@@ -4,3 +4,7 @@
 # Generated BepInEx runtime files
 /cache/
 *.log
+
+# Local .NET build outputs
+**/bin/
+**/obj/
