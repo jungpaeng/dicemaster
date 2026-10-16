@@ -8,3 +8,6 @@
 # Local .NET build outputs
 **/bin/
 **/obj/
+
+# Local development sources and build tooling
+/development/
