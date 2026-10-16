@@ -1,0 +1,6 @@
+# macOS metadata
+.DS_Store
+
+# Generated BepInEx runtime files
+/cache/
+*.log
