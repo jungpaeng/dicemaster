@@ -9,5 +9,5 @@
 **/bin/
 **/obj/
 
-# Local development sources and build tooling
-/development/
+# Generated release packages
+/development/releases/
