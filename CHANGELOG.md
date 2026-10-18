@@ -7,7 +7,7 @@
 
 - 선택지의 공통 본문에서 구문 경계·인자·상수 검증 계획도 제한된 캐시로 재사용합니다. 선택지별 효과·분기·논리 예산·읽기 재시도는 유지합니다.
 - 안전하게 현재 조건을 확인할 수 있는 분기에만 충족/미충족 문구와 색상을 표시합니다. 선행 변경·미확인 콜백·후속 이야기 등은 중립 표시를 유지하며 미래 결과를 확정하지 않습니다.
-- 실제 적용 범위·자동 검사·후보와 비용은 [후속 검증 기록](docs/ISSUE-2-SHARED-ANALYSIS.md)에 구분합니다. 실제 게임/Windows 확인과 PRD #2 완료는 별도입니다. 사용자 지시에 따라 [alpha.5 게시 설명](docs/ISSUE-2-ALPHA5-RELEASE.md)을 준비하고 고정 커밋 재빌드·해시 대조 후 게시합니다.
+- 실제 적용 범위·자동 검사·후보와 비용은 [후속 검증 기록](docs/ISSUE-2-SHARED-ANALYSIS.md)에 구분합니다. 실제 게임/Windows 확인과 PRD #2 완료는 별도입니다. 2026-10-19 03:18:01 KST에 소스 커밋 `d669c4ba08a0450679e5f5d83a8cd20af23b6a58`에서 재빌드한 설치 ZIP을 게시했습니다. 공개 다운로드·CRC·태그·DLL/설정 해시를 검증했고 기존 12개 Release·Latest 정식 v1.0.3·이슈 #2 open을 유지했습니다. [alpha.5 게시 기록](docs/ISSUE-2-ALPHA5-RELEASE.md)에 근거를 구분합니다.
 
 ## [v1.0.4-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.4) — 2026-10-19 (prerelease)
 

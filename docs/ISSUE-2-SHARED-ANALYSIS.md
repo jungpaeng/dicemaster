@@ -77,3 +77,8 @@
 비교·복구용 alpha.2→첫 패치→반복 패치는 `legacy-build.log`에서 미리보기 1,453·통합 139·관리 3,914+메타데이터 1,021 단언을 각각 통과했다. 첫/반복 기존 메서드 316/329개와 내장 리소스 8개가 보존됐고 산출물 검사 1,079/1,111개도 통과했다. `legacy/DiceMaster.dll`은 538,112바이트/SHA `2d4492ac8ed0121b5f8889f5bfef6693b433cf45891bb24437e204fd5a73fd9c`이며 반복 실험 SHA `a296eaff6ba9ab7d1488a2c5cfaa6b8123f7982fc224171fc3e1181fe8978f5f`와 소스 후보를 구분한다. 도구가 비교용 임시 반복본을 검사한 뒤 제거하므로 반복 SHA의 근거는 로그다.
 
 읽기 전용 원본 참조 176개 해시도 전후 동일하다. `local-verification.json`, `final-build-input-verification.json`, `final-source-build.log`, `final-candidate/build-manifest.json`을 후보에 연결한다. 위 로컬 검증 당시 커밋·push·태그·Release 게시·이슈 종료는 수행하지 않았다. 후속 게시 승인에 따른 고정 커밋 재빌드·GitHub 결과는 [alpha.5 게시 기록](ISSUE-2-ALPHA5-RELEASE.md)과 분리한다. 실제 게임 UI·Unity/native/Harmony·다른 모드·프레임/상주 메모리 비용은 별도 미검증이다. PRD #2 전체 완료·이슈 종료로 처리하지 않는다.
+
+
+## 후속 prerelease 게시
+
+사용자 지시에 따라 소스 커밋 `d669c4ba08a0450679e5f5d83a8cd20af23b6a58`을 깨끗하게 재빌드하고 DLL·설정·ZIP이 위 최종 후보와 바이트 단위로 같음을 확인했다. 2026-10-19 03:18:01 KST에 `v1.0.4-alpha.5`를 게시했으며 인증 없는 다운로드·CRC·두 파일·태그·해시를 검증했다. [게시 결과](ISSUE-2-ALPHA5-RELEASE.md)에 Release/asset ID와 남은 실게임 검증을 분리한다. 이 게시로 현재 조건의 실제 적용 범위나 PRD #2 전체 완료를 새로 주장하지 않는다.

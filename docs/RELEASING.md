@@ -8,6 +8,8 @@
 
 고정 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 검토한 DLL SHA-256 `6f4044b5b2e6d6b4f83f57937414dc6887c285660074776308084139bed62dba`와 설정 SHA-256 `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e`를 요구합니다. 출력은 `artifacts/releases/v1.0.4-alpha.5`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 사전 API 확인에서 기존 Release는 12개, Latest 정식은 v1.0.3, 이슈 #2는 open이며 새 태그는 없습니다. 기존 Release·태그·자산을 보존하고 Windows 실행·설치·오류 주입·이슈 종료는 수행하지 않습니다. 실제 게시 결과와 익명 공개 다운로드 검증은 후속 기록으로 구분합니다.
 
+**2026-10-19 03:18:01 KST에 [v1.0.4-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.5) prerelease를 게시하고 인증 없는 공개 다운로드를 검증했습니다.** 소스 태그 커밋은 `d669c4ba08a0450679e5f5d83a8cd20af23b6a58`, Release ID `416618681`, asset ID `654148833`입니다. 고정 커밋의 깨끗한 재빌드가 검토한 DLL·설정·ZIP과 같은 바이트였고 공개 ZIP의 CRC·정확히 두 파일·해시·태그 커밋이 일치했습니다. 기존 12개 Release·자산과 Latest 정식 v1.0.3, 이슈 #2 open을 유지했습니다. Windows 실행과 PRD #2 전체 완료를 주장하지 않습니다. 영수증은 `artifacts/releases/v1.0.4-alpha.5/`에 보존하며 이 게시 기록의 후속 문서 커밋은 태그·공개 자산을 바꾸지 않습니다.
+
 ## PRD 2 alpha.4 실제 Lua 후속 prerelease
 
 사용자가 2026-10-19 KST에 현재 구현의 commit·push·prerelease 게시를 지시했습니다. 대상은 `v1.0.4-alpha.4`, 설치 자산명은 `DiceMaster-v1.0.4-alpha.4.zip`이며 [alpha.4 게시 설명](ISSUE-2-ALPHA4-RELEASE.md)을 사용합니다. 실제 Lua 정적 대조·유한 추적·캐시·할당 개선과 남은 동기 분석 지연·실게임 미검증 범위를 구분합니다.

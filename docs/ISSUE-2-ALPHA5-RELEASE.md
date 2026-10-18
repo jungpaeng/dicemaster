@@ -57,3 +57,9 @@ plugins/DiceMaster/DiceMaster.dll
 | `DiceMaster.cfg` | 9,759바이트 | `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e` |
 
 게임 DLL·게임 소스·실제 Lua·세이브·개발 로그는 ZIP에 포함하지 않습니다. 내부 어셈블리 버전은 기존 `1.0.0.0`이며 배포 태그와 SHA-256으로 식별합니다. 이전 12개 Release·태그·자산은 보존합니다.
+
+## 게시 결과
+
+**2026-10-19 03:18:01 KST에 [v1.0.4-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.5) prerelease를 게시하고 인증 없는 공개 다운로드를 검증했습니다.** 소스 태그 커밋은 `d669c4ba08a0450679e5f5d83a8cd20af23b6a58`, Release ID `416618681`, asset ID `654148833`입니다. 고정 커밋의 깨끗한 재빌드가 검토한 DLL·설정·ZIP과 같은 바이트였고 공개 ZIP의 CRC·정확히 두 파일·해시·태그 커밋이 일치했습니다. 기존 12개 Release·자산과 Latest 정식 v1.0.3, 이슈 #2 open을 유지했습니다. Windows 실행과 PRD #2 전체 완료를 주장하지 않습니다. 영수증은 `artifacts/releases/v1.0.4-alpha.5/`에 보존하며 이 게시 기록의 후속 문서 커밋은 태그·공개 자산을 바꾸지 않습니다.
+
+설치 ZIP: [DiceMaster-v1.0.4-alpha.5.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.5/DiceMaster-v1.0.4-alpha.5.zip)
