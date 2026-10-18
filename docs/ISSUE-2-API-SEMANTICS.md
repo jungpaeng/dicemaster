@@ -1,6 +1,6 @@
 # PRD 2 게임 API 의미 대조
 
-2026-10-19 KST에 읽기 전용 게임 참조의 메타데이터·본문·하위 호출을 다시 확인했다. 이 문서는 구현한 설명의 의미 근거이며 실제 Lua 리소스 대조, Unity 실행, Windows 실행 결과가 아니다. 게임 Lua나 효과 API를 실행하지 않았다.
+2026-10-19 KST에 읽기 전용 게임 참조의 메타데이터·본문·하위 호출을 다시 확인했다. 이 문서는 구현한 설명과 실제 연출 모듈의 정적 의미 근거이며 Unity·Windows 실행 결과가 아니다. 게임 Lua나 효과 API를 실행하지 않았다.
 
 ## 입력 식별
 
@@ -56,8 +56,23 @@
 | `NextRound()` | `0x060000ac` | 다음 순 진행. 행동 횟수·회차 플래그 갱신, 상순 진입 때 상점 갱신, 시간 UI 갱신. |
 | `SetMissionTime(s name, i year, i month, i stage)` | `0x06000095` | 현재 시각 복사 후 양수 month개월·양수 stage순 상대 진행. year는 사용하지 않음. month 진행 후 원래 순을 유지하고 stage만큼 추가 진행한다. |
 | `SetNextScript(s script)` | `0x06000097` | 현재 이야기 스크립트 이름 등록. 즉시 실행이 아니다. 이후 지정이나 Story/Free 전환의 미션 검사로 대상이 바뀔 수 있으므로 후속 효과에는 불확실성·조건부 표시를 유지한다. |
+| `SetCurrentStoryScript(s script)` | `0x06000090` | `SetNextScript`가 이 메서드를 호출하며 둘 다 `PlayerStatManagerData.SetStoryScript`에 같은 예약 대상을 기록한다. 두 API 사이의 덮어쓰기·빈 이름 초기화·동적 대상·다음 선택 경계를 공유한다. 등록 자체는 결과 보상으로 표시하지 않는다. |
+| `SetEnableActions(i enabled)` | `0x06000096` | 정수 **1일 때만** `StoryManager.EnableAction=true`. 그 외 정수는 false다. 메뉴·상태창·로그·자동진행·다음 대사·스킵 입력의 게이트이므로 `이야기 조작 허용/차단`으로 표시한다. 행동력이나 보상 횟수의 변화가 아니다. |
 
 기존 전투 진입 `ChangeScene(s name,s key,s nextScene)`은 `0x0600009c`이다. 원래 미리보기가 인식하던 `ChangeScene("Combat")`·`ChangeScene("Battle")` 형식도 전투 이름 표시 호환을 유지한다. 이 1인자 표시 호환은 실제 게임 메서드의 기본 인자 존재를 뜻하지 않는다. 정상 3인자 호출은 각 인자를 검증한다.
+
+후속 정적 대조에서 `SetEnableActions` → `StoryManager.SetEnableActions(Boolean)`(`0x060000e8`) → setter(`0x060000da`)가 bool 필드 하나만 기록함을 확인했다. 위 입력 getter의 사용처는 `StoryManager`의 `0x060000e0`부터 `0x060000e5`까지다. 이 메서드를 미리보기에서 호출하지 않는다.
+
+## 대화·연출 호출을 일괄 제외하지 않는 이유
+
+실제 `lua/fungus` TextAsset과 공급된 Fungus IL을 함께 정적으로 확인했다. 모듈 본문 SHA-256은 `7942b9b8110a83e4e647ff264801cbfffff0748ea75c98544cb4a9f4a56c8de0`이다. 이름이 연출처럼 보여도 아래 호출은 계속 미지원·실행 불확실성으로 남긴다.
+
+- `LuaManager.Init()`(`0x0600009a`)은 `InitLuaScript`·`ExecuteLuaScript`를 통해 Lua 컴파일·실행으로 이어진다.
+- `runwait`는 임의 IEnumerator를 코루틴으로 넘기며 `runblock`은 Flowchart 블록의 명령을 실행한다.
+- `say`의 대사 태그 처리에는 `Flowchart.BroadcastFungusMessage`와 `WriterSignals.DoTextTagToken`의 핸들러 호출이 있다. 문자열 리터럴이나 `GetStoryText` 인자만으로 태그의 부작용이 없다고 증명할 수 없다.
+- `wait`는 yield 경계다. 순수한 지연으로 분류할 경우에도 이후 상태를 현재 스냅샷과 같다고 취급해서는 안 된다. 이번 후속에서는 연출 허용 목록을 넓히지 않았다.
+
+이 분류와 전체 Lua 추출·리소스 경로·후속 대조의 범위는 [실제 Lua 검증 기록](ISSUE-2-REAL-LUA-VALIDATION.md)에 구분한다. unknown callback·동적 조건·게임 진행을 실제로 실행하여 표시를 채우지 않는다.
 
 ## Player의 상태 의존 계산
 
@@ -82,7 +97,7 @@
 
 `GetDisplayTime`(`0x060000b2`)·`GetModifyString`(`0x060000ca`)은 보조 조회/서식 함수, `UpdateSetPlayerStat`(`0x060000b7`)은 변경 알림만 표시하는 함수다. 이들만 있는 블록은 상태 변경 효과나 미지원 효과로 만들지 않는다. `UpdateSetPlayerStat`를 능력치 직접 설정으로 설명하지 않는다.
 
-효과 API, 임의 Lua 함수, 원래 조건 평가 사슬, RNG, 장비·기술·시간·미션 변경 API는 설명을 위해 호출하지 않는다. 정적 상수·지원 여부는 분석에 캐시하고 상태 스냅샷은 선택지 표시 시점에만 평가한다. 확인되지 않은 실제 Lua·native Unity·Windows 경로는 PRD 2 완료 조건으로 남아 있다.
+효과 API, 임의 Lua 함수, 원래 조건 평가 사슬, RNG, 장비·기술·시간·미션 변경 API는 설명을 위해 호출하지 않는다. 정적 상수·지원 여부는 분석에 캐시하고 상태 스냅샷은 선택지 표시 시점에만 평가한다. 실제 Lua는 별도 정적 대조를 수행하며, native Unity·Windows·현재 실행 상태에서의 수치는 그 결과와 구분한 실행 확인 항목이다.
 
 ## 표시 이름 조회의 singleton 경계
 

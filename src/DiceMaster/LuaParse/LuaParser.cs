@@ -47,6 +47,7 @@ public class LuaParser
 	private readonly Dictionary<string, Dictionary<string, List<Action>>> previewOptionCache = new Dictionary<string, Dictionary<string, List<Action>>>();
 	private readonly Dictionary<string, string> previewSources = new Dictionary<string, string>();
 	private string previewSourceName = "";
+	private readonly PreviewParseCache previewParseCache = new PreviewParseCache();
 	private readonly Dictionary<string, bool> previewIncomplete = new Dictionary<string, bool>();
 	public bool IncompleteOptionDiscovery;
 	private static readonly HashSet<PreviewAnalysis> retryArmed = new HashSet<PreviewAnalysis>();
@@ -70,7 +71,7 @@ public class LuaParser
 		luaOptions.Clear(); luaSwitchCheck.Clear(); luaPositionWork.Clear(); luaModification.Clear();
 		luaOptionStoryText.Clear(); luaSwitchStoryText.Clear(); luaSwitchBranchStoryText.Clear();
 		OptionResult.Clear(); previewOptionCache.Clear(); previewSources.Clear(); retryArmed.Clear();
-		previewSourceName = ""; IncompleteOptionDiscovery = false; previewIncomplete.Clear();
+		previewParseCache.Clear(); previewSourceName = ""; IncompleteOptionDiscovery = false; previewIncomplete.Clear();
 	}
 
 	public Dictionary<string, List<Action>> ExtractOptionActionsFromLua(string friendlyName, string luaScript = "")
@@ -97,7 +98,8 @@ public class LuaParser
 		foreach (var block in blocks)
 		{
 			if (result.ContainsKey(block.Key)) continue;
-			var analysis = PreviewAnalyzer.Analyze(friendlyName, block.Body, DataHelper.ReadPreviewScript);
+			var analysis = PreviewAnalyzer.AnalyzeWithCache(friendlyName, block.Body, DataHelper.ReadPreviewScript, null, previewParseCache);
+			if (block.Conditional) analysis.MarkConditionalRoot();
 			if (block.LimitReached) analysis.AddIssue(friendlyName, "options", "option-lexical-limit");
 			analysis.OptionKey = block.Key;
 			PreviewDiagnostics.Report(analysis, block.Key);
@@ -119,7 +121,12 @@ public class LuaParser
 			if (!optionKeys.Contains(block.Key)) optionKeys.Add(block.Key);
 			if (!optionStoryMap.ContainsKey(block.Key)) optionStoryMap[block.Key] = new List<string>();
 			if (block.Story.Length != 0 && !optionStoryMap[block.Key].Contains(block.Story)) optionStoryMap[block.Key].Add(block.Story);
-			if (!optionActionMap.ContainsKey(block.Key)) optionActionMap[block.Key] = BuildActionListFromBlock(block.Body);
+			if (!optionActionMap.ContainsKey(block.Key))
+			{
+				var analysis = PreviewAnalyzer.AnalyzeWithCache(previewSourceName, block.Body, DataHelper.ReadPreviewScript, null, previewParseCache);
+				if (block.Conditional) analysis.MarkConditionalRoot();
+				optionActionMap[block.Key] = new List<Action> { Action.FromAnalysis(analysis) };
+			}
 			OptionResult[block.Key] = optionActionMap[block.Key];
 		}
 	}
@@ -164,7 +171,7 @@ public class LuaParser
 
 	private List<Action> BuildActionListFromBlock(string blockContent)
 	{
-		return new List<Action> { Action.FromAnalysis(PreviewAnalyzer.Analyze(previewSourceName, blockContent, DataHelper.ReadPreviewScript)) };
+		return new List<Action> { Action.FromAnalysis(PreviewAnalyzer.AnalyzeWithCache(previewSourceName, blockContent, DataHelper.ReadPreviewScript, null, previewParseCache)) };
 	}
 
 	public Dictionary<string, List<string>> ExtractOptionFirstStoryTextsFromLua(string friendlyName, string luaScript = "")
@@ -537,10 +544,10 @@ public class LuaParser
 		if (luaModification.TryGetValue(luaScriptName, out var cached)) return cached;
 		var read = DataHelper.ReadPreviewScript(luaScriptName);
 		PreviewAnalysis analysis;
-		if (read.State == ScriptReadState.Success) analysis = PreviewAnalyzer.Analyze(luaScriptName, read.Text, DataHelper.ReadPreviewScript);
+		if (read.State == ScriptReadState.Success) analysis = PreviewAnalyzer.AnalyzeWithCache(luaScriptName, read.Text, DataHelper.ReadPreviewScript, null, previewParseCache);
 		else
 		{
-			analysis = PreviewAnalyzer.Analyze(luaScriptName, "", DataHelper.ReadPreviewScript);
+			analysis = PreviewAnalyzer.AnalyzeWithCache(luaScriptName, "", DataHelper.ReadPreviewScript, null, previewParseCache);
 			analysis.RootNeedsRead = true;
 			analysis.AddIssue(luaScriptName, "script", read.State == ScriptReadState.Missing ? "script-target-missing" : read.State == ScriptReadState.Waiting ? "script-data-waiting" : "script-read-failed", true, read.State == ScriptReadState.Waiting);
 		}

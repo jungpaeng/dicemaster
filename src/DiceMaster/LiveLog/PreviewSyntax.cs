@@ -19,6 +19,20 @@ namespace DiceMaster.LiveLog
         public string Body;
         public string Story;
         public bool LimitReached;
+        public bool Conditional;
+    }
+
+    // Root discovery is independent of the cumulative per-option trace
+    // budget. The observed 2,667-script corpus peaks at 502,124 UTF-16 chars
+    // and 86,919 tokens; these bounds cover it while remaining finite.
+    public sealed class PreviewDiscoveryLimits
+    {
+        public int MaxCharacters = 524288;
+        public int MaxTokens = 131072;
+        public int MaxOptions = 1024;
+        public int MaxNesting = 128;
+        public int MaxMaterializedCharacters = 1048576;
+        public int MaxWork = 2097152;
     }
 
     public sealed class PreviewBranch
@@ -36,7 +50,13 @@ namespace DiceMaster.LiveLog
     {
         public static List<PreviewToken> Tokenize(string source)
         {
+            return Tokenize(source, int.MaxValue, out bool ignored);
+        }
+
+        private static List<PreviewToken> Tokenize(string source, int maxTokens, out bool limited)
+        {
             source = source ?? "";
+            limited = false;
             var tokens = new List<PreviewToken>();
             for (int i = 0; i < source.Length;)
             {
@@ -49,6 +69,7 @@ namespace DiceMaster.LiveLog
                     else { i += 2; while (i < source.Length && source[i] != '\n' && source[i] != '\r') i++; }
                     continue;
                 }
+                if (tokens.Count >= maxTokens) { limited = true; break; }
                 int start = i;
                 bool str = c == '\'' || c == '"';
                 if (str)
@@ -63,7 +84,7 @@ namespace DiceMaster.LiveLog
                 else if (c == '[' && TryLongEnd(source, i, out int longEnd)) { str = true; i = longEnd; }
                 else if (IsIdentStart(c)) { i++; while (i < source.Length && IsIdent(source[i])) i++; }
                 else if (char.IsDigit(c)) { i++; while (i < source.Length && (char.IsLetterOrDigit(source[i]) || source[i] == '.')) i++; }
-                else if (i + 1 < source.Length && (source.Substring(i, 2) == "==" || source.Substring(i, 2) == "~=" || source.Substring(i, 2) == "<=" || source.Substring(i, 2) == ">=" || source.Substring(i, 2) == "..")) i += 2;
+                else if (i + 1 < source.Length && (((c == '=' || c == '~' || c == '<' || c == '>') && source[i + 1] == '=') || c == '.' && source[i + 1] == '.')) i += 2;
                 else i++;
                 tokens.Add(new PreviewToken { Text = source.Substring(start, i - start), Start = start, End = i, IsString = str, IsIdentifier = !str && IsIdentStart(c) });
             }
@@ -290,55 +311,380 @@ namespace DiceMaster.LiveLog
 
         public static List<PreviewOptionBlock> OptionBlocks(string source, out bool incomplete)
         {
+            return OptionBlocks(source, new PreviewDiscoveryLimits(), out incomplete);
+        }
+
+        public static List<PreviewOptionBlock> OptionBlocks(string source, PreviewDiscoveryLimits limits, out bool incomplete)
+        {
             source = source ?? "";
-            var limits = new PreviewTraceLimits();
-            bool limited = source.Length > limits.MaxCharacters;
-            if (limited) source = source.Substring(0, limits.MaxCharacters);
-            var tokens = Tokenize(source);
-            if (tokens.Count > limits.MaxTokens) { tokens.RemoveRange(limits.MaxTokens, tokens.Count - limits.MaxTokens); source = source.Substring(0, tokens[tokens.Count - 1].End); limited = true; }
+            limits = limits ?? new PreviewDiscoveryLimits();
+            var budget = new DiscoveryBudget(limits);
+            if (source.Length > Math.Max(0, limits.MaxCharacters))
+            { source = source.Substring(0, Math.Max(0, limits.MaxCharacters)); budget.Limited = true; }
+            var tokens = Tokenize(source, Math.Max(0, limits.MaxTokens), out bool tokenLimit);
+            if (tokenLimit)
+            { source = source.Substring(0, tokens.Count == 0 ? 0 : tokens[tokens.Count - 1].End); budget.Limited = true; }
             var result = new List<PreviewOptionBlock>();
-            int work = 0;
-            // Only a genuine short line comment can carry the game's --index identity.
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            var delimiters = DiscoveryDelimiters(tokens, budget);
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            var branches = DiscoveryBranches(tokens, budget, out Dictionary<int, int> controlEnds, out int[] depths, out DiscoveryScopes scopes);
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            var boundaries = DiscoveryBoundaries(tokens, controlEnds, budget);
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            var stories = DiscoveryStories(tokens, delimiters, budget);
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            // Marker starts advance monotonically. A marker inside a nested
+            // block must not cut the enclosing option before its matching end.
+            // Both marker and choose bodies use precomputed lexical boundaries.
             var markers = IndexMarkers(source);
+            var markerTokens = new int[markers.Count];
+            var markerDepths = new int[markers.Count];
+            var markerEnds = new int[markers.Count];
+            var markerScopes = new Dictionary<string, int>(StringComparer.Ordinal);
             int markerToken = 0;
-            for (int m = 0; m < markers.Count; m++)
+            for (int m = 0; m < markers.Count && budget.Spend(); m++)
             {
-                int first = markers[m].End; int limit = m + 1 < markers.Count ? markers[m + 1].Start : source.Length;
-                while (markerToken < tokens.Count && tokens[markerToken].Start < first) { markerToken++; if (++work > limits.MaxWork) break; }
-                if (work > limits.MaxWork) { limited = true; break; }
-                int last = BranchEnd(tokens, markerToken, limit);
-                int visited = markerToken;
-                while (visited < tokens.Count && tokens[visited].Start < last) { visited++; work++; }
-                if (work > limits.MaxWork) { limited = true; break; }
-                string body = source.Substring(first, Math.Max(0, last - first));
-                result.Add(new PreviewOptionBlock { Key = markers[m].Text, Body = body, Story = FirstStory(body) });
+                while (markerToken < tokens.Count && tokens[markerToken].Start < markers[m].End && budget.Spend()) markerToken++;
+                markerTokens[m] = markerToken;
+                markerDepths[m] = markerToken < depths.Length ? depths[markerToken] : 0;
             }
-            for (int i = 0; i < tokens.Count; i++)
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            var nextMarkers = new Stack<int>();
+            for (int m = markers.Count - 1; m >= 0 && budget.Spend(); m--)
             {
-                if (++work > limits.MaxWork) { limited = true; break; }
-                if (!TryCall(tokens, i, out string owner, out string name, out int open, out int close) || owner != "" || name != "choose" || close < 0 || i < 2 || tokens[i - 1].Text != "=" || !tokens[i - 2].IsIdentifier) continue;
-                var args = Arguments(source, tokens, open, close); if (args.Count == 0) continue;
-                string table = args[0].Trim(); string variable = tokens[i - 2].Text;
-                var options = new Dictionary<string, string>();
-                for (int j = 0; j + 5 < i; j++)
+                while (nextMarkers.Count > 0 && markerDepths[nextMarkers.Peek()] > markerDepths[m] && budget.Spend()) nextMarkers.Pop();
+                markerEnds[m] = nextMarkers.Count == 0 ? source.Length : markers[nextMarkers.Peek()].Start;
+                nextMarkers.Push(m);
+            }
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            for (int m = 0; m < markers.Count && budget.Spend(); m++)
+            {
+                int token = markerTokens[m];
+                int boundary = token < boundaries.Length ? boundaries[token] : tokens.Count;
+                int last = boundary < tokens.Count ? tokens[boundary].Start : source.Length;
+                last = Math.Min(last, markerEnds[m]);
+                if (!keys.Contains(markers[m].Text)) markerScopes[markers[m].Text] = token < scopes.Lexical.Length ? scopes.Lexical[token] : 0;
+                AddDiscoveryBlock(source, markers[m].Text, markers[m].End, last, stories, keys, result, budget, true);
+            }
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            // Capture only assignment histories and table generations. A choose
+            // references its generation and position, so later edits/resetting
+            // the same table cannot change that choose's option identities.
+            var bindings = new DiscoveryBindings(scopes);
+            var tables = new Dictionary<DiscoveryBinding, DiscoveryTable>();
+            var conditionBindings = new Dictionary<int, DiscoveryBinding>();
+            var assignmentBindings = new Dictionary<int, DiscoveryBinding>();
+            var choices = new Dictionary<int, DiscoveryChoice>();
+            for (int i = 0; i < tokens.Count && budget.Spend(); i++)
+            {
+                if (!tokens[i].IsIdentifier || i > 0 && (tokens[i - 1].Text == "." || tokens[i - 1].Text == ":")) continue;
+                if (tokens[i].Text == "local")
                 {
-                    if (++work > limits.MaxWork) { limited = true; break; }
-                    if (tokens[j].Text == table && tokens[j + 1].Text == "=" && tokens[j + 2].Text == "{") options.Clear();
-                    if (tokens[j].Text == table && tokens[j + 1].Text == "[" && tokens[j + 3].Text == "]" && tokens[j + 4].Text == "=" && TryString(tokens[j + 5].Text, out string option)) options[tokens[j + 2].Text] = option;
+                    int declaration = i + 1;
+                    if (declaration < tokens.Count && tokens[declaration].Text == "function") declaration++;
+                    while (declaration < tokens.Count && tokens[declaration].IsIdentifier && budget.Spend())
+                    {
+                        bindings.Declare(tokens[declaration].Text, i);
+                        if (declaration + 1 >= tokens.Count || tokens[declaration + 1].Text != ",") break;
+                        declaration += 2;
+                    }
                 }
-                if (work > limits.MaxWork) break;
-                int branch = FindAssignedBranch(tokens, close + 1, variable);
-                if (branch < 0) continue;
-                var branches = Branches(tokens, branch, out int ending);
-                work += ending - branch;
-                if (work > limits.MaxWork) { limited = true; break; }
-                foreach (var b in branches)
-                    if (options.TryGetValue(b.Label, out string option))
-                    { string body = Slice(source, tokens, b.Start, b.End); if (!result.Exists(x => x.Key == option)) result.Add(new PreviewOptionBlock { Key = option, Body = body, Story = FirstStory(body) }); }
+                if (tokens[i].Text == "for")
+                {
+                    int declaration = i + 1;
+                    while (declaration < tokens.Count && tokens[declaration].IsIdentifier && budget.Spend())
+                    {
+                        // Numeric and generic for variables are implicit locals
+                        // in the loop scope, even without the local keyword.
+                        bindings.Declare(tokens[declaration].Text, i + 1);
+                        if (declaration + 1 >= tokens.Count || tokens[declaration + 1].Text != ",") break;
+                        declaration += 2;
+                    }
+                }
+                if (tokens[i].Text == "if")
+                {
+                    int header = i + 1;
+                    while (header < tokens.Count && tokens[header].Text == "(" && budget.Spend()) header++;
+                    if (header + 1 < tokens.Count && tokens[header].IsIdentifier && tokens[header + 1].Text == "==")
+                        conditionBindings[i] = bindings.Resolve(tokens[header].Text, i, budget);
+                }
+                var binding = bindings.Resolve(tokens[i].Text, i, budget);
+                if (binding == null) continue;
+                if (i + 1 < tokens.Count && tokens[i + 1].Text == "=")
+                {
+                    assignmentBindings[i] = binding;
+                    // Unsupported replacement expressions invalidate a prior
+                    // table; they must not leave old choice identities behind.
+                    if (i + 2 < tokens.Count && tokens[i + 2].Text == "{") tables[binding] = new DiscoveryTable();
+                    else tables.Remove(binding);
+                }
+                if (i + 5 < tokens.Count && tokens[i + 1].Text == "[" && tokens[i + 3].Text == "]" && tokens[i + 4].Text == "=" && tokens[i + 5].IsString &&
+                    TryString(tokens[i + 5].Text, out string option))
+                {
+                    if (!tables.TryGetValue(binding, out DiscoveryTable table)) tables[binding] = table = new DiscoveryTable();
+                    table.Add(tokens[i + 2].Text, i, option);
+                }
+                if (tokens[i].Text != "choose" || i < 2 || tokens[i - 1].Text != "=" || !tokens[i - 2].IsIdentifier ||
+                    i > 2 && (tokens[i - 3].Text == "." || tokens[i - 3].Text == ":") ||
+                    i + 2 >= tokens.Count || tokens[i + 1].Text != "(" || !tokens[i + 2].IsIdentifier ||
+                    !delimiters.TryGetValue(i + 1, out int close) || i + 3 >= tokens.Count || tokens[i + 3].Text != "," && i + 3 != close) continue;
+                var tableBinding = bindings.Resolve(tokens[i + 2].Text, i, budget);
+                var resultBinding = bindings.Resolve(tokens[i - 2].Text, i, budget);
+                if (tableBinding != null && resultBinding != null && tables.TryGetValue(tableBinding, out DiscoveryTable selected))
+                    choices[close] = new DiscoveryChoice { Variable = resultBinding, VariableName = tokens[i - 2].Text, Position = i, Scope = scopes.Lexical[i], Table = selected };
             }
-            if (limited) foreach (var block in result) block.LimitReached = true;
-            incomplete = limited;
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            var nextBranch = new Dictionary<DiscoveryBinding, Dictionary<int, int>>();
+            var resolvedChoices = new List<DiscoveryChoice>();
+            for (int i = tokens.Count - 1; i >= 0 && budget.Spend(); i--)
+            {
+                if (assignmentBindings.TryGetValue(i, out DiscoveryBinding assigned)) nextBranch.Remove(assigned);
+                if (conditionBindings.TryGetValue(i, out DiscoveryBinding condition) && condition != null)
+                {
+                    if (!nextBranch.TryGetValue(condition, out Dictionary<int, int> byScope)) nextBranch[condition] = byScope = new Dictionary<int, int>();
+                    byScope[scopes.Lexical[i]] = i;
+                }
+                // A nested result test may have an additional gate/loop around
+                // it. Extracting only its body would erase that condition.
+                if (!choices.TryGetValue(i, out DiscoveryChoice choice) || !nextBranch.TryGetValue(choice.Variable, out Dictionary<int, int> candidates) ||
+                    !candidates.TryGetValue(choice.Scope, out int branch) || !branches.TryGetValue(branch, out List<PreviewBranch> alternatives)) continue;
+                choice.Branches = alternatives; choice.Close = i; choice.Branch = branch; resolvedChoices.Add(choice);
+            }
+            if (budget.WorkExhausted) return EndDiscovery(result, budget, out incomplete);
+            var provenChoiceScopes = new HashSet<int>();
+            for (int c = resolvedChoices.Count - 1; c >= 0 && budget.Spend(); c--)
+            {
+                var choice = resolvedChoices[c];
+                bool pureChoice = true;
+                // Common statements between the visible choice and its result
+                // branch are not part of the extracted option body. They may
+                // mutate state before an effect whose amount uses a snapshot.
+                for (int between = choice.Close + 1; between < choice.Branch && budget.Spend(); between++)
+                    if (tokens[between].Text != ";") pureChoice = false;
+                if (budget.WorkExhausted) pureChoice = false;
+                foreach (var alternative in choice.Branches)
+                    if (!alternative.IsElse && !PureChoiceHeader(tokens, delimiters, alternative, choice.VariableName, budget)) pureChoice = false;
+                foreach (var alternative in choice.Branches)
+                {
+                    if (!budget.Spend()) break;
+                    if (!choice.Table.TryGet(alternative.Label, choice.Position, budget, out string option)) continue;
+                    int first = alternative.Start < tokens.Count ? tokens[alternative.Start].Start : source.Length;
+                    int last = alternative.End < tokens.Count ? tokens[alternative.End].Start : source.Length;
+                    AddDiscoveryBlock(source, option, first, last, stories, keys, result, budget, !pureChoice);
+                    if (pureChoice && alternative.Start < scopes.Lexical.Length) provenChoiceScopes.Add(scopes.Lexical[alternative.Start]);
+                }
+            }
+            foreach (var block in result)
+                if (markerScopes.TryGetValue(block.Key, out int markerScope)) block.Conditional = DiscoveryMarkerConditional(markerScope, scopes, provenChoiceScopes, budget);
+            return EndDiscovery(result, budget, out incomplete);
+        }
+
+        static bool PureChoiceHeader(List<PreviewToken> tokens, Dictionary<int, int> delimiters, PreviewBranch branch, string variable, DiscoveryBudget budget)
+        {
+            int first = branch.HeaderStart + 1, last = branch.HeaderEnd;
+            while (first < last && tokens[first].Text == "(" && delimiters.TryGetValue(first, out int close) && close == last - 1 && budget.Spend()) { first++; last--; }
+            return !budget.WorkExhausted && last - first == 3 && tokens[first].IsIdentifier && tokens[first].Text == variable && tokens[first + 1].Text == "==" &&
+                (tokens[first + 2].IsString || !tokens[first + 2].IsIdentifier);
+        }
+
+        static bool DiscoveryMarkerConditional(int scope, DiscoveryScopes scopes, HashSet<int> provenChoices, DiscoveryBudget budget)
+        {
+            bool uncertain = false;
+            int function = scopes.FunctionOfScope.TryGetValue(scope, out int owner) ? owner : 0;
+            while (scope > 0 && budget.Spend())
+            {
+                if (provenChoices.Contains(scope)) return uncertain;
+                if (!scopes.FunctionOfScope.TryGetValue(scope, out owner) || owner != function) return true;
+                string kind = scopes.Kinds.TryGetValue(scope, out string value) ? value : "";
+                if (kind == "if" || kind == "loop" || kind == "repeat" || kind == "for" || kind == "while") uncertain = true;
+                scope = scopes.Parents[scope];
+            }
+            return budget.WorkExhausted || uncertain;
+        }
+
+        static List<PreviewOptionBlock> EndDiscovery(List<PreviewOptionBlock> result, DiscoveryBudget budget, out bool incomplete)
+        {
+            if (budget.Limited) foreach (var block in result) block.LimitReached = true;
+            incomplete = budget.Limited; return result;
+        }
+
+        sealed class DiscoveryBudget
+        {
+            internal readonly PreviewDiscoveryLimits Limits;
+            internal bool Limited, WorkExhausted;
+            internal int Work, Materialized;
+            internal DiscoveryBudget(PreviewDiscoveryLimits limits) { Limits = limits; }
+            internal bool Spend()
+            {
+                if (Work >= Math.Max(0, Limits.MaxWork)) { Limited = true; WorkExhausted = true; return false; }
+                Work++; return true;
+            }
+        }
+        sealed class DiscoveryBinding { }
+        sealed class DiscoveryScopes
+        {
+            internal readonly int[] Lexical, Functions;
+            internal readonly Dictionary<int, int> Parents = new Dictionary<int, int>();
+            internal readonly Dictionary<int, int> FunctionOfScope = new Dictionary<int, int>();
+            internal readonly Dictionary<int, string> Kinds = new Dictionary<int, string>();
+            internal DiscoveryScopes(int count) { Lexical = new int[count]; Functions = new int[count]; Parents[0] = -1; FunctionOfScope[0] = 0; }
+            internal void Add(int scope, int parent, int function, string kind) { Parents[scope] = parent; FunctionOfScope[scope] = function; Kinds[scope] = kind; }
+        }
+        sealed class DiscoveryBindings
+        {
+            readonly DiscoveryScopes scopes;
+            readonly Dictionary<int, Dictionary<string, DiscoveryBinding>> locals = new Dictionary<int, Dictionary<string, DiscoveryBinding>>();
+            readonly Dictionary<int, Dictionary<string, DiscoveryBinding>> globals = new Dictionary<int, Dictionary<string, DiscoveryBinding>>();
+            internal DiscoveryBindings(DiscoveryScopes value) { scopes = value; }
+            internal void Declare(string name, int token)
+            {
+                int scope = scopes.Lexical[token];
+                if (!locals.TryGetValue(scope, out Dictionary<string, DiscoveryBinding> names)) locals[scope] = names = new Dictionary<string, DiscoveryBinding>(StringComparer.Ordinal);
+                names[name] = new DiscoveryBinding();
+            }
+            internal DiscoveryBinding Resolve(string name, int token, DiscoveryBudget budget)
+            {
+                int scope = scopes.Lexical[token], function = scopes.Functions[token];
+                while (scope >= 0 && scopes.FunctionOfScope.TryGetValue(scope, out int owner) && owner == function && budget.Spend())
+                {
+                    if (locals.TryGetValue(scope, out Dictionary<string, DiscoveryBinding> names) && names.TryGetValue(name, out DiscoveryBinding local)) return local;
+                    scope = scopes.Parents[scope];
+                }
+                if (budget.WorkExhausted) return null;
+                // Do not infer captured variables across a function boundary.
+                if (!globals.TryGetValue(function, out Dictionary<string, DiscoveryBinding> globalNames)) globals[function] = globalNames = new Dictionary<string, DiscoveryBinding>(StringComparer.Ordinal);
+                if (!globalNames.TryGetValue(name, out DiscoveryBinding global)) globalNames[name] = global = new DiscoveryBinding();
+                return global;
+            }
+        }
+        sealed class DiscoveryValue { internal int Position; internal string Value; }
+        sealed class DiscoveryTable
+        {
+            readonly Dictionary<string, List<DiscoveryValue>> values = new Dictionary<string, List<DiscoveryValue>>(StringComparer.Ordinal);
+            internal void Add(string key, int position, string value)
+            {
+                if (!values.TryGetValue(key, out List<DiscoveryValue> history)) values[key] = history = new List<DiscoveryValue>();
+                history.Add(new DiscoveryValue { Position = position, Value = value });
+            }
+            internal bool TryGet(string key, int position, DiscoveryBudget budget, out string value)
+            {
+                value = null;
+                if (!values.TryGetValue(key, out List<DiscoveryValue> history)) return false;
+                int low = 0, high = history.Count;
+                while (low < high && budget.Spend()) { int middle = low + (high - low) / 2; if (history[middle].Position < position) low = middle + 1; else high = middle; }
+                if (budget.WorkExhausted || low == 0) return false;
+                value = history[low - 1].Value; return true;
+            }
+        }
+        sealed class DiscoveryChoice { internal DiscoveryBinding Variable; internal string VariableName; internal int Position, Scope, Close, Branch; internal DiscoveryTable Table; internal List<PreviewBranch> Branches; }
+        sealed class DiscoveryControl
+        {
+            internal int Start, Header, Body = -1, ParentScope, ParentFunction;
+            internal string Kind;
+            internal bool IsElse;
+            internal readonly List<PreviewBranch> Branches = new List<PreviewBranch>();
+        }
+        sealed class DiscoveryStory { internal int Position; internal string Key; }
+
+        static Dictionary<int, int> DiscoveryDelimiters(List<PreviewToken> tokens, DiscoveryBudget budget)
+        {
+            var result = new Dictionary<int, int>(); var opens = new Stack<int>();
+            for (int i = 0; i < tokens.Count && budget.Spend(); i++)
+            {
+                if (tokens[i].IsString) continue;
+                string text = tokens[i].Text;
+                if (text == "(" || text == "[" || text == "{")
+                { if (opens.Count >= Math.Max(0, budget.Limits.MaxNesting)) { budget.Limited = true; return result; } opens.Push(i); }
+                else if (text == ")" || text == "]" || text == "}")
+                {
+                    if (opens.Count == 0) continue;
+                    int open = opens.Pop();
+                    if (tokens[open].Text == (text == ")" ? "(" : text == "]" ? "[" : "{")) result[open] = i;
+                }
+            }
             return result;
+        }
+
+        static Dictionary<int, List<PreviewBranch>> DiscoveryBranches(List<PreviewToken> tokens, DiscoveryBudget budget, out Dictionary<int, int> controlEnds, out int[] depths, out DiscoveryScopes scopes)
+        {
+            controlEnds = new Dictionary<int, int>(); depths = new int[tokens.Count]; scopes = new DiscoveryScopes(tokens.Count);
+            int lexical = 0, function = 0;
+            var result = new Dictionary<int, List<PreviewBranch>>(); var controls = new Stack<DiscoveryControl>();
+            for (int i = 0; i < tokens.Count && budget.Spend(); i++)
+            {
+                depths[i] = controls.Count; scopes.Lexical[i] = lexical; scopes.Functions[i] = function;
+                if (tokens[i].IsString) continue;
+                string text = tokens[i].Text;
+                var current = controls.Count == 0 ? null : controls.Peek();
+                if (text == "then" && current != null && current.Kind == "if" && current.Body < 0) { current.Body = i + 1; continue; }
+                if ((text == "else" || text == "elseif") && current != null && current.Kind == "if")
+                {
+                    AddDiscoveryBranch(tokens, current, i);
+                    current.Header = i; current.IsElse = text == "else"; current.Body = current.IsElse ? i + 1 : -1;
+                    lexical = i + 1; scopes.Add(lexical, current.ParentScope, function, "if"); continue;
+                }
+                if (text == "end" || text == "until")
+                { if (current != null) { controls.Pop(); lexical = current.ParentScope; function = current.ParentFunction; controlEnds[current.Start] = i; if (current.Kind == "if") { AddDiscoveryBranch(tokens, current, i); result[current.Start] = current.Branches; } } continue; }
+                if (text == "do" && current != null && current.Kind == "loop-awaiting-do") { current.Kind = "loop"; continue; }
+                if (text != "if" && text != "function" && text != "for" && text != "while" && text != "repeat" && text != "do") continue;
+                if (controls.Count >= Math.Max(0, budget.Limits.MaxNesting)) { budget.Limited = true; return result; }
+                controls.Push(new DiscoveryControl { Start = i, Header = i, ParentScope = lexical, ParentFunction = function, Kind = text == "for" || text == "while" ? "loop-awaiting-do" : text });
+                int parent = lexical; lexical = i + 1; if (text == "function") function = i + 1; scopes.Add(lexical, parent, function, text);
+            }
+            // A truncated source may still contain a useful, explicitly bounded
+            // branch prefix. Incomplete status remains attached to every block.
+            foreach (var control in controls)
+                if (control.Kind == "if") { AddDiscoveryBranch(tokens, control, tokens.Count); result[control.Start] = control.Branches; }
+            return result;
+        }
+
+        static void AddDiscoveryBranch(List<PreviewToken> tokens, DiscoveryControl control, int end)
+        {
+            if (control.Body < 0) return;
+            control.Branches.Add(new PreviewBranch { Label = Label(tokens, control.Header, control.Body), Start = control.Body, End = end, IsElse = control.IsElse, HeaderStart = control.Header, HeaderEnd = control.Body - 1 });
+        }
+
+        static List<DiscoveryStory> DiscoveryStories(List<PreviewToken> tokens, Dictionary<int, int> delimiters, DiscoveryBudget budget)
+        {
+            var result = new List<DiscoveryStory>();
+            for (int i = 0; i + 2 < tokens.Count && budget.Spend(); i++)
+            {
+                if (!tokens[i].IsIdentifier || tokens[i].Text != "GetStoryText" || tokens[i + 1].Text != "(" || !tokens[i + 2].IsString ||
+                    !delimiters.TryGetValue(i + 1, out int close) || i + 3 >= tokens.Count || i + 3 != close && tokens[i + 3].Text != ",") continue;
+                if (TryString(tokens[i + 2].Text, out string key)) result.Add(new DiscoveryStory { Position = tokens[i].Start, Key = key });
+            }
+            return result;
+        }
+
+        static int[] DiscoveryBoundaries(List<PreviewToken> tokens, Dictionary<int, int> controlEnds, DiscoveryBudget budget)
+        {
+            var result = new int[tokens.Count + 1]; result[tokens.Count] = tokens.Count;
+            for (int i = tokens.Count - 1; i >= 0 && budget.Spend(); i--)
+            {
+                result[i] = result[i + 1];
+                if (tokens[i].IsString) continue;
+                string text = tokens[i].Text;
+                if (controlEnds.TryGetValue(i, out int close)) result[i] = result[close + 1];
+                else if (text == "end" || text == "else" || text == "elseif" || text == "until") result[i] = i;
+            }
+            return result;
+        }
+
+        static void AddDiscoveryBlock(string source, string key, int first, int last, List<DiscoveryStory> stories,
+            HashSet<string> keys, List<PreviewOptionBlock> result, DiscoveryBudget budget, bool conditional = false)
+        {
+            if (keys.Contains(key)) return;
+            if (result.Count >= Math.Max(0, budget.Limits.MaxOptions)) { budget.Limited = true; return; }
+            int available = Math.Max(0, Math.Max(0, budget.Limits.MaxMaterializedCharacters) - budget.Materialized);
+            int length = Math.Max(0, last - first);
+            if (length > available) { length = available; budget.Limited = true; }
+            string story = "";
+            int low = 0, high = stories.Count;
+            while (low < high && budget.Spend()) { int middle = low + (high - low) / 2; if (stories[middle].Position < first) low = middle + 1; else high = middle; }
+            if (!budget.WorkExhausted && low < stories.Count && stories[low].Position < first + length) story = stories[low].Key;
+            result.Add(new PreviewOptionBlock { Key = key, Body = source.Substring(first, length), Story = story, Conditional = conditional });
+            budget.Materialized += length; keys.Add(key);
         }
 
         public static int FindAssignedBranch(List<PreviewToken> tokens, int start, string variable)

@@ -38,7 +38,7 @@ namespace DiceMaster.LiveLog
             {"SetBattleSkillLevel", "si"}, {"SwapUpgradeItem", "si"}, {"RestoreUpgradeItem", "s"},
             {"RestoreAllUpgradeItems", ""}, {"SetGameTime", "iii"}, {"SetGameDayEnvironment", "i"},
             {"NextMonth", ""}, {"NextRound", ""}, {"SetMissionTime", "siii"}, {"SetNextScript", "s"},
-            {"ChangeScene", "sss"}
+            {"ChangeScene", "sss"}, {"SetCurrentStoryScript", "s"}, {"SetEnableActions", "i"}
         };
 
         public static bool IsDisplayOnly(PreviewEffect effect)
@@ -49,7 +49,12 @@ namespace DiceMaster.LiveLog
 
         // Routing is still validated and traced, but is not a player-facing reward.
         public static bool IsRoutingOnly(PreviewEffect effect)
-        { return effect.Owner == "luamanager" && effect.Name == "SetNextScript"; }
+        { return effect.Owner == "luamanager" && IsStoryRegistration(effect.Name); }
+
+        // Both methods call PlayerStatManagerData.SetStoryScript in the supplied
+        // Mortal.Story DLL. This describes/traces registration, never calls it.
+        public static bool IsStoryRegistration(string name)
+        { return name == "SetNextScript" || name == "SetCurrentStoryScript"; }
 
         public static bool IsKnownEffect(string owner, string name)
         {
@@ -224,6 +229,7 @@ namespace DiceMaster.LiveLog
                     case "NextMonth": return "다음 달 진행 · 행동 횟수·회차 플래그·상점·이야기 시간 갱신";
                     case "NextRound": return "다음 순 진행 · 행동 횟수·회차 플래그·필요 시 상점·이야기 시간 갱신";
                     case "SetMissionTime": return "미션 시간 " + S(e, 0) + ": 현재 시각 복사 후 " + Number(Math.Max(0, N(e, 2))) + "개월·" + Number(Math.Max(0, N(e, 3))) + "순 진행(year 인자 미사용)";
+                    case "SetEnableActions": return N(e, 0) == 1 ? "이야기 조작 허용" : "이야기 조작 차단";
                     case "ChangeScene":
                         if (S(e, 0) == "Combat") return Local("System/Combat/Duel", "결투");
                         if (S(e, 0) == "Battle") return Local("System/Combat/Skirmish", "난전");

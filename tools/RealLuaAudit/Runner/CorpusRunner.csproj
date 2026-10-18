@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><UseArtifactsOutput>true</UseArtifactsOutput><ArtifactsPath>$(MSBuildThisFileDirectory)../../../artifacts/real-lua-audit-tool/build-output</ArtifactsPath><NuGetAudit>false</NuGetAudit></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <Compile Include="../../Shared/PayloadCopier.cs" Link="PayloadCopier.cs" />
+    <Compile Include="../../../tests/Shared/PreviewFixtureBoundary.cs" Link="PreviewFixtureBoundary.cs" />
+  </ItemGroup>
+</Project>

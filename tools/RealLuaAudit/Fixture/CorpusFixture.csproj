@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><UseArtifactsOutput>true</UseArtifactsOutput><ArtifactsPath>$(MSBuildThisFileDirectory)../../../artifacts/real-lua-audit-tool/build-output</ArtifactsPath><NuGetAudit>false</NuGetAudit></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="CorpusScenario.cs" />
+    <Compile Include="../../../tests/LiveLogIntegrationFixtures/Fixtures.cs" Link="Boundaries.cs" />
+  </ItemGroup>
+</Project>

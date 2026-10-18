@@ -372,6 +372,92 @@ namespace DiceMaster
             var commentedTarget = Analyze("luamanager.SetNextScript(--comment\n \"child\" --comment\n)", name => Read("Success", "statmodifymanager.SetFlag(\"comment_follow\",1)"));
             Contains(AnalysisText(commentedTarget), "comment_follow", "Commented string literal trace target");
         }
+        static void StoryApiRegression()
+        {
+            foreach (string registration in new[] { "SetNextScript", "SetCurrentStoryScript" })
+            {
+                var names = new List<string>();
+                Func<string, object> reader = name => { names.Add(name); return Read("Success", "statmodifymanager.SetFlag(\"registered_child\",1)\nchoose({})\nstatmodifymanager.SetFlag(\"after_child_choice\",1)"); };
+                var analysis = Analyze("luamanager." + registration + "(\"child\")", reader);
+                string text = AnalysisText(analysis);
+                Check(names.SequenceEqual(new[] { "child" }), "Story registration must use the bounded reader exactly once: " + registration);
+                Contains(text, "registered_child", "Story registration alias follows the target");
+                Contains(text, "이후 가능한 변화", "Registration remains a possible future effect");
+                Excludes(text, "after_child_choice", "Registration stops at the child's next choice");
+                Excludes(text, registration, "Registration API is not a reward label");
+                Check(Items(analysis, "Effects").Cast<object>().Where(effect => (string)Member(effect, "Source") == "child").All(effect => (bool)Member(effect, "Followup")), "Registered child lost followup provenance");
+                string other = registration == "SetNextScript" ? "SetCurrentStoryScript" : "SetNextScript";
+                names.Clear();
+                Analyze("luamanager." + other + "(\"old\")\nluamanager." + registration + "(\"new\")", reader);
+                Check(names.SequenceEqual(new[] { "new" }), "Mixed registration aliases must replace the same pending target");
+                foreach (string replacement in new[] { "\"\"", "dynamic_target" })
+                {
+                    names.Clear();
+                    var replaced = Analyze("luamanager." + other + "(\"old\")\nluamanager." + registration + "(" + replacement + ")", reader);
+                    Check(names.Count == 0, "Cleared/dynamic alias must discard stale literal target");
+                    if (replacement == "dynamic_target") Check(HasReason(replaced, "dynamic-or-invalid-script-target"), "Dynamic alias uncertainty vanished");
+                }
+                var unavailable = Analyze("luamanager." + registration + "(\"child\")", name => Read("Waiting"));
+                Check(Items(unavailable, "Issues").Cast<object>().Any(issue => (string)Member(issue, "Function") == registration && (bool)Member(issue, "IsWaiting")), "Read failure must identify the actual registration alias");
+                names.Clear();
+                var rebound = Analyze("local luamanager=other\nluamanager." + registration + "(\"child\")", reader);
+                Check(names.Count == 0 && HasReason(rebound, "manager-binding-not-evaluated"), "Rebound registration alias reached the game reader");
+            }
+            foreach (int enabled in new[] { 1, 0, -1, 2 })
+            {
+                string text = Text("luamanager.SetEnableActions(" + enabled + ")");
+                SupportedText(text, "Action availability integer constant");
+                Contains(text, enabled == 1 ? "이야기 조작 허용" : "이야기 조작 차단", "Action availability uses integer equality with one");
+            }
+            foreach (string args in new[] { "", "1,2", "dynamic_value", "true" })
+                Contains(Text("luamanager.SetEnableActions(" + args + ")"), Status("UnsupportedStatus"), "Malformed/dynamic action availability remains unsupported");
+            foreach (string call in new[] { "luamanager.Init()", "say(\"text\")", "runwait(task)", "runblock(\"block\")" })
+            {
+                var analysis = Analyze(call + "\nstatmodifymanager.Player(\"money\",3,\"center\",1)");
+                Check(Items(analysis, "Issues").Count > 0, "Potential script/callback execution was mistaken for harmless display");
+                Excludes(AnalysisText(analysis), "예상 변경량", "Execution barrier cannot use the current snapshot as execution state");
+            }
+        }
+        static void EnclosingConditionRegression()
+        {
+            string[] scripts = {
+                "local t={}\nt[1]=\"O_compound_gate\"\nlocal r=choose(t)\nif r==1 and gate then\nstatmodifymanager.Player(\"money\",3,\"center\",1)\nend",
+                "if gate then\n--index:O_marker_gate\nstatmodifymanager.Player(\"money\",3,\"center\",1)\nend",
+                "local t={}\nt[1]=\"O_compound_marker\"\nlocal r=choose(t)\nif r==1 and gate then\n--index:O_compound_marker\nstatmodifymanager.Player(\"money\",3,\"center\",1)\nend",
+                "local t={}\nt[1]=\"O_intervening_write\"\nlocal r=choose(t)\nstatmodifymanager.Player(\"money\",10,\"add\",1)\nif r==1 then\n--index:O_intervening_write\nstatmodifymanager.Player(\"money\",3,\"center\",1)\nend",
+                "local t={}\nt[1]=\"O_intervening_call\"\nlocal r=choose(t)\nhelper()\nif r==1 then\nstatmodifymanager.Player(\"money\",3,\"center\",1)\nend"
+            };
+            foreach (string script in scripts)
+            {
+                var options = (IDictionary)Invoke(Type("LuaParse.LuaParser"), Parser, "ExtractOptionActionsFromLua", "enclosing" + (++caseId), script);
+                Check(options.Count == 1, "Enclosing condition must preserve its option identity");
+                foreach (DictionaryEntry entry in options)
+                {
+                    var actions = (IList)entry.Value;
+                    var analysis = Member(actions[0], "Analysis");
+                    Check(HasReason(analysis, "option-context-not-evaluated") && Items(analysis, "Effects").Cast<object>().All(effect => (bool)Member(effect, "Conditional")), "Discarded enclosing header made an effect guaranteed");
+                    string text = Describe(actions);
+                    Contains(text, "가능한 변화", "Enclosing condition remains visible as a possibility");
+                    Excludes(text, "예상 변경량", "Unproved enclosing gate cannot use the current snapshot");
+                }
+            }
+            bool waiting = true;
+            DataHelper.PreviewScriptReader = name => waiting ? Read("Waiting") : Read("Success", "statmodifymanager.SetFlag(\"child_after_retry\",1)");
+            try
+            {
+                string script = "if gate then\n--index:O_gate_retry\nstatmodifymanager.Player(\"money\",3,\"center\",1)\nluamanager.SetNextScript(\"child\")\nend";
+                var options = (IDictionary)Invoke(Type("LuaParse.LuaParser"), Parser, "ExtractOptionActionsFromLua", "gate_retry" + (++caseId), script);
+                var actions = (IList)options["O_gate_retry"];
+                var analysis = Member(actions[0], "Analysis");
+                Check((bool)Member(analysis, "HasReadFailures"), "Gated read retry fixture must begin waiting");
+                waiting = false;
+                Invoke(Type("LiveLog.PreviewAnalyzer"), null, "RetryReads", analysis);
+                Check(!(bool)Member(analysis, "HasReadFailures") && HasReason(analysis, "option-context-not-evaluated"), "Read recovery erased enclosing-condition metadata");
+                Check(Items(analysis, "Effects").Cast<object>().All(effect => (bool)Member(effect, "Conditional")), "Read recovery promoted a gated root to guaranteed effects");
+                Excludes(Describe(actions), "예상 변경량", "Gated snapshot remains uncertain after read recovery");
+            }
+            finally { DataHelper.PreviewScriptReader = null; }
+        }
         static bool HasReason(object analysis, string reason) => Items(analysis, "Issues").Cast<object>().Any(issue => (string)Member(issue, "Reason") == reason);
         static object Limits(string name, int value)
         {
@@ -381,6 +467,18 @@ namespace DiceMaster
         static void LimitsAndRetry()
         {
             string source = "statmodifymanager.SetFlag(\"bounded\",1)";
+            var largeBody = Analyze(source + "\n--" + new string(' ', 400000) + "\nstatmodifymanager.SetFlag(\"large_body_tail\",1)");
+            Check(!HasReason(largeBody, "trace-character-limit"), "Measured story-size profile must fit a large individual body");
+            Contains(AnalysisText(largeBody), "large_body_tail", "Large complete body must retain its tail within the measured budget");
+            var prefix = Analyze(source + "\n-- padding " + new string(' ', 100) + "\nstatmodifymanager.SetFlag(\"beyond_character_limit\",1)", null, Limits("MaxCharacters", source.Length + 20));
+            Check(HasReason(prefix, "trace-character-limit") && (int)Member(prefix, "CharacterCount") == source.Length + 20, "Oversized body must keep its bounded character count and reason");
+            string prefixText = AnalysisText(prefix);
+            Contains(prefixText, "bounded", "Character cutoff preserves preceding complete effects");
+            Excludes(prefixText, "beyond_character_limit", "Character cutoff cannot collect later effects");
+            Contains(prefixText, Status("PartialStatus"), "Bounded prefix cannot claim full support");
+            var brokenBranch = Analyze(source + "\nif condition then statmodifymanager.SetFlag(\"inside_truncated_branch\",1) end", null, Limits("MaxCharacters", source.Length + 28));
+            Check(HasReason(brokenBranch, "trace-character-limit") && HasReason(brokenBranch, "unbalanced-branch"), "Truncated branch must retain its unknown boundary");
+            Excludes(AnalysisText(brokenBranch), "inside_truncated_branch", "Truncation cannot flatten an incomplete branch");
             object measured = Analyze(source);
             foreach (var boundary in new[] { ("MaxCharacters", "CharacterCount", "trace-character-limit"), ("MaxTokens", "TokenCount", "trace-token-limit"), ("MaxWork", "WorkCount", "trace-work-limit"), ("MaxScripts", "ScriptCount", "trace-script-limit") })
             {
@@ -550,7 +648,10 @@ namespace DiceMaster
             LexicalAndStates(); Console.WriteLine("PREVIEW lexical/state classification passed");
             FunctionCoverage(); Console.WriteLine("PREVIEW function coverage passed");
             BranchPresentation(); Console.WriteLine("PREVIEW branch presentation passed");
-            Trace(); Console.WriteLine("PREVIEW followup trace passed");
+            Trace(); StoryApiRegression(); EnclosingConditionRegression(); Console.WriteLine("PREVIEW followup trace passed");
+            assertions += DiscoveryRegression.Run(); Console.WriteLine("PREVIEW root discovery regression passed");
+            assertions += ParseCacheRegression.Run(); Console.WriteLine("PREVIEW bounded parse cache regression passed");
+            assertions += TraversalRegression.Run(); Console.WriteLine("PREVIEW traversal regression passed");
             NamingSafety(); State(); Console.WriteLine("PREVIEW state-dependent estimates passed");
             Cache(); LimitsAndRetry(); EventRetry(); Benchmark();
             Check(UnityEngine.Random.Calls == 0 && Mortal.Core.StatGroupVariable.OriginalReads == 0 && Mortal.Core.StatCompareItem.OriginalReads == 0, "Preview called original game RNG/evaluation chain");

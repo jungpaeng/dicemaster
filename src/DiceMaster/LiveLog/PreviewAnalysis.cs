@@ -47,6 +47,7 @@ namespace DiceMaster.LiveLog
         public List<PreviewIssue> Issues = new List<PreviewIssue>();
         public bool StoppedAtChoice;
         public int ScriptCount;
+        public int ContextCount;
         public int CharacterCount;
         public int TokenCount;
         public int WorkCount;
@@ -78,14 +79,27 @@ namespace DiceMaster.LiveLog
         internal string RootName;
         internal string OptionKey;
         internal bool RootNeedsRead;
+        internal bool RootConditional;
         internal string RootScript;
         internal Func<string, ScriptReadResult> Reader;
         internal PreviewTraceLimits Limits;
+        internal PreviewParseCache ParseCache;
+
+        // Option discovery removes surrounding headers and may leave common
+        // statements between choose and the result branch outside this body.
+        // Preserve that unproved execution context across read retries.
+        public void MarkConditionalRoot()
+        {
+            RootConditional = true;
+            foreach (PreviewEffect effect in Effects)
+            { effect.Conditional = true; effect.ExecutionUncertain = true; }
+            AddIssue(RootName, "options", "option-context-not-evaluated");
+        }
 
         internal void ReplaceWith(PreviewAnalysis next)
         {
             Effects = next.Effects; Issues = next.Issues; StoppedAtChoice = next.StoppedAtChoice;
-            ScriptCount = next.ScriptCount; CharacterCount = next.CharacterCount;
+            ScriptCount = next.ScriptCount; ContextCount = next.ContextCount; CharacterCount = next.CharacterCount;
             TokenCount = next.TokenCount; WorkCount = next.WorkCount;
         }
 
@@ -110,14 +124,16 @@ namespace DiceMaster.LiveLog
         public static ScriptReadResult Failed() { return new ScriptReadResult(ScriptReadState.Failed, null); }
     }
 
-    // Finite development safeguards, not final game-data-derived production limits.
-    // Actual Lua resources are unavailable; changing this status requires real-resource measurements.
+    // Finite offline policy measured against 2,198 mapped story bodies. The
+    // FIFO/cache profile preserves the compared public and prior local calls.
+    // These are logical safeguards, not a certified Unity frame-time budget;
+    // runtime validation remains separate (see the real-Lua validation doc).
     public sealed class PreviewTraceLimits
     {
         public int MaxDepth = 8;
         public int MaxScripts = 32;
-        public int MaxCharacters = 262144;
-        public int MaxTokens = 65536;
-        public int MaxWork = 131072;
+        public int MaxCharacters = 1310720;
+        public int MaxTokens = 262144;
+        public int MaxWork = 524288;
     }
 }

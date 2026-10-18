@@ -8,8 +8,19 @@ namespace DiceMaster.LiveLog
         private sealed class Target
         {
             public string Name;
+            public string Function;
             public bool Conditional;
             public bool Exited;
+        }
+
+        private sealed class Job
+        {
+            public string Name;
+            public string Script;
+            public string Function;
+            public int Depth;
+            public HashSet<string> Ancestors;
+            public HashSet<string> InvalidOwners;
         }
 
         private sealed class Context
@@ -18,7 +29,10 @@ namespace DiceMaster.LiveLog
             public PreviewTraceLimits Limits;
             public Func<string, ScriptReadResult> Reader;
             public HashSet<string> Expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            public HashSet<string> Path = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            public HashSet<string> Sources = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            public HashSet<string> Scheduled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            public Queue<Job> Pending = new Queue<Job>();
+            public PreviewParseCache Cache;
             public Dictionary<string, ScriptReadResult> Reads = new Dictionary<string, ScriptReadResult>(StringComparer.OrdinalIgnoreCase);
             public HashSet<string> InvalidOwners = new HashSet<string>(StringComparer.Ordinal);
             public bool Exhausted;
@@ -34,9 +48,21 @@ namespace DiceMaster.LiveLog
 
         public static PreviewAnalysis Analyze(string sourceName, string script, Func<string, ScriptReadResult> reader = null, PreviewTraceLimits limits = null)
         {
-            var result = new PreviewAnalysis { RootName = sourceName ?? "", RootScript = script ?? "", Reader = reader, Limits = limits ?? new PreviewTraceLimits() };
-            var context = new Context { Analysis = result, Reader = reader, Limits = result.Limits };
-            AnalyzeScript(context, sourceName ?? "", script ?? "", 0, false, false);
+            return AnalyzeWithCache(sourceName, script, reader, limits, null);
+        }
+
+        // Keep Analyze's four-argument reflection contract. Lexical reuse has a
+        // separate entry point; no state-dependent effects enter this cache.
+        public static PreviewAnalysis AnalyzeWithCache(string sourceName, string script, Func<string, ScriptReadResult> reader, PreviewTraceLimits limits, PreviewParseCache cache)
+        {
+            var result = new PreviewAnalysis { RootName = sourceName ?? "", RootScript = script ?? "", Reader = reader,
+                Limits = limits ?? new PreviewTraceLimits(), ParseCache = cache ?? new PreviewParseCache() };
+            var context = new Context { Analysis = result, Reader = reader, Limits = result.Limits, Cache = result.ParseCache };
+            var root = new Job { Name = result.RootName, Script = result.RootScript, Function = "trace", Depth = 0,
+                Ancestors = new HashSet<string>(StringComparer.OrdinalIgnoreCase), InvalidOwners = new HashSet<string>(StringComparer.Ordinal) };
+            context.Pending.Enqueue(root);
+            context.Scheduled.Add(ContextKey(root.Name, root.InvalidOwners));
+            while (context.Pending.Count > 0 && !context.Exhausted) AnalyzeJob(context, context.Pending.Dequeue());
             PreviewDisplay.Validate(result);
             bool earlierInvalid = false;
             foreach (PreviewEffect effect in result.Effects)
@@ -58,8 +84,9 @@ namespace DiceMaster.LiveLog
                 if (read.State != ScriptReadState.Success) return;
                 script = read.Text ?? ""; analysis.RootScript = script; analysis.RootNeedsRead = false;
             }
-            var next = Analyze(analysis.RootName, script, analysis.Reader, analysis.Limits);
+            var next = AnalyzeWithCache(analysis.RootName, script, analysis.Reader, analysis.Limits, analysis.ParseCache);
             next.SnapshotAllowed = analysis.SnapshotAllowed;
+            if (analysis.RootConditional) next.MarkConditionalRoot();
             foreach (PreviewIssue issue in analysis.Issues)
                 if (issue.Reason == "option-lexical-limit") next.AddIssue(issue.Source, issue.Function, issue.Reason, issue.IsReadFailure, issue.IsWaiting);
             analysis.ReplaceWith(next);
@@ -81,48 +108,87 @@ namespace DiceMaster.LiveLog
             return true;
         }
 
-        private static void AnalyzeScript(Context context, string source, string script, int depth, bool followup, bool conditional)
+        private static string ContextKey(string source, HashSet<string> invalidOwners)
         {
-            if (context.Exhausted) return;
-            if (depth > context.Limits.MaxDepth) { context.Analysis.AddIssue(source, "SetNextScript", "trace-depth-limit"); return; }
-            if (context.Path.Contains(source)) { context.Analysis.AddIssue(source, "SetNextScript", "trace-cycle"); return; }
-            if (context.Expanded.Contains(source)) return;
-            if (context.Analysis.ScriptCount >= context.Limits.MaxScripts) { context.Analysis.AddIssue(source, "SetNextScript", "trace-script-limit"); return; }
-            if (script.Length > context.Limits.MaxCharacters - context.Analysis.CharacterCount) { context.Analysis.AddIssue(source, "trace", "trace-character-limit"); return; }
-            context.Analysis.ScriptCount++; context.Analysis.CharacterCount += script.Length;
-            context.Expanded.Add(source); context.Path.Add(source);
-            var tokens = PreviewSyntax.Tokenize(script);
+            // These are the only two mutable manager bindings inspected by the
+            // analyzer. A source therefore has at most four lexical contexts.
+            int mask = (invalidOwners.Contains("statmodifymanager") ? 1 : 0) | (invalidOwners.Contains("luamanager") ? 2 : 0);
+            return source + "\0" + mask;
+        }
+
+        private static void AnalyzeJob(Context context, Job job)
+        {
+            string source = job.Name;
+            if (job.Depth > context.Limits.MaxDepth) { context.Analysis.AddIssue(source, job.Function, "trace-depth-limit"); return; }
+            if (job.Ancestors.Contains(source)) { context.Analysis.AddIssue(source, job.Function, "trace-cycle"); return; }
+            string key = ContextKey(source, job.InvalidOwners);
+            if (context.Expanded.Contains(key)) return;
+            bool newSource = !context.Sources.Contains(source);
+            if (newSource && context.Analysis.ScriptCount >= context.Limits.MaxScripts)
+            { context.Analysis.AddIssue(source, job.Function, "trace-script-limit"); return; }
+            string script = job.Script;
+            if (script == null)
+            {
+                if (context.Reader == null) { context.Analysis.AddIssue(source, job.Function, "script-data-waiting", true, true); return; }
+                ScriptReadResult read;
+                if (!context.Reads.TryGetValue(source, out read))
+                { try { read = context.Reader(source) ?? ScriptReadResult.Failed(); } catch { read = ScriptReadResult.Failed(); } context.Reads[source] = read; }
+                if (read.State != ScriptReadState.Success)
+                {
+                    bool waiting = read.State == ScriptReadState.Waiting;
+                    context.Analysis.AddIssue(source, job.Function, read.State == ScriptReadState.Missing ? "script-target-missing" : waiting ? "script-data-waiting" : "script-read-failed", true, waiting);
+                    return;
+                }
+                script = read.Text ?? "";
+            }
+            int remainingCharacters = Math.Max(0, context.Limits.MaxCharacters - context.Analysis.CharacterCount);
+            if (script.Length > remainingCharacters)
+            {
+                // Preserve the finite readable prefix. Apply this guard before
+                // lexical caching so a warm cache never enlarges the budget.
+                context.Analysis.AddIssue(source, "trace", "trace-character-limit");
+                if (remainingCharacters == 0) return;
+                script = script.Substring(0, remainingCharacters);
+            }
+            if (newSource) { context.Sources.Add(source); context.Analysis.ScriptCount++; }
+            context.Analysis.ContextCount++;
+            context.Analysis.CharacterCount += script.Length;
+            context.Expanded.Add(key);
+            context.InvalidOwners = new HashSet<string>(job.InvalidOwners, StringComparer.Ordinal);
+            var tokens = context.Cache.Tokens(script);
             int remaining = Math.Max(0, context.Limits.MaxTokens - context.Analysis.TokenCount);
-            if (tokens.Count > remaining)
-            { tokens.RemoveRange(remaining, tokens.Count - remaining); context.Analysis.AddIssue(source, "trace", "trace-token-limit"); }
-            context.Analysis.TokenCount += tokens.Count;
+            int end = Math.Min(tokens.Count, remaining);
+            if (tokens.Count > end)
+            {
+                context.Analysis.AddIssue(source, "trace", "trace-token-limit");
+                // Helpers inspect list.Count while finding calls/branches. A
+                // bounded private view must also stop that lookahead; never
+                // trim the cached list shared with another analysis.
+                tokens = tokens.GetRange(0, end);
+            }
+            context.Analysis.TokenCount += end;
             var targets = new List<Target>();
             bool stopped = false;
-            ParseRange(context, source, script, tokens, 0, tokens.Count, conditional, followup, targets, ref stopped, 0, new List<PreviewBranchContext>(), false);
+            ParseRange(context, source, script, tokens, 0, end, job.Depth > 0, job.Depth > 0, targets, ref stopped, 0, new List<PreviewBranchContext>(), false);
+            var path = new HashSet<string>(job.Ancestors, StringComparer.OrdinalIgnoreCase) { source };
+            foreach (Target target in targets)
             {
-                foreach (Target target in targets)
-                {
-                    if (!Step(context, source)) break;
-                    if (stopped && !target.Exited) continue;
-                    if (context.Path.Contains(target.Name)) { context.Analysis.AddIssue(target.Name, "SetNextScript", "trace-cycle"); continue; }
-                    if (context.Expanded.Contains(target.Name)) continue;
-                    if (depth >= context.Limits.MaxDepth) { context.Analysis.AddIssue(target.Name, "SetNextScript", "trace-depth-limit"); continue; }
-                    if (context.Analysis.ScriptCount >= context.Limits.MaxScripts) { context.Analysis.AddIssue(target.Name, "SetNextScript", "trace-script-limit"); continue; }
-                    if (context.Reader == null) { context.Analysis.AddIssue(target.Name, "SetNextScript", "script-data-waiting", true, true); continue; }
-                    ScriptReadResult read;
-                    if (!context.Reads.TryGetValue(target.Name, out read))
-                    { try { read = context.Reader(target.Name) ?? ScriptReadResult.Failed(); } catch { read = ScriptReadResult.Failed(); } context.Reads[target.Name] = read; }
-                    if (read.State != ScriptReadState.Success)
-                    {
-                        bool waiting = read.State == ScriptReadState.Waiting;
-                        context.Analysis.AddIssue(target.Name, "SetNextScript", read.State == ScriptReadState.Missing ? "script-target-missing" : waiting ? "script-data-waiting" : "script-read-failed", true, waiting);
-                        continue;
-                    }
-                    // Registering a next script does not execute it. Mission/scene processing may replace it.
-                    AnalyzeScript(context, target.Name, read.Text ?? "", depth + 1, true, true);
-                }
+                if (!Step(context, source)) break;
+                if (stopped && !target.Exited) continue;
+                if (path.Contains(target.Name)) { context.Analysis.AddIssue(target.Name, target.Function, "trace-cycle"); continue; }
+                if (job.Depth >= context.Limits.MaxDepth) { context.Analysis.AddIssue(target.Name, target.Function, "trace-depth-limit"); continue; }
+                string nextKey = ContextKey(target.Name, context.InvalidOwners);
+                if (context.Scheduled.Contains(nextKey)) continue;
+                // Bound the admitted frontier as well as parsed work, including
+                // targets whose static reads fail. It cannot grow unboundedly
+                // while MaxScripts counts only successfully parsed sources.
+                if (context.Scheduled.Count >= Math.Max(1L, (long)context.Limits.MaxScripts * 4))
+                { context.Analysis.AddIssue(source, "trace", "trace-frontier-limit"); continue; }
+                context.Scheduled.Add(nextKey);
+                context.Pending.Enqueue(new Job { Name = target.Name, Function = target.Function, Depth = job.Depth + 1,
+                    Ancestors = new HashSet<string>(path, StringComparer.OrdinalIgnoreCase),
+                    InvalidOwners = new HashSet<string>(context.InvalidOwners, StringComparer.Ordinal) });
             }
-            context.Path.Remove(source);
         }
 
         private static bool ParseRange(Context context, string source, string script, List<PreviewToken> tokens, int start, int end, bool conditional, bool followup, List<Target> targets, ref bool stopped, int parseDepth, List<PreviewBranchContext> branchPath, bool inheritedExecutionUncertainty)
@@ -179,7 +245,7 @@ namespace DiceMaster.LiveLog
                         }
                         if (headerChoice) { anyChoice = true; everyReturn = false; hasElse = true; break; }
                         var localTargets = new List<Target>();
-                        foreach (Target target in targets) localTargets.Add(new Target { Name = target.Name, Conditional = true, Exited = target.Exited });
+                        foreach (Target target in targets) localTargets.Add(new Target { Name = target.Name, Function = target.Function, Conditional = true, Exited = target.Exited });
                         bool branchStopped = false;
                         var path = new List<PreviewBranchContext>(branchPath);
                         path.Add(new PreviewBranchContext { Group = branchGroup, Alternative = alternative++, IsElse = branch.IsElse });
@@ -287,13 +353,13 @@ namespace DiceMaster.LiveLog
                     effect.Branches.AddRange(branchPath);
                     context.Analysis.Effects.Add(effect);
                     if (!PreviewDisplay.IsKnownEffect(owner, name)) afterPossibleReturn = true;
-                    if (owner == "luamanager" && name == "SetNextScript")
+                    if (owner == "luamanager" && PreviewDisplay.IsStoryRegistration(name))
                     {
                         if (!afterPossibleReturn && !conditionalExpression) targets.RemoveAll(x => !x.Exited);
                         if (args.Count != 1 || !PreviewSyntax.TryString(args[0], out string next) || next.Length > 0 && !IsLocalScriptName(next)) context.Analysis.AddIssue(source, name, "dynamic-or-invalid-script-target");
                         else if (next.Length > 0)
                         {
-                            if (!targets.Exists(x => string.Equals(x.Name, next, StringComparison.OrdinalIgnoreCase))) targets.Add(new Target { Name = next, Conditional = conditional || afterPossibleReturn || conditionalExpression });
+                            if (!targets.Exists(x => string.Equals(x.Name, next, StringComparison.OrdinalIgnoreCase))) targets.Add(new Target { Name = next, Function = name, Conditional = conditional || afterPossibleReturn || conditionalExpression });
                         }
                     }
                     if (targets.Count > 0 && (owner == "statmodifymanager" && name == "Mission" || owner == "luamanager" && name == "ChangeScene" && args.Count > 0 && PreviewSyntax.TryString(args[0], out string scene) && (scene == "Story" || scene == "Free")))

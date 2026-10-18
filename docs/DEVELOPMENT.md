@@ -12,11 +12,11 @@
 
 이 전환은 기존 동작을 보존하는 소스 복원 범위입니다. 로그 갱신과 모드 전용 난수는 alpha.3에서 이어지며 실제 게임의 미래 판정을 예측하지 않습니다. 이슈 #1·#2의 기능이나 상태를 이번 작업에서 추가 변경하지 않습니다. 다음 성공 Lua까지 기다릴 수 있는 기존 수명주기 제한과 과거 검증 기록은 보존합니다. 이전 prerelease의 게시 커밋·검사·해시는 [배포 기록](ISSUE-3-RELEASE.md)과 [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md)에서 당시 기록으로 확인할 수 있습니다.
 
-## PRD 2 prerelease
+## PRD 2 prerelease·실제 자료 후속
 
 `v1.0.4-alpha.1` prerelease의 변경은 [PRD 2 구현 기록](ISSUE-2-IMPLEMENTATION.md)을 따릅니다. 과거 인계문과 달리 최신 HEAD의 전체 소스로 구현하며 alpha.2는 실패 재현용 비교 입력입니다. 새 분석기는 `src/DiceMaster/LiveLog/Preview*.cs`, 기존 파서·Action 연결은 `src/DiceMaster/LuaParse/`, 리소스 경계는 `DataHelper.ReadPreviewScript`에 둡니다. 고정 분석과 표시 시점의 읽기 전용 현재값을 분리합니다. 공유 선택지·별도 이벤트 파서, 자동 갱신 중 재분석 없음, 같은 문맥의 미지원 최초 진단과 실제 읽기 실패 재시도 계약을 유지합니다.
 
-`build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-2/candidate`로 별도 후보와 검사를 생성합니다. 현재 후보의 실제 Lua·Windows 검증과 최종 추적 제한은 미완료이며 과거 alpha.4 확인을 이 후보에 적용하지 않습니다. 비교·복구용 로그 패치는 새 파서를 포함하므로 `--game-managed`의 읽기 전용 참조가 필요합니다. 설정·세이브·리소스·입력 조작의 변경은 포함하지 않습니다.
+`build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-2/candidate`로 별도 후보와 검사를 생성합니다. 실제 TextAsset 2,685개와 번체 이야기 2,198개의 정적 대조를 추가했습니다. [실제 Lua 검증 기록](ISSUE-2-REAL-LUA-VALIDATION.md)과 [재현 도구](../tools/RealLuaAudit/README.md)에서 범위를 구분합니다. 후속은 FIFO 큐와 문맥별 토큰 LRU를 사용하며 오프라인 추적 한도는 깊이 8·고유 스크립트 32·1,310,720자·262,144토큰·524,288작업입니다. 실제 게임 상태·Windows·Unity 프레임 비용은 별도 미검증이며 과거 alpha.4 확인을 이 후보에 적용하지 않습니다. 비교·복구용 로그 패치는 새 파서를 포함하므로 `--game-managed`의 읽기 전용 참조가 필요합니다. 설정·세이브·리소스·입력 조작의 변경은 포함하지 않습니다.
 
 ## 파일 구성
 

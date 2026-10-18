@@ -2,6 +2,12 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)
 
+## PRD 2 alpha.4 실제 Lua 후속 prerelease
+
+사용자가 2026-10-19 KST에 현재 구현의 commit·push·prerelease 게시를 지시했습니다. 대상은 `v1.0.4-alpha.4`, 설치 자산명은 `DiceMaster-v1.0.4-alpha.4.zip`이며 [alpha.4 게시 설명](ISSUE-2-ALPHA4-RELEASE.md)을 사용합니다. 실제 Lua 정적 대조·유한 추적·캐시·할당 개선과 남은 동기 분석 지연·실게임 미검증 범위를 구분합니다.
+
+게시할 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 DLL SHA-256 `c1b192fdd3932dcc2af35f8d5a526f3de0b52e33557f3de0c8a75258ccf99b91`과 설정 SHA-256 `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e`를 요구합니다. 출력은 `artifacts/releases/v1.0.4-alpha.4`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 11개 Release·태그·자산과 Latest 정식 v1.0.3, 이슈 #2 open 상태를 유지합니다. Windows 설치·게임 실행·런타임 검증을 수행하거나 요청하지 않습니다. 실제 게시 결과는 검증 후 별도로 기록합니다.
+
 ## PRD 2 alpha.3 문구 정리 prerelease
 
 사용자가 2026-10-19 KST에 `가능한 변화` / `이후 가능한 변화` 묶음과 중복 `가산` 제거, commit·push·prerelease 게시를 승인했습니다. 대상은 `v1.0.4-alpha.3`, 설치 자산명은 `DiceMaster-v1.0.4-alpha.3.zip`이며 [alpha.3 게시 설명](ISSUE-2-ALPHA3-RELEASE.md)을 사용합니다. 고정 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 검토한 DLL/설정 해시와 대조하고 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 Release·태그·자산, 정식 Latest v1.0.3과 이슈 #2 open 상태를 유지합니다. 실제 Lua·Windows/native 검증과 PRD #2 완료를 새로 주장하지 않습니다.
