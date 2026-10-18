@@ -75,43 +75,50 @@ namespace DiceMaster.LiveLog
             if (analysis == null) return;
             foreach (PreviewEffect effect in analysis.Effects)
             {
-                if (effect.Validated) continue;
-                effect.Validated = true;
-                effect.Constants = new List<object>();
-                // An explicitly identified display-only call is not an effect,
-                // even when its displayed number is a variable.
-                if (IsDisplayOnly(effect)) continue;
-                Dictionary<string, string> signatures = effect.Owner == "statmodifymanager" ? statSignatures :
-                    effect.Owner == "luamanager" ? luaSignatures : null;
-                string signature = "";
-                if (signatures == null || !signatures.TryGetValue(effect.Name, out signature))
-                    effect.ValidationError = "지원 밖 효과 함수";
-                else if (effect.Owner == "luamanager" && effect.Name == "ChangeScene" && effect.Arguments.Count == 1)
-                    signature = "s";
-                if (effect.ValidationError == null && effect.Arguments.Count != signature.Length)
-                    effect.ValidationError = "함수 인자 수 불일치";
-                if (effect.ValidationError == null)
+                ValidateEffect(effect);
+                if (effect.ValidationError != null) AddIssue(analysis, effect, effect.ValidationError);
+            }
+        }
+
+        // Context-free validation can be shared as an immutable script template.
+        // Attaching an issue to each analysis remains the caller's responsibility.
+        public static void ValidateEffect(PreviewEffect effect)
+        {
+            if (effect.Validated) return;
+            effect.Validated = true;
+            effect.Constants = new List<object>();
+            // An explicitly identified display-only call is not an effect,
+            // even when its displayed number is a variable.
+            if (IsDisplayOnly(effect)) return;
+            Dictionary<string, string> signatures = effect.Owner == "statmodifymanager" ? statSignatures :
+                effect.Owner == "luamanager" ? luaSignatures : null;
+            string signature = "";
+            if (signatures == null || !signatures.TryGetValue(effect.Name, out signature))
+                effect.ValidationError = "지원 밖 효과 함수";
+            else if (effect.Owner == "luamanager" && effect.Name == "ChangeScene" && effect.Arguments.Count == 1)
+                signature = "s";
+            if (effect.ValidationError == null && effect.Arguments.Count != signature.Length)
+                effect.ValidationError = "함수 인자 수 불일치";
+            if (effect.ValidationError == null)
+            {
+                for (int i = 0; i < signature.Length; i++)
                 {
-                    for (int i = 0; i < signature.Length; i++)
+                    if (signature[i] == 's')
                     {
-                        if (signature[i] == 's')
-                        {
-                            string value;
-                            List<PreviewToken> tokens = PreviewSyntax.Tokenize(effect.Arguments[i]);
-                            if (tokens.Count != 1 || !PreviewSyntax.TryString(tokens[0].Text, out value))
-                            { effect.ValidationError = "문자열 리터럴 외 인자"; break; }
-                            effect.Constants.Add(value);
-                        }
-                        else
-                        {
-                            int value; string reason;
-                            if (!PreviewArithmetic.TryInteger(effect.Arguments[i], out value, out reason))
-                            { effect.ValidationError = reason; break; }
-                            effect.Constants.Add(value);
-                        }
+                        string value;
+                        List<PreviewToken> tokens = PreviewSyntax.Tokenize(effect.Arguments[i]);
+                        if (tokens.Count != 1 || !PreviewSyntax.TryString(tokens[0].Text, out value))
+                        { effect.ValidationError = "문자열 리터럴 외 인자"; break; }
+                        effect.Constants.Add(value);
+                    }
+                    else
+                    {
+                        int value; string reason;
+                        if (!PreviewArithmetic.TryInteger(effect.Arguments[i], out value, out reason))
+                        { effect.ValidationError = reason; break; }
+                        effect.Constants.Add(value);
                     }
                 }
-                if (effect.ValidationError != null) AddIssue(analysis, effect, effect.ValidationError);
             }
         }
 
@@ -254,7 +261,7 @@ namespace DiceMaster.LiveLog
             return true;
         }
 
-        private static string BranchLabel(PreviewEffect effect, bool numbered)
+        private static string BranchLabel(PreviewEffect effect, bool numbered, PreviewConditionState current)
         {
             if (effect.Branches.Count == 0) return "";
             var path = new List<string>();
@@ -266,7 +273,11 @@ namespace DiceMaster.LiveLog
             // Neutral branch colors distinguish alternatives, never pass/fail.
             string[] colors = { "#7FC8D6", "#C5A2E0", "#E1BF79" };
             int color = effect.Branches[effect.Branches.Count - 1].Alternative % colors.Length;
-            return "<color=" + colors[color] + ">[경우 " + string.Join(" → ", path) + "]</color> ";
+            string verdict = current == PreviewConditionState.Met ? " · 현재 조건 충족" :
+                current == PreviewConditionState.NotMet ? " · 현재 조건 미충족" : "";
+            string selectedColor = current == PreviewConditionState.Met ? "#80D89B" :
+                current == PreviewConditionState.NotMet ? "#A4A7B0" : colors[color];
+            return "<color=" + selectedColor + ">[경우 " + string.Join(" → ", path) + verdict + "]</color> ";
         }
 
         private static int Section(PreviewEffect effect)
@@ -275,10 +286,32 @@ namespace DiceMaster.LiveLog
             return effect.Conditional || effect.ExecutionUncertain || effect.Branches.Count > 0 ? 1 : 0;
         }
 
-        private static string DescribeRows(List<DisplayRow> rows)
+        private static PreviewConditionState CurrentBranch(PreviewEffect effect, bool allowed,
+            Dictionary<PreviewCondition, PreviewConditionState> values, PreviewConditions.Reader reader)
+        {
+            if (!allowed || effect.Followup || effect.Branches.Count == 0) return PreviewConditionState.Unknown;
+            bool unknown = false;
+            foreach (PreviewBranchContext branch in effect.Branches)
+            {
+                PreviewConditionState current = PreviewConditionState.Unknown;
+                if (branch.CurrentConditionAllowed && branch.CurrentCondition != null)
+                {
+                    if (!values.TryGetValue(branch.CurrentCondition, out current))
+                    { current = reader.Current(branch.CurrentCondition); values.Add(branch.CurrentCondition, current); }
+                }
+                if (current == PreviewConditionState.NotMet) return current;
+                unknown |= current == PreviewConditionState.Unknown;
+            }
+            return unknown ? PreviewConditionState.Unknown : PreviewConditionState.Met;
+        }
+
+        private static string DescribeRows(List<DisplayRow> rows, PreviewAnalysis analysis)
         {
             var lines = new List<string>();
             var groups = new HashSet<int>();
+            var currentValues = new Dictionary<PreviewCondition, PreviewConditionState>();
+            var currentReader = PreviewConditions.CreateReader();
+            bool hasCurrentHint = false;
             foreach (DisplayRow row in rows)
                 foreach (PreviewBranchContext branch in row.Effect.Branches) groups.Add(branch.Group);
             int previousSection = -1;
@@ -298,8 +331,11 @@ namespace DiceMaster.LiveLog
                     values.Add(rows[i++].Text);
                 // Possibility is stated once by the section heading. Preserve
                 // source order and the real branch path without repeated badges.
-                lines.Add((heading ? "  " : "") + BranchLabel(effect, groups.Count > 1) + string.Join(" | ", values));
+                PreviewConditionState current = CurrentBranch(effect, analysis.SnapshotAllowed && !analysis.RootConditional, currentValues, currentReader);
+                hasCurrentHint |= current != PreviewConditionState.Unknown;
+                lines.Add((heading ? "  " : "") + BranchLabel(effect, groups.Count > 1, current) + string.Join(" | ", values));
             }
+            if (hasCurrentHint) lines.Add("조건 표시는 현재 상태 기준 · 진행 중 상태가 바뀌면 결과가 달라질 수 있음");
             return string.Join("\n", lines);
         }
 
@@ -335,7 +371,7 @@ namespace DiceMaster.LiveLog
             string status = unsupported ? (descriptions.Count > 0 ? PartialStatus : UnsupportedStatus) :
                 descriptions.Count == 0 && !failed ? "확인된 효과 없음" : "";
             string result = status;
-            if (descriptions.Count > 0) result += (result.Length > 0 ? "\n" : "") + DescribeRows(descriptions);
+            if (descriptions.Count > 0) result += (result.Length > 0 ? "\n" : "") + DescribeRows(descriptions, analysis);
             if (failed) throw new PreviewReadException(result, waiting);
             return result;
         }

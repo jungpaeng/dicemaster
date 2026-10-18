@@ -648,6 +648,7 @@ namespace DiceMaster
             LexicalAndStates(); Console.WriteLine("PREVIEW lexical/state classification passed");
             FunctionCoverage(); Console.WriteLine("PREVIEW function coverage passed");
             BranchPresentation(); Console.WriteLine("PREVIEW branch presentation passed");
+            assertions += ConditionRegression.Run(); Console.WriteLine("PREVIEW current condition hints passed");
             Trace(); StoryApiRegression(); EnclosingConditionRegression(); Console.WriteLine("PREVIEW followup trace passed");
             assertions += DiscoveryRegression.Run(); Console.WriteLine("PREVIEW root discovery regression passed");
             assertions += ParseCacheRegression.Run(); Console.WriteLine("PREVIEW bounded parse cache regression passed");

@@ -5,13 +5,16 @@ namespace DiceMaster.LiveLog
 {
     public enum PreviewAnalysisState { Supported, Partial, Unsupported, NoEffects, Waiting, ReadFailure }
 
-    // Syntactic alternatives only. These labels never imply a condition verdict.
+    // Syntactic alternatives retain their own identity. A separate read-only
+    // descriptor may supply a current snapshot hint without proving execution.
     // Groups are unique within an analysis, including separately followed scripts.
     public sealed class PreviewBranchContext
     {
         public int Group;
         public int Alternative;
         public bool IsElse;
+        internal PreviewCondition CurrentCondition;
+        internal bool CurrentConditionAllowed;
     }
 
     public sealed class PreviewEffect

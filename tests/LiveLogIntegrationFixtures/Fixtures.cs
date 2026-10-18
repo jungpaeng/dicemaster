@@ -75,6 +75,13 @@ namespace Mortal.Core
         public List<StatCompareItem> _items = new List<StatCompareItem>();
         public LogicOperatorType _logicOp;
     }
+    public class ConditionResultData : UnityEngine.Object
+    {
+        public int _count;
+        public List<ConditionResultItem> _items = new List<ConditionResultItem>();
+        public static int Executions;
+        public bool Execute() { Executions++; throw new InvalidOperationException("Preview executed original condition"); }
+    }
     public class StatGroupVariable : UnityEngine.Object
     {
         public int _groupType = 1;
@@ -162,11 +169,23 @@ namespace OBB.Framework.Attributes
 }
 namespace Mortal.Story
 {
-    public class SwitchResultData : UnityEngine.Object { public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
+    public class SwitchResultData : UnityEngine.Object
+    {
+        public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>();
+        public bool _useCount;
+        public int _count;
+        public static int Executions;
+        public int Execute() { Executions++; throw new InvalidOperationException("Preview executed original switch"); }
+    }
     public class SwitchResultConfig : UnityEngine.Object
     {
+        public List<SwitchResultData> _list = new List<SwitchResultData>();
         public Dictionary<string, SwitchResultData> Items = new Dictionary<string, SwitchResultData>();
         public SwitchResultData GetData(string key) { Items.TryGetValue(key, out var value); return value; }
+    }
+    public class ConditionResultConfig : UnityEngine.Object
+    {
+        public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>();
     }
     public class PositionEventData : UnityEngine.Object
     {
@@ -182,6 +201,7 @@ namespace Mortal.Story
         public static CheckPointManager Instance { get; set; } = new CheckPointManager();
         public object _position = new PositionCollection();
         public object _switchList = new object[0];
+        public ConditionResultConfig _condition = new ConditionResultConfig();
     }
     public class PositionCollection { public IList List = new List<object>(); }
 }

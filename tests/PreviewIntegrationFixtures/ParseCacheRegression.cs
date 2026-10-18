@@ -17,6 +17,7 @@ namespace DiceMaster
         static object Value(object value, string name) => value.GetType().GetField(name)?.GetValue(value) ?? value.GetType().GetProperty(name).GetValue(value);
         static long Count(object cache, string name) => Convert.ToInt64(Value(cache, name));
         static IList Tokens(object cache, string source) => (IList)cache.GetType().GetMethod("Tokens").Invoke(cache, new object[] { source });
+        static object Plan(object cache, string source) => cache.GetType().GetMethod("Plan").Invoke(cache, new object[] { source });
         static void Clear(object cache) => cache.GetType().GetMethod("Clear").Invoke(cache, null);
         static void Check(bool value, string context) { assertions++; if (!value) throw new InvalidOperationException(context); }
         static void SameTokens(IList actual, IList expected, string context)
@@ -61,10 +62,23 @@ namespace DiceMaster
             Func<string, object> reader = name => { reads++; return Read("Success", child); };
             var cold = Analyze(cache, root, reader);
             long tokenizations = Count(cache, "Tokenizations"), hits = Count(cache, "CacheHits");
+            long syntaxBuilds = Count(cache, "SyntaxBuilds"), validationBuilds = Count(cache, "ValidationBuilds");
             var warm = Analyze(cache, root, reader);
             Check(Result(cold) == Result(warm), "Warm lexical reuse changed effects, issues or analysis budgets");
             Check(Count(cache, "Tokenizations") == tokenizations && Count(cache, "CacheHits") >= hits + 2, "Production analyzer did not reuse root and followup tokens");
             Check(reads == 2, "Lexical reuse cached a script read or its analysis context");
+            Check(syntaxBuilds > 0 && Count(cache, "SyntaxBuilds") == syntaxBuilds && Count(cache, "SyntaxHits") > 0, "A shared source rebuilt its static call/argument plan");
+            Check(validationBuilds == 3 && Count(cache, "ValidationBuilds") == validationBuilds && Count(cache, "ValidationHits") == 3, "A shared source repeated constant effect validation");
+
+            // Effect lists are analysis-owned. A consumer changing one result
+            // must never change another option's static template or constants.
+            var previousEffect = ((IList)Value(cold, "Effects"))[0];
+            ((IList)Value(previousEffect, "Arguments"))[0] = "consumer_changed_argument";
+            ((IList)Value(previousEffect, "Constants"))[0] = "consumer_changed_constant";
+            Check(Result(warm) == Result(Analyze(cache, root, reader)), "An analysis consumer mutated a reusable argument or constant template");
+            string invalid = "statmodifymanager.SetFlag(unknown,1)";
+            var invalidCold = Analyze(cache, invalid);
+            Check(Result(invalidCold) == Result(Analyze(cache, invalid)) && ((IList)Value(invalidCold, "Issues")).Count > 0, "A cached validation error lost its analysis-specific issue");
 
             string sugar = "choose 'past_cap'\nstatmodifymanager.SetFlag(\"outside\",1)";
             var owned = Tokens(cache, sugar);
@@ -90,6 +104,62 @@ namespace DiceMaster
             T("PreviewAnalyzer").GetMethod("RetryReads").Invoke(null, new[] { retry });
             Check(!(bool)Value(retry, "HasReadFailures") && ((IList)Value(retry, "Effects")).Count == 3, "A waiting script read became sticky in the lexical cache");
             Check(Count(cache, "CacheHits") >= hits + 2, "Read retry discarded reusable lexical data");
+        }
+
+        static void StaticPlanBoundaries()
+        {
+            var cache = Cache(4, 8192, 4096);
+            string source = "if flag == 'branch' then statmodifymanager.SetFlag(\"x\", 1 + (2 * 3)) elseif flag == 2 then f(g(1,2), {a=3}) else choose 'stop' end";
+            var plan = Plan(cache, source);
+            Check(ReferenceEquals(plan, Plan(cache, new string(source.ToCharArray()))), "Equal source content did not reuse its static plan");
+            var tokens = (IList)Value(plan, "Tokens");
+            var syntax = T("PreviewSyntax");
+            foreach (string name in new[] { "TryCall", "TrySugarCall" })
+            {
+                for (int index = 0; index < tokens.Count; index++)
+                {
+                    object[] expected = { tokens, index, null, null, 0, 0 };
+                    object[] actual = { index, null, null, 0, 0 };
+                    var expectedFound = syntax.GetMethod(name).Invoke(null, expected);
+                    var actualFound = plan.GetType().GetMethod(name).Invoke(plan, actual);
+                    Check(Equals(expectedFound, actualFound), name + " plan changed call recognition");
+                    if (!(bool)expectedFound) continue;
+                    for (int field = 0; field < 4; field++) Check(Equals(expected[field + 2], actual[field + 1]), name + " plan changed call metadata");
+                    if (name != "TryCall" || (int)actual[4] < 0) continue;
+                    int open = (int)actual[3], close = (int)actual[4];
+                    var directArguments = (IList)syntax.GetMethod("Arguments").Invoke(null, new object[] { source, tokens, open, close });
+                    var plannedArguments = (IList)plan.GetType().GetMethod("Arguments").Invoke(plan, new object[] { open, close });
+                    Check(JsonSerializer.Serialize(directArguments) == JsonSerializer.Serialize(plannedArguments), "Static argument normalization changed nested or arithmetic input");
+                    plannedArguments.Add("consumer mutation");
+                    Check(JsonSerializer.Serialize(directArguments) == JsonSerializer.Serialize(plan.GetType().GetMethod("Arguments").Invoke(plan, new object[] { open, close })), "Argument access exposed a reusable mutable list");
+                }
+            }
+            object[] branchArguments = { 0, 0 };
+            var branchList = (IList)plan.GetType().GetMethod("Branches").Invoke(plan, branchArguments);
+            var firstBranch = branchList[0];
+            firstBranch.GetType().GetField("Start").SetValue(firstBranch, -77);
+            branchList.Clear();
+            var freshBranches = (IList)plan.GetType().GetMethod("Branches").Invoke(plan, new object[] { 0, 0 });
+            Check(freshBranches.Count == 3 && (int)Value(freshBranches[0], "Start") >= 0, "Branch access exposed reusable topology or branch nodes");
+            Check(Count(cache, "MemoUnits") <= tokens.Count * 8L && Count(cache, "MemoCharacters") <= source.Length * 4L, "Static memo ownership exceeded its source/token bounds");
+
+            // The same call opener is balanced in the complete plan, and
+            // unbalanced in a private prefix. A warm full plan cannot leak it.
+            int callOpen = -1;
+            for (int i = 0; i < tokens.Count; i++) if ((string)Value(tokens[i], "Text") == "(") { callOpen = i; break; }
+            int fullClose = (int)plan.GetType().GetMethod("MatchClose").Invoke(plan, new object[] { callOpen, -1 });
+            Check(fullClose > callOpen && (int)plan.GetType().GetMethod("MatchClose").Invoke(plan, new object[] { callOpen, fullClose }) == -1, "Static matching ignored its private token-prefix limit");
+            long builds = Count(cache, "PlanBuilds"), hits = Count(cache, "SyntaxHits");
+            Clear(cache);
+            Check(Count(cache, "MemoUnits") == 0 && Count(cache, "MemoCharacters") == 0 && Count(cache, "SyntaxHits") == hits, "Context clear retained static payload or reset lifetime work counters");
+            Check(!ReferenceEquals(plan, Plan(cache, source)) && Count(cache, "PlanBuilds") == builds + 1, "Context clear retained a previous static plan");
+
+            cache = Cache(1, 512, 128);
+            plan = Plan(cache, "f(1)");
+            Plan(cache, "f(2)");
+            Check(!ReferenceEquals(plan, Plan(cache, "f(1)")) && Count(cache, "Entries") == 1, "LRU eviction retained an orphaned static plan");
+            cache = Cache(0, 512, 128);
+            Check(!ReferenceEquals(Plan(cache, "f(1)"), Plan(cache, "f(1)")) && Count(cache, "MemoUnits") == 0, "Disabled cache retained a static plan outside its source budget");
         }
 
         static void ParserReuseAndClear()
@@ -211,6 +281,7 @@ namespace DiceMaster
                 Check((string)Value(operators[i], "Text") == expectedOperators[i], "Punctuation lookahead changed an operator or final character");
             ProductionReuse();
             ParserReuseAndClear();
+            StaticPlanBoundaries();
             return assertions;
         }
     }

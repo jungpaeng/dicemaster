@@ -35,6 +35,7 @@ public class Action
 			return;
 		}
 		Analysis = PreviewAnalyzer.Analyze("", content ?? "");
+		if (isConditional) Analysis.RootConditional = true;
 		foreach (PreviewEffect effect in Analysis.Effects) effect.Conditional |= isConditional;
 	}
 

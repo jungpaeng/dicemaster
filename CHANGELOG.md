@@ -3,6 +3,12 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
+## [v1.0.4-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.5) — 2026-10-19 (prerelease)
+
+- 선택지의 공통 본문에서 구문 경계·인자·상수 검증 계획도 제한된 캐시로 재사용합니다. 선택지별 효과·분기·논리 예산·읽기 재시도는 유지합니다.
+- 안전하게 현재 조건을 확인할 수 있는 분기에만 충족/미충족 문구와 색상을 표시합니다. 선행 변경·미확인 콜백·후속 이야기 등은 중립 표시를 유지하며 미래 결과를 확정하지 않습니다.
+- 실제 적용 범위·자동 검사·후보와 비용은 [후속 검증 기록](docs/ISSUE-2-SHARED-ANALYSIS.md)에 구분합니다. 실제 게임/Windows 확인과 PRD #2 완료는 별도입니다. 사용자 지시에 따라 [alpha.5 게시 설명](docs/ISSUE-2-ALPHA5-RELEASE.md)을 준비하고 고정 커밋 재빌드·해시 대조 후 게시합니다.
+
 ## [v1.0.4-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.4) — 2026-10-19 (prerelease)
 
 - 실제 게임 TextAsset과 ResourceManager 경로를 대조해 번체 이야기·다른 언어·모듈을 구분합니다. 오프라인 추출과 실제 후보 IL 대조 도구를 추가합니다.

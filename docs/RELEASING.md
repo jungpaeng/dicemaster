@@ -2,6 +2,12 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)
 
+## PRD 2 alpha.5 분석 공유·현재 조건 힌트 prerelease
+
+사용자가 2026-10-19 KST에 이번 구현의 commit·push·prerelease 게시를 지시했습니다. 대상은 `v1.0.4-alpha.5`, 설치 자산은 `DiceMaster-v1.0.4-alpha.5.zip`이며 [alpha.5 게시 설명](ISSUE-2-ALPHA5-RELEASE.md)을 사용합니다. 안전한 현재 조건 표시 구현과 실제 자료의 모든 선택지가 미입증 콜백 경계로 중립을 유지하는 범위를 구분합니다.
+
+고정 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 검토한 DLL SHA-256 `6f4044b5b2e6d6b4f83f57937414dc6887c285660074776308084139bed62dba`와 설정 SHA-256 `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e`를 요구합니다. 출력은 `artifacts/releases/v1.0.4-alpha.5`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 사전 API 확인에서 기존 Release는 12개, Latest 정식은 v1.0.3, 이슈 #2는 open이며 새 태그는 없습니다. 기존 Release·태그·자산을 보존하고 Windows 실행·설치·오류 주입·이슈 종료는 수행하지 않습니다. 실제 게시 결과와 익명 공개 다운로드 검증은 후속 기록으로 구분합니다.
+
 ## PRD 2 alpha.4 실제 Lua 후속 prerelease
 
 사용자가 2026-10-19 KST에 현재 구현의 commit·push·prerelease 게시를 지시했습니다. 대상은 `v1.0.4-alpha.4`, 설치 자산명은 `DiceMaster-v1.0.4-alpha.4.zip`이며 [alpha.4 게시 설명](ISSUE-2-ALPHA4-RELEASE.md)을 사용합니다. 실제 Lua 정적 대조·유한 추적·캐시·할당 개선과 남은 동기 분석 지연·실게임 미검증 범위를 구분합니다.

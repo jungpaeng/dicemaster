@@ -39,6 +39,20 @@ namespace DiceMaster.LiveLog
             public int BranchCount;
         }
 
+        // Bindings are syntactic descriptions, never values retained from a save.
+        // Branches own copies; writes/unknown calls invalidate current-state hints.
+        private sealed class ConditionScope
+        {
+            internal Dictionary<string, PreviewCondition> Bindings = new Dictionary<string, PreviewCondition>(StringComparer.Ordinal);
+            internal HashSet<string> Assigned = new HashSet<string>(StringComparer.Ordinal);
+            internal bool Allowed = true;
+            internal int TableDepth;
+            internal ConditionScope Copy()
+            {
+                return new ConditionScope { Bindings = new Dictionary<string, PreviewCondition>(Bindings, StringComparer.Ordinal), Allowed = Allowed };
+            }
+        }
+
         private static readonly HashSet<string> DisplayCalls = new HashSet<string>(StringComparer.Ordinal)
         {
             "GetStoryText", "GetCurrentTravelScript", "GetTempScript", "GetStatData", "GetFlagData",
@@ -155,7 +169,8 @@ namespace DiceMaster.LiveLog
             context.Analysis.CharacterCount += script.Length;
             context.Expanded.Add(key);
             context.InvalidOwners = new HashSet<string>(job.InvalidOwners, StringComparer.Ordinal);
-            var tokens = context.Cache.Tokens(script);
+            var plan = context.Cache.Plan(script);
+            var tokens = plan.Tokens;
             int remaining = Math.Max(0, context.Limits.MaxTokens - context.Analysis.TokenCount);
             int end = Math.Min(tokens.Count, remaining);
             if (tokens.Count > end)
@@ -165,11 +180,12 @@ namespace DiceMaster.LiveLog
                 // bounded private view must also stop that lookahead; never
                 // trim the cached list shared with another analysis.
                 tokens = tokens.GetRange(0, end);
+                plan = new PreviewScriptPlan(script, tokens);
             }
             context.Analysis.TokenCount += end;
             var targets = new List<Target>();
             bool stopped = false;
-            ParseRange(context, source, script, tokens, 0, end, job.Depth > 0, job.Depth > 0, targets, ref stopped, 0, new List<PreviewBranchContext>(), false);
+            ParseRange(context, source, script, plan, 0, end, job.Depth > 0, job.Depth > 0, targets, ref stopped, 0, new List<PreviewBranchContext>(), false, new ConditionScope { Allowed = job.Depth == 0 });
             var path = new HashSet<string>(job.Ancestors, StringComparer.OrdinalIgnoreCase) { source };
             foreach (Target target in targets)
             {
@@ -191,8 +207,9 @@ namespace DiceMaster.LiveLog
             }
         }
 
-        private static bool ParseRange(Context context, string source, string script, List<PreviewToken> tokens, int start, int end, bool conditional, bool followup, List<Target> targets, ref bool stopped, int parseDepth, List<PreviewBranchContext> branchPath, bool inheritedExecutionUncertainty)
+        private static bool ParseRange(Context context, string source, string script, PreviewScriptPlan plan, int start, int end, bool conditional, bool followup, List<Target> targets, ref bool stopped, int parseDepth, List<PreviewBranchContext> branchPath, bool inheritedExecutionUncertainty, ConditionScope conditions)
         {
+            var tokens = plan.Tokens;
             if (parseDepth > 64) { context.Analysis.AddIssue(source, "if", "parse-nesting-limit"); return false; }
             bool afterPossibleReturn = false;
             bool conditionalExpression = false;
@@ -201,6 +218,9 @@ namespace DiceMaster.LiveLog
                 if (!Step(context, source)) return false;
                 PreviewToken token = tokens[i]; if (token.IsString) continue;
                 string t = token.Text;
+                if (t == "{") conditions.TableDepth++;
+                else if (t == "}" && conditions.TableDepth > 0) conditions.TableDepth--;
+                if (conditions.Allowed && conditions.TableDepth == 0) TrackConditionBinding(script, tokens, i, end, conditions);
                 if (t == ";" || t == "local" || i > start && tokens[i - 1].Text == ")" && script.Substring(tokens[i - 1].End, token.Start - tokens[i - 1].End).IndexOf('\n') >= 0) conditionalExpression = false;
                 if (t == "and" || t == "or") { conditionalExpression = true; continue; }
                 if (t == "if")
@@ -211,7 +231,7 @@ namespace DiceMaster.LiveLog
                         if (!tokens[header].IsString && tokens[header].Text == "function")
                         { context.Analysis.AddIssue(source, "if", "unsupported-condition-function"); stopped = true; return false; }
                     }
-                    var branches = PreviewSyntax.Branches(tokens, i, out int closing);
+                    var branches = plan.Branches(i, out int closing);
                     if (closing >= end) { context.Analysis.AddIssue(source, "if", "unbalanced-branch"); return false; }
                     if (!Step(context, source, Math.Max(0, closing - i))) return false;
                     bool anyReturn = false; bool everyReturn = branches.Count > 0; bool hasElse = false;
@@ -221,6 +241,8 @@ namespace DiceMaster.LiveLog
                     var branchTargets = new List<Target>();
                     int branchGroup = ++context.BranchCount;
                     int alternative = 0;
+                    var conditionBase = conditions.Copy();
+                    PreviewCondition remainingCondition = PreviewConditions.Constant(true);
                     foreach (var branch in branches)
                     {
                         if (!Step(context, source)) return false;
@@ -230,7 +252,7 @@ namespace DiceMaster.LiveLog
                             if (!Step(context, source)) return false;
                             if (!tokens[header].IsString && tokens[header].Text == "function")
                             { context.Analysis.AddIssue(source, "if", "unsupported-condition-function"); stopped = true; return false; }
-                            if (PreviewSyntax.TryCall(tokens, header, out string conditionOwner, out string conditionName, out int conditionOpen, out int conditionClose) || PreviewSyntax.TrySugarCall(tokens, header, out conditionOwner, out conditionName, out conditionOpen, out conditionClose))
+                            if (plan.TryCall(header, out string conditionOwner, out string conditionName, out int conditionOpen, out int conditionClose) || plan.TrySugarCall(header, out conditionOwner, out conditionName, out conditionOpen, out conditionClose))
                             {
                                 if (conditionOwner == "" && conditionName == "choose")
                                 {
@@ -239,6 +261,8 @@ namespace DiceMaster.LiveLog
                                     if (processedBranches == 0) { stopped = true; return false; }
                                     headerChoice = true; break;
                                 }
+                                if (!IsSnapshotCheckpoint(conditionOwner, conditionName, plan.Arguments(conditionOpen, conditionClose)))
+                                { conditionBase.Allowed = false; conditions.Allowed = false; }
                                 if (!IsKnownPure(conditionOwner, conditionName))
                                 { context.Analysis.AddIssue(source, conditionName, "condition-invocation-not-evaluated"); unknownCondition = true; }
                             }
@@ -248,8 +272,24 @@ namespace DiceMaster.LiveLog
                         foreach (Target target in targets) localTargets.Add(new Target { Name = target.Name, Function = target.Function, Conditional = true, Exited = target.Exited });
                         bool branchStopped = false;
                         var path = new List<PreviewBranchContext>(branchPath);
-                        path.Add(new PreviewBranchContext { Group = branchGroup, Alternative = alternative++, IsElse = branch.IsElse });
-                        bool returns = ParseRange(context, source, script, tokens, branch.Start, branch.End, true, followup, localTargets, ref branchStopped, parseDepth + 1, path, inheritedExecutionUncertainty || afterPossibleReturn || conditionalExpression);
+                        bool hintAllowed = conditionBase.Allowed && !followup &&
+                            !inheritedExecutionUncertainty && !conditionalExpression;
+                        PreviewCondition predicate = !hintAllowed ? PreviewConditions.Unknown : branch.IsElse ? PreviewConditions.Constant(true) :
+                            PreviewConditions.ParseTokens(tokens, branch.HeaderStart + 1, branch.HeaderEnd, conditionBase.Bindings);
+                        // An unknown header can run Lua indexing/comparison
+                        // metamethods before later elseif arms. Do not treat an
+                        // unknown value as a proven side-effect-free expression.
+                        if (hintAllowed && !predicate.IsKnownSyntax)
+                        { hintAllowed = false; conditionBase.Allowed = false; conditions.Allowed = false; }
+                        PreviewCondition selected = hintAllowed ? PreviewConditions.All(remainingCondition, predicate) : null;
+                        path.Add(new PreviewBranchContext { Group = branchGroup, Alternative = alternative++, IsElse = branch.IsElse,
+                            CurrentCondition = selected, CurrentConditionAllowed = hintAllowed });
+                        if (hintAllowed) remainingCondition = PreviewConditions.All(remainingCondition, PreviewConditions.Not(predicate));
+                        var branchConditions = conditionBase.Copy();
+                        bool returns = ParseRange(context, source, script, plan, branch.Start, branch.End, true, followup, localTargets, ref branchStopped, parseDepth + 1, path, inheritedExecutionUncertainty || afterPossibleReturn || conditionalExpression, branchConditions);
+                        conditions.Allowed &= branchConditions.Allowed;
+                        foreach (string assigned in branchConditions.Assigned)
+                        { conditions.Bindings.Remove(assigned); conditions.Assigned.Add(assigned); }
                         anyReturn |= returns; everyReturn &= returns; hasElse |= branch.IsElse;
                         anyChoice |= branchStopped; everyChoice &= branchStopped;
                         everyExit &= returns || branchStopped; processedBranches++;
@@ -262,6 +302,7 @@ namespace DiceMaster.LiveLog
                     if (everyReturn && hasElse) return true;
                     if ((everyChoice || everyExit) && hasElse) { stopped = true; return false; }
                     afterPossibleReturn |= anyReturn || anyChoice || unknownCondition;
+                    conditions.Allowed &= !anyReturn && !anyChoice && !unknownCondition;
                     continue;
                 }
                 if (t == "for" || t == "while" || t == "repeat" || t == "function" || t == "do")
@@ -269,10 +310,10 @@ namespace DiceMaster.LiveLog
                     context.Analysis.AddIssue(source, t, t == "function" ? "function-body-not-executed" : "unsupported-loop-or-block");
                     if (t == "function" && i + 1 < end && IsReservedOwner(tokens[i + 1].Text))
                     { context.InvalidOwners.Add(tokens[i + 1].Text); context.Analysis.AddIssue(source, tokens[i + 1].Text, "manager-binding-not-evaluated"); }
-                    int closing = SkipBlock(tokens, i, end);
+                    int closing = plan.SkipBlock(i, end);
                     if (closing < 0) { context.Analysis.AddIssue(source, t, "unbalanced-block"); return false; }
                     if (!Step(context, source, Math.Max(0, closing - i))) return false;
-                    i = closing; afterPossibleReturn = true; continue;
+                    i = closing; afterPossibleReturn = true; conditions.Allowed = false; conditions.Bindings.Clear(); continue;
                 }
                 if (t == "return")
                 {
@@ -287,17 +328,17 @@ namespace DiceMaster.LiveLog
                     if (i > start && (tokens[i - 1].Text == "." || tokens[i - 1].Text == ":"))
                     {
                         context.Analysis.AddIssue(source, t, "qualified-manager-reference");
-                        afterPossibleReturn = true;
-                        if (PreviewSyntax.TryCall(tokens, i, out _, out _, out _, out int qualifiedClose) && qualifiedClose >= i)
+                        afterPossibleReturn = true; conditions.Allowed = false;
+                        if (plan.TryCall(i, out _, out _, out _, out int qualifiedClose) && qualifiedClose >= i)
                             i = qualifiedClose;
                         continue;
                     }
                     if (IsManagerAssignment(tokens, i, end))
-                    { context.InvalidOwners.Add(t); context.Analysis.AddIssue(source, t, "manager-binding-not-evaluated"); afterPossibleReturn = true; }
+                    { context.InvalidOwners.Add(t); context.Analysis.AddIssue(source, t, "manager-binding-not-evaluated"); afterPossibleReturn = true; conditions.Allowed = false; }
                     if (i + 1 < end && tokens[i + 1].Text == "[")
-                    { context.Analysis.AddIssue(source, t, "dynamic-call"); int closing = PreviewSyntax.MatchClose(tokens, i + 1, end); if (closing >= 0) i = closing; afterPossibleReturn = true; continue; }
+                    { context.Analysis.AddIssue(source, t, "dynamic-call"); int closing = plan.MatchClose(i + 1, end); if (closing >= 0) i = closing; afterPossibleReturn = true; conditions.Allowed = false; continue; }
                 }
-                if (PreviewSyntax.TrySugarCall(tokens, i, out string sugarOwner, out string sugarName, out int sugarArgument, out int sugarClose))
+                if (plan.TrySugarCall(i, out string sugarOwner, out string sugarName, out int sugarArgument, out int sugarClose))
                 {
                     if (sugarOwner == "" && sugarName == "choose")
                     {
@@ -305,39 +346,40 @@ namespace DiceMaster.LiveLog
                         if (conditional || afterPossibleReturn || conditionalExpression) context.Analysis.AddIssue(source, "choose", "conditional-choice-boundary");
                         break;
                     }
+                    conditions.Allowed = false; // Sugar/display calls are not audited snapshot boundaries.
                     if (context.InvalidOwners.Contains(sugarOwner))
-                    { context.Analysis.AddIssue(source, sugarOwner, "manager-binding-not-evaluated"); afterPossibleReturn = true; }
+                    { context.Analysis.AddIssue(source, sugarOwner, "manager-binding-not-evaluated"); afterPossibleReturn = true; conditions.Allowed = false; }
                     if (!IsKnownPure(sugarOwner, sugarName))
-                    { context.Analysis.AddIssue(source, sugarOwner.Length == 0 ? sugarName : sugarOwner + "." + sugarName, "unsupported-call-syntax"); afterPossibleReturn = true; }
+                    { context.Analysis.AddIssue(source, sugarOwner.Length == 0 ? sugarName : sugarOwner + "." + sugarName, "unsupported-call-syntax"); afterPossibleReturn = true; conditions.Allowed = false; }
                     if (sugarClose < 0 || sugarClose >= end) { context.Analysis.AddIssue(source, sugarName, "unbalanced-call"); return false; }
                     if (!tokens[sugarArgument].IsString)
                         for (int nested = sugarArgument + 1; nested < sugarClose; nested++)
                         {
                             if (!Step(context, source)) return false;
-                            if (PreviewSyntax.TryCall(tokens, nested, out string nestedOwner, out string nestedName, out int nestedOpen, out int nestedClose) || PreviewSyntax.TrySugarCall(tokens, nested, out nestedOwner, out nestedName, out nestedOpen, out nestedClose))
+                            if (plan.TryCall(nested, out string nestedOwner, out string nestedName, out int nestedOpen, out int nestedClose) || plan.TrySugarCall(nested, out nestedOwner, out nestedName, out nestedOpen, out nestedClose))
                             {
                                 if (nestedOwner == "" && nestedName == "choose")
                                 { context.Analysis.StoppedAtChoice = true; context.Analysis.AddIssue(source, "choose", "nested-choice-boundary"); stopped = true; return false; }
-                                if (!IsKnownPure(nestedOwner, nestedName)) { context.Analysis.AddIssue(source, nestedName, "nested-invocation-not-evaluated"); afterPossibleReturn = true; }
+                                if (!IsKnownPure(nestedOwner, nestedName)) { context.Analysis.AddIssue(source, nestedName, "nested-invocation-not-evaluated"); afterPossibleReturn = true; conditions.Allowed = false; }
                             }
                         }
                     i = sugarClose; continue;
                 }
-                if (!PreviewSyntax.TryCall(tokens, i, out string owner, out string name, out int open, out int close)) continue;
+                if (!plan.TryCall(i, out string owner, out string name, out int open, out int close)) continue;
                 if (close < 0 || close >= end) { context.Analysis.AddIssue(source, name, "unbalanced-call"); return false; }
-                var args = PreviewSyntax.Arguments(script, tokens, open, close);
+                var args = plan.Arguments(open, close);
                 bool nestedUnknown = false;
                 for (int nested = open + 1; nested < close; nested++)
                 {
                     if (!Step(context, source)) return false;
-                    if (PreviewSyntax.TryCall(tokens, nested, out string nestedOwner, out string nestedName, out int nestedOpen, out int nestedClose) || PreviewSyntax.TrySugarCall(tokens, nested, out nestedOwner, out nestedName, out nestedOpen, out nestedClose))
+                    if (plan.TryCall(nested, out string nestedOwner, out string nestedName, out int nestedOpen, out int nestedClose) || plan.TrySugarCall(nested, out nestedOwner, out nestedName, out nestedOpen, out nestedClose))
                     {
                         if (nestedOwner == "" && nestedName == "choose")
                         { context.Analysis.StoppedAtChoice = true; context.Analysis.AddIssue(source, "choose", "nested-choice-boundary"); stopped = true; return false; }
                         if (!IsKnownPure(nestedOwner, nestedName)) { context.Analysis.AddIssue(source, nestedName, "nested-invocation-not-evaluated"); nestedUnknown = true; }
                     }
                 }
-                if (nestedUnknown) afterPossibleReturn = true;
+                if (nestedUnknown) { afterPossibleReturn = true; conditions.Allowed = false; }
                 if (owner == "" && name == "choose")
                 {
                     context.Analysis.StoppedAtChoice = true; stopped = true;
@@ -345,12 +387,15 @@ namespace DiceMaster.LiveLog
                     break;
                 }
                 if (context.InvalidOwners.Contains(owner))
-                { context.Analysis.AddIssue(source, owner, "manager-binding-not-evaluated"); afterPossibleReturn = true; i = close; continue; }
+                { context.Analysis.AddIssue(source, owner, "manager-binding-not-evaluated"); afterPossibleReturn = true; conditions.Allowed = false; i = close; continue; }
+                if (!IsSnapshotCheckpoint(owner, name, args)) conditions.Allowed = false;
                 bool knownPure = IsKnownPure(owner, name);
                 if (owner == "statmodifymanager" && !knownPure || owner == "luamanager" && !knownPure)
                 {
                     var effect = new PreviewEffect { Owner = owner, Name = name, Arguments = args, Conditional = conditional || afterPossibleReturn || conditionalExpression, Followup = followup, ExecutionUncertain = inheritedExecutionUncertainty || afterPossibleReturn || conditionalExpression, Condition = conditional || afterPossibleReturn || conditionalExpression ? "분기 조건 또는 후속 실행 여부에 따름" : "", Source = source, Sequence = context.Analysis.Effects.Count };
+                    plan.ValidateEffect(effect, open, close);
                     effect.Branches.AddRange(branchPath);
+                    conditions.Allowed = false;
                     context.Analysis.Effects.Add(effect);
                     if (!PreviewDisplay.IsKnownEffect(owner, name)) afterPossibleReturn = true;
                     if (owner == "luamanager" && PreviewDisplay.IsStoryRegistration(name))
@@ -365,10 +410,65 @@ namespace DiceMaster.LiveLog
                     if (targets.Count > 0 && (owner == "statmodifymanager" && name == "Mission" || owner == "luamanager" && name == "ChangeScene" && args.Count > 0 && PreviewSyntax.TryString(args[0], out string scene) && (scene == "Story" || scene == "Free")))
                         context.Analysis.AddIssue(source, name, "mission-or-scene-may-replace-followup");
                 }
-                else if (!knownPure) { context.Analysis.AddIssue(source, owner.Length == 0 ? name : owner + "." + name, "unsupported-call"); afterPossibleReturn = true; }
+                else if (!knownPure)
+                {
+                    context.Analysis.AddIssue(source, owner.Length == 0 ? name : owner + "." + name, "unsupported-call");
+                    afterPossibleReturn = true;
+                    if (!IsSnapshotCheckpoint(owner, name, args)) conditions.Allowed = false;
+                }
                 i = close;
             }
             return false;
+        }
+
+        private static void TrackConditionBinding(string script, List<PreviewToken> tokens, int at, int end, ConditionScope scope)
+        {
+            if (!tokens[at].IsIdentifier) return;
+            string name = tokens[at].Text;
+            bool local = at > 0 && tokens[at - 1].Text == "local";
+            bool qualified = at > 0 && (tokens[at - 1].Text == "." || tokens[at - 1].Text == ":");
+            bool assignment = at + 1 < end && tokens[at + 1].Text == "=";
+            if (qualified)
+            {
+                if (assignment) { scope.Allowed = false; scope.Bindings.Clear(); }
+                return;
+            }
+            if (assignment && at > 0 && tokens[at - 1].Text == ",")
+            { scope.Bindings.Clear(); scope.Allowed = false; return; }
+            // Index writes may override a manager method or mutate an unknown
+            // object. Reads are conservatively gated too rather than invoking Lua.
+            if (at + 1 < end && tokens[at + 1].Text == "[")
+            { scope.Bindings.Clear(); scope.Allowed = false; return; }
+            if (!local && !assignment) return;
+            scope.Bindings.Remove(name); scope.Assigned.Add(name);
+            if (name == "checkpointmanager") { scope.Allowed = false; scope.Bindings.Clear(); return; }
+            if (!assignment) return;
+            // Only a complete, small single assignment may establish a binding.
+            // Complex/multiple assignments cannot inherit a previous proof.
+            int first = at + 2, last = first, depth = 0;
+            for (; last < end && last - first < 128; last++)
+            {
+                string t = tokens[last].Text;
+                if (depth == 0 && (t == ";" || t == "then" || t == "end" || t == "else" || t == "elseif" || t == "," ||
+                    last > first && script.IndexOf('\n', tokens[last - 1].End, tokens[last].Start - tokens[last - 1].End) >= 0)) break;
+                if (!tokens[last].IsString)
+                { if (t == "(" || t == "[" || t == "{") depth++; else if (t == ")" || t == "]" || t == "}") depth--; }
+                if (depth < 0) return;
+            }
+            if (last - first >= 128 || depth != 0 || last == first)
+            { scope.Allowed = false; return; }
+            if (last < end && IsExpressionContinuation(tokens[last].Text))
+            { scope.Allowed = false; return; }
+            PreviewCondition descriptor = PreviewConditions.ParseTokens(tokens, first, last, scope.Bindings);
+            if (descriptor.IsKnownSyntax) scope.Bindings[name] = descriptor;
+            else scope.Allowed = false; // Unknown indexing/arithmetic may run Lua metamethods.
+        }
+
+        private static bool IsExpressionContinuation(string token)
+        {
+            return token == "+" || token == "-" || token == "*" || token == "/" || token == "%" || token == "^" ||
+                token == ".." || token == "==" || token == "~=" || token == "<" || token == "<=" || token == ">" || token == ">=" ||
+                token == "and" || token == "or" || token == "." || token == ":" || token == "[" || token == "(" || token == "{";
         }
 
         private static bool IsReservedOwner(string name)
@@ -386,6 +486,14 @@ namespace DiceMaster.LiveLog
             { int closing = PreviewSyntax.MatchClose(tokens, next, end); if (closing >= 0 && closing + 1 < end && tokens[closing + 1].Text == "=") return true; }
             while (next + 1 < end && tokens[next].Text == "," && tokens[next + 1].IsIdentifier) next += 2;
             return next < end && tokens[next].Text == "=";
+        }
+
+        // Extraction purity means 'no displayed reward', not runtime purity:
+        // UI/display calls may invoke callbacks or write story state.
+        private static bool IsSnapshotCheckpoint(string owner, string name, List<string> arguments)
+        {
+            return owner == "checkpointmanager" && (name == "Switch" || name == "Condition") &&
+                arguments.Count == 1 && PreviewSyntax.TryString(arguments[0], out string key) && key.Length > 0;
         }
 
         private static bool IsKnownPure(string owner, string name)
