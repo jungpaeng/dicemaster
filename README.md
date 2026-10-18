@@ -89,7 +89,7 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 
 ## v1.0.4-alpha.3 prerelease — 선택지 미리보기
 
-[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.3/DiceMaster-v1.0.4-alpha.3.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 정식 Latest는 v1.0.3으로 유지합니다.
+[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.3/DiceMaster-v1.0.4-alpha.3.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 2026-10-19 01:14:16 KST에 게시하고 공개 다운로드를 검증했습니다. 정식 Latest는 v1.0.3으로 유지합니다.
 
 [v1.0.4-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.3)는 불확실한 현재 효과를 `가능한 변화`, 후속 효과를 `이후 가능한 변화` 아래에 묶습니다. `조건부`를 효과마다 반복하지 않으며, `+5 가산`은 `+5`로 줄입니다. 직접 지정하는 효과의 `10으로 설정`과 초기화 같은 별도 의미는 유지합니다. 실제 같은 조건문의 인접 효과는 `[경우 A]` / `[경우 B · 그 외]`로 묶고 조건문이 여러 개이거나 중첩되면 번호를 함께 표시합니다. Tab 로그에는 전체 설명, 선택지 옆에는 기존 50자 요약을 표시합니다. 설치 파일과 검사 범위는 [alpha.3 게시 설명](docs/ISSUE-2-ALPHA3-RELEASE.md)에 있습니다.
 

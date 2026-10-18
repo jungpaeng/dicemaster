@@ -6,6 +6,8 @@
 
 사용자가 2026-10-19 KST에 `가능한 변화` / `이후 가능한 변화` 묶음과 중복 `가산` 제거, commit·push·prerelease 게시를 승인했습니다. 대상은 `v1.0.4-alpha.3`, 설치 자산명은 `DiceMaster-v1.0.4-alpha.3.zip`이며 [alpha.3 게시 설명](ISSUE-2-ALPHA3-RELEASE.md)을 사용합니다. 고정 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 검토한 DLL/설정 해시와 대조하고 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 Release·태그·자산, 정식 Latest v1.0.3과 이슈 #2 open 상태를 유지합니다. 실제 Lua·Windows/native 검증과 PRD #2 완료를 새로 주장하지 않습니다.
 
+**2026-10-19 01:14:16 KST에 [v1.0.4-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.3)를 게시하고 익명 공개 다운로드를 검증했습니다.** 태그 커밋은 `a7393cc1eb0fc092f38a347f099c48d2f3a88eba`, Release ID는 `416556648`, asset ID는 `653893311`입니다. 소스 커밋의 새 빌드와 검토 후보가 같은 해시로 재생성됐고 공개 ZIP의 CRC·두 파일·DLL/설정 바이트와 태그 커밋이 일치했습니다. 이전 10개 Release·자산, 정식 Latest v1.0.3과 이슈 #2 open을 유지했습니다. 검증 영수증은 `artifacts/releases/v1.0.4-alpha.3/`에 있으며 후속 문서 커밋은 태그·공개 파일을 변경하지 않습니다.
+
 ## PRD 2 alpha.2 가독성 후속 prerelease
 
 사용자가 2026-10-19 KST에 가독성 후속 변경의 commit·push와 prerelease 게시를 승인했습니다. 대상은 `v1.0.4-alpha.2`, 자산명은 `DiceMaster-v1.0.4-alpha.2.zip`입니다. [alpha.2 게시 설명](ISSUE-2-ALPHA2-RELEASE.md)을 사용하고 `prerelease=true`·`make_latest=false`로 게시합니다. alpha.1을 포함한 기존 Release·태그·자산, 정식 Latest v1.0.3과 이슈 #2 open 상태를 유지합니다.

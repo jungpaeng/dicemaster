@@ -2,11 +2,13 @@
 
 [PRD 2](https://github.com/jungpaeng/dicemaster/issues/2) · [개발 안내](DEVELOPMENT.md) · [기술 인계](ISSUE-2-TECHNICAL-HANDOFF.md)
 
-2026-10-19 KST. PRD 2 로컬 소스·검사·별도 후보의 구현 기록이다. 이후 사용자 승인으로 commit·push하고 `v1.0.4-alpha.1`, 가독성 후속 `v1.0.4-alpha.2` prerelease를 게시했다. 실제 Lua와 사용자 Windows 검증, 실제 자료를 사용한 추적 제한 검증은 미완료이며 기능·이슈 완료로 처리하지 않는다. 과거 alpha.4 사용자 Windows 확인을 이 후보에 승계하지 않으며 이슈 #2는 open으로 유지한다. 게시 설명은 [alpha.2 안내](ISSUE-2-ALPHA2-RELEASE.md)와 [alpha.1 안내](ISSUE-2-RELEASE.md)에 있다.
+2026-10-19 KST. PRD 2 로컬 소스·검사·별도 후보의 구현 기록이다. 이후 사용자 승인으로 commit·push하고 `v1.0.4-alpha.1`, 가독성 후속 `v1.0.4-alpha.2`, 문구 정리 `v1.0.4-alpha.3` prerelease를 게시했다. 실제 Lua와 사용자 Windows 검증, 실제 자료를 사용한 추적 제한 검증은 미완료이며 기능·이슈 완료로 처리하지 않는다. 과거 alpha.4 사용자 Windows 확인을 이 후보에 승계하지 않으며 이슈 #2는 open으로 유지한다. 게시 설명은 [alpha.3 안내](ISSUE-2-ALPHA3-RELEASE.md), [alpha.2 안내](ISSUE-2-ALPHA2-RELEASE.md)와 [alpha.1 안내](ISSUE-2-RELEASE.md)에 있다.
 
 ## v1.0.4-alpha.3 문구 정리
 
 2026-10-19 사용자가 `조건부` / `이어서 진행 시`의 중복·모호한 안내와 `+5 가산`의 중복 표현 정리, commit·push·prerelease 게시를 지시했다. 대상은 `v1.0.4-alpha.3`이며 공개 alpha.1/alpha.2 태그·자산·게시 설명은 바꾸지 않는다.
+
+**2026-10-19 01:14:16 KST**에 [v1.0.4-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.3)를 게시했다. 태그 소스 커밋은 `a7393cc1eb0fc092f38a347f099c48d2f3a88eba`, Release ID는 `416556648`, 설치 자산 ID는 `653893311`이다. 115개 입력의 커밋 스냅샷을 기존 모드 DLL·Git 데이터·이전 출력 없이 새로 빌드하고 8개 검사 프로그램을 통과했다. DLL·ZIP 해시는 아래 검토 후보와 같고 인증 없는 공개 다운로드의 CRC·두 파일·태그 커밋·DLL/설정 해시를 확인했다. 기존 10개 Release·자산, 정식 Latest v1.0.3과 이슈 #2 open을 보존했다. 영수증은 `artifacts/releases/v1.0.4-alpha.3/release-verification.json`, `github-publication.json`, `anonymous-verification.json`과 빌드 로그에 있다. 후속 게시 문서 커밋은 소스 태그·공개 ZIP·DLL을 바꾸지 않는다.
 
 불확실한 현재 효과는 `가능한 변화`, 연결된 이야기의 효과는 `이후 가능한 변화` 아래에 묶고 개별 `조건부` 표지는 없앤다. 가능성을 제목으로 보존하면서 기존 source·분기·명령 순서를 유지한다. 확실한 현재 효과가 뒤에 이어지면 `현재 선택` 제목으로 불확실한 묶음을 끝낸다. 실제 같은 조건문의 갈래만 `[경우 A]` / `[경우 B · 그 외]`로 묶고, 여러 조건문·중첩 경로가 있으면 번호도 남긴다. 갈래의 중립색은 충족 판정이 아니다.
 
