@@ -8,11 +8,13 @@
 
 ## PRD #4 후보와 prerelease
 
-### v1.0.5-alpha.6 게시 준비
+### v1.0.5-alpha.6 게시·공개 다운로드 검증
 
-사용자가 현재 누적 후속의 커밋·prerelease 게시를 지시했습니다. 검토 후보는 `artifacts/issue-4/pad-open/`의 DLL `4bcce037713407e25378ecbd2113649c9f9e52968659b1b748a6bec795645efa`·설정 `efd4847eb096aad70bfb7c3399534caab6becf71daca75fc5359100b0638cbf8`·ZIP `fe26f96e3c9512c7a31c10226ff3ba13a13f81b5ec8c6916c44d3376184f5cb0`입니다. 고정 구현 커밋을 `verify-preview-release.py --scope prd4`로 재빌드하고 출력은 `artifacts/releases/v1.0.5-alpha.6/`로 분리합니다. [게시 설명·검사 범위·Windows 확인](ISSUE-4-ALPHA6-RELEASE.md)과 [게시 절차](RELEASING.md)를 따릅니다. 로컬 12개 검사와 고정 커밋 검증·실제 게시·공개 다운로드 결과를 구분하며, 아래 개별 로컬 후보의 당시 기록은 보존합니다.
+**2026-10-19 06:21:15 KST에 [v1.0.5-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.6)을 게시했습니다.** 소스·태그 커밋 `de0d511e60c99a6b84be33c9e3d7676746986c76`을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 12개 검사와 입력 153개·생산 소스 63개 일치를 확인했습니다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip)은 검토한 DLL `4bcce037713407e25378ecbd2113649c9f9e52968659b1b748a6bec795645efa`·설정 `efd4847eb096aad70bfb7c3399534caab6becf71daca75fc5359100b0638cbf8`·ZIP `fe26f96e3c9512c7a31c10226ff3ba13a13f81b5ec8c6916c44d3376184f5cb0`과 같은 바이트이며 인증 없는 다운로드의 CRC·두 파일·바이트·해시를 확인했습니다.
 
-### 현재 로컬 후속: 패드 로그 열기
+결과는 `artifacts/releases/v1.0.5-alpha.6/`에 분리하며 Release ID `416720471`·asset ID `654515746`입니다. 기존 19개 Release·태그·자산과 Latest 정식 v1.0.4를 보존했습니다. [게시 설명·검사 범위·DLL만 적용·복구·Windows 확인](ISSUE-4-ALPHA6-RELEASE.md)과 [게시 기록](RELEASING.md)을 따릅니다. 실제 Windows 확인은 대기이고 이슈 #4는 open이며, 아래 개별 로컬 후보의 당시 기록은 보존합니다.
+
+### alpha.6에 포함한 로컬 후보 이력: 패드 로그 열기
 
 사용자 승인에 따라 같은 소유자 XInput 패드에서 첫 스틱 클릭을 유지한 채 반대 클릭이 300ms 미만에 겹치면 닫힌 로그를 여는 경로를 추가합니다. 같은 게임 폴링에서의 동시 클릭도 허용하며, 겹치지 않는 연속 클릭과 정확히 300ms 이상의 간격은 거부합니다. 기존 `LogMenuToggleKey`(기본 Tab)는 유지합니다. 새 `[DiceMaster].EnableGamepadLogOpen=true`는 주사위 조정 옵션과 독립적이며 조합은 열기 전용입니다. 초기 PRD의 패드 열기 제외는 이번 후속 지시로 대체하고 과거 후보·공개 자산은 보존합니다.
 
@@ -28,7 +30,7 @@ python3 build/build-source.py --references '<읽기 전용 참조 루트>' --out
 
 빌드 입력 153개와 ZIP CRC·정확히 두 파일·각 내부 바이트·해시를 독립 확인했습니다. DLL은 582,656바이트·SHA-256 `4bcce037713407e25378ecbd2113649c9f9e52968659b1b748a6bec795645efa`, ZIP은 245,066바이트·`fe26f96e3c9512c7a31c10226ff3ba13a13f81b5ec8c6916c44d3376184f5cb0`입니다. 전체 검사·설정 해시·[최종 검증 영수증](../artifacts/issue-4/pad-open-evidence/local-verification.json)은 [후보 기록](ISSUE-4-PAD-OPEN.md)을 따릅니다.
 
-전체 C# 소스와 읽기 전용 게임 참조를 사용하며 게임 소스·DLL을 배포하지 않습니다. 실제 Windows 테스트는 사용자가 수행하고, 관리 대역에서 조합·소유권을 검증한 결과를 실게임 입력 정상으로 확대하지 않습니다. 이번 로컬 변경에서 커밋·공개 게시·이슈 #4 완료는 수행하지 않습니다.
+전체 C# 소스와 읽기 전용 게임 참조를 사용하며 게임 소스·DLL을 배포하지 않습니다. 실제 Windows 테스트는 사용자가 수행하고, 관리 대역에서 조합·소유권을 검증한 결과를 실게임 입력 정상으로 확대하지 않습니다. 후보 생성 당시에는 커밋·공개 게시·이슈 완료를 수행하지 않았고 이후 위 alpha.6으로 게시했습니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다.
 
 ### 직전 로컬 후보: 조건 분기 블록
 

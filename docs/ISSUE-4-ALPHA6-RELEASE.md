@@ -1,7 +1,7 @@
-# DiceMaster v1.0.5-alpha.6 — 게시 준비
+# DiceMaster v1.0.5-alpha.6 — 읽기 화면·조건 분기·패드 로그 열기
 
-alpha.5 이후 요청한 읽기 화면과 **양쪽 스틱 클릭으로 로그 열기**를 모은 테스트용 prerelease를 준비합니다.
-로컬 전체 소스 빌드·12개 검사는 통과했으며 고정 커밋 재빌드·실제 게시·인증 없는 공개 다운로드 확인은 별도 진행 후 기록합니다.
+alpha.5 이후 요청한 읽기 화면과 **양쪽 스틱 클릭으로 로그 열기**를 모은 테스트용 prerelease입니다.
+소스 커밋 `de0d511e60c99a6b84be33c9e3d7676746986c76`을 깨끗하게 재빌드해 전체 12개 검사와 검토한 DLL·설정·ZIP 해시 일치를 확인했습니다. 실제 Windows 게임은 미확인입니다.
 실제 Windows 게임의 패드·터치·배치 확인은 대기 중이며 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)는 미완료로 유지합니다.
 
 ## 이번 변경
@@ -24,7 +24,7 @@ alpha.5 이후 요청한 읽기 화면과 **양쪽 스틱 클릭으로 로그 �
 
 ## 확인한 범위와 남은 확인
 
-로컬 12개 검사 프로그램·입력 153개 일치·ZIP CRC·정확히 두 파일·내부 바이트·SHA-256을 확인했습니다. 전체 모드 컴파일은 오류 0개·기존 경고 7개입니다.
+고정 커밋의 12개 검사 프로그램·입력 153개 일치·ZIP CRC·정확히 두 파일·내부 바이트·SHA-256을 확인했습니다. 전체 모드 컴파일은 오류 0개·기존 경고 7개입니다.
 
 | 주요 검사 | 결과 |
 | --- | --- |
@@ -33,7 +33,7 @@ alpha.5 이후 요청한 읽기 화면과 **양쪽 스틱 클릭으로 로그 �
 | 실제 DLL helper·게시·모델 통합 | 203개 단언 |
 | 게임 API / 선택지 / 주사위·패드 | 관리 동작 3,914개·메타데이터 1,047개 / 통합 1,453개 / 262,831개 단언 |
 
-나머지 갱신·수명주기·한국어·주사위 검사를 포함한 [전체 12개 결과](ISSUE-4-PAD-OPEN.md#후보와-자동-검사), [manifest](../artifacts/issue-4/pad-open/build-manifest.json), [독립 검증 영수증](../artifacts/issue-4/pad-open-evidence/local-verification.json)을 보존합니다.
+나머지 갱신·수명주기·한국어·주사위 검사를 포함한 [전체 12개 결과](https://github.com/jungpaeng/dicemaster/blob/de0d511e60c99a6b84be33c9e3d7676746986c76/docs/ISSUE-4-PAD-OPEN.md#후보와-자동-검사)을 보존합니다.
 게임·Win32·XInput 원래 export·Unity는 명시적인 검사 대역입니다. 자동 검사는 실제 Windows 후킹 적용·한글 배치·스크롤·터치·게임 입력 중복이 정상이라는 증거가 아닙니다.
 
 - **Tab 진입의 기존 모드 전환·첫 패드 입력 소비 문제는 별도 미해결 경로입니다.** 새 패드 조합으로 연 경로의 검사 결과로 이를 해결했다고 주장하지 않습니다.
@@ -43,10 +43,10 @@ alpha.5 이후 요청한 읽기 화면과 **양쪽 스틱 클릭으로 로그 �
 
 ## 설치 파일·적용·복구
 
-게시 예정 설치 자산은 `DiceMaster-v1.0.5-alpha.6.zip`입니다. GitHub 자동 `Source code` 압축 파일과 구분합니다.
+설치 자산은 **[DiceMaster-v1.0.5-alpha.6.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip)**입니다. GitHub 자동 `Source code` 압축 파일과 구분합니다.
 ZIP에는 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함하며 게임 DLL·소스는 포함하지 않습니다.
 
-| 파일 | 크기 | 검토 후보 SHA-256 |
+| 파일 | 크기 | 설치 파일 SHA-256 |
 | --- | ---: | --- |
 | `DiceMaster.dll` | 582,656바이트 | `4bcce037713407e25378ecbd2113649c9f9e52968659b1b748a6bec795645efa` |
 | `DiceMaster-v1.0.5-alpha.6.zip` | 245,066바이트 | `fe26f96e3c9512c7a31c10226ff3ba13a13f81b5ec8c6916c44d3376184f5cb0` |
@@ -81,13 +81,23 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 | 11 | 버튼/스틱/트리거 홀드로 닫기, 재연결·Alt-Tab·로드·주사위 왕복 | 해제·중립 전 재열기·게임 취소·대화 진행·주사위 조정 없음 |
 | 12 | Tab·설정 키로 열기와 Steam Input 켜짐/꺼짐 | 기존 진입 모드·첫 패드 입력 문제를 별도로 기록하고 실제 확인한 XInput 구성만 지원으로 판단 |
 
-세부 확인표는 [패드 열기](ISSUE-4-PAD-OPEN.md), [조건 분기](ISSUE-4-CONDITION-BLOCKS.md), [읽기 화면](ISSUE-4-READING-LAYOUT.md)와 [기존 Windows 회귀](ISSUE-4-WINDOWS-VALIDATION.md)를 함께 사용합니다. 과거 검색·자판·접기 항목은 이번 화면에 적용하지 않습니다.
+세부 확인표는 [패드 열기](https://github.com/jungpaeng/dicemaster/blob/de0d511e60c99a6b84be33c9e3d7676746986c76/docs/ISSUE-4-PAD-OPEN.md), [조건 분기](https://github.com/jungpaeng/dicemaster/blob/de0d511e60c99a6b84be33c9e3d7676746986c76/docs/ISSUE-4-CONDITION-BLOCKS.md), [읽기 화면](https://github.com/jungpaeng/dicemaster/blob/de0d511e60c99a6b84be33c9e3d7676746986c76/docs/ISSUE-4-READING-LAYOUT.md)와 [기존 Windows 회귀](https://github.com/jungpaeng/dicemaster/blob/de0d511e60c99a6b84be33c9e3d7676746986c76/docs/ISSUE-4-WINDOWS-VALIDATION.md)를 함께 사용합니다. 과거 검색·자판·접기 항목은 이번 화면에 적용하지 않습니다.
 결과에 DLL SHA-256, 해상도·배율·패드·Steam Input·게임/로더 환경, 옵션 값·항목 ID·재현 순서·관련 BepInEx 로그를 남겨 주세요.
 
-## 게시 검증 상태
+## 소스와 검증 기록
 
-로컬 검토 후보는 2026-10-19 06:14:54 KST에 생성했으며 위 해시·12개 검사는 그 후보의 결과입니다.
-그 뒤 게시 검증기의 필수 검사 목록을 12개로 보완하고 검증기 회귀 8개를 통과했습니다. 생산 소스 입력 63개는 그대로이고 빌드 도구 2개의 해시만 달라졌으므로, 앞의 입력 153개 영수증은 생성 당시 스냅샷으로 보존하고 최종 입력 근거는 고정 커밋 재빌드 manifest를 사용합니다.
-사용자의 커밋·prerelease 지시에 따라 고정 구현 커밋을 재빌드하고 `artifacts/releases/v1.0.5-alpha.6/`에 검증 결과를 분리합니다.
-**고정 커밋 재빌드·태그·실제 GitHub 게시와 인증 없는 공개 페이지/ZIP 검증은 현재 준비 단계입니다.** 완료 후 실제 커밋·게시 시각·Release/asset 식별과 검증 영수증을 추가합니다.
-기존 Release·태그·자산과 Latest 정식 v1.0.4를 보존하고 이슈 #4는 닫지 않습니다.
+소스 커밋 `de0d511e60c99a6b84be33c9e3d7676746986c76`에서 재빌드한 설치 파일입니다. 새 패드 열기 검사를 포함한 12개 프로그램을 필수로 검증하며, 검토 후보와 같은 DLL·cfg·ZIP을 확인했습니다. 공개 페이지·다운로드 검증 영수증은 작업 환경의 `artifacts/releases/v1.0.5-alpha.6/`에 별도로 보존합니다.
+
+기존 Release·태그·자산과 Latest 정식 v1.0.4를 유지합니다. 실제 Windows 패드 탐색·스크롤·버튼과 주요 회귀는 사용자 확인 대기이며 이슈 #4를 완료 처리하지 않습니다.
+
+## 실제 게시·공개 다운로드 검증
+
+**2026-10-19 06:21:15 KST에 [v1.0.5-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.6) prerelease를 게시했습니다.** 소스·태그 커밋은 `de0d511e60c99a6b84be33c9e3d7676746986c76`, Release ID는 `416720471`, asset ID는 `654515746`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다.
+
+고정 커밋의 깨끗한 전체 소스 재빌드·12개 검사 프로그램과 입력 153개·생산 소스 입력 63개의 일치를 확인했습니다. DLL·cfg·ZIP은 앞서 검토한 후보와 같은 바이트입니다. 게시 검증기의 필수 검사 목록 보완에 대한 회귀 8개도 통과했습니다. 생성 시점의 로컬 후보 입력 영수증과 최종 고정 커밋 입력 manifest를 구분해 보존합니다.
+
+인증 없는 공개 페이지 접근과 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip) 다운로드에서 SHA-256·CRC·정확히 두 파일·DLL/설정 내부 바이트를 확인했습니다. 기존 19개 Release·태그 커밋·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다.
+
+영수증은 `artifacts/releases/v1.0.5-alpha.6/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드·검증 로그에 있습니다. 실제 공개 본문은 같은 폴더의 `release-body.md`로 보존했습니다. 공개 본문에서 임시 게시 준비 문구를 검증·설치 안내로 바꾸고 문서 링크를 고정 소스 URL로 풀었으며 로컬 산출물 링크를 제거했습니다. 이 게시 기록의 후속 문서 커밋은 태그·공개 ZIP을 바꾸지 않습니다.
+
+**실제 Windows 게임은 설치하거나 실행하지 않았으며 패드 탐색·스크롤·버튼·터치·주요 회귀 확인은 사용자 대기입니다. 이슈 #4를 완료 처리하지 않았습니다.**

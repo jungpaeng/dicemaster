@@ -1,8 +1,8 @@
 # 소스 기반 Release와 게시 이력
 
-## PRD #4 alpha.6 읽기 화면·조건 분기·패드 열기 게시 준비
+## PRD #4 alpha.6 읽기 화면·조건 분기·패드 열기 게시
 
-2026-10-19 KST에 사용자가 현재 수정의 커밋·prerelease 작성을 명시적으로 지시했습니다. 대상 예정은 `v1.0.5-alpha.6`, 설치 자산은 `DiceMaster-v1.0.5-alpha.6.zip`이며 [변경·검토 해시·설치·복구·Windows 확인표](ISSUE-4-ALPHA6-RELEASE.md)를 사용합니다. alpha.5 이후의 1920×1200 기준 872×960·20px 기본 배치, 선택지 읽기 전용 화면, 조건 분기 블록, 미션 정상 문구 생략·자동 스크롤바와 양쪽 스틱 클릭 열기를 포함합니다.
+2026-10-19 KST에 사용자가 현재 수정의 커밋·prerelease 작성을 명시적으로 지시했습니다. [v1.0.5-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.6)의 설치 자산은 [DiceMaster-v1.0.5-alpha.6.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip)이며 [변경·SHA-256·설치·복구·Windows 확인표](ISSUE-4-ALPHA6-RELEASE.md)를 사용합니다. alpha.5 이후의 1920×1200 기준 872×960·20px 기본 배치, 선택지 읽기 전용 화면, 조건 분기 블록, 미션 정상 문구 생략·자동 스크롤바와 양쪽 스틱 클릭 열기를 포함합니다.
 
 패드 열기는 사용자 후속 지시로 초기 제외 조건을 대체합니다. 같은 패드의 첫 스틱 클릭을 누른 채 반대쪽 클릭을 300ms 미만에 겹쳐 열며 기존 Tab·설정 키와 B 복귀·닫기를 유지합니다. `[DiceMaster].EnableGamepadLogOpen=true`가 기본이고 주사위 조정 옵션과 독립적입니다. 첫 클릭 중복을 막기 위해 옵션 활성·게임 초점·로그 닫힘에서 단독 L3/R3도 게임에 전달하지 않습니다. 이 제약, `false`와 해제·중립 후 복구, 게임 바인딩 자료 부재와 기존 Tab 진입 첫 입력 문제의 미해결 범위를 게시 본문에 포함합니다.
 
@@ -10,7 +10,11 @@
 
 사전 원격 확인에서 main은 로컬 기준 `8aa292970b8f46d5c5007bb29a61124b08577665`와 일치하고 기존 Release·태그는 각각 19개입니다. alpha.6 태그·Release는 없으며 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 확인했습니다. 게시 검증기의 필수 검사 목록을 12개로 보완하고 검증기 회귀 8개를 통과했습니다. 이때 빌드 도구 2개의 입력 해시만 바뀌었고 생산 소스 입력 63개는 동일합니다. 앞의 로컬 153개 입력 영수증은 후보 생성 당시 스냅샷이며, 최종 입력 근거는 아래 고정 커밋 재빌드 manifest로 분리합니다.
 
-고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 검토 DLL·설정·ZIP과 비교하고 결과는 `artifacts/releases/v1.0.5-alpha.6/`에 보존합니다. 새 prerelease는 `prerelease=true`·`make_latest=false`로 게시하며 기존 Release·태그·자산과 Latest 정식 v1.0.4를 보존합니다. **현재 이 절은 게시 준비이며 고정 커밋 검증·실제 게시·인증 없는 공개 페이지/ZIP 다운로드 확인은 완료로 기록하지 않습니다.** 실제 결과는 후속 기록으로 추가하고 게임 설치·실행·이슈 #4 완료는 수행하지 않습니다.
+**2026-10-19 06:21:15 KST에 prerelease를 게시했습니다.** 소스·태그 커밋은 `de0d511e60c99a6b84be33c9e3d7676746986c76`, Release ID는 `416720471`, asset ID는 `654515746`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 해당 커밋을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 전체 12개 검사와 입력 153개·생산 소스 63개 일치를 확인했습니다. DLL·설정·ZIP은 검토한 후보와 같은 바이트입니다.
+
+인증 없는 공개 페이지 접근·설치 ZIP 다운로드에서 SHA-256·CRC·정확히 두 파일·DLL/설정 내부 바이트를 확인했습니다. 기존 19개 Release·태그 커밋·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.6/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드·검증 로그에 있습니다.
+
+실제 공개 본문은 같은 폴더의 `release-body.md`로 보존합니다. 임시 준비 문구를 검증·설치 안내로 바꾸고 문서 링크를 고정 소스 URL로 풀었으며 로컬 산출물 링크를 제거했습니다. 게시 기록의 후속 문서 커밋은 태그·공개 설치 자산을 바꾸지 않습니다. **Windows 게임 설치·실행은 수행하지 않았으며 실제 패드·스크롤·버튼·터치 확인은 사용자 대기입니다. 이슈 #4를 완료 처리하지 않았습니다.**
 
 ## PRD #4 alpha.5 화면·탭·터치·미션 안내 후속
 
