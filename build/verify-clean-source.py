@@ -39,7 +39,8 @@ def main():
             'preexisting_dicemaster_dll_count': len(forbidden),
             'dll': record(result / 'DiceMaster.dll'), 'zip': record(result / 'DiceMaster-source-candidate.zip'),
             'tests': manifest['tests'], 'sdk': manifest['sdk'],
-            'windows_validation': 'not authorized / not performed',
+            'windows_validation': manifest['windows_validation'],
+            'default_build_switched': manifest['default_build_switched'],
         })
     print('CLEAN SOURCE BUILD PASS', report)
 

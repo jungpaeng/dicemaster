@@ -9,7 +9,7 @@ import tempfile
 import zipfile
 from source_build import (ARTIFACTS, REPOSITORY, BASELINE_COMMIT, BASELINE_SHA256,
                           sdk, references, build, behavior_tests, build_inputs, digest, record, write_json,
-                          artifact_directory)
+                          artifact_directory, release_policy)
 
 
 def main():
@@ -42,6 +42,7 @@ def main():
     dotnet, version = sdk()
     inputs = references(reference_root)
     input_hashes = build_inputs()
+    policy = release_policy()
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='dicemaster-source-') as directory:
         work = Path(directory)
@@ -80,8 +81,9 @@ def main():
         source_hashes = {str(path.relative_to(REPOSITORY)): digest(path) for path in source_files
                          if path.is_file() and not {'bin', 'obj'}.intersection(path.parts)}
         manifest = {
-            'status': 'local-source-candidate', 'default_build_switched': False,
-            'windows_validation': 'not authorized / not performed',
+            'status': 'local-source-candidate', 'default_build_switched': True,
+            'windows_validation': policy['windows_validation'],
+            'runtime_equivalence': 'Separate release verification must compare this build with the user-tested alpha.4 DLL.',
             'created_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'recovery_baseline': {'commit': BASELINE_COMMIT, 'sha256': BASELINE_SHA256,
                                   'used_as_normal_build_input': False},

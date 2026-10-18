@@ -1,12 +1,51 @@
-# 전체 소스 빌드 alpha.4 prerelease 기록
+# 전체 소스 빌드 전환과 Release 기록
 
 [소스 빌드·비교 계약](SOURCE-BUILD.md) · [Release·전환 조건](RELEASING.md) · [변경 이력](../CHANGELOG.md)
 
-## 승인과 현재 상태
+## v1.0.3 정식 전환 근거 — 2026-10-19
+
+사용자는 PRD #3가 완료되면 정식 Release를 발행하고 이슈 #3을 닫으라고 지시했으며, 뒤이어 **사용자 Windows 검증을 완료했고 alpha.4를 직접 내려받아 확인했다**고 답했습니다. 확인 대상은 공개 `DiceMaster-v1.0.3-alpha.4.zip`의 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 사용자 확인 날짜는 2026-10-19 KST이며 실제 실행 날짜·게임/BepInEx 버전·패드/Steam Input 환경·항목별 로그는 미제공입니다. 과거 읽기 전용 참조 자료의 버전 정보를 이 Windows 실행 환경으로 대입하지 않습니다.
+
+정식 `v1.0.3`은 현재 관리하는 전체 소스 프로젝트를 새로 빌드한 자산으로 준비합니다. alpha.4 이후 제품 C# 34개, 설정과 번역 데이터는 유지했고 번역 리소스의 주석 세 줄만 정리했습니다. 이 때문에 정식 후보 DLL의 전체 바이트와 해시는 alpha.4와 다릅니다. alpha.4와 정식 후보의 전체 IL·메타데이터·7개 리소스 바이트 및 나머지 번역 리소스의 데이터 동등성, 새 후보의 일곱 자동 검사와 alpha.3 기준 계약 비교를 따로 검증합니다. 사용자 확인 대상과 새 후보를 연결하는 이 비교를 새 후보의 직접 Windows 실행으로 표현하지 않습니다.
+
+기본 개발·배포는 전체 소스 빌드로 전환하며 `build/release-policy.json`에 전환 상태와 검증 출처를 둡니다. 기존 패치 명령은 별도 비교·복구 도구로 남기고, alpha.3 기준은 고정 Git 커밋에서 해시를 검증해 재생성합니다. 소스 커밋을 고정한 사전 검증을 통과한 뒤 새 정식 태그·Release를 게시하고, 공개 다운로드를 검증한 다음 이슈 #3을 종료합니다. 이 문서의 준비 기록은 아직 GitHub 게시·종료 결과를 뜻하지 않습니다. 기존 태그·Release·자산과 이슈 #1·#2 상태는 변경하지 않습니다.
+
+### PRD #3 수용 기준과 증거
+
+아래 번호는 [PRD #3의 Acceptance Criteria](https://github.com/jungpaeng/dicemaster/issues/3) 순서입니다. 자동 검사에서 사용하는 native/Unity 경계 대역, 사용자 확인, 별도 미제공 환경·측정 기록을 구분합니다.
+
+| 번호 | 수용 기준 | 구현·검증 근거 |
+|---|---|---|
+| 1 | alpha.3 기준과 전체 C#·모드 리소스 관리 | 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`, 기준 DLL `485581c2…`, `src/DiceMaster/` C# 34개·리소스 8개·`recovery-manifest.json`. 고정 DLL 새 추출의 `recover-source.py --check` 44개 파일 일치 |
+| 2 | 깨끗한 checkout에서 기존 DLL 없이 전체 빌드·설치 파일 생성 | `build/verify-release.py --source-commit <전체 SHA>`의 허용 목록 스냅샷은 기존 `DiceMaster.dll` 0개, `.git/`·옛 출력·외부 게임 자료 제외. 새 DLL과 정확히 두 파일 ZIP 생성 |
+| 3 | 정상 빌드의 추출·병합·IL 교체 의존성 제거와 중복 방지 | `src/DiceMaster/DiceMaster.csproj`가 26개 복원 소스와 8개 Gamepad/LiveLog 관리 소스를 한 번만 컴파일. 비교기의 타입·메서드·Harmony 수와 변조 거부 검사로 중복 타입·후킹 검출 |
+| 4 | 설정·식별·후킹/리플렉션·native ABI·리소스 계약 | `SourceBuildContractTests`와 `compatibility.json`의 alpha.3 계약 2,750개, 변조 거부 12종. 12개 소스 표현 차이와 번역 주석 세 줄의 의도한 정리는 [비교 계약](SOURCE-BUILD.md#검사-계약과-한계)에 명시 |
+| 5 | 실제 기능 검사를 새 빌드에 연결하고 변경 근거 기록 | 일곱 자동 검사: 로그 19, 엔진 16개 시나리오·70개 단언, 수명주기 4,023, 실제 파서/표시 통합 134, 게임 API 동작 3,914·메타데이터 1,011, 패드 262,715, 번역/주사위 2,170. 기준/후보 관찰값 4,341개 비교. 기존 IL 지문 검사와 동작 계약의 차이를 문서화 |
+| 6 | 참조·컴파일·검사·리소스 오류의 명확한 실패와 오래된 산출물 방지 | `verify-source-failures.py` 11종, 기준 재생성 13종, Release 출력 보호 4종 및 비교기 변조 거부 12종. 기존 성공 후보 보존·새 ZIP 미생성·오래된 PASS 제거 확인 |
+| 7 | 게임 DLL/소스 제외와 두 파일 설치 ZIP·새 DLL 일치 | 소스 허용 목록과 명시적 참조 15개 계약, ZIP CRC·파일 수·경로·설정/빌드 DLL 바이트·SHA-256 검사. 허용한 내장 MinHook 두 DLL 외 게임 DLL·게임 소스는 포함하지 않음 |
+| 8 | 사용자 Windows에서 기존 동작·설치·설정·native/Harmony/UI/패드 확인과 식별 기록 | 2026-10-19 사용자 본인의 포괄적 Windows 검증 완료 확인, 직접 다운로드한 공개 alpha.4와 위 DLL 식별. 게임/BepInEx·패드 환경·세부 경로별 로그는 미제공으로 명시. 정식 후보는 alpha.4 대비 별도 동등성 비교로 연결하며 직접 Windows 실행을 주장하지 않음 |
+| 9 | 조건 충족 후 기본 빌드 전환·문서·복구 절차 갱신 | `build/release-policy.json`, README·개발·소스 빌드·Release·변경 이력의 기본 경로를 소스 빌드로 전환. [Release·복구 안내](RELEASING.md)에 이전 공개 자산 또는 고정 Git 기준 DLL을 이용한 복구와 설정/세이브 유지, 실제 롤백 기록 미제공을 구분 |
+| 10 | #2 이전 빌드 기반 전환과 기존 이슈/미확인 범위 분리 | #2 효과 분석 확장은 구현하지 않음. alpha.3의 알려진 대기 제한·독립 난수 설명·#1의 별도 수용 기준을 유지. 다른 환경 호환성·실제 게임 성능·개별 Windows 실행 로그를 새로 검증했다고 표현하지 않음 |
+
+### 정식 자산 확인 절차
+
+정식 준비 입력의 새 검증에서 alpha.4 고정 커밋의 DLL·ZIP 공개 해시 재현과 설정 바이트 일치를 확인했습니다. 전체 타입 91개·메서드 525개(본문 496개)·메타데이터/IL 1,313항목·Harmony 속성 61개·P/Invoke 3개가 동일하며 변조 8종을 거부했습니다. 리소스 7개는 바이트 일치하고 하나의 정확한 주석 세 줄 변경만 허용합니다. 새 일곱 검사·alpha.3 기준 계약 2,750개/변조 12종/동작 4,341개·Git 없는 격리 빌드·실패 경로 11종도 통과했습니다. 커밋 확정 후 같은 검사를 고정 커밋으로 다시 수행하고 최종 영수증을 게시 결과와 연결합니다.
+
+```sh
+python3 build/verify-release.py \
+  --references '<읽기 전용 참조 루트>' \
+  --source-commit '<정식 소스 40자리 커밋 SHA>' \
+  --version v1.0.3 \
+  --output-dir artifacts/releases/v1.0.3
+```
+
+출력 폴더는 비어 있거나 없어야 합니다. `release-verification.json`의 커밋·입력 해시·SDK·참조·DLL·ZIP·검사 결과를 확인하고, 게시 뒤 `github-publication.json`과 `anonymous-verification.json`으로 `draft=false`·`prerelease=false`, 설치 자산의 공개 다운로드·CRC·두 파일·동일 DLL/설정·해시를 대조합니다. 소스 태그와 자산을 변경하지 않는 후속 문서 커밋에 최종 게시 ID·시각·이슈 종료 결과를 기록합니다.
+
+## alpha.4 prerelease 당시 승인과 상태
 
 사용자 승인에 따라 C# 프로젝트 구조 변경을 commit·push하고 **[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 고정 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`에서 프로젝트를 다시 빌드·자동 검사했습니다. 설치 자산은 `DiceMaster-v1.0.3-alpha.4.zip`이며 익명 공개 API와 실제 자산 다운로드 검증을 마쳤습니다. 이 문서는 확인된 게시 결과를 기록하는 후속 문서 변경이며 소스 태그·자산을 바꾸지 않습니다.
 
-기존 여섯 태그·Release·자산을 덮어쓰지 않았으며 Latest 정식 `v1.0.2` (Release ID `416349430`)를 유지했습니다. alpha.4는 `draft=false`, `prerelease=true`, `make_latest=false`로 게시했습니다. Windows 설치·게임 실행은 수행하거나 요청하지 않습니다. 기본 빌드 전환·PRD #3 전체 완료·이슈 종료·정식 Release는 보류합니다. 이슈 #2의 기능 확장은 포함하지 않습니다.
+기존 여섯 태그·Release·자산을 덮어쓰지 않았으며 당시 Latest 정식 `v1.0.2` (Release ID `416349430`)를 유지했습니다. alpha.4는 `draft=false`, `prerelease=true`, `make_latest=false`로 게시했습니다. 이 게시 당시에는 Windows 설치·게임 실행을 수행하거나 요청하지 않았고 기본 빌드 전환·PRD #3 전체 완료·이슈 종료·정식 Release를 보류했습니다. 이슈 #2의 기능 확장은 포함하지 않았습니다.
 
 ## 태그와 설치 자산의 대응
 
@@ -79,4 +118,4 @@ python3 build/verify-source.py \
 
 로컬 영수증 위치는 `artifacts/releases/v1.0.3-alpha.4/`입니다. `source-provenance.json`으로 고정 소스 커밋에서 만든 새 소스 스냅샷과 일반 빌드 시작 시 기존 모드 DLL 0개를 기록합니다. `build-manifest.json`, `compatibility.json`/`.log`, `commit-build.log`는 빌드·검사를, `release-manifest.json`, `github-publication.json`, `anonymous-verification.json`은 자산·게시·공개 다운로드를 추적합니다. 이 생성 파일은 Git에서 제외하며 이 문서에 핵심 결과를 남깁니다.
 
-native Unity·실제 리소스 로드·Harmony 설치·다른 모드·Windows UI·XInput·사용자 설정 유지 업데이트/롤백·실제 게임 성능은 미검증입니다. 별도 승인 후 같은 DLL 식별값으로 사용자 Windows 확인을 마쳐야 기본 빌드·배포 전환을 검토할 수 있습니다. alpha.3의 다음 성공 Lua까지 대기하는 알려진 제한과 이슈 #1 미완료 조건도 유지합니다.
+alpha.4 게시 당시에는 native Unity·실제 리소스 로드·Harmony 설치·다른 모드·Windows UI·XInput·사용자 설정 유지 업데이트/롤백·실제 게임 성능을 Windows에서 검증하지 않았습니다. 이후 사용자 본인이 공개 alpha.4의 Windows 검증 완료를 확인한 내용과 미제공 환경·실행 기록은 이 문서의 정식 전환 근거로 분리합니다. alpha.3의 다음 성공 Lua까지 대기하는 알려진 제한과 이슈 #1의 별도 수용 기준은 유지합니다.

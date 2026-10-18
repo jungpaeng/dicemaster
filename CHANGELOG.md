@@ -3,6 +3,16 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
+## v1.0.3 — 정식 발행 준비 (2026-10-19)
+
+- 기본 개발·배포 경로를 `src/DiceMaster/DiceMaster.csproj`의 전체 소스 빌드로 전환합니다. Gamepad·LiveLog를 같은 프로젝트에서 한 번 컴파일하며 기존 모드 DLL을 입력으로 사용하지 않습니다. `tools/LegacyPatch/`는 비교·복구용으로 남깁니다.
+- 루트 `config/`·`plugins/` 사본을 제거했습니다. 설정은 `packaging/config/DiceMaster.cfg`에서 읽고 alpha.3 비교 기준은 고정 Git 커밋의 DLL blob과 SHA-256으로 재생성합니다. Release ZIP의 설정·새 DLL 두 파일 구조는 유지합니다.
+- 모드 전용 자료·참조를 정리하고 번역 리소스의 주석 세 줄을 수정했습니다. alpha.4 이후 제품 C# 34개와 나머지 내장 리소스 7개, 번역의 비주석 데이터는 그대로 유지합니다.
+- 사용자가 2026-10-19 공개 alpha.4를 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 대상 DLL은 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`이며 게임·BepInEx·패드 환경과 항목별 결과는 제공되지 않았습니다. 현재 정식 준비 DLL을 Windows에서 별도로 실행했다고 기록하지 않습니다. 두 산출물의 비교·자동 검사와 게시 식별은 [소스 빌드 안내](docs/SOURCE-BUILD.md)와 [배포 기록](docs/ISSUE-3-RELEASE.md)에 남깁니다.
+- 이번 완료 범위는 PRD #3의 전체 소스 복원·빌드 전환입니다. 이슈 #1·#2의 기능과 상태는 추가 변경하지 않으며 기존 알려진 제한은 보존합니다. 기존 어셈블리·플러그인 내부 버전과 런타임 동작 계약을 유지합니다.
+
+아래 prerelease 절의 보류·권한·기본 빌드 설명은 각 게시 당시의 기록입니다. 현재 전환 상태는 이 절과 [개발 안내](docs/DEVELOPMENT.md)를 따릅니다.
+
 ## [v1.0.3-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4) — 2026-10-18 (prerelease)
 
 사용자 승인에 따라 구조 변경을 commit·push하고 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`에서 전체 소스 DLL을 새로 빌드했습니다. 2026-10-18 23:42:14 KST에 `draft=false`, `prerelease=true`, 최신 정식 지정 없이 게시했습니다. 익명 공개 API·설치 ZIP 다운로드의 CRC·정확히 두 파일·소스 빌드 DLL/태그의 패키지 설정 바이트·SHA-256 일치를 확인했습니다. Release ID `416503505`, asset ID `653700999`입니다. [이슈 #3 배포 기록](docs/ISSUE-3-RELEASE.md)에 최종 검사와 식별값을 기록했습니다.

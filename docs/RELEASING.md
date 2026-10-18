@@ -1,8 +1,18 @@
-# prerelease 게시와 정식 Release 조건
+# 소스 기반 Release와 게시 이력
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)
 
-사용자 승인에 따라 현재 C# 프로젝트 구조 변경을 commit·push하고 **[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 태그의 소스 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`을 새로 빌드·검사한 `DiceMaster-v1.0.3-alpha.4.zip`이며 `draft=false`, `prerelease=true`, `make_latest=false`로 게시했습니다. Release ID `416503505`, asset ID `653700999`입니다. 익명 공개 API·다운로드 검증을 마쳤고 식별값과 검사 증거는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 기존 여섯 Release·자산과 Latest 정식 `v1.0.2`를 유지했습니다. 이 승인은 Windows 설치·실행, 기본 빌드 전환, 정식 Release나 이슈 종료를 포함하지 않습니다.
+## v1.0.3 정식 전환 — 2026-10-19
+
+사용자는 PRD #3 완료 시 정식 Release 게시와 이슈 종료를 지시했고, 2026-10-19 KST에 **Windows 검증을 완료했으며 공개된 alpha.4를 직접 내려받아 사용했다**고 확인했습니다. 이를 alpha.4 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`에 대한 사용자 확인으로 기록합니다. 게임·BepInEx 버전, 패드/Steam Input 환경, 항목별 결과·로그·업데이트/롤백 증거는 별도 제공되지 않았습니다. 이 환경을 과거 수신 참조의 환경으로 추정하거나 정식 후보를 직접 Windows에서 실행했다고 기록하지 않습니다.
+
+현재 정식 `v1.0.3` 게시를 준비합니다. 일반 개발·배포 경로는 전체 소스 빌드이며 정책·사용자 확인·비교 근거는 `build/release-policy.json`과 [이슈 #3 완료 근거](ISSUE-3-RELEASE.md)에 연결합니다. alpha.4 이후 제품 C# 34개와 설정은 바꾸지 않았고 번역 리소스 주석 세 줄을 정리했으므로 DLL 전체 해시는 달라집니다. 정식 후보는 새 자동 검사와 alpha.4 대비 전체 IL·메타데이터·native 리소스·실제 번역 데이터 동등성 검사를 통과한 결과만 게시합니다. 이는 사용자 확인 대상과 새 후보의 연결 근거이며 새 후보에 대한 별도 Windows 실행 기록은 아닙니다.
+
+정식 자산은 `DiceMaster-v1.0.3.zip`이며 설정과 새 소스 빌드 DLL 두 파일만 포함합니다. 고정 소스 커밋의 Release 사전 검증, 게시 후 익명 공개 다운로드·CRC·파일/해시 검증을 마친 뒤 이슈 #3을 종료합니다. 기존 태그·Release·공개 파일은 덮어쓰지 않습니다. 이슈 #1의 과거 수용 기준이나 이슈 #2의 기능 확장 완료를 이 전환의 결과로 선언하지 않으며 두 이슈 상태도 변경하지 않습니다.
+
+## alpha.4 및 이전 prerelease의 당시 승인 범위
+
+사용자 승인에 따라 C# 프로젝트 구조 변경을 commit·push하고 **[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 태그의 소스 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`을 새로 빌드·검사한 `DiceMaster-v1.0.3-alpha.4.zip`이며 `draft=false`, `prerelease=true`, `make_latest=false`로 게시했습니다. Release ID `416503505`, asset ID `653700999`입니다. 익명 공개 API·다운로드 검증을 마쳤고 식별값과 검사 증거는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 당시 기존 여섯 Release·자산과 Latest 정식 `v1.0.2`를 유지했습니다. 당시 승인은 Windows 설치·실행, 기본 빌드 전환, 정식 Release나 이슈 종료를 포함하지 않았습니다.
 
 사용자가 모드 전용 독립 난수의 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. 실제 게임 판정의 예측값이 아니라는 의미는 문서·게시 설명에 기록합니다. 최종 자동 검사·파일·로컬 ZIP 검증과 새 prerelease 게시·익명 공개 다운로드 검증을 마쳤습니다. 기존 수치를 승계하지 않습니다.
 
@@ -10,13 +20,13 @@
 
 **[`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 2026-10-18 21:08:36 KST에 게시하고 공개 다운로드 검증을 마쳤습니다.** GitHub 상태는 `draft=false`, `prerelease=true`입니다. 이 게시로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
 
-현재 Windows PC는 기존 파일·정보 읽기만 허용되어 있으며 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. prerelease 게시 승인은 이 PC에서의 게임 실행 승인이 아닙니다. 실행을 요청하거나 수행하지 않습니다.
+이 prerelease 게시 당시에는 Windows PC의 기존 파일·정보 읽기만 허용됐고 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. 이후 사용자 본인의 alpha.4 검증 완료 확인은 위 정식 전환 기록으로 분리합니다. 에이전트가 Windows 설치나 게임 실행을 수행하거나 요청한 것은 아닙니다.
 
-## 이슈 #3 전체 소스 후보의 전환 조건
+## 이슈 #3 전체 소스 빌드와 Release 검사
 
 전체 소스 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`이며 기준 DLL SHA-256은 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. [전체 소스 빌드](SOURCE-BUILD.md)는 별도 후보 DLL과 두 파일 ZIP을 만듭니다. 게시한 alpha.4 prerelease는 고정 태그 커밋의 `src/DiceMaster/DiceMaster.csproj`를 빌드한 DLL과 같은 커밋의 `packaging/config/DiceMaster.cfg`를 묶습니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 기존 alpha.3 비교·복구 기준이므로 게시 자산 DLL과 다릅니다. 태그에 기존 DLL을 교체하지 않고 빌드 영수증·해시·공개 다운로드로 소스 커밋과 자산을 연결합니다.
 
-저장소 구성은 루트 솔루션과 `src/`·`tests/`·`build/`·`tools/`·`packaging/`으로 정리했습니다. 일반 컴파일 DLL은 `artifacts/bin/DiceMaster/release/`, 자동 검사한 후보 DLL·ZIP·영수증은 `artifacts/source-candidate/`에 생성합니다. 루트 `config/`·`plugins/`는 제거했으며 새 후보 ZIP의 설정은 `packaging/config/DiceMaster.cfg`에서 읽습니다. ZIP 내부 설치 경로는 계속 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`입니다. 비교·복원 기준은 `python3 build/baseline.py`로 고정 Git 커밋에서 꺼내 해시 확인 후 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll`에 둡니다. 기존 패치 명령의 기본 입력도 이 기준이며 출력은 `artifacts/legacy-candidate/`로 분리합니다. 기존 태그·배포 자산과 기본 전환 보류 조건은 유지합니다.
+저장소 구성은 루트 솔루션과 `src/`·`tests/`·`build/`·`tools/`·`packaging/`으로 정리했습니다. 일반 컴파일 DLL은 `artifacts/bin/DiceMaster/release/`, 자동 검사한 후보 DLL·ZIP·영수증은 `artifacts/source-candidate/`에 생성합니다. 루트 `config/`·`plugins/`는 제거했으며 ZIP의 설정은 `packaging/config/DiceMaster.cfg`에서 읽습니다. ZIP 내부 설치 경로는 계속 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`입니다. 비교·최초 복원 기준은 `python3 build/baseline.py`로 고정 Git 커밋에서 꺼내 해시 확인 후 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll`에 둡니다. 기준 DLL과 기존 패치 공정은 일반 빌드 입력이 아니며 별도 비교·복구 경로로 유지합니다. 기존 패치의 출력은 `artifacts/legacy-candidate/`로 분리합니다.
 
 Release 후보 사전 검증은 다음 명령으로 수행합니다. 관리 소스만 담은 스냅샷에서 기존 모드 DLL과 `.git/` 없이 빌드·일곱 검사를 실행하고, 고정 기준 비교·변조 거부·ZIP CRC·두 파일·빌드 DLL/패키지 설정 바이트·SHA-256을 확인합니다.
 
@@ -26,18 +36,18 @@ python3 build/verify-release.py \
   --output-dir artifacts/release-candidate
 ```
 
-완료 결과는 `release-verification.json`과 빌드·호환성 보고서 및 로그로 기록합니다. 게시할 커밋 확정 후에는 `--source-commit <40자리 전체 커밋 SHA>`로 그 커밋만 검사하고 `--version vX.Y.Z...`로 ZIP 자산명을 정할 수 있습니다. 기존 영수증을 덮어쓰지 않도록 출력 폴더는 비어 있거나 없어야 하며 재실행에는 새 경로를 지정합니다. 이 명령은 로컬 검증만 수행합니다. 새 태그·게시·push는 별도 사용자 지시에 따라 실행하며 현재 루트 정리 작업으로 기존 alpha.4 태그나 자산을 바꾸지 않습니다.
+완료 결과는 `release-verification.json`과 빌드·호환성 보고서 및 로그로 기록합니다. 게시할 커밋 확정 후에는 `--source-commit <40자리 전체 커밋 SHA>`로 그 커밋만 검사하고 `--version v1.0.3`으로 ZIP 자산명을 정합니다. 기존 영수증을 덮어쓰지 않도록 출력 폴더는 비어 있거나 없어야 하며 재실행에는 새 경로를 지정합니다. 이 명령은 로컬 검증만 수행합니다. 새 태그·게시·push는 사용자의 정식 게시 지시에 따라 별도로 실행하며 기존 alpha.4 태그나 자산은 바꾸지 않습니다.
 
-후보를 기본 개발·배포 경로로 바꾸려면 같은 후보 식별값으로 다음 증거를 모두 확보해야 합니다.
+기본 개발·배포 경로 전환의 증거는 다음과 같이 구분합니다.
 
 - 기존 모드 DLL 없이 새 소스 빌드·ZIP 생성, 기존 자동 검사 및 기준과의 동작·메타데이터·후킹·native ABI·8개 내장 리소스 비교 통과
-- 향후 별도 승인 후 사용자가 기록한 Windows 설치·설정 유지·네 탭/UI/번역·주사위/패드·Harmony/native·로그·난수·수명주기 확인
+- 2026-10-19 사용자가 기록한 공개 alpha.4 Windows 검증 완료 확인과, 그 DLL에서 새 후보로의 동등성 비교. 사용자 미제공 환경·항목별 로그는 미제공으로 명시
 - 게임 DLL·게임 소스가 저장소와 ZIP에 없고 ZIP이 설정·새 DLL 두 파일만 포함한다는 확인
 - 기본 명령·문서·산출물 생성 경로를 전환하고 이전 기본 빌드·배포 DLL로 복구할 수 있다는 확인
 
-Windows 설치·실행은 현재 수행하거나 요청하지 않습니다. 자동 검사만 통과한 후보는 이슈 #3 완료나 기본 전환의 근거가 되지 않습니다. 이슈 #1의 알려진 제한과 미완료 조건, 이슈 #2의 기능 확장은 별도로 유지합니다. 이번 alpha.4 게시 승인은 Windows 실행 승인이 아니며 과거 prerelease도 전환 증거로 승계하지 않습니다.
+Windows 설치·실행을 에이전트가 수행하거나 요청하지 않습니다. 자동 검사와 사용자 확인은 서로 다른 증거이며, 사용자 확인을 모든 Windows 환경·성능·개별 경로의 검증 기록으로 확대하지 않습니다. 이슈 #1의 알려진 제한과 미완료 조건, 이슈 #2의 기능 확장은 별도로 유지합니다.
 
-전환 전 비교·복구는 후보 출력 디렉터리를 별도로 만들고 고정 Git 커밋에서 alpha.3 기준을 재생성하여 기존 패치 공정에 사용하는 것입니다. 참조 폴더나 기존 게시 파일을 덮어쓰지 않습니다. 향후 승인된 설치 뒤 문제가 생기면 게임을 종료하고 보관한 alpha.3 DLL을 복원하며 기존 설정과 세이브를 유지합니다. 이 실제 Windows 업데이트·롤백은 아직 확인하지 않았습니다. v1.0.2의 선택지 결과 소실, 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기하는 alpha.3의 알려진 제한은 소스 복원으로 해결했다고 표시하지 않습니다.
+비교·복구는 별도 후보 디렉터리에 고정 Git 커밋에서 alpha.3 기준을 재생성하여 기존 패치 공정에 사용하거나 이전 공개 alpha.4 설치 자산을 사용하는 것입니다. 참조 폴더나 기존 게시 파일을 덮어쓰지 않습니다. 설치 뒤 문제가 생기면 게임을 종료하고 보관한 이전 DLL을 복원하며 기존 설정과 세이브를 유지합니다. 실제 Windows 업데이트·롤백의 별도 실행 기록은 제공되지 않았습니다. v1.0.2의 선택지 결과 소실, 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기하는 alpha.3의 알려진 제한은 소스 복원으로 해결했다고 표시하지 않습니다.
 
 ## alpha.3 게시 기록
 
@@ -82,9 +92,9 @@ alpha.1 후보는 캐시/보호 19개, 엔진 16개 시나리오·70개 단언, 
 
 alpha.1의 난수 실패 정책과 alpha.2에 반영한 범위·판정 미정·전용 미지원 표시의 차이, 제자리 복원 뒤 다음 성공 Lua까지 대기할 수 있는 동작을 알려야 합니다. native Unity·실제 리소스·Harmony·다른 모드·UI·Windows·실제 게임 성능은 미검증입니다. 모의 엔진의 벤치마크를 실제 게임 성능으로 기재하지 않습니다.
 
-## 기능 완료·정식 Release 전에 필요한 증거
+## 이슈 #1의 별도 기능 완료 증거
 
-[검증 기록](ISSUE-1-VALIDATION.md)의 모든 수용 기준을 실제 증거에 연결해야 합니다. 미확인·실패가 남아 있으면 기능 완료·이슈 완료·정식 Release로 처리하지 않습니다. 이 조건은 이번에 승인된 prerelease 게시를 막는 조건과 구분합니다.
+[이슈 #1 검증 기록](ISSUE-1-VALIDATION.md)의 기능·실제 성능 수용 기준은 이슈 #3의 소스 빌드 전환과 별개입니다. 아래는 이슈 #1 당시 남긴 확인 목록이며, 이번 alpha.4 사용자 확인으로 측정값이나 항목별 결과가 추가됐다고 처리하지 않습니다. 이 목록을 정식 v1.0.3 전체 소스 빌드 전환의 새 요구사항으로 확대하거나 이슈 #1의 완료를 재판정하지 않습니다.
 
 - 실제 파서·공유 캐시·표시·선택지 요약의 연속 갱신과 기존 기능 보존
 - 현재 탭·세 상태·5초 재시도·수동 복구·진단 로그 동작
@@ -94,8 +104,8 @@ alpha.1의 난수 실패 정책과 alpha.2에 반영한 범위·판정 미정·�
 - 별도 승인 후 사용자가 기록한 Windows 검증과 실제 게임 시간·할당량 측정
 - 최종 DLL·소스·도구·문서·ZIP 일치, 반복 패치·패드 재빌드·리소스 보존
 
-## 향후 롤백 검증
+## 롤백 안내와 확인 범위
 
-기존 설정과 세이브 형식은 변경하지 않습니다. 이전 Release 또는 보관 DLL 복원과 설정 유지 여부는 향후 별도 승인된 Windows 검증 대상입니다. 현재 Windows에 후보를 설치하거나 복원하도록 요청하지 않습니다.
+기존 설정과 세이브 형식은 변경하지 않습니다. 이전 Release 또는 보관 DLL 복원과 설정 유지 여부의 항목별 Windows 결과는 사용자가 별도 제공하지 않았습니다. 이번 작업에서 Windows에 설치하거나 복원하도록 요청하지 않습니다.
 
 v1.0.2로 돌아가면 선택지 결과 소실 문제가 다시 나타날 수 있습니다. v1.0.1에는 자동 로그 갱신이 없습니다. 실제 업데이트·롤백은 아직 검증하지 않았습니다.

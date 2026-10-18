@@ -1,18 +1,16 @@
 # 개발 안내
 
-[사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
+[사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
 ## 개발 범위
 
-현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 모드 C#·리소스 복원과 별도 전체 소스 빌드 후보입니다. 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 전체 소스 구성·재생성·빌드·검사·실패 처리와 남은 검증은 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 패치 공정은 유지하며 기준 DLL은 고정 Git 커밋에서 재생성합니다.
+현재 기본 개발·배포 경로는 `src/DiceMaster/DiceMaster.csproj`의 전체 소스 빌드입니다. [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 전체 모드 C#·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 기존 `DiceMaster.dll`을 컴파일 입력으로 읽거나 패치하지 않습니다. 루트 솔루션·검증·Release 패키징을 이 경로에 맞춰 사용하며 정식 `v1.0.3` 발행을 준비합니다. 기본 정책과 사용자 확인 근거는 `build/release-policy.json`에서 관리합니다.
 
-다음은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 숫자 갱신 후속 구현입니다. 사용자가 모드 전용 `System.Random`으로 계산하고 UI 부가 문구를 붙이지 않는 변경과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명 안에서 결과를 재사용해 숫자·조건 색상·이벤트 확률 설명을 일치시키며, 게임 RNG와 조건 실행 카운터는 변경하지 않습니다. 실제 게임의 미래 판정을 예측하는 기능은 아닙니다. 새 소스의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 관리 동작 3,914개·메타데이터 1,011개·통합 134개를 최초/반복에서, 최종 패드 525,430개를 통과했고 11개 프로젝트의 MSBuild 경고·오류는 0입니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록 문서 후속 커밋은 위 태그·ZIP의 기준을 바꾸지 않습니다. [검증 기록](ISSUE-1-VALIDATION.md)에 파일 해시·검사 범위를 남기고 이전 버전 결과를 승계하지 않습니다.
+복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 구성·재생성·빌드·검사·실패 처리는 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 패치 공정은 비교·복구용으로 보존하며 입력은 고정 Git 커밋에서 해시를 검증해 재생성하고 출력은 `artifacts/legacy-candidate/`에 분리합니다.
 
-[`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST에 배포 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 게시했습니다. 두 prerelease의 공개 다운로드·ZIP·DLL 바이트 일치를 검증했으며 각 이력을 보존합니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능·이슈 완료로 표시하거나 정식 Release를 공개하지 않습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했지만 runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다.
+2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 대상은 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`에서 빌드한 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 현재 정식 준비 DLL은 번역 리소스의 주석 세 줄 정리로 전체 해시가 다릅니다. Windows 사용자 확인과 두 DLL의 자동 비교를 별도 증거로 기록하며 현재 정식 준비 DLL 자체를 Windows에서 새로 실행한 결과로 바꾸어 쓰지 않습니다. 게임·로더·패드 환경과 세부 검증 결과는 제공되지 않았습니다. 이 작업 중 에이전트가 Windows 설치·게임 실행을 수행하거나 요청하지 않습니다.
 
-전환 전 **기존 패치 공정**은 고정 alpha.3 Git 커밋에서 재생성한 기준 DLL에 패드 확장·로그 갱신 패치를 적용합니다. 아래 기존 패치 도구 안내는 비교·복구 경로로 보존하며 출력은 `artifacts/legacy-candidate/`에 분리합니다. 별도 소스 빌드는 선택지 파서·번역·UI를 포함한 전체 모드를 관리 소스에서 컴파일하며 기존 모드 DLL을 읽거나 패치하지 않습니다.
-
-자동 검사와 사용자 Windows 확인을 모두 통과하기 전에는 기본 빌드를 바꾸지 않습니다. 사용자 승인에 따라 폴더 구조 변경을 commit·push하고 `v1.0.3-alpha.4` prerelease를 2026-10-18 23:42:14 KST에 게시했습니다. 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 소스 프로젝트를 기존 모드 DLL 없는 스냅샷에서 새로 빌드·검사했고 공개 다운로드의 두 파일·CRC·DLL/설정 바이트·해시 일치를 확인했습니다. alpha.4 태그 당시 루트의 alpha.3 기준 DLL과 새 설치 ZIP의 DLL은 서로 다릅니다. 현재 작업 트리는 루트 사본을 제거하고 고정 Git 커밋에서 기준을 재생성합니다. 게시 결과·자산 식별과 재현 절차는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 이슈 #2 확장, 이슈 #1 미완료 조건 해결, Windows 설치·게임 실행·이슈 종료·정식 Release는 이번 작업에 포함하지 않습니다.
+이 전환은 기존 동작을 보존하는 소스 복원 범위입니다. 로그 갱신과 모드 전용 난수는 alpha.3에서 이어지며 실제 게임의 미래 판정을 예측하지 않습니다. 이슈 #1·#2의 기능이나 상태를 이번 작업에서 추가 변경하지 않습니다. 다음 성공 Lua까지 기다릴 수 있는 기존 수명주기 제한과 과거 검증 기록은 보존합니다. 이전 prerelease의 게시 커밋·검사·해시는 [배포 기록](ISSUE-3-RELEASE.md)과 [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md)에서 당시 기록으로 확인할 수 있습니다.
 
 ## 파일 구성
 
@@ -43,6 +41,7 @@ build/
 ├── verify-clean-source.py            # 기존 모드 DLL 없는 격리 빌드
 ├── verify-source-failures.py          # 실패 진단·산출물 보존 검사
 ├── verify-release.py                 # 소스 스냅샷 빌드·비교·Release ZIP 검사
+├── release-policy.json              # 기본 소스 빌드·Windows 사용자 확인 근거
 └── reference-contract.json           # 읽기 전용 외부 참조의 고정 해시
 tools/
 ├── SourceRecovery/                   # 기준 DLL에서 최초 복원 재현·템플릿
@@ -90,11 +89,11 @@ dotnet build DiceMaster.sln -c Release \
 python3 build/build-source.py --references '<읽기 전용 참조 루트>'
 ```
 
-이 결과는 `artifacts/source-candidate/`에 DLL·ZIP·영수증을 함께 생성합니다. 산출물을 한 후보 폴더에서 교체해야 검사 실패나 중단 시 서로 다른 실행의 DLL과 ZIP이 섞이지 않으므로, 검증 후보는 일반 컴파일 결과와 별도 위치를 사용합니다. 참조 해시·기존 모드 DLL 없는 빌드·기준 비교·재생성은 [SOURCE-BUILD.md](SOURCE-BUILD.md)를 따릅니다. 이 구조 정리는 기존 배포 DLL의 전환이나 Windows 검증 완료를 뜻하지 않습니다.
+이 결과는 `artifacts/source-candidate/`에 DLL·ZIP·영수증을 함께 생성합니다. 산출물을 한 후보 폴더에서 교체해야 검사 실패나 중단 시 서로 다른 실행의 DLL과 ZIP이 섞이지 않으므로, 검증 후보는 일반 컴파일 결과와 별도 위치를 사용합니다. 참조 해시·기존 모드 DLL 없는 빌드·기준 비교·재생성은 [SOURCE-BUILD.md](SOURCE-BUILD.md)를 따릅니다. 기본 개발·배포에 이 소스 빌드를 사용하며 자동 검사 결과와 alpha.4 사용자 Windows 확인 근거를 함께 기록합니다.
 
-## 기존 기본 패치 빌드 방법
+## 비교·복구용 기존 패치 빌드 방법
 
-전체 소스 후보의 일반 빌드와 검사는 [SOURCE-BUILD.md](SOURCE-BUILD.md)를 따릅니다. 아래 기존 패치 명령은 이전 공정을 재현하거나 비교·복구할 때 사용합니다. 자동 검사와 사용자 Windows 확인이 모두 완료되기 전에는 소스 후보로 기본 경로를 바꾸지 않습니다.
+기본 전체 소스 빌드와 검사는 [SOURCE-BUILD.md](SOURCE-BUILD.md)를 따릅니다. 아래 기존 패치 명령은 이전 공정을 재현하거나 비교·복구할 때 사용하며 일반 제품 빌드·배포에는 사용하지 않습니다.
 
 아래 명령은 macOS의 로컬 개발 후보 생성·검사 예시이며 Windows 게임 설치·실행이나 배포가 아닙니다. 읽기 전용 수신 참조는 입력으로만 사용합니다.
 
@@ -153,7 +152,7 @@ LB를 먼저 놓아도 조정에 사용한 B·방향키는 해당 버튼을 놓�
 
 ## 기존 기능의 구현 위치
 
-다음 기능은 전체 소스 후보에서 `src/DiceMaster/`로 복원합니다. 아래 이름은 기준 DLL과 복원 소스를 대조할 때의 탐색 기준입니다. 기존 기본 패치 빌드는 같은 기능이 들어 있는 DLL을 계속 입력으로 사용합니다.
+다음 기능은 `src/DiceMaster/`의 전체 소스로 복원했습니다. 아래 이름은 기준 DLL과 복원 소스를 대조할 때의 탐색 기준입니다. 기존 패치 도구가 같은 기능이 들어 있는 DLL을 입력으로 사용하는 경로는 비교·복구용으로만 보존합니다.
 
 | 기능 | 주요 클래스·메서드 |
 |---|---|
@@ -184,7 +183,7 @@ v1.0.2는 자동 갱신에서 네 탭의 표시를 한꺼번에 재구성합니�
 
 전달받은 실제 게임 DLL에서 확인한 `SaveSystem`의 새 게임·공개 로드·공통 로드 6개 메서드와 private `SceneController.StartLoadScene`의 Prefix에서 문맥을 무효화합니다. Prefix/Postfix/Finalizer는 `LifecycleState`의 호출 토큰으로 중첩·중복·오래된 콜백을 구분합니다. void 로드 반환과 씬 코루틴 생성은 준비 완료로 처리하지 않습니다.
 
-Lua Prefix는 원문을 임시 보관하고 이전 문맥을 지우며, `LoadLuaFunction`의 non-null 결과 Postfix에서만 새 분석을 활성화합니다. null·예외·누락 스크립트·전환 중 완료는 계속 차단합니다. 억제 중 자동·수동·탭 전환은 이전 원문 재분석이나 현재값 조회를 하지 않습니다. 제자리 복원이 새 Lua를 만들지 않는 경우 다음 실제 성공 Lua까지 대기하는 것이 현재 안전 정책입니다. 이 연결의 실제 Harmony·UI 실행 검증은 남아 있습니다.
+Lua Prefix는 원문을 임시 보관하고 이전 문맥을 지우며, `LoadLuaFunction`의 non-null 결과 Postfix에서만 새 분석을 활성화합니다. null·예외·누락 스크립트·전환 중 완료는 계속 차단합니다. 억제 중 자동·수동·탭 전환은 이전 원문 재분석이나 현재값 조회를 하지 않습니다. 제자리 복원이 새 Lua를 만들지 않는 경우 다음 실제 성공 Lua까지 대기하는 것이 현재 안전 정책입니다. 이 연결의 자동 검사와 alpha.4 사용자 Windows 완료 확인을 구분해 기록하며 Harmony·UI 항목별 상세 결과는 제공되지 않았습니다.
 
 이 절은 이슈 #1의 구현 계약입니다. 실제 구현·자동 검사·게임 확인 상태는 [검증 기록](ISSUE-1-VALIDATION.md)을 따릅니다.
 
@@ -193,7 +192,7 @@ Lua Prefix는 원문을 임시 보관하고 이전 문맥을 지우며, `LoadLua
 | 고정 Lua 분석 결과·파싱 완료 캐시 | Lua 분석 경로가 소유합니다. 자동 표시는 읽기만 하며, 결과와 완료 표시를 함께 유지합니다. 정상 주기 갱신 중 재분석하지 않습니다. |
 | 현재값·조건 판정·확률·표시 문자열 | 표시 경로가 소유합니다. 열린 현재 탭의 정상 행만 0.25초 간격으로 다시 평가합니다. |
 | 마지막 정상 값·실패 원인·다음 재시도 시각 | 항목별로 보관합니다. 한 항목의 오류가 다른 행이나 다른 탭의 최신 값을 되돌리지 않습니다. |
-| 세션·Lua 문맥 | 새 Lua·세이브 로드·새 게임에서 교체합니다. 이전 문맥의 행·실패 상태를 새 정보와 섞지 않습니다. 확인된 전환 Prefix에서 차단하고 성공 Lua 컴파일 뒤 새 세대로 교체합니다. 실제 게임 실행에서의 적용은 미검증입니다. |
+| 세션·Lua 문맥 | 새 Lua·세이브 로드·새 게임에서 교체합니다. 이전 문맥의 행·실패 상태를 새 정보와 섞지 않습니다. 확인된 전환 Prefix에서 차단하고 성공 Lua 컴파일 뒤 새 세대로 교체합니다. alpha.4 사용자 Windows 완료 확인은 받았으며 이 항목의 별도 실행 로그는 제공되지 않았습니다. |
 
 `SetFlag`·`AddFlag`의 값은 예정된 변경입니다. 표시용 현재 플래그를 읽더라도 이 값을 현재값으로 덮어쓰지 않습니다. 기존 네 탭과 선택지 옆 50자 요약·로그의 전체 설명 계약을 유지합니다.
 
@@ -300,11 +299,9 @@ v1.0.1 DLL에는 별도 비교로 다음을 확인했습니다.
 
 ### 실제 게임 확인
 
-이슈 #1의 실제 게임 실행 확인은 향후 필수 완료 조건이며 현재 승인되지 않았습니다. 현재는 기존 Windows 파일·정보의 읽기와 macOS 개발 검사만 허용됩니다. 아래 연결은 향후 별도 승인 후 검토할 계획이며 실행 요청이 아닙니다. [Windows 검증표](ISSUE-1-VALIDATION.md#사용자-windows-검증)에 게임·모드 베이스·BepInEx 버전, DLL 식별값, 패드 환경과 결과를 사용자가 기록합니다. 실제 게임 API 내부 분석과 이 검증이 끝나기 전에는 기능 완료나 정식 Release 공개로 처리하지 않습니다. 승인된 prerelease 게시와 이 완료 조건은 구분합니다.
+사용자가 2026-10-19 공개 alpha.4를 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 에이전트가 직접 게임을 실행한 결과와 구분하며 사용자 확인의 파일 식별·환경 제공 범위는 [소스 빌드 안내](SOURCE-BUILD.md#사용자-windows-확인과-기본-전환)에 기록합니다. 상세 항목이 없는 포괄 확인을 게임 버전·모드 베이스·BepInEx·패드·Steam Input 조합별 통과 결과로 확대하지 않습니다.
 
-릴리스 설명에는 실제로 확인한 게임·모드 베이스 버전, 패드 환경, 검사한 동작을 적습니다.
-게임 내 숫자 반영, 입력 중복, UI 배치, Steam Input 호환성은 향후 별도 승인된 실제 Windows 검증의 대상이며 현재 확인하지 않았습니다.
-수신된 기존 파일·로그는 Steam appid `1859910` / buildid `26021712`, Unity `2020.3.49f1`, BepInEx `6.0.0-be.692`를 식별합니다. 이는 새 실행이나 호환성 통과 기록이 아닙니다.
+수신된 기존 파일·로그는 Steam appid `1859910` / buildid `26021712`, Unity `2020.3.49f1`, BepInEx `6.0.0-be.692`를 식별합니다. 이 정적 자료의 환경을 이번 사용자 Windows 검증 환경으로 간주하지 않습니다. 현재 산출물과 사용자가 확인한 alpha.4의 자동 비교, 정식 발행 검사는 [배포 기록](ISSUE-3-RELEASE.md)에 구분합니다.
 
 ## 원본과 사용 라이브러리
 

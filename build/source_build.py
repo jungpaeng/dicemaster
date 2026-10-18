@@ -22,6 +22,17 @@ def record(path):
     return {'bytes': path.stat().st_size, 'sha256': digest(path)}
 
 
+def release_policy():
+    """Describe the selected build path and the exact user-tested artifact."""
+    policy = json.loads((BUILD / 'release-policy.json').read_text())
+    if policy.get('schema_version') != 1 or policy.get('default_build') != 'source':
+        raise RuntimeError('Unsupported source release policy.')
+    validation = policy.get('windows_validation', {})
+    if validation.get('status') != 'user-confirmed' or not validation.get('release_equivalence_required'):
+        raise RuntimeError('Source release policy must identify the user-confirmed Windows reference.')
+    return policy
+
+
 def build_inputs():
     roots = [REPOSITORY / name for name in ('src', 'tests', 'tools', 'build', 'packaging')]
     paths = [path for root in roots for path in root.rglob('*')

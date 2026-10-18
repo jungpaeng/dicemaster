@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "default_build": "source",
+  "windows_validation": {
+    "status": "user-confirmed",
+    "confirmed_on": "2026-10-19",
+    "confirmation_source": "Maintainer confirmation in this task: Windows validation complete; downloaded alpha.4 was used.",
+    "tested_release": "v1.0.3-alpha.4",
+    "tested_source_commit": "46bbf7486ab424696f1f5ba7d4126f6c12d11184",
+    "tested_dll_sha256": "24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1",
+    "tested_zip_sha256": "ddd32abbaa886cea4e0975bd522addbb1339e71a59223137fbbe23114d9556b8",
+    "tested_config_sha256": "8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e",
+    "game_version": null,
+    "bepinex_version": null,
+    "environment_note": "The maintainer did not provide exact game/loader versions, device details or raw test logs.",
+    "new_release_dll_directly_windows_tested": false,
+    "release_equivalence_required": true,
+    "allowed_runtime_difference": "Only the three reviewed comment headings in DiceMaster.Translations.ModTranslation.txt; all code, metadata, native ABI and translation data must match alpha.4."
+  }
+}

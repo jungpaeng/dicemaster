@@ -5,7 +5,7 @@ import datetime
 import tempfile
 from baseline import get_baseline
 from source_build import (ARTIFACTS, BASELINE_COMMIT, BASELINE_SHA256,
-                          sdk, references, compatibility, record, write_json, artifact_directory)
+                          sdk, references, compatibility, record, write_json, artifact_directory, release_policy)
 
 
 def main():
@@ -39,8 +39,8 @@ def main():
     write_json(report, {'status': 'pass', 'created_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                         'baseline_commit': BASELINE_COMMIT, 'baseline': baseline_info,
                         'candidate': before, 'sdk': version, 'references': reference_info,
-                        'checks': checks, 'windows_validation': 'not authorized / not performed',
-                        'default_build_switched': False})
+                        'checks': checks, 'windows_validation': release_policy()['windows_validation'],
+                        'default_build_switched': True})
     print('COMPATIBILITY PASS', report)
 
 
