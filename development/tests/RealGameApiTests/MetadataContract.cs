@@ -154,25 +154,38 @@ static partial class RealGameApiTests
             var safe = Calls(wrapper).Single();
             Check(safe.DeclaringType.FullName == "DiceMaster.LiveLog.SafeDisplayEvaluation" && safe.Name == item.Safe && ParametersAre(safe, "System.Object"),
                 "wrapper binds object safe evaluator " + item.Name);
-            int replacements = 0;
             foreach (var type in descriptionTypes)
                 foreach (var method in AllTypes(new[] { type }).SelectMany(value => value.Methods).Where(value => value.HasBody && value != wrapper))
                 {
                     Eq(0, Calls(method).Count(call => call.DeclaringType.FullName == item.Owner && call.Name == item.Original), "no risky description API fallback " + method.FullName);
-                    replacements += Calls(method).Count(call => call.DeclaringType.FullName == patch.FullName && call.Name == item.Name);
                 }
-            Check(replacements > 0, "actual description call sites use wrapper " + item.Name);
         }
-        foreach (var type in descriptionTypes.Take(2))
-            Check(type.Methods.Where(method => method.HasBody).SelectMany(Calls).Any(call => call.DeclaringType.FullName == patch.FullName && wrappers.Any(wrapper => wrapper.Name == call.Name)),
-                "description owner calls pure wrappers " + type.FullName);
+        var conditions = candidate.MainModule.GetType("DiceMaster.DataHelper").Methods.Single(method => method.Name == "ExtractConditions" &&
+            ParametersAre(method, "Mortal.Core.ConditionResultItem", "System.Boolean&"));
+        var conditionInstructions = Instructions(conditions);
+        Check(conditions.IsStatic && conditions.ReturnType.FullName == "System.String" && conditions.Parameters[1].IsOut,
+            "condition formatter preserves public signature");
+        Check(conditionInstructions.Length == 4 && conditionInstructions[0].OpCode == OpCodes.Ldarg_0 && conditionInstructions[1].OpCode == OpCodes.Ldarg_1 &&
+            conditionInstructions[2].OpCode == OpCodes.Call && conditionInstructions[3].OpCode == OpCodes.Ret, "condition formatting unconditionally uses preview model");
+        var conditionCall = Calls(conditions).Single();
+        Check(conditionCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" && conditionCall.Name == "ExtractConditions" &&
+            ParametersAre(conditionCall, "System.Object", "System.Boolean&") && conditionCall.ReturnType.FullName == "System.String", "condition formatter exact payload contract");
+        var events = candidate.MainModule.GetType("DiceMaster.PositionEventCache").Methods.Single(method => method.Name == "GenerateDynamicDesc");
+        var eventInstructions = Instructions(events);
+        Check(!events.IsStatic && ParametersAre(events, "Mortal.Story.PositionEventData") && events.ReturnType.FullName == "System.String", "event formatter preserves instance signature");
+        Check(eventInstructions.Length == 3 && eventInstructions[0].OpCode == OpCodes.Ldarg_1 && eventInstructions[1].OpCode == OpCodes.Call && eventInstructions[2].OpCode == OpCodes.Ret,
+            "event formatting unconditionally uses preview model");
+        var eventCall = Calls(events).Single();
+        Check(eventCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" && eventCall.Name == "EventDescription" &&
+            ParametersAre(eventCall, "System.Object") && eventCall.ReturnType.FullName == "System.String", "event formatter exact payload contract");
         var remainingRiskyCalls = AllTypes(candidate.MainModule.Types).SelectMany(type => type.Methods).Where(method => method.HasBody)
             .SelectMany(method => method.Body.Instructions.Select(instruction => instruction.Operand).OfType<MethodReference>()
                 .Where(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original))
                 .Select(call => method.FullName + " -> " + call.FullName)).ToArray();
         Check(remainingRiskyCalls.Length == 0, "no risky original description API references anywhere, including nested/lambda types: " + string.Join("; ", remainingRiskyCalls));
-        var evaluator = candidate.MainModule.GetType("DiceMaster.LiveLog.SafeDisplayEvaluation");
-        foreach (var method in AllTypes(new[] { evaluator }).SelectMany(type => type.Methods).Where(method => method.HasBody))
+        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting" }
+            .Select(name => candidate.MainModule.GetType(name) ?? throw new InvalidDataException("Missing preview payload " + name)).ToArray();
+        foreach (var method in AllTypes(evaluators).SelectMany(type => type.Methods).Where(method => method.HasBody))
             Check(!Calls(method).Any(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original) ||
                 (call.DeclaringType.FullName == "Mortal.Core.ConditionResultData" && call.Name == "Execute") ||
                 (call.DeclaringType.FullName == "Mortal.Core.StatValueReference" && call.Name == "GetValue") ||

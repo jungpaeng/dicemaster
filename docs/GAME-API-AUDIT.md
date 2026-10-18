@@ -1,7 +1,7 @@
 # 로그 갱신 게임 API 분석 기록
 
 [개발 안내](DEVELOPMENT.md) · [실제 조회 API 근거](REAL-GAME-API-FINDINGS.md) · [게임 수명주기 근거](GAME-LIFECYCLE-ANALYSIS.md) · [검증 결과](ISSUE-1-VALIDATION.md) · [요구사항 #1](https://github.com/jungpaeng/dicemaster/issues/1)
-사용자가 별도로 승인한 `v1.0.3-alpha.1` prerelease 게시와 기능·이슈 완료/정식 Release 판정은 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
+게시된 `v1.0.3-alpha.1`과 사용자가 승인한 `v1.0.3-alpha.2` prerelease 재발행은 기능·이슈 완료/정식 Release 판정과 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
 
 
 기록일: 2026-10-18. **실제 관리 DLL의 조회 API와 새 게임·로드 경계 정적 분석을 수행했습니다. 실제 게임 런타임·사용자 Windows 검증·게임 성능 측정은 미실행입니다.** 자동 검사와 정적 분석으로 이슈 완료나 정식 Release 공개 조건을 충족했다고 처리하지 않습니다. Windows는 파일·정보 읽기만 승인되었으며 게임 실행을 수행하거나 요청하지 않았습니다.
@@ -59,7 +59,7 @@ PositionEventData.GetRate
 
 - 그룹은 eager 평가 후 checked Sum, Max/Min, unchecked Multiply를 계산합니다. 빈 그룹·null·알 수 없는 enum을 구분합니다.
 - 비교·조건을 평가하고 조건 설정은 `_count`를 건드리지 않고 목록을 OR 평가합니다. 재귀 경로와 깊이를 검사합니다.
-- 난수 참조는 `RandomDisplayValueException`으로 실패시킵니다. 난수를 뽑거나 임의의 확정값을 만들지 않습니다. 난수 조건 표시 지원은 남은 기능 한계이며 전체 표시 지원 완료로 기록하지 않습니다.
+- alpha.1의 설명 경로는 난수를 `RandomDisplayValueException`으로 실패시켰습니다. alpha.2도 primitive int/bool 평가 API의 난수 예외를 유지하지만, 설명은 `RandomPreview`·`PreviewFormatting`의 범위/판정 미정/미지원 결과를 사용합니다. 직접 Sum1 난수와 직접 Sum1 정수 상수의 단일 비교에만 이론 N/D를 표시하며 실제 난수는 뽑지 않습니다. [구현·최종 검사 범위](RANDOM-PREVIEW-FOLLOWUP.md)는 실제 게임 실행 검증과 구분합니다.
 - `GameStat`과 그 변환 그래프에서 확인한 타입·재귀를 검사한 뒤 감사한 읽기 getter를 사용합니다. native 곡선 계산은 남은 런타임 경계입니다.
 
 `development/tools/LogRefreshInjector/SafeEvaluationHooks.cs`는 **모드의 알려진 설명 계산 호출 위치**를 순수 평가로 바꾸는 경계입니다. 일반 게임 진행 중 체크포인트 내러티브 설명도 깊이 0에서 같은 helper를 사용하므로, 설명 호출은 보호 깊이와 관계없이 안전 평가를 사용해야 합니다. 게임 어셈블리의 원본 메서드나 의도적인 이벤트·미션 실행 자체를 대체하지 않습니다. 해당 연결·반복 패치·자동 검사 결과는 [검증 기록](ISSUE-1-VALIDATION.md)과 구분해 확인합니다.

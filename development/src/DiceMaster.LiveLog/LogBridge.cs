@@ -118,6 +118,52 @@ namespace DiceMaster.LiveLog
         }
 
         private static object Parser() { return Read(TypeFor("DiceMaster.LuaParse.LuaParser"), "Instance"); }
+        public static object CallDisplayHelper(string owner, string name, params object[] arguments)
+        {
+            return Call(TypeFor(owner), name, arguments);
+        }
+        public static bool DisplayIsProtected() { return (int)Read(Patch(), "DisplayRefreshDepth") != 0; }
+        public static string DescribeEvent(object cache, object data)
+        {
+            int previousDepth = (int)Read(Patch(), "DisplayRefreshDepth");
+            Write(Patch(), "DisplayRefreshDepth", previousDepth + 1);
+            try
+            {
+                string result = (string)Call(cache, "GenerateDynamicDesc", data);
+                if (previousDepth == 0) RecordDescriptionResult(data, null);
+                return result;
+            }
+            catch (Exception error)
+            {
+                if (previousDepth != 0) throw;
+                RecordDescriptionResult(data, error);
+                return RefreshEngine.ReadFailureStatus;
+            }
+            finally { Write(Patch(), "DisplayRefreshDepth", previousDepth); }
+        }
+        public static void RecordDescriptionResult(object source, Exception error)
+        {
+            // Narrative Harmony callbacks must not prevent normal gameplay if
+            // a description fails. Deduplicate their diagnostics independently
+            // from the engine's per-row error/backoff state.
+            try
+            {
+                string key = "description/" + (source == null ? 0 : RuntimeHelpers.GetHashCode(source));
+                if (error == null)
+                {
+                    if (boundaryFailures.Remove(key)) Log("LiveLog item=" + key + " recovered");
+                    return;
+                }
+                string cause = error.GetType().FullName + "\n" + error.StackTrace;
+                string previous;
+                if (!boundaryFailures.TryGetValue(key, out previous) || previous != cause)
+                {
+                    boundaryFailures[key] = cause;
+                    Log("LiveLog item=" + key + " failure type=" + cause);
+                }
+            }
+            catch (Exception) { }
+        }
         public static object GetEventParser()
         {
             if (eventParser == null) eventParser = Activator.CreateInstance(TypeFor("DiceMaster.LuaParse.LuaParser"), true);

@@ -65,7 +65,7 @@ namespace DiceMaster.LiveLog
                 finally { active.Remove(value); }
             }
 
-            private int Reference(object value)
+            internal int Reference(object value)
             {
                 Enter(value);
                 try
@@ -211,5 +211,8 @@ namespace DiceMaster.LiveLog
         public static bool CheckCondition(object value) { return new Evaluation().Condition(value); }
         public static bool CheckConditionData(object value) { return new Evaluation().ConditionData(value); }
         public static int ReadEventRate(object value) { return new Evaluation().Rate(value); }
+        // Shared only with the structured preview. This retains the audited
+        // known-reference semantics without calling a gameplay evaluator.
+        internal static int ReadReference(object value) { return new Evaluation().Reference(value); }
     }
 }

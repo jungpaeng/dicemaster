@@ -1,7 +1,7 @@
 # 실제 게임 표시 조회 API 정적 분석
 
 기록일: 2026-10-18. 대상은 이슈 #1의 표시 전용 조회입니다. 실제 게임 DLL의 메서드 본문과 하위 호출을 macOS에서 분석했습니다. **게임 런타임 실행·실제 Unity 동작·Windows 검증은 수행하지 않았으며, 이 기록은 구현 완료나 정식 Release 공개 판정이 아닙니다.**
-사용자가 별도로 승인한 `v1.0.3-alpha.1` prerelease 게시와 기능·이슈 완료/정식 Release 판정은 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
+게시된 `v1.0.3-alpha.1`과 사용자가 승인한 `v1.0.3-alpha.2` prerelease 재발행은 기능·이슈 완료/정식 Release 판정과 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
 
 
 세이브 로드·새 게임·이야기 읽음 표시의 별도 분석은 [게임 수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)을 참조합니다.
@@ -138,7 +138,7 @@ LINQ용 정적 delegate 초기화 캐시 쓰기도 확인되지만, 이것은 �
 
 ## 개발 소스 반영과 회귀 검사 기준
 
-`development/src/DiceMaster.LiveLog/SafeDisplayEvaluation.cs`는 원본 `GetRate`·`GetResult`·`Check`를 직접 실행하지 않고 확인된 필드·읽기 전용 getter를 사용합니다. 조건 설정 분기는 `_count`를 건드리지 않고 조건 목록을 직접 OR 평가합니다. 난수는 게임 상태에서 확정된 현재값이 아니므로 임의로 한 값을 만들거나 RNG를 소비하지 않고 `RandomDisplayValueException`으로 실패시킵니다. 이 정책에서는 난수 조건의 표시가 완전하다고 기록하지 않습니다.
+`development/src/DiceMaster.LiveLog/SafeDisplayEvaluation.cs`는 원본 `GetRate`·`GetResult`·`Check`를 직접 실행하지 않고 확인된 필드·읽기 전용 getter를 사용합니다. 조건 설정 분기는 `_count`를 건드리지 않고 조건 목록을 직접 OR 평가합니다. primitive int/bool API는 난수를 임의 값으로 만들거나 RNG를 소비하지 않고 `RandomDisplayValueException`으로 거부합니다. alpha.1의 설명도 이 예외를 행 실패로 표시했습니다. alpha.2 설명 경로는 `RandomPreview`·`PreviewFormatting`의 구조화된 범위·판정 미정·전용 미지원 결과와 제한된 단일 비교의 이론 N/D를 사용합니다. 난수 샘플링과 실제 판정 확정은 하지 않으며 [후속 구현·검사 기록](RANDOM-PREVIEW-FOLLOWUP.md)에 지원 경계를 명시합니다.
 
 소스에서 실제 17개 변수 종류, 부호 적용 범위, 빈 집계·null 처리, checked Sum/unchecked Multiply, 시간 산술, 조건 eager 평가와 조건 설정 단축 평가를 실제 IL과 대조했습니다. 알 수 없는 enum은 원본의 임의 기본값 대신 명시적인 실패로 처리합니다. 객체 동일성에 따른 재귀 가드와 최대 깊이 128을 둡니다.
 

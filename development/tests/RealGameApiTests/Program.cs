@@ -74,7 +74,11 @@ static partial class RealGameApiTests
         TestComparisonsAndConditions();
         TestRates();
         TestSideEffects();
-        if (args.Length == 4) TestSafeEvaluation();
+        if (args.Length == 4)
+        {
+            TestSafeEvaluation();
+            if (fixture.GetType("DiceMaster.LiveLog.RandomPreview") != null) TestRandomPreview();
+        }
         Console.WriteLine($"PASS: {assertions - metadataAssertions} managed behavior assertions and {metadataAssertions} metadata contract assertions; Unity/random/data boundaries are managed fixtures, native game runtime NOT executed.");
         return 0;
     }

@@ -136,6 +136,14 @@ static class LiveLogIntegrationTests
         }
         Install(module.GetType("DiceMaster.ReflectionExtensions").Methods.Single(method => method.Name == "GetFieldValue"),
             target.GetType("DiceMaster.ReflectionExtensions").Methods.Single(method => method.Name == "GetFieldValue"));
+        Install(module.GetType("DiceMaster.PositionEventCache").Methods.Single(method => method.Name == "GenerateDynamicDesc"),
+            target.GetType("DiceMaster.PositionEventCache").Methods.Single(method => method.Name == "GenerateDynamicDesc"));
+        var eventBoundary = module.GetType("DiceMaster.PositionEventCache").Methods.Single(method => method.Name == "GeneratePreviewDynamicDesc");
+        var eventBoundaryTarget = new MethodDefinition(eventBoundary.Name, eventBoundary.Attributes, Type(eventBoundary.ReturnType));
+        foreach (var parameter in eventBoundary.Parameters)
+            eventBoundaryTarget.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, Type(parameter.ParameterType)));
+        target.GetType("DiceMaster.PositionEventCache").Methods.Add(eventBoundaryTarget);
+        Install(eventBoundary, eventBoundaryTarget);
         // Load the helper scenario independently so its stronger game boundary
         // shapes do not weaken or replace the earlier parser/bridge assertions.
         fixtures.Name.Name += ".Helpers";

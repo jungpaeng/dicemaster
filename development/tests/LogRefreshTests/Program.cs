@@ -99,6 +99,7 @@ static class LogRefreshTests
         using (var fixtures = AssemblyDefinition.ReadAssembly(args[1]))
         {
             target = fixtures.MainModule;
+            new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LiveLog");
             var groups = new Dictionary<string, string[]> {
                 ["DiceMaster.PositionEventCache"] = new[] { "GetPositionEventDesc", "GeneratePreviewDynamicDesc", "ClearDisplayCaches", "GetPositionEvents" },
                 ["DiceMaster.OptionInfoPatch"] = new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" },

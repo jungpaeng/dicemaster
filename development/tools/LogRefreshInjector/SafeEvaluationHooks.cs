@@ -34,5 +34,19 @@ static partial class LogRefreshInjector
                             changed.Add(method);
                         }
         }
+        // Replace complete description boundaries so a random range/pending
+        // result never passes through an int/bool wrapper or success coloring.
+        var formatting = module.GetType("DiceMaster.LiveLog.PreviewFormatting");
+        var conditions = module.GetType("DiceMaster.DataHelper").Methods.Single(m => m.Name == "ExtractConditions" &&
+            m.Parameters[0].ParameterType.FullName == "Mortal.Core.ConditionResultItem");
+        var conditionBody = Body(conditions);
+        conditionBody.Emit(OpCodes.Ldarg_0); conditionBody.Emit(OpCodes.Ldarg_1);
+        conditionBody.Emit(OpCodes.Call, Method(formatting, "ExtractConditions")); conditionBody.Emit(OpCodes.Ret);
+        var dynamic = Method(cache, "GenerateDynamicDesc");
+        var eventBody = Body(dynamic);
+        eventBody.Emit(OpCodes.Ldarg_1); eventBody.Emit(OpCodes.Call, Method(formatting, "EventDescription")); eventBody.Emit(OpCodes.Ret);
+        var boundary = Body(Method(cache, "GeneratePreviewDynamicDesc"));
+        boundary.Emit(OpCodes.Ldarg_0); boundary.Emit(OpCodes.Ldarg_1);
+        boundary.Emit(OpCodes.Call, Method(module.GetType("DiceMaster.LiveLog.LogBridge"), "DescribeEvent")); boundary.Emit(OpCodes.Ret);
     }
 }

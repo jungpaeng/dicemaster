@@ -4,7 +4,32 @@
 
 기록일: 2026-10-18 (Asia/Seoul). 기준 회귀: v1.0.2 / `e7d6dfeade5da9bba12825668f4948f56aea9e26`.
 
-**현재 상태: 기능·이슈 완료와 정식 Release는 보류하며, [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) 게시와 공개 다운로드 검증을 마쳤습니다.** 게시 시각은 2026-10-18 21:08:36 KST, 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`입니다. 실제 게임 DLL의 관련 API 분석과 사용자 Windows 검증을 모두 충족하기 전에는 기능·이슈 완료 또는 정식 Release로 처리하지 않습니다. Windows 설치·게임 실행 검증은 승인되지 않았습니다.
+**현재 상태: `v1.0.3-alpha.2` 난수 미리보기 소스 반영·prerelease 준비 중입니다.** 사용자가 문제 수정과 새 prerelease 발행을 승인했습니다. alpha.2 최종 패드→로그 왕복·반복 패치와 직접 패드 검사를 통과했습니다. 로컬 ZIP의 두 파일·CRC·바이트도 검증했으며 게시 커밋 기준 증명·공개 다운로드는 게시 단계에서 확인합니다. Windows 실행 승인은 추가되지 않았고 기능·이슈 완료와 정식 Release는 계속 보류합니다. [후속 구현 범위](RANDOM-PREVIEW-FOLLOWUP.md)를 따릅니다.
+
+**이전 게시 기록:** [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) 게시와 공개 다운로드 검증을 마쳤습니다. 게시 시각은 2026-10-18 21:08:36 KST, 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`입니다. 실제 게임 DLL의 관련 API 분석과 사용자 Windows 검증을 모두 충족하기 전에는 기능·이슈 완료 또는 정식 Release로 처리하지 않습니다. Windows 설치·게임 실행 검증은 승인되지 않았습니다.
+
+## alpha.2 구현·검사 준비 기록
+
+| 항목 | 현재 상태 |
+|---|---|
+| 대상 버전 | `v1.0.3-alpha.2` prerelease 준비, 미게시 |
+| 수정 범위 | 범위·실행 시 판정·전용 미지원 표시, 안전하게 지원한 단일 비교의 균등 정수 기준 이론 확률 |
+| 구현·formatter 연결 | 소스 반영·전체 파이프라인 통과. `RandomPreview`·`PreviewFormatting`과 설명 경계 연결 |
+| 자동 검사·반복 패치 | 캐시/보호 19개, 엔진 16개 시나리오·70개, 수명주기 4,023개, 통합 최초·반복 각각 111개 통과 |
+| 실제 관리 동작·메타데이터 | 최초·반복 각각 3,543개·949개 단언 통과 |
+| 구조·리소스 | 최초·반복 각각 958개 단언, 본문 356개 불변·정규화 0개·리소스 8개 일치 |
+| 최종 빌드 진단 | 정상 네트워크 재검사 11개 프로젝트 모두 MSBuild 경고 0·오류 0. 독립 취약점 감사 결과를 뜻하지 않음 |
+| 최종 패드→로그 왕복·직접 패드 | 모두 통과. 최종 파일의 패드 525,430개 단언 통과 |
+| 설치 기준과 최종 파일 구조 | 971개 단언 통과. 본문 322개 불변·검증한 보호/formatter 경로 13개 정규화·리소스 8개 일치 |
+| alpha.2 최종 DLL | `development/releases/v1.0.3-alpha.2/DiceMaster.final.dll` / `plugins/DiceMaster/DiceMaster.dll` 바이트 일치 |
+| alpha.2 DLL SHA-256·크기 | `b6f7ae790cde736dcf1a282e9242c46b8ab0204602c7c462d59c571f321740ec`, 462,848바이트 |
+| alpha.1 백업 | `development/releases/v1.0.3-alpha.2/prior-alpha.1.dll`, `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7` 보존 |
+| alpha.2 로컬 ZIP | `DiceMaster-v1.0.3-alpha.2.zip`, 192,018바이트, SHA-256 `fcd3111b101efba6ef62b0f79cb918f23e016ccf8e1637a821edb9e2ae0589f1` |
+| 로컬 ZIP 검증 | 정확히 config/DiceMaster.cfg·plugins/DiceMaster/DiceMaster.dll 두 파일, CRC 정상·작업 트리 파일 바이트 일치 |
+| 배포 커밋·공개 다운로드 | 게시 전 준비 중. 커밋 후 같은 커밋 blobs 기준 재생성·증명 및 공개 다운로드 검증 예정 |
+| 승인 범위 | 수정·새 prerelease 게시와 필요한 commit/push/태그. Windows 실행·기능 완료·정식 Release는 포함하지 않음 |
+
+난수 미정·미지원과 실제 조회 실패를 구분하며 샘플링·임의 bool/int·일반 실패 색상으로 대신하지 않는 것이 이번 검사의 핵심입니다. 새 결과와 자료 문맥이 바뀌면 이전 확정값을 난수의 현재값처럼 보관하지 않아야 합니다. 검사 기준과 허용 경계는 [난수 미리보기 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)에 기록합니다.
 
 ## 확인한 문제와 증거의 한계
 
@@ -26,7 +51,7 @@
 
 `PositionEventData.GetRate`·`StatGroupVariable.GetResult`·`StatCompareItem.Check`의 전이 호출에서 `UnityEngine.Random.Range` 진입과 `ConditionResultData.Execute`의 `_count` 증가를 확인했습니다. 원본 API를 표시 목적으로 반복 실행하는 것과 모드의 표시 보호 깊이를 높이는 것만으로는 게임 상태 비변경을 보장할 수 없습니다.
 
-후보의 `SafeDisplayEvaluation`은 실제 DLL에서 확인한 17개 값 종류·집계·비교·확률 계산을 별도 수행합니다. 난수는 샘플링하거나 임의 값으로 대체하지 않고 해당 행의 실패/이전 값 표시로 처리합니다. 알 수 없는 enum·미지원 `GameStat` 변환·순환 자료는 거부합니다. `ConditionResultItem._items == null`은 잘못된 자료로 실패하며 정상 빈 목록은 false입니다. 알려진 모드 설명 호출은 내러티브 경로의 보호 깊이 0에서도 순수 평가로 연결하고 원본 게임 어셈블리·실제 진행 API는 교체하지 않습니다. `AnimationCurve.Evaluate` 등 native 계산과 실제 리소스·다른 모드의 런타임 패치는 실행 검증하지 않았습니다.
+`v1.0.3-alpha.1`의 `SafeDisplayEvaluation`은 실제 DLL에서 확인한 17개 값 종류·집계·비교·확률 계산을 별도 수행합니다. 난수는 샘플링하거나 임의 값으로 대체하지 않고 해당 행의 실패/이전 값 표시로 처리합니다. 알 수 없는 enum·미지원 `GameStat` 변환·순환 자료는 거부합니다. `ConditionResultItem._items == null`은 잘못된 자료로 실패하며 정상 빈 목록은 false입니다. 알려진 모드 설명 호출은 내러티브 경로의 보호 깊이 0에서도 순수 평가로 연결하고 원본 게임 어셈블리·실제 진행 API는 교체하지 않습니다. `AnimationCurve.Evaluate` 등 native 계산과 실제 리소스·다른 모드의 런타임 패치는 실행 검증하지 않았습니다.
 
 `LifecycleState`와 후킹은 실제 `SaveSystem` 6개 진입점·공통 씬 시작 경계에서 이전 정보와 분석을 지우고 조회를 차단합니다. Lua Prefix의 원문은 임시 보관하며 실제 컴파일 결과가 non-null인 Postfix에서만 활성화합니다. void 로드 반환·씬 코루틴 생성·null Lua·예외·오래된 콜백으로 준비 완료를 선언하지 않습니다. 차단 중 자동·수동·탭 전환의 현재값 조회와 재분석은 0회여야 합니다. 현재 Lua 안의 제자리 복원은 새 Lua를 만들지 않을 수 있으므로 다음 실제 성공 Lua까지 대기할 수 있습니다.
 
@@ -35,6 +60,8 @@
 선택지 분석은 공유 `LuaParser.Instance`가, 이벤트 고정 설명은 별도 파서가 소유합니다. 콜드·지연 준비 이벤트도 공유 선택지 분석을 덮어쓰지 않습니다. 실제 관리 코드의 정적 분석·일부 실제 IL 이식 검사와 Unity/Harmony/native 실행 검증은 구분합니다. 세부 서명·IL 근거·남은 한계는 [실제 API 분석](REAL-GAME-API-FINDINGS.md)과 [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)에 기록합니다.
 
 ## 수용 기준
+
+난수 범위·판정 미정·전용 미지원 표시와 제한적인 단일 비교 이론 확률은 [alpha.2 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)의 현재 작업입니다. 게시된 alpha.1에는 없으며 alpha.2의 최종 관리 코드·표시·반복 패치·패드 검사를 통과했습니다. 게시 커밋 기준 증명·공개 다운로드 검증은 게시 단계에서 확인합니다.
 
 체크 표시는 자동 검사, 실제 API 분석, 해당 Windows 사용자 확인을 모두 충족한 경우에만 추가합니다. 코드가 존재하거나 일부 모의 검사가 통과한 것만으로 체크하지 않습니다.
 
@@ -48,9 +75,9 @@
 - [ ] 구조적 성능 기준, 실제 시간·할당량 측정, 오류 최초 1회·복구 1회 로그 정책을 충족합니다.
 - [ ] 자동 검사·Windows 검증·문서·릴리스 설명·두 파일 ZIP과 커밋/다운로드 검증이 실제 결과와 일치합니다.
 
-## 자동 검사 기록
+## alpha.1 자동 검사 기록 — 게시된 버전의 이력
 
-현재 단계는 macOS 개발·정적 분석·자동 검사입니다. 실제 게임 IL의 관리 본문을 경계 대역에 이식하는 검사도 Unity·native·게임 실행을 뜻하지 않습니다. 최종 패드→로그 재적용·반복 패치 파이프라인, 실제 설치 기준과의 구조 비교, 최종 파일의 패드 검사를 모두 통과했습니다. 아래 경로·해시로 로컬 후보를 식별합니다. 이전 후보 통과 결과를 새 소스의 최종 결과로 승계하지 않습니다.
+다음은 alpha.1 게시 당시의 macOS 검사 이력입니다. 실제 게임 IL의 관리 본문을 경계 대역에 이식하는 검사도 Unity·native·게임 실행을 뜻하지 않습니다. alpha.1의 패드→로그·반복 패치·구조·패드 검사를 통과했으며 아래 경로·해시는 해당 버전을 식별합니다. 이전 후보 통과 결과를 새 소스의 최종 결과로 승계하지 않습니다.
 
 | 검사 | 현재 기록 | 확인 범위와 제한 |
 |---|---|---|
@@ -67,7 +94,7 @@
 | Unity/native·실제 리소스·Harmony 실행 | 미실행 | 현재 단계 범위 밖, 완료 판정 불가 |
 | 사용자 Windows 게임 실행 | 미승인·미실행 | 기존 파일·정보 읽기만 허용된 상태 |
 
-### 이전 후보 기록과 새 후보 식별
+### alpha.1 및 그 이전 후보 식별
 
 | 항목 | 식별값 |
 |---|---|
@@ -76,7 +103,7 @@
 | 이전 후보 보관 경로 | `development/releases/real-api/prior-candidate.dll` |
 | 이전 후보 SHA-256·크기 | `56d85cd000cf6bf065237bcf032a1c6e18d2e739a09ead59e9fac2860b24206f`, 444,416바이트 |
 | 실제 API 반영 최종 후보 경로 | `development/releases/real-api/DiceMaster.final.dll` |
-| 저장소 추적 DLL | `plugins/DiceMaster/DiceMaster.dll` — 최종 후보와 바이트 일치, Windows 실행 검증 아님 |
+| alpha.1 게시 당시 추적 DLL | 배포 커밋의 `plugins/DiceMaster/DiceMaster.dll` — alpha.1 후보와 바이트 일치, 현재 alpha.2 파일과 구분 |
 | 최종 후보 SHA-256·크기 | `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 455,680바이트 |
 | 게시 상태 | `v1.0.3-alpha.1` prerelease 공개·익명 다운로드 검증 완료. 기능·정식 Release 완료와 구분 |
 | 배포 기준 커밋 | `2d8936786845b534524b916537e7f1c3e5ab482d` — 이후 문서 보완 커밋과 별개로 태그·ZIP 기준 고정 |
@@ -170,7 +197,7 @@ Unity·게임 API·실제 파서·리플렉션 어댑터·Windows 게임 런타�
 
 향후 승인된 검증의 기록 대상은 재현 순서·탭·항목·관찰 시간과 관련 BepInEx 오류/복구 로그입니다. 전체 Lua·세이브 내용은 기록 대상에서 제외합니다.
 
-## 게시한 prerelease와 보류한 정식 Release
+## alpha.1 게시 기록과 보류한 정식 Release
 
 [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 아래 식별값으로 게시되었습니다. 공개 API와 익명 공개 다운로드 검증을 모두 마쳤습니다.
 

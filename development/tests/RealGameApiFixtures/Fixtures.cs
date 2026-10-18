@@ -4,6 +4,7 @@ namespace UnityEngine
 {
     public class Object
     {
+        public string name;
         public static bool operator ==(Object left, Object right) => ReferenceEquals(left, right);
         public static bool operator !=(Object left, Object right) => !ReferenceEquals(left, right);
         public override bool Equals(object value) => ReferenceEquals(this, value);
@@ -61,4 +62,32 @@ namespace Mortal.Core
 namespace OBB.Framework.Data
 {
     public class StoryMappingItem { public string Value { get; set; } }
+}
+namespace DiceMaster
+{
+    public static class OptionInfoPatch { public static int DisplayRefreshDepth; }
+    public static class DicePlugin
+    {
+        public static readonly System.Collections.Generic.List<string> Warnings = new System.Collections.Generic.List<string>();
+        public static void LogWarning(object message) => Warnings.Add(System.Convert.ToString(message));
+    }
+    // Description labels/color boundaries. Actual PreviewFormatting IL is
+    // copied from the candidate; these helpers do not inspect game state.
+    public static class DataHelper
+    {
+        public static string GetLocalizedSystemText(string key, string fallback, string category, string original) => fallback;
+        public static string FormatConditionValName(object value) => "fixture";
+        public static string GetCompareOperator(object operation)
+        {
+            string[] names = { "=", "≠", "<", "≤", ">", "≥" };
+            return names[System.Convert.ToInt32(operation)];
+        }
+        public static string GetLogicOperator(object operation) => System.Convert.ToInt32(operation) == 0 ? "AND" : "OR";
+    }
+    public static class RichText
+    {
+        public static int Colors;
+        public static string Green(string value) { Colors++; return "<color=green>" + value + "</color>"; }
+        public static string Red(string value) { Colors++; return "<color=red>" + value + "</color>"; }
+    }
 }

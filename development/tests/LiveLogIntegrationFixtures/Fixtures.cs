@@ -35,8 +35,8 @@ namespace Mortal.Core
         public static LocalizationManager Instance { get; set; }
         public ILocaleResolver LocaleResolver { get; set; }
     }
-    public enum StatCompareType { Equal }
-    public enum LogicOperatorType { And }
+    public enum StatCompareType { Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual }
+    public enum LogicOperatorType { And, Or }
     public enum PositionType { None, Fixture }
     public class ConditionResultItem
     {
@@ -61,6 +61,9 @@ namespace Mortal.Core
     {
         public int _checkType = 1;
         public bool _negative;
+        public int _constant, _randomMin, _randomMax;
+        public StatGroupVariable _statGroup;
+        public object _condition;
         public GameStat _stat = new GameStat();
     }
     public class GameStat
@@ -125,7 +128,14 @@ namespace Mortal.Story
         public Dictionary<string, SwitchResultData> Items = new Dictionary<string, SwitchResultData>();
         public SwitchResultData GetData(string key) { Items.TryGetValue(key, out var value); return value; }
     }
-    public class PositionEventData : UnityEngine.Object { public int State; }
+    public class PositionEventData : UnityEngine.Object
+    {
+        public int State, _defaultRate = 10;
+        public bool _toggleCondition;
+        public Mortal.Core.ConditionResultItem _activeCondition;
+        public PositionEventRateItem[] _eventRateItem = new PositionEventRateItem[0];
+    }
+    public class PositionEventRateItem { public Mortal.Core.ConditionResultItem Condition; public int Rate; }
     public class CheckPointManager : UnityEngine.Object
     {
         public static CheckPointManager Instance { get; set; } = new CheckPointManager();
@@ -207,7 +217,7 @@ namespace DiceMaster
         public static bool GetMissionPeriod(Mortal.Core.MissionCheckData value, out string period) { period = "fixture period"; return true; }
         static string GetLocalizedSystemText(string key, string fallback, string category, string original) => fallback;
         static string FormatConditionValName(Mortal.Core.StatGroupVariable value) => value?.name ?? "?";
-        static string GetCompareOperator(Mortal.Core.StatCompareType value) => "==";
+        static string GetCompareOperator(Mortal.Core.StatCompareType value) => new[] { "==", "!=", "<", "<=", ">", ">=" }[(int)value];
         static string GetLogicOperator(Mortal.Core.LogicOperatorType value) => "&&";
     }
     public static class ReflectionExtensions
@@ -231,14 +241,16 @@ namespace DiceMaster
             return "rate=" + DataHelper.CurrentValue;
         }
         string GenerateStaticDesc(Mortal.Story.PositionEventData value) { StaticReads++; return Scenario.ExtractEventDescription(); }
+        string GenerateDynamicDesc(Mortal.Story.PositionEventData value) => throw new InvalidOperationException("Actual event formatter IL not installed");
         public void ClearDisplayCaches() { eventDescCache.Clear(); }
     }
     public static class UiTextMapper { public static string ApplyTranslations(string value) => value; }
     public static class RichText
     {
+        public static int ConditionColors;
         public static string ColorText(string value) => value;
-        public static string Green(string value) => value;
-        public static string Red(string value) => value;
+        public static string Green(string value) { ConditionColors++; return value; }
+        public static string Red(string value) { ConditionColors++; return value; }
         public static string Golden(string value) => value;
     }
     public static class FlagTranslations { public static string TranslateDevNote(string id, int value) => id; }
@@ -602,6 +614,71 @@ namespace DiceMaster
             Tick(plugin, true);
             Check(plugin.missionEntries.All(row => !row.Description.Contains("실패") && !row.Description.Contains("대기")),
                 "Corrected mission stage/condition source did not recover independently");
+            var random = new Mortal.Core.StatValueReference { _checkType = 7, _randomMin = 1, _randomMax = 100 };
+            var randomGroup = new Mortal.Core.StatGroupVariable { name = "隨機", _value = new List<Mortal.Core.StatValueReference> { random } };
+            var constant = new Mortal.Core.StatGroupVariable { name = "常數_50", _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 0, _constant = 50 } } };
+            var randomCompare = new Mortal.Core.StatCompareItem { _value1 = randomGroup, _value2 = constant, _compareOp = Mortal.Core.StatCompareType.GreaterEqual };
+            var randomCondition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { randomCompare } };
+            int colors = RichText.ConditionColors;
+            bool included;
+            string randomText = DataHelper.ExtractConditions(randomCondition, out included);
+            Check(randomText.Contains("난수 1~100") && randomText.Contains("실행 시 판정") && randomText.Contains("51/100"), "Actual condition formatter lost range/pending/theory probability");
+            Check(RichText.ConditionColors == colors && included, "Random preview was colored as pass/fail or hidden as false");
+            randomCondition._items.Add(good);
+            randomText = DataHelper.ExtractConditions(randomCondition, out included);
+            Check(!randomText.Contains("이론 확률"), "Compound condition displayed an unproven aggregate probability");
+            randomCondition._items.Remove(good);
+            var previewEvent = new Mortal.Story.PositionEventData { _toggleCondition = true, _activeCondition = randomCondition };
+            string eventPreview = (string)typeof(PositionEventCache).GetMethod("GenerateDynamicDesc", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(PositionEventCache.Instance, new object[] { previewEvent });
+            Check(eventPreview.Contains("발동 확률：실행 시 판정") && eventPreview.Contains("난수 1~100"), "Actual event description coerced random condition to numeric event rate");
+            var inactiveCondition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> {
+                new Mortal.Core.StatCompareItem { _value1 = constant, _value2 = randomCompare._value2, _compareOp = Mortal.Core.StatCompareType.NotEqual }
+            } };
+            var inactiveEvent = new Mortal.Story.PositionEventData { _toggleCondition = true, _activeCondition = inactiveCondition, _eventRateItem = null };
+            eventPreview = (string)typeof(PositionEventCache).GetMethod("GenerateDynamicDesc", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(PositionEventCache.Instance, new object[] { inactiveEvent });
+            Check(eventPreview.Contains("발동 확률：0"), "Inactive event's unreachable null rate list became a new description failure");
+            var narrativeFailure = new Mortal.Core.ConditionResultItem { _items = null };
+            int narrativeWarnings = DicePlugin.Warnings.Count;
+            string narrativeText = DataHelper.ExtractConditions(narrativeFailure, out included);
+            Check(narrativeText == "읽기 실패" && included, "Narrative formatter error aborted gameplay or became empty/false");
+            DataHelper.ExtractConditions(narrativeFailure, out included);
+            Check(DicePlugin.Warnings.Count == narrativeWarnings + 1, "Repeated narrative description failure flooded diagnostics");
+            narrativeFailure._items = new List<Mortal.Core.StatCompareItem>();
+            DataHelper.ExtractConditions(narrativeFailure, out included);
+            DataHelper.ExtractConditions(narrativeFailure, out included);
+            Check(DicePlugin.Warnings.Count == narrativeWarnings + 2, "Narrative description recovery was missing or duplicated");
+            var badEvent = new Mortal.Story.PositionEventData { _toggleCondition = true, _activeCondition = new Mortal.Core.ConditionResultItem { _items = null } };
+            var eventBoundary = typeof(PositionEventCache).GetMethod("GeneratePreviewDynamicDesc", BindingFlags.NonPublic | BindingFlags.Instance);
+            int eventWarnings = DicePlugin.Warnings.Count;
+            string narrativeEvent = (string)eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent });
+            Check(narrativeEvent == "읽기 실패" && OptionInfoPatch.DisplayRefreshDepth == 0, "Narrative event description error escaped its incoming-depth boundary");
+            eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent });
+            Check(DicePlugin.Warnings.Count == eventWarnings + 1, "Narrative event error flooded diagnostics");
+            bool protectedEventFailed = false;
+            OptionInfoPatch.TargetEvent = previewEvent;
+            OptionInfoPatch.DisplayRefreshDepth = 1;
+            try { eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent }); }
+            catch (TargetInvocationException failure) { protectedEventFailed = failure.InnerException is InvalidOperationException; }
+            Check(protectedEventFailed && OptionInfoPatch.DisplayRefreshDepth == 1 && ReferenceEquals(OptionInfoPatch.TargetEvent, previewEvent),
+                "Protected event error was swallowed, leaked depth, or consumed execution request");
+            OptionInfoPatch.DisplayRefreshDepth = 0;
+            badEvent._activeCondition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { good } };
+            eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent });
+            eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent });
+            Check(DicePlugin.Warnings.Count == eventWarnings + 2, "Narrative event recovery was missing or duplicated");
+            first.Stage._conditions = new[] { randomCondition };
+            plugin.currentTab = "미션"; Tick(plugin, true);
+            int warnings = DicePlugin.Warnings.Count;
+            Check(plugin.missionEntries[0].Description.Contains("실행 시 판정") && !plugin.missionEntries[0].Description.Contains("실패"), "Random mission still entered the generic row failure path");
+            random._randomMin = 5; random._randomMax = 3;
+            UnityEngine.Time.unscaledTime += 0.3f; Tick(plugin);
+            Check(plugin.missionEntries[0].Description.Contains("난수 조건 · 미리보기 미지원") && !plugin.missionEntries[0].Description.Contains("실패"), "Unsupported random range was logged as a read failure");
+            random._randomMin = 1; random._randomMax = 10;
+            UnityEngine.Time.unscaledTime += 0.3f; Tick(plugin);
+            Check(plugin.missionEntries[0].Description.Contains("난수 1~10") && !plugin.missionEntries[0].Description.Contains("미지원"), "Random preview incorrectly waited five seconds to refresh its range");
+            Check(DicePlugin.Warnings.Count == warnings, "Pending/unsupported random preview generated failure/recovery diagnostics");
+            NewLua(Lua("O_random_reset"), "random_reset");
+            Check(plugin.missionEntries.Count == 0, "New Lua retained old random preview rows");
             return assertions;
         }
     }

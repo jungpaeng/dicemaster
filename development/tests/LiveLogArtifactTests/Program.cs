@@ -23,7 +23,8 @@ internal static class Program
         "DiceMaster.PositionEventCache::GetPositionEventDesc", "DiceMaster.PositionEventCache::GeneratePreviewDynamicDesc",
         "DiceMaster.PositionEventCache::ClearDisplayCaches", "DiceMaster.PositionEventCache::GetPositionEvents",
         "DiceMaster.UiTextMapper::TryGetCachedTranslation", "DiceMaster.UiTextMapper::CacheTranslation",
-        "DiceMaster.DataHelper::GetMissions"
+        "DiceMaster.DataHelper::GetMissions", "DiceMaster.DataHelper::ExtractConditions",
+        "DiceMaster.PositionEventCache::GenerateDynamicDesc"
     };
 
     private static void Check(bool value, string message)
@@ -245,7 +246,9 @@ internal static class Program
                 Check(matches.Length == 1 && matches[0].Attributes == method.Attributes && matches[0].ImplAttributes == method.ImplAttributes,
                     "Existing method signature/attributes changed: " + method.FullName);
                 MethodDefinition after = matches[0];
-                if (replacements.Contains(type.FullName + "::" + method.Name)) continue;
+                if (replacements.Contains(type.FullName + "::" + method.Name) &&
+                    !(type.FullName == "DiceMaster.DataHelper" && method.Name == "ExtractConditions" &&
+                      method.Parameters[0].ParameterType.FullName != "Mortal.Core.ConditionResultItem")) continue;
                 string before = Fingerprint(method, false), rawAfter = Fingerprint(after, false);
                 if (before == rawAfter) { preservedMethods++; continue; }
                 Check(Fingerprint(method, true) == Fingerprint(after, true), "Unexpected method body change: " + method.FullName);
@@ -272,6 +275,24 @@ internal static class Program
                 code[1].Operand is MethodReference call && call.DeclaringType.FullName == "DiceMaster.LiveLog.SafeDisplayEvaluation" &&
                 call.Name == entry.Item2 && code[2].OpCode == OpCodes.Ret, "Safe display wrapper has an unsafe fallback.");
         }
+        var conditionFormatter = output.GetType("DiceMaster.DataHelper").Methods.Single(m => m.Name == "ExtractConditions" &&
+            m.Parameters[0].ParameterType.FullName == "Mortal.Core.ConditionResultItem");
+        var conditionCode = conditionFormatter.Body.Instructions;
+        Check(conditionCode.Count == 4 && conditionCode[0].OpCode == OpCodes.Ldarg_0 && conditionCode[1].OpCode == OpCodes.Ldarg_1 &&
+            conditionCode[2].OpCode == OpCodes.Call && conditionCode[2].Operand is MethodReference conditionCall &&
+            conditionCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" && conditionCall.Name == "ExtractConditions" &&
+            conditionCode[3].OpCode == OpCodes.Ret, "Condition formatter must carry preview text without coercing random values.");
+        var eventCode = Method(output, "DiceMaster.PositionEventCache", "GenerateDynamicDesc").Body.Instructions;
+        Check(eventCode.Count == 3 && eventCode[0].OpCode == OpCodes.Ldarg_1 && eventCode[1].OpCode == OpCodes.Call &&
+            eventCode[1].Operand is MethodReference eventCall && eventCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" &&
+            eventCall.Name == "EventDescription" && eventCode[2].OpCode == OpCodes.Ret, "Event formatter must not invent a numeric random rate.");
+        var boundaryCode = Method(output, "DiceMaster.PositionEventCache", "GeneratePreviewDynamicDesc").Body.Instructions;
+        Check(boundaryCode.Count == 4 && boundaryCode[0].OpCode == OpCodes.Ldarg_0 && boundaryCode[1].OpCode == OpCodes.Ldarg_1 &&
+            boundaryCode[2].OpCode == OpCodes.Call && boundaryCode[2].Operand is MethodReference boundaryCall &&
+            boundaryCall.DeclaringType.FullName == "DiceMaster.LiveLog.LogBridge" && boundaryCall.Name == "DescribeEvent" &&
+            boundaryCode[3].OpCode == OpCodes.Ret, "Event description must preserve incoming protection depth.");
+        Check(Method(output, "DiceMaster.LiveLog.LogBridge", "DescribeEvent").Body.ExceptionHandlers.Any(handler => handler.HandlerType == ExceptionHandlerType.Finally),
+            "Event description scope must restore the captured depth in finally.");
         Check(Calls(Method(output, "DiceMaster.DicePlugin", "Update"), "DiceMaster.DicePlugin", "RefreshLiveLogDisplay") == 1, "Update automatic display hook missing/duplicated.");
         Check(Calls(Method(output, "DiceMaster.DicePlugin", "Update"), "DiceMaster.DicePatch", "UpdateGamepad") == 1, "Update gamepad hook missing/duplicated.");
         Check(Calls(Method(output, "DiceMaster.DicePlugin", "DrawLogWindow"), "DiceMaster.DicePlugin", "RefreshLiveLogDisplay") == 1, "GUI tab refresh hook missing/duplicated.");
