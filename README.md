@@ -101,6 +101,8 @@ alpha.1에서 추가한 16개 StatModifyManager 함수와 12개 LuaManager 함�
 
 ## v1.0.4-alpha.5 prerelease — 분석 공유와 현재 조건 힌트
 
+2026-10-19 사용자가 이번 버전의 Windows 테스트 완료를 확인해 [PRD #2](https://github.com/jungpaeng/dicemaster/issues/2)를 완료로 닫았습니다. [완료 기록](docs/ISSUE-2-COMPLETION.md)에 사용자 확인과 기존 자동 검사·배포 검증의 범위를 구분합니다. 아래 설명의 조건·추적 지원 경계와 배포 당시 이력은 유지합니다.
+
 [alpha.5 게시 설명](docs/ISSUE-2-ALPHA5-RELEASE.md)의 대상입니다. 공통 본문의 구문·인자·상수 분석도 유한 캐시로 공유하며 무거운 사례의 Mac 대역 추출 시간이 약 484→336ms, 전체 검사 시간이 평균 약 4.4% 줄었습니다. 현재 조건을 안전하게 읽을 수 있는 분기에만 `현재 조건 충족`/`현재 조건 미충족`과 녹색/회색을 덧붙입니다. 선행 변경·미확인 콜백·후속 이야기·입증하지 못한 바깥 문맥은 기존 중립 표시를 유지합니다. 현재 제공된 실제 자료의 선택지는 모두 미입증 문맥 경계에 걸려 중립 표시를 유지합니다. 안전한 문맥의 기능과 자동 검사는 구현했지만 실제 게임의 색상 적용 범위는 미확인입니다. 미래 실행 결과를 보장하는 표시는 아닙니다. [구현·검사와 적용 제한](docs/ISSUE-2-SHARED-ANALYSIS.md)은 공개 alpha.4와 구분합니다. 2026-10-19 03:18:01 KST에 [alpha.5 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.5)를 게시하고 고정 커밋 재빌드·공개 다운로드·해시·CRC를 확인했습니다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.5/DiceMaster-v1.0.4-alpha.5.zip)을 제공합니다. 정식 Latest는 v1.0.3을 유지합니다.
 
 ## 공개 버전 업데이트와 롤백

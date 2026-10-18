@@ -1,5 +1,7 @@
 # PRD 2 실제 Lua 정적 대조
 
+**현재 상태 — 2026-10-19 03:24:40 KST:** 사용자가 `v1.0.4-alpha.5` 맥락의 Windows 테스트 완료를 확인해 [이슈 #2](https://github.com/jungpaeng/dicemaster/issues/2)를 `closed` / `completed`로 종료했습니다. [완료 근거와 확인 범위](ISSUE-2-COMPLETION.md)를 따르며 아래 미확인/open 기록은 당시 이력으로 보존합니다.
+
 2026-10-19 KST. 최신 시작 HEAD는 `199db9f`(공개 `v1.0.4-alpha.3` 게시 기록)이다. 사용자의 작업 재개 지시에 따라 소스·검사·로컬 후보를 수정한다. 사용자 지시로 commit·push하고 2026-10-19 02:44:05 KST에 `v1.0.4-alpha.4` prerelease를 게시했다. 태그 소스 커밋은 `3af4f862c09399b56ea7e127ef67d21290eaf174`이며 고정 커밋의 새 빌드와 공개 다운로드가 아래 후보 DLL·ZIP의 해시와 같음을 확인했다. [게시 기록](RELEASING.md)에 Release·자산 식별과 확인 범위를 구분한다. 기존 alpha.3 문구와 이전 공개 자산은 보존한다.
 
 ## 확보 자료와 정확한 경로

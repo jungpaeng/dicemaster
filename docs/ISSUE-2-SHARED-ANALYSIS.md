@@ -1,5 +1,7 @@
 # PRD 2: 정적 분석 공유와 현재 조건 표시
 
+**현재 상태 — 2026-10-19 03:24:40 KST:** 사용자가 `v1.0.4-alpha.5` 맥락의 Windows 테스트 완료를 확인해 [이슈 #2](https://github.com/jungpaeng/dicemaster/issues/2)를 `closed` / `completed`로 종료했습니다. [완료 근거와 확인 범위](ISSUE-2-COMPLETION.md)를 따르며 아래 미확인/open 기록은 당시 이력으로 보존합니다.
+
 2026-10-19, 구현 기준은 공개 alpha.4 이후 HEAD `b7b28bf86d042292cf4151c903c69f31deb34fab`이다. 구현 검증은 별도 로컬 후보로 수행했고 Windows 실행을 포함하지 않았다. 이후 사용자가 commit·push·prerelease 게시를 지시했으며 대상은 [v1.0.4-alpha.5](ISSUE-2-ALPHA5-RELEASE.md)다. 기존 미추적 `.agents/`와 `skills-lock.json`은 보존했다.
 
 ## 변경한 동작

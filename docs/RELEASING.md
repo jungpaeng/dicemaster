@@ -1,5 +1,7 @@
 # 소스 기반 Release와 게시 이력
 
+**현재 상태 — 2026-10-19 03:24:40 KST:** 사용자가 `v1.0.4-alpha.5` 맥락의 Windows 테스트 완료를 확인해 [이슈 #2](https://github.com/jungpaeng/dicemaster/issues/2)를 `closed` / `completed`로 종료했습니다. [완료 근거와 확인 범위](ISSUE-2-COMPLETION.md)를 따르며 아래 미확인/open 기록은 당시 이력으로 보존합니다.
+
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)
 
 ## PRD 2 alpha.5 분석 공유·현재 조건 힌트 prerelease

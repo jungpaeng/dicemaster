@@ -1,5 +1,7 @@
 # DiceMaster v1.0.4-alpha.5 — 정적 분석 공유·안전한 현재 조건 힌트
 
+**게시 후 사용자 확인:** 2026-10-19 03:24:40 KST에 사용자 Windows 테스트 완료 확인을 근거로 이슈 #2를 완료 처리했습니다. [완료 기록](ISSUE-2-COMPLETION.md)을 따르며 아래 미확인/open 내용은 게시 당시 기록입니다. 배포 태그·파일은 그대로입니다.
+
 선택지 사이의 공통 구문·인자·상수 분석을 재사용하는 prerelease입니다. 정식 Latest는 [v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 유지합니다.
 
 ## 변경 사항
