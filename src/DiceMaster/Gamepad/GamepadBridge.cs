@@ -65,7 +65,9 @@ namespace DiceMaster.Gamepad
             if (!pads[log.Owner]) return "선택 패드 연결 해제 · 재연결 또는 도구의 패드 다시 선택";
             if (log.Waiting) return "패드 " + (log.Owner + 1) + " · 버튼 해제·양쪽 스틱 중립·트리거 해제 후 새 입력";
             if (!log.PadMode) return "게임의 키보드·마우스 모드 · 패드 전환은 입력 후 중립을 거쳐 다시 조작";
-            return "패드 " + (log.Owner + 1) + " · LB/RB 탭 · 십자키/왼쪽 스틱 이동 · A 선택 · B 복귀/닫기 · Y 도구 · X 새로고침 · 오른쪽 스틱 스크롤";
+            // The renderer shows context-specific controls in its footer.
+            // Keep device ownership/status to one line above the content.
+            return "패드 " + (log.Owner + 1) + " · 로그 탐색 중";
         }
         public static int Tick(bool enabled, bool windowVisible, int current, float time, string cacheRoot)
         {

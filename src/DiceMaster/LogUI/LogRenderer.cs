@@ -22,7 +22,7 @@ namespace DiceMaster.LogUI
         private Rect window;
         private Rect savedWindow;
         private Area area, previousArea;
-        private int currentTabIndex, toolIndex, detailIndex, keyboardIndex, renderedFont;
+        private int currentTabIndex, toolIndex, detailIndex, keyboardIndex, renderedFont, chromeFont;
         private float toolScroll, keyboardScroll, lastSave;
         private bool ensureVisible, stylesReady, searchFieldFocused;
         private long context = long.MinValue;
@@ -31,12 +31,20 @@ namespace DiceMaster.LogUI
         private ReservationTicket pointerReservation;
         private Action pendingAction;
         private GUIStyle textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle, statusStyle, fieldStyle, boxStyle, windowStyle;
+        private GUIStyle chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle;
         private LogSnapshot cachedSnapshot;
         private string cachedSearch, cachedSummary;
         private IList<LogItem> cachedRows;
         private readonly List<Rect> toolRects = new List<Rect>();
         private readonly List<KeyboardCell> keyboardCells = new List<KeyboardCell>();
-        private float contentHeight = 300f;
+        private LogLayout layout;
+        private Rect lastSelectedBounds;
+        private Rect lastListViewport;
+        private float lastListViewportHeight;
+        private string lastMeasuredId, lastMeasuredTab;
+        private bool manualListScroll;
+        private float BodyHeight => layout == null ? Math.Max(80, window.height * .7f) : layout.Content.height;
+        private float BodyWidth => layout == null ? window.width - 24 : layout.Content.width;
         public string InputHint { get; set; } = "";
         public Action ReselectController { get; set; }
         public Action<string> TabChanged { get; set; }
@@ -53,15 +61,22 @@ namespace DiceMaster.LogUI
             this.close = close;
             window = new Rect(ConfigManager.LogWindowX.Value, ConfigManager.LogWindowY.Value,
                 ConfigManager.LogWindowWidth.Value, ConfigManager.LogWindowHeight.Value);
+            bool useDefaults = LogLayout.IsDefaultSeed(window, ConfigManager.LogFontSize.Value);
+            if (useDefaults)
+            {
+                window = LogLayout.DefaultWindow(Screen.width, Screen.height);
+                ConfigManager.LogFontSize.Value = LogLayout.DefaultFont(Screen.height);
+            }
             window = ConstrainWindow(window, Screen.width, Screen.height);
             savedWindow = new Rect(float.NaN, 0, 0, 0);
+            if (useDefaults) PersistLayout(true);
         }
 
         public static Rect ConstrainWindow(Rect value, int screenWidth, int screenHeight)
         {
             float width = Math.Max(1, screenWidth), height = Math.Max(1, screenHeight);
-            value.width = Mathf.Clamp(Finite(value.width, 750), Math.Min(540, width), width);
-            value.height = Mathf.Clamp(Finite(value.height, 750), Math.Min(440, height), height);
+            value.width = Mathf.Clamp(Finite(value.width, LogLayout.DefaultWidth), Math.Min(540, width), width);
+            value.height = Mathf.Clamp(Finite(value.height, LogLayout.DefaultHeight), Math.Min(440, height), height);
             value.x = Mathf.Clamp(Finite(value.x, 20), 0, Math.Max(0, width - value.width));
             value.y = Mathf.Clamp(Finite(value.y, 20), 0, Math.Max(0, height - value.height));
             return value;
@@ -81,6 +96,8 @@ namespace DiceMaster.LogUI
             LatchPhysicallyHeldKeys();
             searchFieldFocused = false;
             ensureVisible = true;
+            manualListScroll = false;
+            lastMeasuredId = null;
         }
 
         private bool Synchronize()
@@ -182,7 +199,11 @@ namespace DiceMaster.LogUI
             float pixels = value * 520f * Mathf.Clamp(Time.unscaledDeltaTime, 0f, 0.1f);
             if (area == Area.Tools) toolScroll = Math.Max(0, toolScroll + pixels);
             else if (area == Area.Keyboard) keyboardScroll = Math.Max(0, keyboardScroll + pixels);
-            else if (Cards) State.ListScroll = Math.Max(0, State.ListScroll + pixels);
+            else if (Cards)
+            {
+                State.ListScroll = Math.Max(0, State.ListScroll + pixels);
+                if (value != 0) manualListScroll = true;
+            }
             else State.DetailScroll = Math.Max(0, State.DetailScroll + pixels);
         }
 
@@ -192,7 +213,7 @@ namespace DiceMaster.LogUI
             window = ConstrainWindow(window, Screen.width, Screen.height);
             EnsureStyles();
             HandleKeyboard();
-            window = GUILayout.Window(140404, window, DrawWindow, "다이스마스터 로그 · 창 제목을 끌어 이동", windowStyle,
+            window = GUILayout.Window(140404, window, DrawWindow, "다이스마스터 로그 · 창 안을 끌어 이동", windowStyle,
                 GUILayout.Width(window.width), GUILayout.Height(window.height));
             window = ConstrainWindow(window, Screen.width, Screen.height);
             if (pendingAction != null)
@@ -208,72 +229,150 @@ namespace DiceMaster.LogUI
 
         private void EnsureStyles()
         {
-            int configured = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 28);
-            // Keep the fixed bars accessible even on unusually small viewports.
-            int font = Math.Min(configured, Math.Max(10, (int)(Math.Min(window.width / 28f, window.height / 32f))));
-            if (stylesReady && renderedFont == font) return;
+            // The selected physical font size is honored. Reserve actual chrome
+            // and content rectangles instead of shrinking text to fit the window.
+            int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, LogLayout.MinimumFont, LogLayout.MaximumFont);
+            int controls = Math.Min(font, Math.Max(12, Math.Min(LogLayout.DefaultFont(Screen.height), (int)(window.width / 28f))));
+            if (stylesReady && renderedFont == font && chromeFont == controls) return;
             renderedFont = font;
+            chromeFont = controls;
             textStyle = new GUIStyle(GUI.skin.label) { fontSize = font, richText = true, wordWrap = true, padding = new RectOffset(4, 4, 4, 4) };
             textStyle.normal.textColor = Color.white;
             literalStyle = new GUIStyle(textStyle) { richText = false };
             titleStyle = new GUIStyle(textStyle) { fontStyle = FontStyle.Bold };
-            statusStyle = new GUIStyle(textStyle) { fontSize = Math.Max(10, font - 1) };
+            statusStyle = new GUIStyle(textStyle) { fontSize = Math.Max(12, chromeFont - 1) };
             buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = font, richText = true, wordWrap = true, padding = new RectOffset(6, 6, 6, 6) };
             buttonStyle.normal.textColor = Color.white;
             selectedStyle = new GUIStyle(buttonStyle) { fontStyle = FontStyle.Bold };
             selectedStyle.normal.textColor = new Color(1f, .86f, .36f);
-            fieldStyle = new GUIStyle(GUI.skin.textField) { fontSize = font, richText = false };
+            fieldStyle = new GUIStyle(GUI.skin.textField) { fontSize = chromeFont, richText = false };
             boxStyle = new GUIStyle(GUI.skin.box) { padding = new RectOffset(6, 6, 5, 5) };
-            windowStyle = new GUIStyle(GUI.skin.window) { fontSize = font, padding = new RectOffset(8, 8, font + 14, 8) };
+            windowStyle = new GUIStyle(GUI.skin.window) { fontSize = chromeFont, padding = new RectOffset(8, 8, chromeFont + 14, 8) };
+            chromeTitleStyle = new GUIStyle(titleStyle) { fontSize = chromeFont };
+            chromeButtonStyle = new GUIStyle(buttonStyle) { fontSize = chromeFont };
+            chromeSelectedStyle = new GUIStyle(selectedStyle) { fontSize = chromeFont };
+            scrollStyle = new GUIStyle { padding = new RectOffset(0, 0, 0, 0) };
+            // GUILayout includes inherited skin margins in its minimum sizes.
+            // Our measured rectangles budget padding explicitly, so margins
+            // must not make a supposedly fixed pane grow past its clip area.
+            foreach (GUIStyle style in new[] { textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle,
+                statusStyle, fieldStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle })
+                style.margin = new RectOffset(0, 0, 0, 0);
             stylesReady = true;
         }
+
+        private float TextHeight(string text, GUIStyle style, float width)
+        { return Math.Max(style.fontSize + 10, style.CalcHeight(new GUIContent(text), Math.Max(1, width))); }
 
         private void DrawWindow(int id)
         {
             if (!searchFieldFocused) GUI.FocusControl(null);
+            string summary = "문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary();
+            float width = Math.Max(1, window.width - Math.Max(8, chromeFont * .55f) * 2);
+            layout = LogLayout.Calculate(window, chromeFont, !Cards && area != Area.Keyboard,
+                TextHeight(summary, statusStyle, width),
+                string.IsNullOrEmpty(InputHint) ? 0 : TextHeight(InputHint, statusStyle, width),
+                TextHeight(Hint(), statusStyle, width), chromeFont + 14 + renderedFont + 24 + 10 + (renderedFont + 12) * 2);
+            GUILayout.BeginArea(layout.Tabs);
             GUILayout.BeginHorizontal();
             for (int index = 0; index < Tabs.Length; index++)
             {
                 int tabIndex = index;
-                SafeButton((index == currentTabIndex ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), index == currentTabIndex);
+                SafeButton((index == currentTabIndex ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), index == currentTabIndex, chrome: true);
             }
-            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { if (area != Area.Tools) previousArea = area; area = Area.Tools; ensureVisible = true; }, area == Area.Tools);
-            SafeButton("닫기", "close", () => close?.Invoke());
+            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { if (area != Area.Tools) previousArea = area; area = Area.Tools; ensureVisible = true; }, area == Area.Tools, chrome: true);
+            SafeButton("닫기", "close", () => close?.Invoke(), chrome: true);
             GUILayout.EndHorizontal();
-            Label("문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary(), statusStyle);
-            if (!string.IsNullOrEmpty(InputHint)) Label(InputHint, statusStyle);
-            if (!Cards && area != Area.Keyboard) DrawSearch();
-            contentHeight = Math.Max(60, window.height - (Cards ? 165 : 210) - renderedFont * 3);
+            GUILayout.EndArea();
+            if (!layout.CompactChrome)
+            {
+                GUILayout.BeginArea(layout.Status);
+                Label(summary, statusStyle);
+                GUILayout.EndArea();
+            }
+            if (!layout.CompactChrome && !string.IsNullOrEmpty(InputHint))
+            {
+                GUILayout.BeginArea(layout.InputStatus);
+                Label(InputHint, statusStyle);
+                GUILayout.EndArea();
+            }
+            if (!layout.CompactChrome && !Cards && area != Area.Keyboard)
+            {
+                GUILayout.BeginArea(layout.Search);
+                DrawSearch();
+                GUILayout.EndArea();
+            }
+            // This rectangle is exactly the space remaining after the title,
+            // tabs, status, search and footer. Each scroll pane gets its height.
+            GUILayout.BeginArea(layout.Content);
             if (area == Area.Tools) DrawTools();
             else if (area == Area.Keyboard) DrawKeyboard();
             else if (Cards) DrawCards();
             else DrawListDetail();
-            Label(Hint(), statusStyle);
-            GUI.DragWindow(new Rect(0, 0, window.width, renderedFont + 12));
+            GUILayout.EndArea();
+            GUILayout.BeginArea(layout.Footer);
+            Label(layout.CompactChrome ? "Y 도구 · B 복귀/닫기" : Hint(), statusStyle);
+            GUILayout.EndArea();
+            // Restore the old whole-window drag area. Keep this after controls
+            // so buttons, text input and scrollbars retain their mouse capture.
+            GUI.DragWindow(new Rect(0, 0, window.width, window.height));
             if (Event.current.rawType == EventType.MouseUp && pendingAction == null) { pointerIdentity = null; pointerReservation = null; PersistLayout(true); }
         }
 
         private void DrawSearch()
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label("검색", statusStyle, GUILayout.Width(renderedFont * 3));
+            GUILayout.Label("검색", statusStyle, GUILayout.Width(chromeFont * 3));
             GUI.SetNextControlName("DiceMasterLogSearch");
             string value = GUILayout.TextField(State.Search, 256, fieldStyle, GUILayout.MinWidth(40), GUILayout.ExpandWidth(true));
             Rect searchRect = GUILayoutUtility.GetLastRect();
             if (Event.current.rawType == EventType.MouseDown && searchRect.Contains(Event.current.mousePosition))
             { searchFieldFocused = true; State.CancelExecution(); GamepadBridge.NotifyPointerActivity(); }
             if (value != State.Search) { State.SetSearch(value); CancelPending(); }
-            SafeButton("패드 입력", "search-keyboard", OpenKeyboard);
-            SafeButton("지우기", "clear-search", ClearSearch);
+            SafeButton("패드 입력", "search-keyboard", OpenKeyboard, chrome: true);
+            SafeButton("지우기", "clear-search", ClearSearch, chrome: true);
             GUILayout.EndHorizontal();
+        }
+
+        private Vector2 BeginScroll(float y, float height)
+        {
+            // Only vertical scrolling is used. GUIStyle.none gives a horizontal
+            // scrollbar zero height, so it cannot cover the selected row.
+            return GUILayout.BeginScrollView(new Vector2(0, y), false, true,
+                GUIStyle.none, GUI.skin.verticalScrollbar, scrollStyle,
+                GUILayout.Height(height), GUILayout.ExpandWidth(true));
+        }
+
+        private Vector2 BeginListScroll(float height)
+        {
+            float previous = State.ListScroll;
+            Event evt = Event.current;
+            bool mouse = evt != null && (evt.rawType == EventType.MouseDown || evt.rawType == EventType.MouseDrag || evt.rawType == EventType.ScrollWheel);
+            bool inside = mouse && lastListViewport.Contains(evt.mousePosition);
+            Vector2 next = BeginScroll(previous, height);
+            // A captured scrollbar thumb can be dragged outside its viewport.
+            // Its changed return value still belongs to the user's gesture.
+            if (mouse && next.y != previous || inside && evt.rawType == EventType.ScrollWheel) manualListScroll = true;
+            return next;
+        }
+
+        private void DrawOverflowChrome(bool includeSearch = false)
+        {
+            if (layout == null || !layout.CompactChrome) return;
+            Label("문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary(), statusStyle);
+            if (!string.IsNullOrEmpty(InputHint)) Label(InputHint, statusStyle);
+            Label(Hint(), statusStyle);
+            if (includeSearch && !Cards) DrawSearch();
         }
 
         private void DrawCards()
         {
             IList<LogItem> rows = VisibleRows();
-            Vector2 scroll = GUILayout.BeginScrollView(new Vector2(0, State.ListScroll), GUILayout.ExpandHeight(true), GUILayout.MinHeight(60));
+            Vector2 scroll = BeginListScroll(BodyHeight);
             State.ListScroll = scroll.y;
+            DrawOverflowChrome();
             rowRects.Clear();
+            float contentBottom = 0;
             if (rows.Count == 0) DrawEmpty();
             foreach (LogItem row in rows)
             {
@@ -293,24 +392,26 @@ namespace DiceMaster.LogUI
                 }
                 GUILayout.EndVertical();
                 Rect rect = GUILayoutUtility.GetLastRect();
-                rowRects[row.Id] = rect;
-                // An expanded body can be taller than the entire viewport.
-                // Keep its selected header visible; right-stick scrolling then
-                // reaches the body without jumping straight to the card's end.
-                FollowSelection(headerRect, row.Id);
+                rowRects[row.Id] = headerRect;
+                contentBottom = Math.Max(contentBottom, rect.yMax);
             }
             GUILayout.EndScrollView();
+            CompleteListScroll(GUILayoutUtility.GetLastRect(), contentBottom);
         }
 
         private void DrawListDetail()
         {
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical(GUILayout.Width(Math.Max(140, window.width * .36f)));
-            Label(area == Area.List ? "▶ 목록" : "목록", titleStyle);
-            Vector2 list = GUILayout.BeginScrollView(new Vector2(0, State.ListScroll), GUILayout.MinHeight(60), GUILayout.ExpandHeight(true));
+            float headingHeight = chromeFont + 14;
+            float listWidth = Math.Max(140, BodyWidth * .36f);
+            float reserveHeight = 0;
+            GUILayout.BeginHorizontal(GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
+            GUILayout.BeginVertical(GUILayout.Width(listWidth), GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
+            Display.Label(area == Area.List ? "▶ 목록" : "목록", chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
+            Vector2 list = BeginListScroll(Math.Max(1, BodyHeight - headingHeight));
             State.ListScroll = list.y;
             IList<LogItem> rows = VisibleRows();
             rowRects.Clear();
+            float contentBottom = 0;
             if (rows.Count == 0) DrawEmpty();
             foreach (LogItem row in rows)
             {
@@ -319,30 +420,37 @@ namespace DiceMaster.LogUI
                     () => { Select(row.Id); area = Area.List; }, selected && area == Area.List);
                 Rect rect = GUILayoutUtility.GetLastRect();
                 rowRects[row.Id] = rect;
-                FollowSelection(rect, row.Id);
+                contentBottom = Math.Max(contentBottom, rect.yMax);
             }
             GUILayout.EndScrollView();
+            CompleteListScroll(GUILayoutUtility.GetLastRect(), contentBottom);
             GUILayout.EndVertical();
-            GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true));
+            GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true), GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
             LogItem selectedRow = State.Selected;
-            if (selectedRow == null)
+            Display.Label(area == Area.Detail ? "▶ 상세" : "상세", chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
+            bool reservable = selectedRow != null && selectedRow.CanReserve && !State.PublicationFailed;
+            if (selectedRow != null)
             {
-                Label("목록에서 대상을 선택하세요.\n자동 갱신·검색으로 대상이 없어지면 다시 선택해야 합니다.", textStyle);
-                GUILayout.FlexibleSpace();
-            }
-            else
-            {
-                Label(area == Area.Detail ? "▶ 상세" : "상세", titleStyle);
-                bool reservable = selectedRow.CanReserve && !State.PublicationFailed;
                 string label = CurrentTab == "이벤트" ? "이벤트 우선 예약" : "미션 조건 통과 예약";
                 if (LogBridge.IsReserved(CurrentTab, selectedRow.Target)) label += " · 예약 중";
                 bool enabled = GUI.enabled;
                 GUI.enabled = enabled && reservable;
-                SafeButton((area == Area.Detail && detailIndex == 1 ? "▶ " : "") + label, "reserve:" + selectedRow.Id,
-                    () => Reserve(pointerReservation), area == Area.Detail && detailIndex == 1);
+                bool focused = area == Area.Detail && detailIndex == 1;
+                string buttonLabel = (focused ? "▶ " : "") + label;
+                GUIStyle reserveStyle = focused ? chromeSelectedStyle : chromeButtonStyle;
+                float detailWidth = Math.Max(1, BodyWidth - listWidth - boxStyle.padding.left - boxStyle.padding.right);
+                reserveHeight = Math.Max(chromeFont + 24, reserveStyle.CalcHeight(new GUIContent(buttonLabel), detailWidth));
+                SafeButton(buttonLabel, "reserve:" + selectedRow.Id,
+                    () => Reserve(pointerReservation), focused, reserveHeight, chrome: true);
                 GUI.enabled = enabled;
-                Vector2 detail = GUILayout.BeginScrollView(new Vector2(0, State.DetailScroll), GUILayout.MinHeight(40), GUILayout.ExpandHeight(true));
-                State.DetailScroll = detail.y;
+            }
+            Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, BodyHeight - headingHeight - (selectedRow == null ? 0 : reserveHeight) - 10));
+            State.DetailScroll = detail.y;
+            DrawOverflowChrome();
+            if (selectedRow == null)
+                Label("목록에서 대상을 선택하세요.\n자동 갱신·검색으로 대상이 없어지면 다시 선택해야 합니다.", textStyle);
+            else
+            {
                 Label(Title(selectedRow), titleStyle);
                 Label(RowState(selectedRow), statusStyle);
                 Label(CurrentTab == "이벤트" ? "다음 해당 판정의 가중치를 높입니다. 즉시 발생하거나 지정 이벤트가 발생함을 보장하지 않습니다." :
@@ -351,8 +459,8 @@ namespace DiceMaster.LogUI
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
                 Label(selectedRow.Description, textStyle);
-                GUILayout.EndScrollView();
             }
+            GUILayout.EndScrollView();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
         }
@@ -369,10 +477,11 @@ namespace DiceMaster.LogUI
         private int ToolCount => 19;
         private void DrawTools()
         {
-            Label("▶ 도구 · ↑↓ 선택 / A 작동 / B 돌아가기", titleStyle);
-            Vector2 scroll = GUILayout.BeginScrollView(new Vector2(0, toolScroll), GUILayout.MinHeight(60), GUILayout.ExpandHeight(true));
+            Vector2 scroll = BeginScroll(toolScroll, BodyHeight);
             toolScroll = scroll.y;
+            DrawOverflowChrome(includeSearch: true);
             toolRects.Clear();
+            float contentBottom = 0;
             for (int index = 0; index < ToolCount; index++)
             {
                 int item = index;
@@ -380,10 +489,15 @@ namespace DiceMaster.LogUI
                     () => { toolIndex = item; ActivateTool(item); }, toolIndex == index);
                 Rect rect = GUILayoutUtility.GetLastRect();
                 toolRects.Add(rect);
-                if (ensureVisible && toolIndex == index && Event.current.type == EventType.Repaint)
-                { toolScroll = BringIntoView(toolScroll, rect); ensureVisible = false; }
+                contentBottom = Math.Max(contentBottom, rect.yMax);
             }
             GUILayout.EndScrollView();
+            Rect viewport = GUILayoutUtility.GetLastRect();
+            if (ensureVisible && Event.current.type == EventType.Repaint && toolIndex < toolRects.Count)
+            {
+                toolScroll = LogLayout.BringIntoView(toolScroll, toolRects[toolIndex], viewport.height, contentBottom);
+                ensureVisible = false;
+            }
         }
 
         private string ToolLabel(int index)
@@ -393,8 +507,8 @@ namespace DiceMaster.LogUI
                 case 0: return "검색 문자 입력 · 로컬 한글/영문/ID 자판";
                 case 1: return "검색 지우기";
                 case 2: return "게임 데이터 새로고침 [X]";
-                case 3: return "글자 작게 · 현재 " + ConfigManager.LogFontSize.Value;
-                case 4: return "글자 크게 · 현재 " + ConfigManager.LogFontSize.Value;
+                case 3: return "본문 글자 작게 · 현재 " + ConfigManager.LogFontSize.Value;
+                case 4: return "본문 글자 크게 · 현재 " + ConfigManager.LogFontSize.Value;
                 case 5: return "창 너비 줄이기 · 현재 " + (int)window.width;
                 case 6: return "창 너비 늘리기 · 현재 " + (int)window.width;
                 case 7: return "창 높이 줄이기 · 현재 " + (int)window.height;
@@ -420,8 +534,8 @@ namespace DiceMaster.LogUI
                 case 0: OpenKeyboard(); break;
                 case 1: ClearSearch(); break;
                 case 2: refresh?.Invoke(); break;
-                case 3: ConfigManager.LogFontSize.Value = Mathf.Clamp(ConfigManager.LogFontSize.Value - 1, 12, 28); break;
-                case 4: ConfigManager.LogFontSize.Value = Mathf.Clamp(ConfigManager.LogFontSize.Value + 1, 12, 28); break;
+                case 3: ConfigManager.LogFontSize.Value = Mathf.Clamp(ConfigManager.LogFontSize.Value - 1, LogLayout.MinimumFont, LogLayout.MaximumFont); break;
+                case 4: ConfigManager.LogFontSize.Value = Mathf.Clamp(ConfigManager.LogFontSize.Value + 1, LogLayout.MinimumFont, LogLayout.MaximumFont); break;
                 case 5: window.width -= 40; break;
                 case 6: window.width += 40; break;
                 case 7: window.height -= 40; break;
@@ -430,7 +544,7 @@ namespace DiceMaster.LogUI
                 case 10: window.x += 32; break;
                 case 11: window.y -= 32; break;
                 case 12: window.y += 32; break;
-                case 13: window = new Rect(20, 20, 750, 750); ConfigManager.LogFontSize.Value = 14; break;
+                case 13: window = LogLayout.DefaultWindow(Screen.width, Screen.height); ConfigManager.LogFontSize.Value = LogLayout.DefaultFont(Screen.height); break;
                 case 14: ReselectController?.Invoke(); ResetInputFocus(); break;
                 case 15: SwitchTab(0); break;
                 case 16: SwitchTab(2); break;
@@ -488,14 +602,17 @@ namespace DiceMaster.LogUI
 
         private void DrawKeyboard()
         {
-            Vector2 scroll = GUILayout.BeginScrollView(new Vector2(0, keyboardScroll), GUILayout.MinHeight(60), GUILayout.ExpandHeight(true));
+            Vector2 scroll = BeginScroll(keyboardScroll, BodyHeight);
             keyboardScroll = scroll.y;
+            DrawOverflowChrome();
             // Search input is literal user text. Display.Label translates and
             // records unknown Han text, so it must never receive this draft.
             GUILayout.Label("▶ 로컬 검색 자판 · " + (keyboard.Mode == 0 ? keyboard.StageLabel + " (초성→중성→종성)" : "영문·원본 ID") +
                 "\n검색어: " + keyboard.Draft + "  [조합: " + keyboard.Composition + "]", literalStyle);
             Label("방향키로 이동 · A 입력 · 확정 전에는 검색에 반영하지 않음 · B 취소", statusStyle);
             int index = 0;
+            Rect selectedRect = new Rect();
+            float contentBottom = 0;
             while (index < keyboardCells.Count)
             {
                 int row = keyboardCells[index].Row;
@@ -506,13 +623,20 @@ namespace DiceMaster.LogUI
                     KeyboardCell cell = keyboardCells[index];
                     SafeButton((index == keyboardIndex ? "▶ " : "") + cell.Label, "key:" + row + ":" + cell.Column + ":" + keyboard.Mode + ":" + keyboard.Stage,
                         () => { keyboardIndex = key; PressKeyboardCell(); }, keyboardIndex == index);
-                    if (ensureVisible && keyboardIndex == index && Event.current.type == EventType.Repaint)
-                    { keyboardScroll = BringIntoView(keyboardScroll, GUILayoutUtility.GetLastRect()); ensureVisible = false; }
+                    Rect keyRect = GUILayoutUtility.GetLastRect();
+                    if (keyboardIndex == index) selectedRect = keyRect;
+                    contentBottom = Math.Max(contentBottom, keyRect.yMax);
                     index++;
                 }
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndScrollView();
+            Rect viewport = GUILayoutUtility.GetLastRect();
+            if (ensureVisible && Event.current.type == EventType.Repaint)
+            {
+                keyboardScroll = LogLayout.BringIntoView(keyboardScroll, selectedRect, viewport.height, contentBottom);
+                ensureVisible = false;
+            }
         }
 
         private void NavigateKeyboard(LogPadCommand command)
@@ -544,9 +668,10 @@ namespace DiceMaster.LogUI
             ensureVisible = true;
         }
 
-        private void SafeButton(string label, string identity, Action action, bool highlighted = false)
+        private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false)
         {
-            bool pressed = GUILayout.Button(label, highlighted ? selectedStyle : buttonStyle, GUILayout.MinHeight(renderedFont + 16), GUILayout.ExpandWidth(true));
+            GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
+            bool pressed = GUILayout.Button(label, style, height > 0 ? GUILayout.Height(height) : GUILayout.MinHeight((chrome ? chromeFont : renderedFont) + 16), GUILayout.ExpandWidth(true));
             Rect rect = GUILayoutUtility.GetLastRect();
             Event evt = Event.current;
             // rawType remains MouseDown/MouseUp after IMGUI consumes the event.
@@ -580,7 +705,7 @@ namespace DiceMaster.LogUI
         }
 
         private void Select(string id)
-        { State.Select(id); observedSelection = State.SelectedId; detailIndex = 0; ensureVisible = true; CancelPending(); }
+        { State.Select(id); observedSelection = State.SelectedId; detailIndex = 0; ensureVisible = true; manualListScroll = false; CancelPending(); }
 
         private void SwitchTab(int index)
         {
@@ -649,18 +774,23 @@ namespace DiceMaster.LogUI
             return "현재: " + (Cards ? "카드" : "목록") + " · ↑↓ 이동 / A " + (Cards ? "펼침" : "상세") + " / → 상세 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
         }
 
-        private void FollowSelection(Rect rect, string id)
+        private void CompleteListScroll(Rect viewport, float contentBottom)
         {
-            if (!ensureVisible || id != State.SelectedId || Event.current.type != EventType.Repaint) return;
-            State.ListScroll = BringIntoView(State.ListScroll, rect);
-            ensureVisible = false;
-        }
-
-        private float BringIntoView(float scroll, Rect rect)
-        {
-            if (rect.y < scroll) return Math.Max(0, rect.y);
-            if (rect.yMax > scroll + contentHeight) return Math.Max(0, rect.yMax - contentHeight);
-            return scroll;
+            if (Event.current.type != EventType.Repaint || viewport.height <= 0) return;
+            lastListViewport = viewport;
+            Rect selected;
+            if (State.SelectedId == null || !rowRects.TryGetValue(State.SelectedId, out selected)) return;
+            bool changed = lastMeasuredId == State.SelectedId && lastMeasuredTab == CurrentTab &&
+                (selected != lastSelectedBounds || viewport.height != lastListViewportHeight);
+            if (ensureVisible || changed && area == Area.List && !manualListScroll)
+            {
+                State.ListScroll = LogLayout.BringIntoView(State.ListScroll, selected, viewport.height, contentBottom);
+                ensureVisible = false;
+            }
+            lastSelectedBounds = selected;
+            lastListViewportHeight = viewport.height;
+            lastMeasuredId = State.SelectedId;
+            lastMeasuredTab = CurrentTab;
         }
 
         private static int IndexOf(IList<LogItem> rows, string id)
@@ -668,14 +798,14 @@ namespace DiceMaster.LogUI
 
         private void PersistLayout(bool immediate)
         {
-            if (window == savedWindow && ConfigManager.LogFontSize.Value >= 12 && ConfigManager.LogFontSize.Value <= 28) return;
+            if (window == savedWindow && ConfigManager.LogFontSize.Value >= LogLayout.MinimumFont && ConfigManager.LogFontSize.Value <= LogLayout.MaximumFont) return;
             if (!immediate && Time.unscaledTime - lastSave < .5f) return;
             lastSave = Time.unscaledTime;
             ConfigManager.LogWindowX.Value = window.x;
             ConfigManager.LogWindowY.Value = window.y;
             ConfigManager.LogWindowWidth.Value = window.width;
             ConfigManager.LogWindowHeight.Value = window.height;
-            ConfigManager.LogFontSize.Value = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 28);
+            ConfigManager.LogFontSize.Value = Mathf.Clamp(ConfigManager.LogFontSize.Value, LogLayout.MinimumFont, LogLayout.MaximumFont);
             savedWindow = window;
         }
 

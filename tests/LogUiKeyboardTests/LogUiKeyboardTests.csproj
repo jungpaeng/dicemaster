@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="../../src/DiceMaster/LogUI/LocalSearchKeyboard.cs" Link="LocalSearchKeyboard.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogRenderer.cs" Link="LogRenderer.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
   </ItemGroup>
 </Project>
