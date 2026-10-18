@@ -4,7 +4,7 @@
 
 ## PRD #4 로그 탐색 prerelease
 
-alpha.2의 작은 빈 창 실패를 고정 크기 창 호출로 수정한 [alpha.3](ISSUE-4-ALPHA3-RELEASE.md)을 준비합니다. [원인·검사 보강·설정 복구·Windows 재검증](ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따르며 기존 패드 매핑과 입력 소유권은 유지합니다. 실제 Windows 표시·탐색 성공은 재검증 대기입니다.
+alpha.2의 작은 빈 창 실패를 고정 크기 창 호출로 수정한 [alpha.3](ISSUE-4-ALPHA3-RELEASE.md)을 게시했습니다. [원인·검사 보강·설정 복구·Windows 재검증](ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따르며 기존 패드 매핑과 입력 소유권은 유지합니다. 실제 Windows 표시·탐색 성공은 재검증 대기입니다.
 
 alpha.1의 사용자 보고에 따른 [UI 크기·본문 높이·포커스 스크롤 후속 수정](ISSUE-4-UI-FOLLOWUP.md)은 사용자 지시에 따라 [v1.0.5-alpha.2 prerelease](ISSUE-4-ALPHA2-RELEASE.md)로 게시했습니다. 1080p 기본 1200×860/본문20px을 화면 높이에 맞춰 확대하며 본문 글자는12~64px을 그대로 표시합니다. 기본 배치 이행·사용자 지정 보존, 실제 뷰포트 추적과 수동 읽기 유지, 큰 글자·작은 창에서의 복구를 추가했습니다. 후속 후보의 실제 Windows 확인은 대기 중이며 아래 기존 alpha.1 검증/게시와 구분합니다.
 

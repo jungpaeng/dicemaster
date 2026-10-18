@@ -49,3 +49,9 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 로그 열기는 기존 `[DiceMaster].LogMenuToggleKey`(기본 **Tab**)이며 패드 열기 조합은 없습니다. 이벤트·미션 버튼은 즉시 실행을 보장하지 않는 기존 **예약** 기능입니다. 키보드·마우스 직접 상태 폴링은 보조 콜백 차단 범위 밖이고, 미확인 Steam Input 구성·모든 패드의 호환성은 보장하지 않습니다. 자세한 조작과 지원 경계는 [패드 안내](https://github.com/jungpaeng/dicemaster/blob/v1.0.5-alpha.3/docs/GAMEPAD.md)를 따릅니다.
 
 결과에는 DLL 해시·해상도/배율/창 모드·게임/로더/패드/Steam Input 환경·재현 순서와 관련 BepInEx 로그를 남겨 주세요. 자동 검사와 prerelease 게시는 실제 게임 성공의 근거를 대신하지 않습니다.
+
+## 게시 결과
+
+**2026-10-19 04:24:38 KST에 [v1.0.5-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.3) prerelease를 게시했습니다.** 소스 태그 커밋은 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`, Release ID는 `416651578`, asset ID는 `654282422`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 구현·후보 검증 문서 커밋을 푸시했고 고정 소스 스냅샷의 깨끗한 재빌드·11개 프로그램·UI 11,840/실제 DLL 연결 23 단언과 검토 DLL·설정·ZIP 해시 일치를 확인했습니다. 공개 설치 파일은 [DiceMaster-v1.0.5-alpha.3.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.3/DiceMaster-v1.0.5-alpha.3.zip)입니다.
+
+Release·태그·보존 상태는 인증된 GitHub API로 확인했고 공개 페이지와 ZIP은 인증 없이 접근·다운로드했습니다. ZIP CRC·정확히 두 파일·DLL/설정 바이트·해시가 검증한 패키지와 일치합니다. 기존 16개 Release·태그 커밋·자산, Latest 정식 v1.0.4, 이슈 #2 closed와 #4 open을 보존했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.3/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드/검증 로그에 있습니다. 게시 결과를 기록하는 후속 문서 커밋은 태그·공개 자산을 바꾸지 않습니다. **실제 Windows 창 표시·패드 탐색·스크롤·버튼·드래그와 회귀 확인은 대기이며 이슈 #4를 완료 처리하지 않았습니다.**

@@ -7,9 +7,9 @@
 
 ## PRD #4 — v1.0.5-alpha.3 빈 로그 창 수정
 
-alpha.2에서 작은 빈 창만 표시된다는 실제 Windows 실패가 보고되었습니다. 창의 자동 크기 계산이 `BeginArea` 내용을 포함하지 않아 축소되는 원인을 확인하고 고정 크기 창 API로 수정했습니다. [원인·검사 보강·설정 복구·Windows 재검증](docs/ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. 전체 소스 빌드·11개 검사와 이전 잘못된 창 호출을 거부하는 회귀 검사를 통과했고 [alpha.3 설치·복구·해시](docs/ISSUE-4-ALPHA3-RELEASE.md)를 준비했습니다. 고정 커밋 `3b24513`의 깨끗한 재빌드까지 통과한 로컬 후보이며 공개 게시 전입니다. 실제 게임 표시 성공은 아직 확인하지 않았습니다.
+alpha.2에서 작은 빈 창만 표시된다는 실제 Windows 실패가 보고되었습니다. 창의 자동 크기 계산이 `BeginArea` 내용을 포함하지 않아 축소되는 원인을 확인하고 고정 크기 창 API로 수정했습니다. [원인·검사 보강·설정 복구·Windows 재검증](docs/ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. **[v1.0.5-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.3)를 2026-10-19 04:24:38 KST에 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.3/DiceMaster-v1.0.5-alpha.3.zip) · [적용·복구·해시](docs/ISSUE-4-ALPHA3-RELEASE.md). 소스 커밋 `3b24513`의 깨끗한 재빌드·11개 검사·이전 호출 거부 검사와 인증 없는 공개 다운로드의 해시 검증을 통과했습니다. **실제 Windows 창 표시·패드 동작은 재검증 대기**입니다.
 
-## PRD #4 — v1.0.5-alpha.2 UI 후속
+## 이전 PRD #4 — v1.0.5-alpha.2 UI 후속
 
 alpha.1에서 보고된 작은 UI·좁은 본문·선택 항목 스크롤 추적 문제를 수정하고 **[v1.0.5-alpha.2 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.2)를 2026-10-19 04:13:07 KST에 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.2/DiceMaster-v1.0.5-alpha.2.zip). 조활 시스템의 화면 높이 배율을 참고해 기본 창/본문을 **1080p 1200×860·20px, 1440p 1600×1147·27px, 4K 2400×1720·40px**로 맞춥니다. 본문은 탭·검색·안내를 제외한 남은 높이를 채우고, 실제 스크롤 영역으로 선택 항목을 따라갑니다. 본문 글자 설정을 창 크기로 다시 줄이지 않습니다.
 

@@ -1,6 +1,6 @@
 # 변경 이력
 
-## [v1.0.5-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.3) — 2026-10-19 (prerelease 게시 준비)
+## [v1.0.5-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.3) — 2026-10-19 (prerelease)
 
 - alpha.2의 빈 자동 배치 루트가 실제 창을 패딩 크기로 줄이던 회귀를 `GUI.Window` 고정 크기 호출로 수정합니다. 기존 크기·남은 본문·포커스 스크롤·전체 창 드래그는 유지합니다.
 - 요청 크기를 그대로 반환하던 검사 대역을 보강하여 실제 창 경계와 관리 코드 보정값을 분리합니다. [원인과 검사·Windows 재검증](docs/ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따르며 자동 검사로 실게임 표시 성공을 주장하지 않습니다.

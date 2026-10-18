@@ -2,7 +2,7 @@
 
 2026-10-19 KST. 사용자가 `v1.0.5-alpha.2`의 실제 Windows 게임에서 **좌측 상단에 매우 작은 빈 창만 보인다**고 보고했다. 이는 alpha.2의 실게임 실패이며, 이전 빌드·자동 검사 통과로 대체하지 않는다. 실제 위치가 정확히 `(0,0)`이었다고 단정할 근거는 없다.
 
-이번 로컬 수정은 창을 만드는 API를 고정 크기용 `GUI.Window`로 바꾸는 최소 변경이다. Windows 재검증은 아직 하지 않았고 이슈 #4도 미완료다. 에이전트는 게임을 설치하거나 실행하지 않았다. 이 문서는 새 버전의 게시 성공 기록이 아니다.
+이번 수정은 창을 만드는 API를 고정 크기용 `GUI.Window`로 바꾸는 최소 변경이다. 사용자 승인에 따라 2026-10-19 04:24:38 KST에 [v1.0.5-alpha.3](ISSUE-4-ALPHA3-RELEASE.md)로 게시했다. Windows 재검증은 아직 하지 않았고 이슈 #4도 미완료다. 에이전트는 게임을 설치하거나 실행하지 않았다. 게시·공개 다운로드 근거는 alpha.3 기록으로 구분한다.
 
 ## 원인: 비어 있는 자동 배치 루트
 
@@ -58,7 +58,7 @@ alpha.2는 `GUILayout.Window`에 너비·높이 옵션을 전달하면서 탭·�
 | 후보 ZIP 경로 / SHA-256 | `artifacts/issue-4/fixed-window/DiceMaster-source-candidate.zip` / `471119e2eb263843fe30b86f5a693b3ddafd0ff2fb51a8224993932f68b06af5` |
 | Windows 실제 게임 결과 | 사용자 재검증 대기 |
 
-이전 공개 alpha.2 자산의 해시를 수정 후보의 해시로 사용하지 않는다. [alpha.3](ISSUE-4-ALPHA3-RELEASE.md)용 로컬 설치 ZIP은 `artifacts/releases/v1.0.5-alpha.3/DiceMaster-v1.0.5-alpha.3.zip`이다. 고정 커밋만 추출한 소스 스냅샷에서 기존 모드 DLL·Git 데이터·이전 출력 없이 새로 컴파일하고 11개 검사·검토 DLL/설정/ZIP 해시 비교를 통과했다. `release-verification.json`은 게시 전 검사 영수증이며 아직 공개 게시하지 않았다. 실제 게시·공개 다운로드 결과는 게시 후 별도로 기록한다.
+이전 공개 alpha.2 자산의 해시를 수정 후보의 해시로 사용하지 않는다. [alpha.3](ISSUE-4-ALPHA3-RELEASE.md)용 로컬 설치 ZIP은 `artifacts/releases/v1.0.5-alpha.3/DiceMaster-v1.0.5-alpha.3.zip`이다. 고정 커밋만 추출한 소스 스냅샷에서 기존 모드 DLL·Git 데이터·이전 출력 없이 새로 컴파일하고 11개 검사·검토 DLL/설정/ZIP 해시 비교를 통과했다. `release-verification.json`은 게시 전 검사 영수증이다. 이후 사용자 승인에 따라 2026-10-19 04:24:38 KST에 게시했고, 인증 없는 공개 페이지·ZIP 다운로드와 내부 두 파일·CRC·해시를 확인했다. 실제 게시 결과는 같은 폴더의 `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 [alpha.3 기록](ISSUE-4-ALPHA3-RELEASE.md)에 보존한다.
 
 새 계약 검사에서 area만 있는 자동 창은 16×42로 축소되고 고정 창은 1200×860을 유지한다. 격리 복사본의 생산 호출을 옛 자동 창으로 되돌린 변이 검사도 새 native 경계 검사에서 예상대로 실패했다. 공개 alpha.2의 실제 DLL은 새 고정 창 연결 검사에서 거부됐고 수정 DLL은 23개 연결 검사를 통과했다. `artifacts/issue-4/window-size-regression-evidence/`에 변이 결과·빌드/거부 로그와 읽기 전용 참조 IL 확인 요약을 보존한다. 대역의 `NativeRect`와 클리핑은 계약 모델의 값이며 실제 Unity/native 화면을 실행하거나 캡처한 결과가 아니다.
 

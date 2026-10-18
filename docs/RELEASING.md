@@ -4,7 +4,11 @@
 
 alpha.2에서 좌측 상단의 작은 빈 창만 보인다는 실제 Windows 실패를 확인하고 자동 크기 창을 고정 사각형 창으로 교체합니다. 기존 prerelease 지시의 후속인 `v1.0.5-alpha.3`은 [원인·검사 보강](ISSUE-4-WINDOW-SIZE-REGRESSION.md)과 [설치·복구·해시](ISSUE-4-ALPHA3-RELEASE.md)를 따릅니다. 에이전트는 게임을 실행하지 않았으며 실제 수정 성공과 이슈 #4 완료는 주장하지 않습니다.
 
-검토 DLL `e432c5e118760a3d5d75eba9f0920db1ac7bb73bdc0aada3d91ea74e178b3fb9`, 설정 `2ed5841519cf3ef6719477b0e6b69de989c4b02c5e5fa883b303b786db2faafc`를 요구하고 고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 전체 11개 프로그램·UI 11,840·새 실제 DLL 연결 23 단언, 이전 호출로 되돌리면 실패하는 회귀·공개 alpha.2 DLL 거부를 확인했습니다. 출력은 `artifacts/releases/v1.0.5-alpha.3/`입니다. 소스 커밋 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`의 깨끗한 재빌드·11개 검사와 검토 DLL/설정/ZIP 해시 일치를 확인했습니다. 아직 원격 푸시나 공개 게시는 진행하지 않았습니다. 사전 확인의 기존 16개 Release·태그·자산과 정식 Latest v1.0.4를 보존하고 이슈 #4는 open을 유지합니다. 게시·인증 없는 공개 페이지/ZIP 다운로드 결과는 별도로 기록합니다.
+검토 DLL `e432c5e118760a3d5d75eba9f0920db1ac7bb73bdc0aada3d91ea74e178b3fb9`, 설정 `2ed5841519cf3ef6719477b0e6b69de989c4b02c5e5fa883b303b786db2faafc`를 요구하고 고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 전체 11개 프로그램·UI 11,840·새 실제 DLL 연결 23 단언, 이전 호출로 되돌리면 실패하는 회귀·공개 alpha.2 DLL 거부를 확인했습니다. 출력은 `artifacts/releases/v1.0.5-alpha.3/`입니다. 소스 커밋 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`의 깨끗한 재빌드·11개 검사와 검토 DLL/설정/ZIP 해시 일치를 확인했습니다. 사용자의 명시적 게시 승인 뒤 커밋·태그를 푸시했고 실제 게시 결과는 아래에 기록합니다. 사전 확인의 기존 16개 Release·태그·자산과 정식 Latest v1.0.4를 보존하고 이슈 #4는 open을 유지합니다. 게시·인증 없는 공개 페이지/ZIP 다운로드 결과는 별도로 기록합니다.
+
+**2026-10-19 04:24:38 KST에 [v1.0.5-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.3) prerelease를 게시했습니다.** 소스 태그 커밋은 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`, Release ID는 `416651578`, asset ID는 `654282422`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 구현·후보 검증 문서 커밋을 푸시했고 고정 소스 스냅샷의 깨끗한 재빌드·11개 프로그램·UI 11,840/실제 DLL 연결 23 단언과 검토 DLL·설정·ZIP 해시 일치를 확인했습니다. 공개 설치 파일은 [DiceMaster-v1.0.5-alpha.3.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.3/DiceMaster-v1.0.5-alpha.3.zip)입니다.
+
+Release·태그·보존 상태는 인증된 GitHub API로 확인했고 공개 페이지와 ZIP은 인증 없이 접근·다운로드했습니다. ZIP CRC·정확히 두 파일·DLL/설정 바이트·해시가 검증한 패키지와 일치합니다. 기존 16개 Release·태그 커밋·자산, Latest 정식 v1.0.4, 이슈 #2 closed와 #4 open을 보존했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.3/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드/검증 로그에 있습니다. 게시 결과를 기록하는 후속 문서 커밋은 태그·공개 자산을 바꾸지 않습니다. **실제 Windows 창 표시·패드 탐색·스크롤·버튼·드래그와 회귀 확인은 대기이며 이슈 #4를 완료 처리하지 않았습니다.**
 
 ## PRD #4 alpha.2 UI 크기·스크롤·창 이동 후속
 

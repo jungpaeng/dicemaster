@@ -8,6 +8,8 @@
 
 ## PRD #4 후보와 prerelease
 
+alpha.3은 소스 커밋 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`의 깨끗한 재빌드·11개 검사·검토 후보 해시 일치를 확인한 뒤 2026-10-19 04:24:38 KST에 게시했습니다. 인증 없는 공개 페이지·설치 ZIP 검증도 통과했습니다. [게시 결과와 해시](ISSUE-4-ALPHA3-RELEASE.md)를 따르며 실제 Windows 성공 여부는 확인 대기입니다.
+
 alpha.2의 작은 빈 창 회귀는 [별도 원인·검사 기록](ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. 고정 크기 창 API로 바꾼 후보는 `artifacts/issue-4/fixed-window/`, 게시 전 고정 커밋 검증은 `artifacts/releases/v1.0.5-alpha.3/`에 분리합니다. 기존 후보·자산과 설정을 보존하고 실제 Unity/native 검증은 사용자가 수행합니다.
 
 사용자 지시에 따라 [alpha.2 UI 후속](ISSUE-4-ALPHA2-RELEASE.md)을 `389292a85469c046032d498561a3470387429f61`로 커밋했습니다. `verify-preview-release.py --scope prd4`로 해당 커밋만 재빌드한 DLL·설정·ZIP이 검토 후보와 일치했고 11개 검사 프로그램을 통과했습니다. 2026-10-19 04:13:07 KST prerelease 게시와 인증 없는 공개 페이지·ZIP 다운로드 검증을 마쳤습니다. [배포 기록](RELEASING.md)을 따르며 실제 Windows 확인은 별도입니다.
