@@ -73,3 +73,7 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 익명 API 조회 한도 때문에 Release·태그·기존 자산·Latest·이슈 메타데이터는 인증된 GitHub API로 확인했습니다. 공개 페이지와 ZIP은 인증 없이 접근·다운로드했고 ZIP CRC·정확히 두 파일·DLL/설정 바이트·SHA-256이 검증한 결과와 일치했습니다. 기존 15개 Release·태그 커밋·자산을 보존했고 Latest는 정식 v1.0.4, 이슈 #2는 closed, #4는 open을 유지합니다. 영수증은 `artifacts/releases/v1.0.5-alpha.2/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드/검증 로그입니다. 이 게시 기록을 반영하는 후속 문서 커밋은 태그와 공개 설치 자산을 바꾸지 않습니다.
 
 Windows 게임 설치·실행·UI/native 입력 성공이나 PRD #4 완료를 주장하지 않습니다. 실제 패드 탐색·스크롤·버튼·창 이동과 회귀는 사용자가 재검증해야 합니다.
+
+## 게시 후 Windows 실패 보고
+
+2026-10-19 KST에 사용자가 실제 게임에서 좌측 상단에 매우 작은 빈 창만 표시된다고 보고했습니다. alpha.2의 자동 검사 통과는 창 표시 성공의 근거가 되지 못했습니다. 자동 크기 창과 별도 영역 배치 사이의 회귀 원인과 수정·검사 보강·설정 복구·재검증은 [후속 기록](ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. 기존 게시 자산의 해시·태그는 당시 기록으로 보존합니다.

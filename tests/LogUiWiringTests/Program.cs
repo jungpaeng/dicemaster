@@ -35,6 +35,18 @@ static class Program
         Check(update.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "LogMenuToggleKey"), "existing configurable open key is used");
         Check(updateCalls.Any(c => c.Name == "GetKeyDown"), "keyboard open entry point retained");
         Check(Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Draw"), "actual OnGUI calls replacement renderer");
+        // BeginArea content does not contribute entries to GUILayout.Window's
+        // root layout. Inspect the shipped Draw call itself: fixture rendering
+        // alone cannot catch Unity shrinking that empty automatic root.
+        var draw = Method(renderer, "Draw");
+        var fixedWindowParameters = new[] { "System.Int32", "UnityEngine.Rect", "UnityEngine.GUI/WindowFunction", "System.String", "UnityEngine.GUIStyle" };
+        Check(draw.Body.Instructions.Where(i => i.OpCode == OpCodes.Call).Select(i => i.Operand).OfType<MethodReference>()
+            .Count(c => c.DeclaringType.FullName == "UnityEngine.GUI" && c.Name == "Window" && !c.HasThis
+                && c.ReturnType.FullName == "UnityEngine.Rect"
+                && c.Parameters.Select(p => p.ParameterType.FullName).SequenceEqual(fixedWindowParameters)) == 1,
+            "actual renderer Draw must call the five-argument fixed-rect GUI.Window API exactly once");
+        Check(!Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "Window"),
+            "actual renderer must not call automatic GUILayout.Window: BeginArea leaves its root layout empty");
         Check(Type(plugin).Fields.Any(f => f.FieldType.FullName == renderer), "plugin retains renderer instance across frames");
         Check(Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.Namespace == "DiceMaster.LogUI" && c.Name == "Publish"), "actual data publication reaches structured UI model");
         Check(Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve"), "renderer reservation uses current bridge validation");

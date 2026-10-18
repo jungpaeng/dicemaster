@@ -87,12 +87,14 @@ internal static class Program
             catch (ArgumentOutOfRangeException) { rejected = true; }
             Check(rejected, "invalid syllable indices rejected");
         }
+        WindowRootContract();
+        RendererNativeWindowBounds();
         RendererNavigation();
         RendererRenderingBoundaries();
         LayoutGeometry();
         RendererViewportAndFocus();
         RendererCompactAndPointerScroll();
-        Console.WriteLine("PASS: LogUiKeyboardTests: " + checks + " checks passed; actual renderer/model/local keyboard sources with explicit Unity/game boundaries; all 11,172 modern Hangul syllables.");
+        Console.WriteLine("PASS: LogUiKeyboardTests: " + checks + " checks passed; actual renderer/model/local keyboard sources with explicit Unity/game boundaries and managed window/clip contract model (not native Unity execution); all 11,172 modern Hangul syllables.");
     }
 
     private static object Field(LogRenderer renderer, string name) => typeof(LogRenderer).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(renderer);
@@ -104,6 +106,106 @@ internal static class Program
     {
         Event.current = new Event { type = type, rawType = type, keyCode = key };
         typeof(LogRenderer).GetMethod("HandleKeyboard", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
+    }
+
+    private static void WindowRootContract()
+    {
+        var requested = new Rect(20, 20, 1200, 860);
+        var style = new GUIStyle { padding = new RectOffset(8, 8, 34, 8) };
+        var label = new GUIStyle { fontSize = 20 };
+        Action<int> onlyFreeArea = id =>
+        {
+            GUILayout.BeginArea(new Rect(40, 80, 400, 300));
+            GUILayout.Label("자유 영역의 실제 표시 범위", label);
+            GUILayout.EndArea();
+        };
+        Event.current = new Event { type = EventType.Layout, rawType = EventType.Layout };
+        Rect automatic = GUILayout.Window(9001, requested, onlyFreeArea, "automatic", style,
+            GUILayout.Width(requested.width), GUILayout.Height(requested.height));
+        Check(automatic.width == 16 && automatic.height == 42, "negative control: area-only automatic window collapses to padding despite fixed options");
+        Check(GUILayout.LastWindow.RootEntryCount == 0 && GUILayout.LastWindow.FreeAreas.Count == 1,
+            "free areas are separate from ordinary root entries");
+        Event.current = new Event { type = EventType.Repaint, rawType = EventType.Repaint };
+        GUILayout.Window(9001, requested, onlyFreeArea, "automatic", style,
+            GUILayout.Width(requested.width), GUILayout.Height(requested.height));
+        Check(GUILayout.LastWindow.NativeRect.width == 16 && GUILayout.LastWindow.RequestedRect.width == 1200,
+            "repaint keeps native layout result instead of substituting requested rectangle");
+        Check(GUILayout.Controls.Count == 1 && GUILayout.Controls[0].VisibleRect.width == 0 && GUILayout.Controls[0].VisibleRect.height == 0,
+            "recorded free-area control is clipped away by the collapsed native window");
+
+        Event.current = new Event { type = EventType.Layout, rawType = EventType.Layout };
+        Rect fixedWindow = GUI.Window(9002, requested, onlyFreeArea, "fixed", style);
+        Check(fixedWindow == requested && !GUILayout.LastWindow.Automatic,
+            "positive control: fixed GUI window preserves original native rectangle with area-only content");
+        Event.current = new Event { type = EventType.Repaint, rawType = EventType.Repaint };
+        GUI.Window(9002, requested, onlyFreeArea, "fixed", style);
+        Check(GUILayout.LastWindow.NativeRect == requested && GUILayout.LastWindow.RootEntryCount == 0 && GUILayout.LastWindow.FreeAreas.Count == 1,
+            "fixed window retains native bounds through layout and repaint without manufacturing a root child");
+        Check(GUILayout.Controls[0].VisibleRect == GUILayout.Controls[0].WindowLocalRect,
+            "free-area label inside fixed native window retains its full visible rectangle");
+    }
+
+    private static bool ContainsRect(Rect outer, Rect inner)
+        => inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.width <= outer.x + outer.width && inner.yMax <= outer.yMax;
+
+    private static void NativeWindowContainsContent(LogRenderer renderer, string scenario)
+    {
+        GUILayout.WindowRecord actual = GUILayout.LastWindow;
+        Check(actual != null && actual.NativeRect == actual.RequestedRect,
+            scenario + ": actual renderer native window retains requested bounds before managed ConstrainWindow can mask shrinkage");
+        Check(!actual.Automatic && actual.RootEntryCount == 0 && actual.FreeAreas.Count >= 3,
+            scenario + ": fixed window supports separately registered free areas and an empty ordinary root");
+        var nativeClip = new Rect(0, 0, actual.NativeRect.width, actual.NativeRect.height);
+        var layout = (LogLayout)Field(renderer, "layout");
+        Check(ContainsRect(nativeClip, layout.Tabs) && ContainsRect(nativeClip, layout.Content) && ContainsRect(nativeClip, layout.Footer),
+            scenario + ": native window contains tabs, content and footer");
+        Check(actual.FreeAreas.TrueForAll(area => ContainsRect(nativeClip, area)), scenario + ": every free area remains inside native clip");
+        Check(GUILayout.Controls.Exists(control => control.Button && control.VisibleRect.width > 0 && control.VisibleRect.height > 0),
+            scenario + ": at least one control has visible pixels inside the native clip, not merely a recorded draw call");
+    }
+
+    private static void RendererNativeWindowBounds()
+    {
+        int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldScreenWidth = Screen.width, oldScreenHeight = Screen.height;
+        float oldX = DiceMaster.Config.ConfigManager.LogWindowX.Value, oldY = DiceMaster.Config.ConfigManager.LogWindowY.Value;
+        float oldWidth = DiceMaster.Config.ConfigManager.LogWindowWidth.Value, oldHeight = DiceMaster.Config.ConfigManager.LogWindowHeight.Value;
+        try
+        {
+            Screen.width = 1920; Screen.height = 1080;
+            foreach (int[] setting in new[] { new[] { 1200, 860, 20 }, new[] { 540, 440, 64 } })
+            {
+                DiceMaster.Config.ConfigManager.LogWindowX.Value = DiceMaster.Config.ConfigManager.LogWindowY.Value = 20;
+                DiceMaster.Config.ConfigManager.LogWindowWidth.Value = setting[0];
+                DiceMaster.Config.ConfigManager.LogWindowHeight.Value = setting[1];
+                DiceMaster.Config.ConfigManager.LogFontSize.Value = setting[2];
+                var model = new LogModel(); model.ResetContext(900);
+                foreach (string tab in new[] { "선택지", "조건", "이벤트", "미션" }) Publish(model, tab, Item("native-row", new object()));
+                var renderer = new LogRenderer(model, null, null) { InputHint = setting[2] == 64 ? new string('안', 200) : "패드 탐색 사용 가능" };
+                renderer.Handle(LogPadCommand.None);
+                for (int index = 0; index < 4; index++)
+                {
+                    renderer.Handle(LogPadCommand.Activate);
+                    Repaint(renderer);
+                    NativeWindowContainsContent(renderer, setting[0] + "x" + setting[1] + " " + renderer.CurrentTab);
+                    if (index < 3) renderer.Handle(LogPadCommand.NextTab);
+                }
+                renderer.Handle(LogPadCommand.Tools);
+                Repaint(renderer);
+                NativeWindowContainsContent(renderer, "tools");
+                renderer.Handle(LogPadCommand.Activate);
+                Repaint(renderer);
+                NativeWindowContainsContent(renderer, "local search keyboard");
+            }
+        }
+        finally
+        {
+            DiceMaster.Config.ConfigManager.LogFontSize.Value = oldFont;
+            DiceMaster.Config.ConfigManager.LogWindowX.Value = oldX;
+            DiceMaster.Config.ConfigManager.LogWindowY.Value = oldY;
+            DiceMaster.Config.ConfigManager.LogWindowWidth.Value = oldWidth;
+            DiceMaster.Config.ConfigManager.LogWindowHeight.Value = oldHeight;
+            Screen.width = oldScreenWidth; Screen.height = oldScreenHeight;
+        }
     }
 
     private static void RendererNavigation()

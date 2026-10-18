@@ -64,6 +64,8 @@ namespace UnityEngine
     {
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
         public static void FocusControl(string name) { } public static void SetNextControlName(string name) { } public static void DragWindow(Rect rect) { }
+        public static Rect Window(int id, Rect rect, Action<int> draw, string title, GUIStyle style)
+            => GUILayout.InvokeWindow(id, rect, draw, style, false, Array.Empty<GUILayoutOption>());
     }
     public sealed class GUILayoutOption
     {
@@ -83,6 +85,14 @@ namespace UnityEngine
         public sealed class ControlRecord
         {
             public string Text; public Rect Rect; public int FontSize; public bool Button;
+            public Rect WindowLocalRect, AncestorClip, VisibleRect;
+        }
+        public sealed class WindowRecord
+        {
+            public int Id, RootEntryCount;
+            public bool Automatic;
+            public Rect RequestedRect, NativeRect;
+            public readonly List<Rect> FreeAreas = new List<Rect>();
         }
         private sealed class Group
         {
@@ -91,26 +101,76 @@ namespace UnityEngine
             internal ScrollViewRecord Record;
             internal Vector2 SavedMouse;
             internal Rect AreaRect;
+            internal int EntryCount;
+            internal Vector2 GuiOrigin;
+            internal Rect Clip;
         }
         public static readonly List<string> Buttons = new List<string>(), LiteralLabels = new List<string>();
         public static readonly List<ScrollViewRecord> ScrollViews = new List<ScrollViewRecord>();
         public static readonly List<ControlRecord> Controls = new List<ControlRecord>();
         public static Func<int, Vector2, Vector2> ScrollInput;
         private static readonly Stack<Group> Groups = new Stack<Group>();
+        private static readonly Dictionary<int, Rect> NativeWindows = new Dictionary<int, Rect>();
+        private static WindowRecord activeWindow;
+        public static WindowRecord LastWindow;
         public static Rect LastRect = new Rect(0, 0, 200, 30);
         public static void ResetLayout(float width = 1000, float height = 900)
         {
             Groups.Clear(); ScrollViews.Clear(); Controls.Clear(); Buttons.Clear(); LiteralLabels.Clear();
-            Groups.Push(new Group { Bounds = new Rect(0, 0, width, height), FixedHeight = height });
+            Groups.Push(new Group { Bounds = new Rect(0, 0, width, height), FixedHeight = height, Clip = new Rect(0, 0, width, height) });
             LastRect = new Rect();
         }
         public static Rect Window(int id, Rect rect, Action<int> draw, string title, GUIStyle style, params GUILayoutOption[] options)
+            => InvokeWindow(id, rect, draw, style, true, options);
+
+        // Narrow managed contract model from Unity 2021.3 GUILayout/LayoutGroup:
+        // BeginArea belongs to the free-area list, not root.entries. An automatic
+        // window marks root.isWindow; its empty-root CalcWidth/CalcHeight replace
+        // fixed options with style padding and LayoutSingleGroup moves the native
+        // window. GUI.Window keeps the supplied native rect through the fixed-area
+        // path. This models that distinction; it does not execute Unity/native UI.
+        internal static Rect InvokeWindow(int id, Rect rect, Action<int> draw, GUIStyle style, bool automatic, GUILayoutOption[] options)
         {
             ResetLayout(rect.width, rect.height);
-            draw(id);
-            if (Groups.Count != 1) throw new InvalidOperationException("Unbalanced renderer layout groups");
-            return rect;
+            var record = new WindowRecord { Id = id, RequestedRect = rect, Automatic = automatic };
+            activeWindow = record;
+            try
+            {
+                draw(id);
+                if (Groups.Count != 1) throw new InvalidOperationException("Unbalanced renderer layout groups");
+                record.RootEntryCount = Current.EntryCount;
+                if (Event.current.type == EventType.Layout)
+                {
+                    Rect native = rect;
+                    if (automatic && record.RootEntryCount == 0)
+                    {
+                        native.width = style.padding?.horizontal ?? 0;
+                        native.height = style.padding?.vertical ?? 0;
+                    }
+                    else if (automatic)
+                    {
+                        native.width = Option("Width", rect.width, options);
+                        native.height = Option("Height", rect.height, options);
+                    }
+                    NativeWindows[id] = native;
+                }
+                Rect cached;
+                record.NativeRect = NativeWindows.TryGetValue(id, out cached) ? cached : rect;
+                Rect nativeClip = new Rect(0, 0, record.NativeRect.width, record.NativeRect.height);
+                foreach (ControlRecord control in Controls)
+                    control.VisibleRect = Intersection(control.WindowLocalRect, Intersection(control.AncestorClip, nativeClip));
+                LastWindow = record;
+                return record.NativeRect;
+            }
+            finally { activeWindow = null; }
         }
+        private static Rect Intersection(Rect first, Rect second)
+        {
+            float x = Math.Max(first.x, second.x), y = Math.Max(first.y, second.y);
+            return new Rect(x, y, Math.Max(0, Math.Min(first.x + first.width, second.x + second.width) - x),
+                Math.Max(0, Math.Min(first.yMax, second.yMax) - y));
+        }
+        private static Rect Offset(Rect rect, Vector2 origin) => new Rect(rect.x + origin.x, rect.y + origin.y, rect.width, rect.height);
         private static Group Current
         {
             get { if (Groups.Count == 0) ResetLayout(); return Groups.Peek(); }
@@ -133,6 +193,7 @@ namespace UnityEngine
             Group parent = Current;
             parent.Cursor += parent.Horizontal ? rect.width : rect.height;
             parent.Cross = Math.Max(parent.Cross, parent.Horizontal ? rect.height : rect.width);
+            parent.EntryCount++;
             LastRect = rect;
         }
         private static void Begin(bool horizontal, GUIStyle style, GUILayoutOption[] options)
@@ -147,7 +208,8 @@ namespace UnityEngine
             {
                 Bounds = new Rect(bounds.x + (padding?.left ?? 0), bounds.y + (padding?.top ?? 0),
                     Math.Max(1, bounds.width - (padding?.horizontal ?? 0)), bounds.height),
-                Horizontal = horizontal, FixedHeight = Option("Height", 0, options), Padding = padding
+                Horizontal = horizontal, FixedHeight = Option("Height", 0, options), Padding = padding,
+                GuiOrigin = Current.GuiOrigin, Clip = Current.Clip
             });
         }
         private static void End()
@@ -160,8 +222,11 @@ namespace UnityEngine
         }
         public static void BeginArea(Rect rect)
         {
+            activeWindow?.FreeAreas.Add(Offset(rect, Current.GuiOrigin));
+            Rect windowLocal = Offset(rect, Current.GuiOrigin);
             Groups.Push(new Group { Bounds = new Rect(0, 0, rect.width, rect.height), Area = true, FixedHeight = rect.height,
-                SavedMouse = Event.current.mousePosition, AreaRect = rect });
+                SavedMouse = Event.current.mousePosition, AreaRect = rect,
+                GuiOrigin = new Vector2(windowLocal.x, windowLocal.y), Clip = Intersection(Current.Clip, windowLocal) });
             Event.current.mousePosition = new Vector2(Event.current.mousePosition.x - rect.x, Event.current.mousePosition.y - rect.y);
         }
         public static void BeginArea(Rect rect, GUIStyle style) { BeginArea(rect); }
@@ -181,8 +246,11 @@ namespace UnityEngine
             Vector2 result = ScrollInput == null ? scroll : ScrollInput(ScrollViews.Count, scroll);
             var record = new ScrollViewRecord { Viewport = viewport, InputScroll = scroll, ReturnedScroll = result };
             ScrollViews.Add(record);
+            Rect viewportInWindow = Offset(viewport, Current.GuiOrigin);
             Groups.Push(new Group { Bounds = new Rect(0, 0, Math.Max(1, viewport.width - 18), viewport.height),
-                Scroll = true, Record = record, FixedHeight = viewport.height, SavedMouse = Event.current.mousePosition });
+                Scroll = true, Record = record, FixedHeight = viewport.height, SavedMouse = Event.current.mousePosition,
+                GuiOrigin = new Vector2(viewportInWindow.x - result.x, viewportInWindow.y - result.y),
+                Clip = Intersection(Current.Clip, viewportInWindow) });
             Event.current.mousePosition = new Vector2(Event.current.mousePosition.x - viewport.x + result.x,
                 Event.current.mousePosition.y - viewport.y + result.y);
             return result;
@@ -201,7 +269,9 @@ namespace UnityEngine
         {
             Rect initial = Allocate(0, options);
             Rect rect = Allocate(style.CalcHeight(new GUIContent(text), initial.width), options);
-            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button };
+            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button,
+                WindowLocalRect = Offset(rect, Current.GuiOrigin), AncestorClip = Current.Clip };
+            control.VisibleRect = Intersection(control.WindowLocalRect, control.AncestorClip);
             Controls.Add(control);
             foreach (Group group in Groups)
                 if (group.Scroll) { group.Record.Controls.Add(control); break; }

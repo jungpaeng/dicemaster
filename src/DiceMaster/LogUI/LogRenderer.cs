@@ -213,8 +213,10 @@ namespace DiceMaster.LogUI
             window = ConstrainWindow(window, Screen.width, Screen.height);
             EnsureStyles();
             HandleKeyboard();
-            window = GUILayout.Window(140404, window, DrawWindow, "다이스마스터 로그 · 창 안을 끌어 이동", windowStyle,
-                GUILayout.Width(window.width), GUILayout.Height(window.height));
+            // The contents use absolute BeginArea rectangles. They do not add
+            // children to GUILayout.Window's root, whose empty-group sizing
+            // would collapse the native window to its style padding.
+            window = GUI.Window(140404, window, DrawWindow, "다이스마스터 로그 · 창 안을 끌어 이동", windowStyle);
             window = ConstrainWindow(window, Screen.width, Screen.height);
             if (pendingAction != null)
             {
