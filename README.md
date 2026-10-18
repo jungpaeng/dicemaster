@@ -7,7 +7,7 @@
 
 ## PRD #4 — v1.0.5-alpha.3 빈 로그 창 수정
 
-alpha.2에서 작은 빈 창만 표시된다는 실제 Windows 실패가 보고되었습니다. 창의 자동 크기 계산이 `BeginArea` 내용을 포함하지 않아 축소되는 원인을 확인하고 고정 크기 창 API로 수정했습니다. [원인·검사 보강·설정 복구·Windows 재검증](docs/ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. 전체 소스 빌드·11개 검사와 이전 잘못된 창 호출을 거부하는 회귀 검사를 통과했고 [alpha.3 설치·복구·해시](docs/ISSUE-4-ALPHA3-RELEASE.md)를 준비했습니다. 고정 커밋 재빌드 후 새 prerelease로 게시하며 실제 게임 표시 성공은 아직 확인하지 않았습니다.
+alpha.2에서 작은 빈 창만 표시된다는 실제 Windows 실패가 보고되었습니다. 창의 자동 크기 계산이 `BeginArea` 내용을 포함하지 않아 축소되는 원인을 확인하고 고정 크기 창 API로 수정했습니다. [원인·검사 보강·설정 복구·Windows 재검증](docs/ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. 전체 소스 빌드·11개 검사와 이전 잘못된 창 호출을 거부하는 회귀 검사를 통과했고 [alpha.3 설치·복구·해시](docs/ISSUE-4-ALPHA3-RELEASE.md)를 준비했습니다. 고정 커밋 `3b24513`의 깨끗한 재빌드까지 통과한 로컬 후보이며 공개 게시 전입니다. 실제 게임 표시 성공은 아직 확인하지 않았습니다.
 
 ## PRD #4 — v1.0.5-alpha.2 UI 후속
 

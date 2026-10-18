@@ -4,7 +4,7 @@
 
 alpha.2에서 좌측 상단의 작은 빈 창만 보인다는 실제 Windows 실패를 확인하고 자동 크기 창을 고정 사각형 창으로 교체합니다. 기존 prerelease 지시의 후속인 `v1.0.5-alpha.3`은 [원인·검사 보강](ISSUE-4-WINDOW-SIZE-REGRESSION.md)과 [설치·복구·해시](ISSUE-4-ALPHA3-RELEASE.md)를 따릅니다. 에이전트는 게임을 실행하지 않았으며 실제 수정 성공과 이슈 #4 완료는 주장하지 않습니다.
 
-검토 DLL `e432c5e118760a3d5d75eba9f0920db1ac7bb73bdc0aada3d91ea74e178b3fb9`, 설정 `2ed5841519cf3ef6719477b0e6b69de989c4b02c5e5fa883b303b786db2faafc`를 요구하고 고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 전체 11개 프로그램·UI 11,840·새 실제 DLL 연결 23 단언, 이전 호출로 되돌리면 실패하는 회귀·공개 alpha.2 DLL 거부를 확인했습니다. 출력은 `artifacts/releases/v1.0.5-alpha.3/`입니다. 사전 확인의 기존 16개 Release·태그·자산과 정식 Latest v1.0.4를 보존하고 이슈 #4는 open을 유지합니다. 게시·인증 없는 공개 페이지/ZIP 다운로드 결과는 별도로 기록합니다.
+검토 DLL `e432c5e118760a3d5d75eba9f0920db1ac7bb73bdc0aada3d91ea74e178b3fb9`, 설정 `2ed5841519cf3ef6719477b0e6b69de989c4b02c5e5fa883b303b786db2faafc`를 요구하고 고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 전체 11개 프로그램·UI 11,840·새 실제 DLL 연결 23 단언, 이전 호출로 되돌리면 실패하는 회귀·공개 alpha.2 DLL 거부를 확인했습니다. 출력은 `artifacts/releases/v1.0.5-alpha.3/`입니다. 소스 커밋 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`의 깨끗한 재빌드·11개 검사와 검토 DLL/설정/ZIP 해시 일치를 확인했습니다. 아직 원격 푸시나 공개 게시는 진행하지 않았습니다. 사전 확인의 기존 16개 Release·태그·자산과 정식 Latest v1.0.4를 보존하고 이슈 #4는 open을 유지합니다. 게시·인증 없는 공개 페이지/ZIP 다운로드 결과는 별도로 기록합니다.
 
 ## PRD #4 alpha.2 UI 크기·스크롤·창 이동 후속
 
