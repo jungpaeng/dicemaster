@@ -6,11 +6,40 @@ namespace DiceMaster.LogUI
     public enum LogReadState { Unknown, Unread, Read }
     public enum LogRefreshState { Healthy, Waiting, ReadFailure, RetainedFailure }
 
+    // A checkpoint's branches come from separate ConditionResultItem objects.
+    // Preserve those boundaries before formatting; visual line wrapping and
+    // localized operator text cannot establish the branch structure later.
+    public sealed class LogConditionBranch
+    {
+        public readonly string Title, Context, Description;
+        public LogConditionBranch(string title, string context, string description)
+        { Title = title ?? ""; Context = context ?? ""; Description = description ?? ""; }
+    }
+
+    public sealed class LogConditionDetails
+    {
+        public readonly string Hint, DescriptionFallback;
+        public readonly IList<LogConditionBranch> Branches;
+        public LogConditionDetails(string hint, IEnumerable<LogConditionBranch> branches, string descriptionFallback = "")
+        {
+            Hint = hint ?? "";
+            DescriptionFallback = descriptionFallback ?? "";
+            // The publication owns a stable, immutable list. A builder or
+            // later refresh cannot mutate an already published last-good view.
+            var copy = new List<LogConditionBranch>();
+            if (branches != null)
+                foreach (LogConditionBranch branch in branches)
+                    if (branch != null) copy.Add(branch);
+            Branches = copy.AsReadOnly();
+        }
+    }
+
     // A publication carries identities and original structured states.
     // The view never recovers them from localized titles, colors or row positions.
     public sealed class LogItem
     {
         public string Id = "", RawId = "", Title = "", Text = "", Description = "";
+        public LogConditionDetails ConditionDetails;
         public LogReadState ReadState;
         public readonly List<string> AnalysisStates = new List<string>();
         public string RefreshStatus = "";

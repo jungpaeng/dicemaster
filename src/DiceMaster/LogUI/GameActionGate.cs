@@ -61,6 +61,9 @@ namespace DiceMaster.LogUI
             // the configured opening/closing key at this callback boundary too.
             bool toggle = Application.isFocused && ConfigManager.LogMenuToggleKey != null
                 && Input.GetKeyDown(ConfigManager.LogMenuToggleKey.Value);
+            // The native hook may detect an opener before plugin Update. Its
+            // pending capture must already own action callbacks on that frame.
+            toggle |= Application.isFocused && GamepadBridge.LogOpening;
             if (toggle) releasing = true;
             return LogActionPhases.Allow(active, releasing || toggle, Convert.ToInt32(__2));
         }

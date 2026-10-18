@@ -31,7 +31,8 @@ namespace DiceMaster.Gamepad
                 if (error == 0 && NativeXInput.RawDepth == 0 && NativeXInput.CallbackDepth == 1)
                 {
                     Owner.ObserveGamePoll();
-                    state = Owner.Filter.Filter(user, state, Owner.WindowActive);
+                    state = Owner.Filter.FilterGame(user, state, Owner.WindowActive,
+                        (double)Stopwatch.GetTimestamp() / Stopwatch.Frequency);
                 }
                 else if (error != 0 && NativeXInput.RawDepth == 0 && NativeXInput.CallbackDepth == 1)
                     Owner.Filter.Disconnected(user);
@@ -64,10 +65,39 @@ namespace DiceMaster.Gamepad
                 return last != 0 && Stopwatch.GetTimestamp() - last < Stopwatch.Frequency;
             }
         }
-        internal void ObserveGamePoll() { Interlocked.Exchange(ref lastPoll, Stopwatch.GetTimestamp()); }
+        internal void ObserveGamePoll()
+        {
+            long now = Stopwatch.GetTimestamp();
+            long previous = Interlocked.Exchange(ref lastPoll, now);
+            // A held gesture may span a scene/device/polling outage. Its first
+            // resumed callback must establish neutral before a fresh chord.
+            if (previous == 0 || now - previous >= Stopwatch.Frequency) Filter.CancelLogOpener();
+        }
         public bool LogActive { set { Filter.SetLogCapture(value); } }
         public void RequireNeutral() { Filter.RequireNeutral(); }
         public bool CanUseRaw(uint user) { return Filter.CanUseRaw(user); }
+        public void ConfigureLogOpener(bool enabled, bool focused, bool open)
+        {
+            Filter.ConfigureLogOpener(enabled && !disposed, focused, open);
+            if (!PollingFresh) Filter.CancelLogOpener();
+        }
+        public bool TryConsumeLogOpen(out int owner)
+        {
+            if (disposed || !PollingFresh)
+            {
+                Filter.CancelLogOpener(); owner = -1; return false;
+            }
+            return Filter.TryConsumeLogOpen(out owner);
+        }
+        public bool LogOpening
+        {
+            get
+            {
+                if (disposed || !PollingFresh) { Filter.CancelLogOpener(); return false; }
+                return Filter.LogOpening;
+            }
+        }
+        public void CancelLogOpener() { Filter.CancelLogOpener(); }
         internal readonly PadInputFilter Filter = new PadInputFilter();
         private readonly XInputHook[] hooks = new XInputHook[12];
         private int count;

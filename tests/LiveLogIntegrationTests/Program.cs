@@ -86,7 +86,17 @@ static class LiveLogIntegrationTests
         using var fixtures = AssemblyDefinition.ReadAssembly(args[1]);
         target = fixtures.MainModule;
         var module = source.MainModule;
-        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+        // The fixture project deliberately has no duplicate model definitions.
+        // Bind its object-returning helper boundary to the DTO copied from this
+        // exact delivered DLL, then install the real helper body below for the
+        // stronger helper -> bridge -> model scenarios.
+        var conditionSource = module.GetType("DiceMaster.DataHelper").Methods.Single(method => method.Name == "DescribeSwitchCheckpoint");
+        var conditionTarget = target.GetType("DiceMaster.DataHelper").Methods.Single(method => method.Name == "DescribeSwitchCheckpoint");
+        conditionTarget.ReturnType = Type(conditionSource.ReturnType);
+        var conditionIl = conditionTarget.Body.GetILProcessor();
+        foreach (var ret in conditionTarget.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray())
+            conditionIl.InsertBefore(ret, Instruction.Create(OpCodes.Castclass, conditionTarget.ReturnType));
         PreviewFixtureBoundary.Install(target);
         var probe = target.GetType("DiceMaster.Probe").Fields.Single(field => field.Name == "ParserEntries");
         foreach (var method in target.GetType("DiceMaster.LuaParse.LuaParser").Methods.Where(method => method.Name.StartsWith("Extract") && method.HasBody))
@@ -129,7 +139,7 @@ static class LiveLogIntegrationTests
         if (target.GetType("DiceMaster.LogUI.LogModel") != null) assertions += Run(output, "RunLogModel");
         var helperSource = module.GetType("DiceMaster.DataHelper");
         var helperTarget = target.GetType("DiceMaster.DataHelper");
-        foreach (var method in helperSource.Methods.Where(method => method.Name == "GetMissions" || method.Name == "ExtractConditions" || method.Name == "IsValidMission" || method.Name == "ParseSwitchCheckpoint"))
+        foreach (var method in helperSource.Methods.Where(method => method.Name == "GetMissions" || method.Name == "ExtractConditions" || method.Name == "IsValidMission" || method.Name == "ParseSwitchCheckpoint" || method.Name == "DescribeSwitchCheckpoint"))
         {
             var destination = helperTarget.Methods.Single(candidate => candidate.Name == method.Name &&
                 candidate.Parameters.Count == method.Parameters.Count &&
@@ -152,6 +162,7 @@ static class LiveLogIntegrationTests
         output = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1]))!, "LiveLogIntegrationFixtures.helpers.patched.dll");
         fixtures.Write(output);
         assertions += Run(output, "RunHelpers");
+        assertions += Run(output, "RunConditionBlocks");
         Console.WriteLine("PASS: " + assertions + " integration assertions using actual DLL parser, Action, refresh engine, bridge, lifecycle hook, pure wrapper, option-summary and dynamic helper IL; game/UI/compiler boundaries are fixtures.");
         return 0;
     }

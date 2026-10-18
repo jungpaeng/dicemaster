@@ -7,6 +7,7 @@ namespace DiceMaster.Gamepad
     public static class PadButtons
     {
         public const ushort Up = 0x0001, Down = 0x0002, Left = 0x0004, Right = 0x0008;
+        public const ushort LeftThumb = 0x0040, RightThumb = 0x0080, ThumbClicks = LeftThumb | RightThumb;
         public const ushort LB = 0x0100, RB = 0x0200, A = 0x1000, B = 0x2000, X = 0x4000, Y = 0x8000;
         public const ushort Directions = Up | Down | Left | Right;
         public const ushort Captured = Directions | LB | B;
@@ -97,6 +98,111 @@ namespace DiceMaster.Gamepad
         }
         private readonly Slot[] slots = { new Slot(), new Slot(), new Slot(), new Slot() };
         private bool logCapture;
+        private bool openerEnabled, openerFocused, openerOpen, openerOpening;
+        private int pendingOpen = -1;
+        private readonly bool[] openerAwaitNeutral = { true, true, true, true };
+        private readonly ushort[] openerFirst = new ushort[4];
+        private readonly double[] openerStarted = new double[4];
+        public const double LogOpenChordSeconds = 0.30;
+
+        public bool LogOpening { get { lock (gate) return openerOpening; } }
+
+        public void ConfigureLogOpener(bool enabled, bool focused, bool open)
+        {
+            lock (gate)
+            {
+                if (enabled == openerEnabled && focused == openerFocused && open == openerOpen) return;
+                bool reserved = openerEnabled && openerFocused;
+                // Hand off without a frame in which the gesture is released to
+                // the game before the ordinary log owner takes over.
+                if (open && focused && openerOpening) logCapture = true;
+                ResetOpener(reserved || openerOpening);
+                openerEnabled = enabled; openerFocused = focused; openerOpen = open;
+                if (enabled && focused)
+                    foreach (Slot slot in slots) slot.AwaitNeutral = true;
+            }
+        }
+
+        public bool TryConsumeLogOpen(out int owner)
+        {
+            lock (gate)
+            {
+                owner = -1;
+                if (!openerEnabled || !openerFocused || openerOpen || pendingOpen < 0) return false;
+                owner = pendingOpen;
+                pendingOpen = -1;
+                // The consumer may invalidate pad navigation before its next
+                // TickLog. Commit capture now so that cancellation cannot open
+                // a gap between native recognition and UI opening.
+                logCapture = true;
+                return true;
+            }
+        }
+
+        public void CancelLogOpener()
+        {
+            lock (gate) ResetOpener(openerOpening || openerEnabled && openerFocused);
+        }
+
+        private void ResetOpener(bool requireGameNeutral)
+        {
+            pendingOpen = -1; openerOpening = false;
+            for (int i = 0; i < 4; i++)
+            {
+                openerFirst[i] = 0; openerStarted[i] = 0; openerAwaitNeutral[i] = true;
+                if (requireGameNeutral) slots[i].AwaitNeutral = true;
+            }
+        }
+
+        private void ObserveOpener(uint index, PadState raw, double time)
+        {
+            if (!openerEnabled || !openerFocused || openerOpen || openerOpening || logCapture) return;
+            if (openerAwaitNeutral[index])
+            {
+                if (IsNeutral(raw)) openerAwaitNeutral[index] = false;
+                return;
+            }
+            ushort thumbs = (ushort)(raw.Buttons & PadButtons.ThumbClicks);
+            bool invalid = (raw.Buttons & ~PadButtons.ThumbClicks) != 0
+                || raw.LeftTrigger > 30 || raw.RightTrigger > 30
+                || !PadStick.IsNeutral(raw.LeftX, raw.LeftY) || !PadStick.IsNeutral(raw.RightX, raw.RightY);
+            if (invalid || openerFirst[index] != 0 && time - openerStarted[index] >= LogOpenChordSeconds)
+            {
+                openerFirst[index] = 0; openerAwaitNeutral[index] = true;
+                return;
+            }
+            if (thumbs == 0)
+            {
+                openerFirst[index] = 0;
+                return;
+            }
+            if (openerFirst[index] == 0)
+            {
+                openerFirst[index] = thumbs;
+                openerStarted[index] = time;
+            }
+            else if ((thumbs & openerFirst[index]) == 0)
+            {
+                // Sequential non-overlapping clicks are not a chord.
+                openerFirst[index] = 0; openerAwaitNeutral[index] = true;
+                return;
+            }
+            if (thumbs != PadButtons.ThumbClicks) return;
+            pendingOpen = (int)index; openerOpening = true;
+            foreach (Slot slot in slots) slot.AwaitNeutral = true;
+        }
+
+        // Only an actual game caller invokes this path. UI raw polling and the
+        // compatibility Filter method cannot create or advance an open request.
+        public PadState FilterGame(uint index, PadState state, bool windowActive, double time)
+        {
+            if (index >= 4) return state;
+            lock (gate)
+            {
+                ObserveOpener(index, state, time);
+                return Filter(index, state, windowActive);
+            }
+        }
 
         public static bool IsNeutral(PadState state)
         {
@@ -117,13 +223,18 @@ namespace DiceMaster.Gamepad
                 if (active && !logCapture)
                     foreach (Slot slot in slots) if (slot.Seen) Capture(slot, slot.Raw);
                 logCapture = active;
+                if (active && openerOpening) ResetOpener(true);
             }
         }
         // Used on focus/mode/context boundaries, including previously blocked
         // non-owner pads. Reconnection cannot turn a held input into a new press.
         public void RequireNeutral()
         {
-            lock (gate) foreach (Slot slot in slots) slot.AwaitNeutral = true;
+            lock (gate)
+            {
+                ResetOpener(false);
+                foreach (Slot slot in slots) slot.AwaitNeutral = true;
+            }
         }
         public bool CanUseRaw(uint index)
         {
@@ -131,7 +242,7 @@ namespace DiceMaster.Gamepad
             lock (gate)
             {
                 Slot slot = slots[index];
-                return !logCapture && !slot.AwaitNeutral && slot.LogButtons == 0
+                return !logCapture && !openerOpening && !slot.AwaitNeutral && slot.LogButtons == 0
                     && !slot.LogLeft && !slot.LogRight && !slot.LogLT && !slot.LogRT;
             }
         }
@@ -149,7 +260,10 @@ namespace DiceMaster.Gamepad
             if (raw.LeftTrigger <= 30) slot.LogLT = false;
             if (raw.RightTrigger <= 30) slot.LogRT = false;
             if (slot.AwaitNeutral && IsNeutral(raw)) slot.AwaitNeutral = false;
-            if (logCapture) Capture(slot, raw);
+            if (logCapture || openerOpening) Capture(slot, raw);
+            // These two clicks are reserved even when the chord is incomplete.
+            // Preserve that latch through configuration/focus changes too.
+            if (openerEnabled && openerFocused) slot.LogButtons |= (ushort)(raw.Buttons & PadButtons.ThumbClicks);
         }
         public PadState Filter(uint index, PadState state, bool windowActive)
         {
@@ -170,7 +284,7 @@ namespace DiceMaster.Gamepad
                     }
                     else if (PadStick.IsNeutral(raw.LeftX, raw.LeftY)) slot.DiceStick = false;
                 }
-                if (logCapture || slot.AwaitNeutral)
+                if (logCapture || openerOpening || slot.AwaitNeutral)
                 {
                     state.Buttons = 0; state.LeftTrigger = state.RightTrigger = 0;
                     state.LeftX = state.LeftY = state.RightX = state.RightY = 0;
@@ -209,6 +323,8 @@ namespace DiceMaster.Gamepad
             lock (gate)
             {
                 logCapture = false;
+                openerEnabled = openerFocused = openerOpen = false;
+                ResetOpener(false);
                 for (int i = 0; i < slots.Length; i++) slots[i] = new Slot();
             }
         }
@@ -218,7 +334,10 @@ namespace DiceMaster.Gamepad
             lock (gate)
             {
                 Slot old = slots[index];
-                slots[index] = new Slot { AwaitNeutral = logCapture || old.AwaitNeutral || old.LogButtons != 0
+                bool wasOpening = openerOpening;
+                if (wasOpening && pendingOpen == (int)index) ResetOpener(true);
+                openerFirst[index] = 0; openerAwaitNeutral[index] = true;
+                slots[index] = new Slot { AwaitNeutral = logCapture || wasOpening || old.AwaitNeutral || old.LogButtons != 0
                     || old.LogLeft || old.LogRight || old.LogLT || old.LogRT };
             }
         }

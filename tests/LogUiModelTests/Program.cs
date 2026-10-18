@@ -148,6 +148,7 @@ static class Program
                 "Full publication, stable identity or list/detail scroll stress regression");
         }
         StatusOnlyRows();
+        StructuredConditionDetails();
         Console.WriteLine("PASS: " + checks + " log model assertions (full publications, status-only rows, navigation, identity, last-good/errors, context and activation tickets).");
         Measure();
         return 0;
@@ -220,6 +221,65 @@ static class Program
             "An all-diagnostic publication was hidden or reordered");
         Check(state.HasPublished && state.Selected == null && !state.Select(status1.Id) && !state.CanActivate(ticket),
             "All-diagnostic publication auto-selected a target or preserved prior activation");
+    }
+
+    static void StructuredConditionDetails()
+    {
+        var inputs = new List<LogConditionBranch> {
+            new LogConditionBranch("분기 1", "이 조건을 만족하면", "돈 >= 10 | 평판 >= 5\n같은 분기의 추가 줄"),
+            new LogConditionBranch("분기 2", "앞 분기가 모두 불충족일 때 검사", "체력 >= 20"),
+            new LogConditionBranch("그 외 (분기 3)", "위 분기가 모두 불충족일 때", "")
+        };
+        const string hint = "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.";
+        var details = new LogConditionDetails(hint, inputs, "호환용 평문");
+        inputs.Clear();
+        Check(details.Branches.Count == 3 && details.Branches[0].Title == "분기 1" && details.Branches[1].Title == "분기 2"
+            && details.Branches[2].Title == "그 외 (분기 3)", "Published condition branches shared a mutable input list or lost source order");
+        Check(details.Branches[0].Description == "돈 >= 10 | 평판 >= 5\n같은 분기의 추가 줄" && details.Hint == hint
+            && details.Branches[2].Context == "위 분기가 모두 불충족일 때" && details.Branches[2].Description == "",
+            "Condition publication changed clause operators, multiline branch boundaries, or fallback meaning");
+        bool mutationBlocked = false;
+        try { details.Branches.Add(new LogConditionBranch("임의 분기", "", "")); }
+        catch (NotSupportedException) { mutationBlocked = true; }
+        Check(mutationBlocked && details.Branches.IsReadOnly && details.Branches.Count == 3,
+            "Condition details allowed later mutation of an existing publication or last-good snapshot");
+        var model = new LogModel(); model.ResetContext(40);
+        LogItem row = Row("checkpoint"); row.ConditionDetails = details;
+        row.ReadState = LogReadState.Unread; row.Text = "1 2 그 외";
+        Publish(model, "조건", row);
+        var state = model.Tab("조건");
+        Check(state.Selected == null && state.Select(row.Id) && ReferenceEquals(state.Selected.ConditionDetails, details),
+            "Structured branch publication auto-selected a checkpoint or disconnected selected details");
+        state.ListScroll = 71; state.DetailScroll = 172;
+        var updated = Row(row.Id); updated.ConditionDetails = new LogConditionDetails("새 검사 안내", new[] {
+            new LogConditionBranch("분기 1", "새 조건 맥락", "갱신된 본문 | 기존 연산자")
+        });
+        Publish(model, "조건", updated);
+        Check(state.SelectedId == row.Id && state.ListScroll == 71 && state.DetailScroll == 172
+            && ReferenceEquals(state.Selected.ConditionDetails, updated.ConditionDetails),
+            "Same-context branch refresh lost selected checkpoint/scroll or retained stale detail data");
+        Check(details.Branches.Count == 3 && details.Branches[0].Description.Contains("|"),
+            "New branch publication mutated the earlier last-good description");
+        Check(Arm(state) == null && state.Selected.CanSelect && !state.Selected.CanReserve,
+            "Read-only structured condition publication produced reservation authority");
+        var retained = Row(row.Id); retained.ConditionDetails = details;
+        retained.RefreshState = LogRefreshState.RetainedFailure; retained.HasLastGood = true;
+        Publish(model, "조건", retained);
+        Check(state.SelectedId == row.Id && state.Selected.ConditionDetails.Branches.Count == 3
+            && state.Selected.RefreshState == LogRefreshState.RetainedFailure && Arm(state) == null,
+            "Condition last-good failure erased structured branches or made them actionable");
+        var countOnly = new LogConditionDetails("", Array.Empty<LogConditionBranch>(), "실행 횟수 기준 분기");
+        Check(countOnly.Branches.Count == 0 && countOnly.DescriptionFallback == "실행 횟수 기준 분기"
+            && countOnly.Hint == "", "Count-based checkpoint invented normal branch structure or lost neutral guidance");
+        Publish(model, "조건");
+        Check(state.Selected == null && state.DetailScroll == 0 && !state.ExecutionFocus,
+            "Removed structured checkpoint retained stale detail focus");
+        Publish(model, "조건", row); state.Select(row.Id); state.ListScroll = 44; state.DetailScroll = 55;
+        model.ResetContext(41);
+        model.Publish(new LogSnapshot(40, "조건", new[] { row }));
+        Check(model.Tab("조건").Selected == null && model.Tab("조건").Snapshot.Rows.Count == 0 && state.Snapshot.Rows.Count == 0
+            && state.ListScroll == 0 && state.DetailScroll == 0,
+            "Context replacement or late structured publication restored the old checkpoint and branches");
     }
 
     static void Measure()

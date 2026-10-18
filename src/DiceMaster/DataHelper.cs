@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using BepInEx;
 using DiceMaster.LiveLog;
+using DiceMaster.LogUI;
 using Mortal.Core;
 using Mortal.Story;
 using OBB.Framework.Data;
@@ -22,12 +23,16 @@ public static class DataHelper
 
 	public static string ParseSwitchCheckpoint(string checkpoint)
 	{
+		return DescribeSwitchCheckpoint(checkpoint)?.DescriptionFallback ?? string.Empty;
+	}
+
+	public static LogConditionDetails DescribeSwitchCheckpoint(string checkpoint)
+	{
 		CheckPointManager instance = CheckPointManager.Instance;
 		if (instance == null)
 		{
-			return string.Empty;
+			return null;
 		}
-		StringBuilder stringBuilder = new StringBuilder();
 		SwitchResultConfig[] fieldValue = instance.GetFieldValue<SwitchResultConfig[]>("_switchList");
 		SwitchResultData switchResultData = null;
 		if (fieldValue != null)
@@ -47,17 +52,38 @@ public static class DataHelper
 		}
 		if (switchResultData == null)
 		{
-			return string.Empty;
+			return null;
 		}
+		// Execute also supports a separate count-based route. Reading its
+		// condition list would invent branches that this route never checks;
+		// do not execute it or advance its counter to discover the result.
+		if (switchResultData.GetFieldValue<bool>("_useCount"))
+			return new LogConditionDetails("", null,
+				"이 체크포인트는 조건식 대신 실행 횟수를 기준으로 분기합니다.");
 		List<ConditionResultItem> fieldValue2 = switchResultData.GetFieldValue<List<ConditionResultItem>>("_items");
-		if (fieldValue2 != null)
+		// Keep the old successful empty-description contract for an absent
+		// outer list. Malformed items still follow ExtractConditions' existing
+		// failure/last-good path rather than becoming a partial branch list.
+		if (fieldValue2 == null) return new LogConditionDetails("", null);
+		var branches = new List<LogConditionBranch>();
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < fieldValue2.Count; i++)
 		{
-			foreach (ConditionResultItem item in fieldValue2)
-			{
-				stringBuilder.AppendLine("    " + ExtractConditions(item, out var _));
-			}
+			// One description evaluation per real item supplies both the
+			// structured UI and the compatibility plaintext projection.
+			string description = ExtractConditions(fieldValue2[i], out var _);
+			// The game's LogicOp returns false for an existing empty item
+			// list. An empty block must not resemble an unconditional branch.
+			string branchDescription = string.IsNullOrEmpty(description) ?
+				"등록된 조건이 없어 이 분기는 충족되지 않습니다." : description;
+			branches.Add(new LogConditionBranch("분기 " + (i + 1),
+				i == 0 ? "이 조건을 만족하면" : "앞 분기가 모두 불충족일 때 검사", branchDescription));
+			stringBuilder.AppendLine("    " + description);
 		}
-		return stringBuilder.ToString();
+		branches.Add(new LogConditionBranch("그 외 (분기 " + (fieldValue2.Count + 1) + ")",
+			"위 분기가 모두 불충족일 때", ""));
+		return new LogConditionDetails("위에서부터 검사하며, 처음 만족한 분기로 진행합니다.",
+			branches, stringBuilder.ToString());
 	}
 
 	public static string ExtractConditions(ConditionResultItem condition, out bool isInPeriod)

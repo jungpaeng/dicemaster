@@ -45,8 +45,9 @@ class PreviewValidationTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             preview.validate_preview_candidate(manifest, 'prd4')
 
-    def test_all_eleven_test_programs_are_required(self):
-        self.assertEqual(len(preview.PRD4_REQUIRED_TESTS), 11)
+    def test_all_twelve_test_programs_are_required(self):
+        self.assertEqual(len(preview.PRD4_REQUIRED_TESTS), 12)
+        self.assertIn('LogOpenerIntegrationTests', preview.PRD4_REQUIRED_TESTS)
         for name in preview.PRD4_REQUIRED_TESTS:
             manifest = deepcopy(self.prd4)
             del manifest['tests'][name]
@@ -54,11 +55,12 @@ class PreviewValidationTests(unittest.TestCase):
                 preview.validate_preview_candidate(manifest, 'prd4')
 
     def test_empty_or_malformed_test_evidence_is_rejected(self):
-        for evidence in ([], '', [''], ['   '], [None], ['PASS:', None]):
-            manifest = deepcopy(self.prd4)
-            manifest['tests']['LogUiWiringTests'] = evidence
-            with self.subTest(evidence=evidence), self.assertRaises(RuntimeError):
-                preview.validate_preview_candidate(manifest, 'prd4')
+        for name in ('LogUiWiringTests', 'LogOpenerIntegrationTests'):
+            for evidence in ([], '', [''], ['   '], [None], ['PASS:', None]):
+                manifest = deepcopy(self.prd4)
+                manifest['tests'][name] = evidence
+                with self.subTest(name=name, evidence=evidence), self.assertRaises(RuntimeError):
+                    preview.validate_preview_candidate(manifest, 'prd4')
 
     def test_candidate_windows_claims_are_rejected(self):
         for value in (None, True, 0, 'confirmed'):

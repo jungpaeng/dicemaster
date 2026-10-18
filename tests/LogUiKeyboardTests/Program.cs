@@ -28,7 +28,10 @@ internal static class Program
         RendererActualControllerPointerBoundary();
         RendererActualControllerKeyboardBoundary();
         RendererChoiceAndConditionNavigation();
+        RendererStructuredConditionBlocks();
         RendererChoiceAndConditionReflow();
+        RendererAutomaticScrollbars();
+        RendererMissionRefreshWording();
         RendererRenderingBoundaries();
         LayoutGeometry();
         RendererViewportAndFocus();
@@ -161,12 +164,12 @@ internal static class Program
         var renderer = new LogRenderer(model, () => refreshes++, () => closes++);
         renderer.Handle(LogPadCommand.None); // initial context consumes pending input
         renderer.Handle(LogPadCommand.Activate);
-        Check(model.Tab("선택지").SelectedId == "card1" && Area(renderer) == "List", "first A selects only");
+        Check(model.Tab("선택지").SelectedId == null && Area(renderer) == "List", "choice A leaves the read-only comparison unselected");
         renderer.Handle(LogPadCommand.Activate);
-        Check(model.Tab("선택지").SelectedId == "card1" && Area(renderer) == "List", "repeated A keeps choice comparison in its visible list");
+        Check(model.Tab("선택지").SelectedId == null && Area(renderer) == "List", "repeated A leaves the read-only comparison unselected");
         renderer.Handle(LogPadCommand.Down);
         renderer.Handle(LogPadCommand.Activate);
-        Check(model.Tab("선택지").SelectedId == "card2" && Area(renderer) == "List", "A selects another choice without opening a hidden-detail state");
+        Check(model.Tab("선택지").SelectedId == null && model.Tab("선택지").ListScroll > 0 && Area(renderer) == "List", "choice direction scrolls its body without creating a selection");
         renderer.Handle(LogPadCommand.Back);
         Check(closes == 1, "B closes directly from the always-visible choice comparison");
         renderer.Handle(LogPadCommand.NextTab);
@@ -257,7 +260,7 @@ internal static class Program
                 Check(Math.Abs(layout.Content.yMax - layout.Footer.y + layout.Gap) < .01f,
                     tab + ": body consumes every pixel remaining before the footer");
                 foreach (LogItem row in rows)
-                    Check(GUILayout.ScrollViews[0].Controls.Exists(control => control.Button && control.Text.Contains(row.Id, StringComparison.Ordinal)),
+                    Check(GUILayout.ScrollViews[0].Controls.Exists(control => control.Button == (tab != "선택지") && control.Text.Contains(row.Id, StringComparison.Ordinal)),
                         tab + ": all published rows remain in the unfiltered rendered list");
                 Check(!GUILayout.Controls.Exists(control => control.Text.Contains("검색", StringComparison.Ordinal)
                     || control.Text.Contains("자판", StringComparison.Ordinal) || control.Text == "패드 입력" || control.Text == "지우기"),
@@ -267,8 +270,8 @@ internal static class Program
                     tab + ": the list uses the full body except its own visible heading");
                 for (int index = 0; index < rows.Length; index++) renderer.Handle(LogPadCommand.Down);
                 Repaint(renderer); Repaint(renderer);
-                Check(model.Tab(tab).SelectedId == rows[rows.Length - 1].Id,
-                    tab + ": pad navigation reaches the final published row without a filter");
+                Check(tab == "선택지" ? model.Tab(tab).SelectedId == null && model.Tab(tab).ListScroll > 0 : model.Tab(tab).SelectedId == rows[rows.Length - 1].Id,
+                    tab + ": pad navigation scrolls the read-only body or reaches the final selectable row without a filter");
                 renderer.Handle(LogPadCommand.Tools);
                 Repaint(renderer);
                 var tools = GUILayout.ScrollViews[0].Controls.FindAll(control => control.Button);
@@ -1244,14 +1247,24 @@ internal static class Program
         renderer.Handle(LogPadCommand.Right);
         renderer.Handle(LogPadCommand.Left);
         AssertPublicChoices(renderer, model, choices, "after repeated A and both horizontal directions");
-        Check(model.Tab("선택지").SelectedId == "choice-first", "A and horizontal choice input cannot hide a body or change to unrelated selection");
+        Check(model.Tab("선택지").SelectedId == null, "choice activation and horizontal input leave the read-only body unselected");
         renderer.Handle(LogPadCommand.Down);
-        renderer.Handle(LogPadCommand.Activate);
-        AssertPublicChoices(renderer, model, choices, "after choosing another comparison");
+        float choiceOffset = model.Tab("선택지").ListScroll;
+        Check(choiceOffset > 0 && model.Tab("선택지").SelectedId == null, "choice down scrolls text without selecting an item");
+        renderer.Handle(LogPadCommand.Up);
+        Check(model.Tab("선택지").ListScroll == 0 && model.Tab("선택지").SelectedId == null, "choice up reverses body scrolling without selecting an item");
+        AssertPublicChoices(renderer, model, choices, "after directional body scrolling");
+        GUILayout.ScrollViewRecord comparison = GUILayout.ScrollViews[0];
+        Check(!comparison.Controls.Exists(control => control.Button), "choice comparison has no fake selection or collapse button");
+        GUILayout.ControlRecord firstBody = comparison.Controls.Find(control => control.Text == choices[0].Description);
+        GUILayout.ControlRecord secondHeading = comparison.Controls.Find(control => control.Text == choices[1].Text);
+        Check(secondHeading.Rect.y - firstBody.Rect.yMax >= Math.Max(8, ((GUIStyle)Field(renderer, "textStyle")).fontSize * .6f),
+            "choice items have an explicit readable vertical gap in addition to their box padding");
+        model.Tab("선택지").Select(choices[1].Id);
+        renderer.Handle(LogPadCommand.Activate); renderer.Handle(LogPadCommand.Down); renderer.Handle(LogPadCommand.Right);
+        Check(model.Tab("선택지").SelectedId == choices[1].Id && Area(renderer) == "List",
+            "read-only renderer navigation does not create or replace model selection");
         model.Tab("선택지").ListScroll = 0;
-        ClickRenderedButton(renderer, "선택 비교 첫째");
-        Check(model.Tab("선택지").SelectedId == "choice-first", "mouse header release selects its stable choice ID");
-        AssertPublicChoices(renderer, model, choices, "after header mouse click");
         renderer.Handle(LogPadCommand.Back);
         Check(closes == 1, "B closes the public choice comparison directly");
 
@@ -1333,24 +1346,129 @@ internal static class Program
             TapKey(keyboardRenderer, KeyCode.Return);
             TapKey(keyboardRenderer, KeyCode.RightArrow);
             TapKey(keyboardRenderer, KeyCode.LeftArrow);
-            Check(keyboardModel.Tab("선택지").SelectedId == "key-first" && Area(keyboardRenderer) == "List", "real keyboard A and horizontal input keep choices fully public");
+            Check(keyboardModel.Tab("선택지").SelectedId == null && Area(keyboardRenderer) == "List", "real keyboard activation and horizontal input do not select read-only choices");
             PressKey(keyboardRenderer, KeyCode.DownArrow);
+            float keyboardOffset = keyboardModel.Tab("선택지").ListScroll;
             PressKey(keyboardRenderer, KeyCode.DownArrow);
-            Check(keyboardModel.Tab("선택지").SelectedId == "key-second", "held keyboard down selects once and ignores repeated KeyDown");
+            Check(keyboardModel.Tab("선택지").SelectedId == null && keyboardOffset > 0 && keyboardModel.Tab("선택지").ListScroll == keyboardOffset,
+                "held keyboard down scrolls once and ignores repeated KeyDown");
             keyboardModel.ResetContext(305);
             Publish(keyboardModel, "선택지", Item("replacement"));
             keyboardRenderer.ResetInputFocus();
             keyboardRenderer.Handle(LogPadCommand.None);
             PressKey(keyboardRenderer, KeyCode.DownArrow);
-            Check(keyboardModel.Tab("선택지").SelectedId == null, "held direction cannot select a replacement context choice");
+            Check(keyboardModel.Tab("선택지").SelectedId == null && keyboardModel.Tab("선택지").ListScroll == 0, "held direction cannot scroll a replacement context");
             ReleaseKey(keyboardRenderer, KeyCode.DownArrow);
             TapKey(keyboardRenderer, KeyCode.DownArrow);
-            Check(keyboardModel.Tab("선택지").SelectedId == "replacement", "fresh direction selects after release in replacement context");
+            Check(keyboardModel.Tab("선택지").SelectedId == null && keyboardModel.Tab("선택지").ListScroll > 0, "fresh direction scrolls after release in replacement context");
             TapKey(keyboardRenderer, KeyCode.Escape);
             Check(keyboardCloses == 1, "keyboard Escape closes the public choice list directly");
             Check(LogBridge.Reservations == reservations, "choice and condition navigation never invokes event or mission reservation");
         }
         finally { Input.Held.Clear(); }
+    }
+
+    private static void RendererStructuredConditionBlocks()
+    {
+        Rect saved = ConfiguredRect();
+        int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
+        int reservations = LogBridge.Reservations;
+        try
+        {
+            Screen.width = 1920; Screen.height = 1200;
+            foreach (int[] size in new[] { new[] { 872, 960, 20 }, new[] { 540, 600, 32 } })
+            {
+                ConfigureLayout(new Rect(60, 50, size[0], size[1]), size[2]);
+                var branches = new[] {
+                    new LogConditionBranch("분기 1", "이 조건을 만족하면", "돈 >= 10 | 평판 >= 5\n같은 분기의 다음 줄: 분기 99, 그 외\n" + new string('긴', 800)),
+                    new LogConditionBranch("분기 2", "앞 분기가 모두 불충족일 때 검사", "체력 >= 20 | 기력 >= 15\nRAW_CONDITION_" + new string('A', 256)),
+                    new LogConditionBranch("그 외 (분기 3)", "위 분기가 모두 불충족일 때", "")
+                };
+                const string hint = "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.";
+                LogItem first = Item("structured-checkpoint");
+                first.Text = "1 2 그 외";
+                first.Description = "LEGACY_FLAT_NOT_REPEATED\n분기처럼 보이는 줄";
+                first.ReadState = LogReadState.Unread;
+                first.ConditionDetails = new LogConditionDetails(hint, branches, first.Description);
+                LogItem second = Item("other-checkpoint");
+                second.ConditionDetails = new LogConditionDetails("", new[] { new LogConditionBranch("다른 분기", "다른 맥락", "다른 설명") });
+                var model = new LogModel(); model.ResetContext(310);
+                Publish(model, "조건", first, second);
+                var renderer = new LogRenderer(model, null, null);
+                renderer.Handle(LogPadCommand.None); renderer.Handle(LogPadCommand.NextTab); renderer.Handle(LogPadCommand.Activate);
+                Repaint(renderer); Repaint(renderer);
+                GUILayout.ScrollViewRecord pane = GUILayout.ScrollViews[1];
+                Check(pane.Controls.Exists(control => !control.Button && control.Text == hint)
+                    && pane.Controls.Exists(control => !control.Button && control.Text == first.Text),
+                    "condition details keep source order guidance and existing branch-read summary");
+                Check(!pane.Controls.Exists(control => control.Text == first.Description),
+                    "structured condition blocks do not repeat the compatibility flattened description");
+                var observed = new List<GUILayout.BoxRecord>();
+                foreach (LogConditionBranch branch in branches)
+                {
+                    List<GUILayout.BoxRecord> boxes = GUILayout.Boxes.FindAll(box => box.Controls.Exists(control => control.Text == branch.Title)
+                        && box.Controls.FindAll(control => Array.Exists(branches, candidate => control.Text == candidate.Title)).Count == 1);
+                    Check(boxes.Count == 1, "each real condition branch owns exactly one separate styled vertical block");
+                    GUILayout.BoxRecord box = boxes[0]; observed.Add(box);
+                    Check(box.Style != null && box.Rect.width > 0 && box.Rect.height > 0
+                        && box.Controls.Exists(control => !control.Button && control.Text == branch.Context),
+                        "branch block has real geometry and its supplied condition/fallback context");
+                    Check(!box.Controls.Exists(control => control.Button)
+                        && box.Controls.Count == (branch.Description.Length == 0 ? 2 : 3),
+                        "branch body lines stay within one read-only block rather than becoming fake branches or controls");
+                    if (branch.Description.Length > 0)
+                        Check(box.Controls.Exists(control => !control.Button && control.Text == branch.Description),
+                            "complete branch description retains line breaks and the existing | operator text");
+                }
+                for (int index = 1; index < observed.Count; index++)
+                    Check(observed[index].Rect.y - observed[index - 1].Rect.yMax >= Math.Max(10, size[2] * .6f) - .01f,
+                        "branch blocks keep publication order and a visible gap between complete descriptions");
+                Check(pane.ContentHeight > pane.Viewport.height && !pane.Controls.Exists(control => control.Button),
+                    "long structured conditions remain readable in an independently scrollable, noninteractive detail pane");
+                GUILayout.ControlRecord longToken = pane.Controls.Find(control => control.Text == branches[1].Description);
+                Check(observed[1].Rect.width <= pane.ContentWidth + .01f
+                    && longToken.Rect.width <= observed[1].Rect.width - observed[1].Style.padding.horizontal + .01f
+                    && longToken.Rect.height > size[2] * 4,
+                    "unbroken condition identifiers wrap within the actual branch client width instead of widening content beyond its vertical-only pane");
+                renderer.Handle(LogPadCommand.Right); renderer.Handle(LogPadCommand.Activate); renderer.Handle(LogPadCommand.Left);
+                Check(Area(renderer) == "List" && model.Tab("조건").SelectedId == first.Id && !model.Tab("조건").ExecutionFocus,
+                    "condition A and horizontal input cannot focus a branch or nonexistent detail action");
+                float beforeScroll = model.Tab("조건").DetailScroll;
+                renderer.Scroll(1);
+                Check(model.Tab("조건").DetailScroll > beforeScroll && model.Tab("조건").ListScroll == 0,
+                    "right stick scrolls the complete condition blocks while checkpoint list keeps focus");
+                renderer.Handle(LogPadCommand.Down);
+                Check(model.Tab("조건").SelectedId == second.Id && model.Tab("조건").DetailScroll == 0 && Area(renderer) == "List",
+                    "condition list navigation remains available after reading expanded branch blocks");
+                Check(LogBridge.Reservations == reservations, "read-only condition blocks never reserve game actions");
+            }
+
+            ConfigureLayout(new Rect(60, 50, 872, 960), 20);
+            var fallbackModel = new LogModel(); fallbackModel.ResetContext(311);
+            const string countHint = "이 체크포인트는 조건식 대신 실행 횟수를 기준으로 분기합니다.";
+            LogItem countRow = Item("count-checkpoint");
+            countRow.Description = "COUNT_LEGACY_SHOULD_NOT_RENDER";
+            countRow.ConditionDetails = new LogConditionDetails("", Array.Empty<LogConditionBranch>(), countHint);
+            Publish(fallbackModel, "조건", countRow);
+            var fallbackRenderer = new LogRenderer(fallbackModel, null, null);
+            fallbackRenderer.Handle(LogPadCommand.None); fallbackRenderer.Handle(LogPadCommand.NextTab); fallbackRenderer.Handle(LogPadCommand.Activate);
+            Repaint(fallbackRenderer);
+            Check(GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && control.Text == countHint)
+                && !GUILayout.ScrollViews[1].Controls.Exists(control => control.Text == countRow.Description || control.Text == "분기 1" || control.Text.StartsWith("그 외", StringComparison.Ordinal)),
+                "count-based checkpoint displays neutral supplied guidance without inventing condition alternatives");
+            fallbackRenderer.Handle(LogPadCommand.Right); fallbackRenderer.Handle(LogPadCommand.Activate);
+            Check(Area(fallbackRenderer) == "List" && !fallbackModel.Tab("조건").ExecutionFocus && LogBridge.Reservations == reservations,
+                "count-based guidance has no false selectable or executable detail action");
+            countRow.ConditionDetails = null; countRow.Description = "호환 설명 그대로 | 다음 줄\n분기 77처럼 보이는 문자열";
+            Publish(fallbackModel, "조건", countRow); Repaint(fallbackRenderer);
+            Check(GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && control.Text == countRow.Description),
+                "condition rows without structured publication retain their complete original compatibility description without parsing");
+            countRow.ConditionDetails = new LogConditionDetails("", null);
+            Publish(fallbackModel, "조건", countRow); Repaint(fallbackRenderer);
+            Check(!GUILayout.ScrollViews[1].Controls.Exists(control => control.Text == countRow.Description || control.Text == "분기 1"),
+                "successful empty structured condition data does not fabricate branches or revive stale compatibility text");
+        }
+        finally { ConfigureLayout(saved, oldFont); Screen.width = oldWidth; Screen.height = oldHeight; }
     }
 
     private static void RendererChoiceAndConditionReflow()
@@ -1377,16 +1495,21 @@ internal static class Program
             renderer.Handle(LogPadCommand.Down);
             renderer.Handle(LogPadCommand.Down);
             Repaint(renderer); Repaint(renderer);
-            Check(Area(renderer) == "List" && !(bool)Field(renderer, "ensureVisible"), "choice selection consumes its explicit header-follow request");
+            float initialOffset = model.Tab("선택지").ListScroll;
+            Check(Area(renderer) == "List" && model.Tab("선택지").SelectedId == null && initialOffset > 0,
+                "choice directions scroll the continuous body without a header-follow request");
             Publish(model, "선택지", publication(8000));
-            FocusVisible(renderer, model, "선택지", "비교 카드 선택", "public choice follows preceding body growth");
+            Repaint(renderer); Repaint(renderer);
+            Check(model.Tab("선택지").ListScroll == initialOffset && model.Tab("선택지").SelectedId == null,
+                "preceding choice body growth preserves current reading scroll without creating selection");
             renderer.Scroll(1);
             float manualOffset = model.Tab("선택지").ListScroll;
             Publish(model, "선택지", publication(12000));
             Repaint(renderer); Repaint(renderer);
-            Check(model.Tab("선택지").ListScroll == manualOffset, "manual public-choice body scrolling survives another preceding-body reflow");
+            Check(model.Tab("선택지").ListScroll == manualOffset, "manual choice body scrolling survives preceding-body reflow");
             renderer.Handle(LogPadCommand.Down);
-            FocusVisible(renderer, model, "선택지", "비교 카드 다음", "fresh direction resumes public-choice header following");
+            Check(model.Tab("선택지").ListScroll > manualOffset && model.Tab("선택지").SelectedId == null,
+                "fresh direction continues body scrolling after reflow instead of jumping to a header");
 
             var conditions = new LogModel(); conditions.ResetContext(307);
             LogItem[] conditionRows = LongRows(30);
@@ -1414,6 +1537,100 @@ internal static class Program
         }
     }
 
+    private static void RendererAutomaticScrollbars()
+    {
+        Rect saved = ConfiguredRect();
+        int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
+        try
+        {
+            Screen.width = 1920; Screen.height = 1200;
+            foreach (string tab in new[] { "선택지", "조건", "이벤트", "미션" })
+                foreach (bool overflowing in new[] { false, true })
+                {
+                    ConfigureLayout(new Rect(60, 50, 872, 960), 20);
+                    var model = new LogModel(); model.ResetContext(308);
+                    LogItem[] rows = overflowing ? LongRows(30) : new[] { Item("short", new object()), Item("short-next", new object()) };
+                    rows[0].Description = overflowing ? rows[0].Description : "짧은 첫 본문";
+                    if (overflowing) foreach (LogItem row in rows) row.Description = new string('설', 5000);
+                    Publish(model, tab, rows);
+                    var renderer = new LogRenderer(model, null, null);
+                    renderer.Handle(LogPadCommand.None);
+                    for (int index = 0; index < Array.IndexOf(new[] { "선택지", "조건", "이벤트", "미션" }, tab); index++) renderer.Handle(LogPadCommand.NextTab);
+                    renderer.Handle(LogPadCommand.Activate);
+                    Repaint(renderer); Repaint(renderer);
+                    Check(GUILayout.ScrollViews.Count == (tab == "선택지" ? 1 : 2), tab + ": keeps the complete reading/list and detail panes");
+                    foreach (GUILayout.ScrollViewRecord pane in GUILayout.ScrollViews)
+                    {
+                        Check(!pane.AlwaysShowVertical && !pane.AlwaysShowHorizontal && ReferenceEquals(pane.HorizontalScrollbar, GUIStyle.none),
+                            tab + ": actual renderer requests conditional vertical bars and suppresses horizontal bars");
+                        Check((pane.ContentHeight > pane.Viewport.height) == overflowing,
+                            tab + ": short/long fixtures genuinely fit or overflow their measured viewport");
+                        Check(pane.ReservedVerticalScrollbar == overflowing,
+                            tab + ": managed repeated-layout contract reserves scrollbar width only for overflowing content (native Unity rendering remains untested)");
+                        if (!overflowing) Check(Math.Abs(pane.ContentWidth - pane.Viewport.width) < .01f,
+                            tab + ": fitting content reclaims the entire unused scrollbar gutter");
+                        if (!overflowing && tab != "선택지")
+                            Check(pane.Controls.FindAll(control => control.Button).TrueForAll(control => Math.Abs(control.Rect.width - pane.ContentWidth) < .01f),
+                                tab + ": fitting rows use the full available client width without a scrollbar gutter");
+                    }
+                    if (tab == "선택지")
+                        Check(model.Tab(tab).SelectedId == null && !GUILayout.ScrollViews[0].Controls.Exists(control => control.Button),
+                            "short and overflowing choice bodies are read-only and never select an entry");
+                    if (!overflowing && tab == "선택지")
+                    {
+                        var pane = GUILayout.ScrollViews[0];
+                        var firstBody = pane.Controls.Find(control => control.Text == "짧은 첫 본문");
+                        var nextTitle = pane.Controls.Find(control => control.Text == rows[1].Title);
+                        Check(((GUIStyle)Field(renderer, "textStyle")).fontSize == 20 && nextTitle.Rect.y - firstBody.Rect.yMax >= 12,
+                            "20px choice body has at least a 12px explicit gap between readable entries");
+                    }
+                }
+        }
+        finally { ConfigureLayout(saved, oldFont); Screen.width = oldWidth; Screen.height = oldHeight; }
+    }
+
+    private static void RendererMissionRefreshWording()
+    {
+        Rect saved = ConfiguredRect();
+        int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
+        try
+        {
+            Screen.width = 1920; Screen.height = 1200;
+            ConfigureLayout(new Rect(60, 50, 872, 960), 20);
+            var model = new LogModel();
+            LogItem healthy = Item("healthy", new object()); healthy.Title = "정상 미션 제목";
+            LogItem read = Item("read", new object()); read.ReadState = LogReadState.Read;
+            LogItem unread = Item("unread", new object()); unread.ReadState = LogReadState.Unread;
+            LogItem analyzed = Item("analyzed", new object()); analyzed.AnalysisStates.Add("Partial");
+            LogItem waiting = Item("waiting"); waiting.RefreshState = LogRefreshState.Waiting;
+            LogItem failed = Item("failed"); failed.RefreshState = LogRefreshState.ReadFailure; failed.RefreshStatus = "조회 실패 원인";
+            LogItem retained = Item("retained"); retained.RefreshState = LogRefreshState.RetainedFailure; retained.RefreshStatus = "이전 값 유지 원인"; retained.HasLastGood = true;
+            var renderer = MissionRenderer(model, new[] { healthy, read, unread, analyzed, waiting, failed, retained });
+            renderer.Handle(LogPadCommand.Activate);
+            Repaint(renderer);
+            Check(!GUILayout.Controls.Exists(control => control.Text.Contains("조회 정상", StringComparison.Ordinal)),
+                "mission list and selected detail omit redundant healthy retrieval wording");
+            var pane = GUILayout.ScrollViews[0];
+            Check(pane.Controls.Exists(control => control.Button && control.Text == "▶ " + healthy.Title),
+                "healthy mission caption has no trailing blank status row or separator");
+            Check(!GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && string.IsNullOrEmpty(control.Text)),
+                "healthy mission detail does not allocate a blank state label");
+            Check(pane.Controls.Exists(control => control.Button && control.Text.Contains(read.Id, StringComparison.Ordinal) && control.Text.EndsWith("읽음", StringComparison.Ordinal))
+                && pane.Controls.Exists(control => control.Button && control.Text.Contains(unread.Id, StringComparison.Ordinal) && control.Text.EndsWith("미독", StringComparison.Ordinal)),
+                "mission explicit read state remains visible without dangling join punctuation");
+            Check(pane.Controls.Exists(control => control.Button && control.Text == analyzed.Title + "\n추가 영향 가능")
+                && !pane.Controls.Exists(control => control.Button && control.Text.Contains("\n · ", StringComparison.Ordinal)),
+                "healthy mission analysis state begins directly with its explanation and no leading separator");
+            Check(pane.Controls.Exists(control => control.Button && control.Text.Contains(waiting.Id, StringComparison.Ordinal) && control.Text.Contains("설명 조회 대기", StringComparison.Ordinal))
+                && pane.Controls.Exists(control => control.Button && control.Text.Contains(failed.Id, StringComparison.Ordinal) && control.Text.Contains(failed.RefreshStatus, StringComparison.Ordinal))
+                && pane.Controls.Exists(control => control.Button && control.Text.Contains(retained.Id, StringComparison.Ordinal) && control.Text.Contains(retained.RefreshStatus, StringComparison.Ordinal)),
+                "mission waiting, failed and retained status explanations remain available");
+            Check(healthy.RefreshState == LogRefreshState.Healthy && failed.RefreshState == LogRefreshState.ReadFailure && retained.HasLastGood,
+                "mission healthy-label removal changes presentation without changing publication or reservation state");
+        }
+        finally { ConfigureLayout(saved, oldFont); Screen.width = oldWidth; Screen.height = oldHeight; }
+    }
+
     private static void Invoke(LogRenderer renderer, string method) => typeof(LogRenderer).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
     private static void RendererRenderingBoundaries()
     {
@@ -1432,7 +1649,7 @@ internal static class Program
         GUILayout.LiteralLabels.Clear();
         DiceMaster.EmbeddedTranslations.Display.TranslatedLabels.Clear();
         Invoke(renderer, "DrawChoices");
-        Check(GUILayout.Buttons.Exists(text => text.Contains(card.Text, StringComparison.Ordinal)), "always-visible choice header uses actual option sentence");
+        Check(GUILayout.LiteralLabels.Contains(card.Text) && !GUILayout.Buttons.Exists(text => text.Contains(card.Text, StringComparison.Ordinal)), "read-only choice heading uses actual option sentence without an inactive selection control");
         Check(GUILayout.LiteralLabels.Contains(card.Description) && model.Tab("선택지").SelectedId == null, "choice body is drawn without requiring any selection");
         Check(model.Tab("선택지").ListScroll == 0, "long public choice body does not force scrolling to its end");
         Check(GUILayout.LiteralLabels.Contains("원본 ID: " + card.RawId), "raw ID is rendered literally without replacing event-result identifiers or markup");
@@ -1513,10 +1730,10 @@ internal static class Program
         {
             Rect window = LogLayout.DefaultWindow(screen[0], screen[1]);
             int font = LogLayout.DefaultFont(screen[1]);
-            Check(font >= previousFont && font >= 16, "default font scales up with resolution");
+            Check(font >= previousFont && font >= LogLayout.MinimumFont, "default font scales up with resolution");
             Check(window.x >= 0 && window.y >= 0 && window.x + window.width <= screen[0] && window.yMax <= screen[1],
                 "scaled default window stays entirely inside display");
-            Check(window.width > screen[0] * .55f && window.height > screen[1] * .65f, "default leaves a readable substantial content window");
+            Check(window.width >= Math.Min(screen[0], 540) && Math.Abs(window.height - screen[1] * .8f) < .01f, "default keeps a readable width and uses 80 percent screen height");
             previousFont = font;
         }
         Check(LogLayout.IsDefaultSeed(new Rect(20, 20, 750, 750), 14), "unchanged alpha1 default is eligible for readable migration");
@@ -1647,27 +1864,29 @@ internal static class Program
             config.Value = 24;
             Array.Reverse(focusRows);
 
-            // Every preceding choice body contributes its full height. Follow
-            // the measured header rather than estimating ordinal * rowHeight.
+            // Choices are a continuous reading surface. Directions scroll the
+            // text without manufacturing a selected/focus-follow header.
             focusRenderer.Handle(LogPadCommand.PreviousTab);
             focusRenderer.Handle(LogPadCommand.PreviousTab);
-            focusRenderer.Handle(LogPadCommand.Activate);
             for (int index = 0; index < 9; index++) focusRenderer.Handle(LogPadCommand.Down);
+            Repaint(focusRenderer); Repaint(focusRenderer);
+            float bodyOffset = focusModel.Tab("선택지").ListScroll;
+            Check(bodyOffset > 0 && focusModel.Tab("선택지").SelectedId == null,
+                "choice directions scroll the complete measured bodies without selecting a header");
             focusRenderer.Handle(LogPadCommand.Activate);
-            FocusVisible(focusRenderer, focusModel, "선택지", "비교 카드 09", "choice after variable public bodies");
-            focusRenderer.Handle(LogPadCommand.Down);
-            FocusVisible(focusRenderer, focusModel, "선택지", "비교 카드 10", "card after oversized body");
-            for (int index = 0; index < 10; index++) focusRenderer.Handle(LogPadCommand.Up);
-            FocusVisible(focusRenderer, focusModel, "선택지", "비교 카드 00", "first public choice header moving up");
-            focusModel.Tab("선택지").ListScroll = 200;
+            focusRenderer.Handle(LogPadCommand.Right);
+            focusRenderer.Handle(LogPadCommand.Left);
+            Check(focusModel.Tab("선택지").ListScroll == bodyOffset && focusModel.Tab("선택지").SelectedId == null,
+                "choice activation and horizontal navigation leave the reading position unchanged");
             focusRenderer.Scroll(1);
             float manualScroll = focusModel.Tab("선택지").ListScroll;
             Array.Reverse(focusRows);
             Publish(focusModel, "선택지", focusRows);
             Repaint(focusRenderer); Repaint(focusRenderer);
-            Check(focusModel.Tab("선택지").ListScroll == manualScroll, "manual body scrolling survives publication until a new focus movement requests following");
+            Check(focusModel.Tab("선택지").ListScroll == manualScroll, "choice reading scroll survives automatic publication without forced following");
             focusRenderer.Handle(LogPadCommand.Down);
-            FocusVisible(focusRenderer, focusModel, "선택지", "비교 카드 00", "new focus command resumes following after manual body scrolling");
+            Check(focusModel.Tab("선택지").ListScroll > manualScroll && focusModel.Tab("선택지").SelectedId == null,
+                "fresh choice direction continues scrolling from current reading position");
 
             focusRenderer.Handle(LogPadCommand.Tools);
             Rect toolsWindow = focusRenderer.WindowRect;
@@ -1803,7 +2022,8 @@ internal static class Program
             Repaint(pointerRenderer); Repaint(pointerRenderer);
             Check(pointerModel.Tab("선택지").ListScroll == 220, "scrollbar drag stays in ownership through card reflow");
             pointerRenderer.Handle(LogPadCommand.Down);
-            FocusVisible(pointerRenderer, pointerModel, "선택지", "비교 카드 00", "pad focus resumes follow after mouse scrollbar drag");
+            Check(pointerModel.Tab("선택지").SelectedId == null && pointerModel.Tab("선택지").ListScroll > 220,
+                "pad direction continues choice reading scroll from the mouse scrollbar position without header following");
             GUILayout.ScrollInput = (index, input) => index == 0 ? new Vector2(input.x, 330) : input;
             Event.current = new Event { type = EventType.MouseDrag, rawType = EventType.MouseDrag, mousePosition = new Vector2(-100, -100) };
             pointerRenderer.Draw();
@@ -1889,7 +2109,7 @@ internal static class Program
     {
         Rect saved = ConfiguredRect();
         int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
-        var seed = new Rect(20, 20, 1152, 756);
+        var seed = new Rect(20, 20, 872, 960);
         try
         {
             foreach (int[] startup in new[] { new[] { 640, 480 }, new[] { 1280, 720 }, new[] { 0, 0 } })
@@ -1950,18 +2170,39 @@ internal static class Program
                     "every supported historical seed remains raw until a valid first draw");
                 Screen.width = 3840; Screen.height = 2160;
                 Repaint(renderer);
-                Check(renderer.WindowRect == LogLayout.DefaultWindow(Screen.width, Screen.height) && DiceMaster.Config.ConfigManager.LogFontSize.Value == 40,
+                Check(renderer.WindowRect == LogLayout.DefaultWindow(Screen.width, Screen.height) && DiceMaster.Config.ConfigManager.LogFontSize.Value == 36,
                     "historical seed migrates using final 4K layout and font");
             }
             foreach (int[] screen in new[] { new[] { 1280, 720 }, new[] { 2560, 1440 }, new[] { 3840, 2160 } })
             {
                 Screen.width = screen[0]; Screen.height = screen[1];
-                float scale = LogLayout.ScreenScale(Screen.height);
+                float scale = Mathf.Clamp(Screen.height / 1080f, .85f, 4f);
                 Rect previousScaled = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale, 1280 * scale, 960 * scale), Screen.width, Screen.height);
                 previousScaled.y += .005f; previousScaled.height += .005f;
-                ConfigureLayout(previousScaled, LogLayout.DefaultFont(Screen.height));
+                ConfigureLayout(previousScaled, (int)Math.Round(20 * scale));
                 var migrated = FirstDrawRenderer();
                 Check(migrated.WindowRect == LogLayout.DefaultWindow(Screen.width, Screen.height), "previous 1280 by 960 scaled default migrates after config serialization");
+            }
+            foreach (int[] display in new[] { new[] { 1920, 1080 }, new[] { 1920, 1200 }, new[] { 2560, 1440 }, new[] { 3840, 2160 }, new[] { 3440, 1440 } })
+            {
+                Screen.width = display[0]; Screen.height = display[1];
+                float oldScale = Mathf.Clamp(Screen.height / 1080f, .85f, 4f);
+                int oldScaledFont = (int)Math.Round(20 * oldScale);
+                Rect oldRatioDefault = LogRenderer.ConstrainWindow(new Rect(20 * oldScale, 20 * oldScale,
+                    (float)Math.Round(Screen.width * .6f), (float)Math.Round(Screen.height * .7f)), Screen.width, Screen.height);
+                ConfigureLayout(oldRatioDefault, oldScaledFont);
+                Check(FirstDrawRenderer().WindowRect == LogLayout.DefaultWindow(Screen.width, Screen.height)
+                    && DiceMaster.Config.ConfigManager.LogFontSize.Value == LogLayout.DefaultFont(Screen.height),
+                    "unchanged prior 60/70 percent tuple migrates coherently to the new viewport baseline");
+                Rect moved = oldRatioDefault; moved.x += 1;
+                ConfigureLayout(moved, oldScaledFont);
+                Check(FirstDrawRenderer().WindowRect == moved, "moved old ratio window remains a custom user layout");
+                Rect resized = oldRatioDefault; resized.width -= 1;
+                ConfigureLayout(resized, oldScaledFont);
+                Check(FirstDrawRenderer().WindowRect == resized, "resized old ratio window remains a custom user layout");
+                ConfigureLayout(oldRatioDefault, oldScaledFont + 1);
+                Check(FirstDrawRenderer().WindowRect == oldRatioDefault && DiceMaster.Config.ConfigManager.LogFontSize.Value == oldScaledFont + 1,
+                    "custom-font old ratio window remains a custom user layout");
             }
             Screen.width = 640; Screen.height = 480;
             ConfigureLayout(seed, 20);
@@ -1997,13 +2238,14 @@ internal static class Program
             Screen.width = 3840; Screen.height = 2160;
             Repaint(unavailable);
             Check(unavailable.WindowRect == LogLayout.DefaultWindow(Screen.width, Screen.height), "deferred initialization still runs after a usable display becomes available");
-            foreach (int[] display in new[] { new[] { 1920, 1080, 1152, 756 }, new[] { 2560, 1440, 1536, 1008 },
-                new[] { 3840, 2160, 2304, 1512 }, new[] { 3440, 1440, 2064, 1008 }, new[] { 1920, 1200, 1152, 840 }, new[] { 5120, 1440, 3072, 1008 } })
+            foreach (int[] display in new[] { new[] { 1920, 1080, 872, 864, 18 }, new[] { 2560, 1440, 1163, 1152, 24 },
+                new[] { 3840, 2160, 1744, 1728, 36 }, new[] { 3440, 1440, 1562, 1152, 24 }, new[] { 1920, 1200, 872, 960, 20 }, new[] { 5120, 1440, 2325, 1152, 24 } })
             {
                 Rect proportional = LogLayout.DefaultWindow(display[0], display[1]);
                 Check(Math.Abs(proportional.width - display[2]) < .01f && Math.Abs(proportional.height - display[3]) < .01f,
-                    "default window independently uses 60 percent width and 70 percent height on " + display[0] + "x" + display[1]);
+                    "default window follows the 872 by 960 reference proportions on " + display[0] + "x" + display[1]);
                 Check(ContainsRect(new Rect(0, 0, display[0], display[1]), proportional), "proportional default stays inside the complete display");
+                Check(LogLayout.DefaultFont(display[1]) == display[4], "font follows 20px at 1200px display height");
                 Screen.width = display[0]; Screen.height = display[1];
                 ConfigureLayout(seed, 20);
                 Check(FirstDrawRenderer().WindowRect == proportional, "actual renderer first draw applies proportional default on this aspect ratio");
@@ -2028,13 +2270,13 @@ internal static class Program
         RectOffset oldBarMargin = GUI.skin.verticalScrollbar.margin;
         try
         {
-            Check(LogLayout.DefaultWidth == 1152 && LogLayout.DefaultHeight == 756, "configuration seed represents the 60 percent by 70 percent default at 1080p");
+            Check(LogLayout.DefaultWidth == 872 && LogLayout.DefaultHeight == 960 && LogLayout.DefaultFontSize == 20, "configuration seed matches the 1920 by 1200 reference");
             foreach (int[] screen in new[] { new[] { 1280, 720 }, new[] { 1920, 1080 }, new[] { 2560, 1440 }, new[] { 3840, 2160 } })
             {
                 Screen.width = screen[0]; Screen.height = screen[1];
-                float scale = LogLayout.ScreenScale(Screen.height);
+                float scale = Mathf.Clamp(Screen.height / 1080f, .85f, 4f);
                 Rect previous = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale, 1200 * scale, 860 * scale), Screen.width, Screen.height);
-                int previousFont = LogLayout.DefaultFont(Screen.height);
+                int previousFont = (int)Math.Round(20 * scale);
                 Rect serialized = previous;
                 serialized.x += .005f; serialized.width += .005f;
                 ConfigureLayout(serialized, previousFont);
@@ -2054,7 +2296,7 @@ internal static class Program
             }
             Screen.width = 1920; Screen.height = 1080;
             ConfigureLayout(new Rect(20, 20, 1200, 860), 20);
-            Check(FirstDrawRenderer().WindowRect.width == 1152, "unscaled previous default seed migrates to proportional window on first draw");
+            Check(FirstDrawRenderer().WindowRect.width == 872, "unscaled previous default seed migrates to proportional window on first draw");
             Check(!LogLayout.IsDefaultSeed(new Rect(20.02f, 20, 1200, 860), 20), "serialization tolerance does not classify a changed physical position as a default");
             foreach (GUIStyle style in skinStyles) { style.fixedHeight = 32; style.fixedWidth = 96; }
             GUI.skin.verticalScrollbar.fixedWidth = 20;
@@ -2090,7 +2332,7 @@ internal static class Program
                 {
                     if (!row.Button) continue;
                     GUIStyle actualStyle = row.Text.StartsWith("▶ ", StringComparison.Ordinal) ? selected : normal;
-                    Check(row.Rect.width == (float)Math.Floor(list.ContentWidth), tab + ": row width excludes actual 20px scrollbar and 3px margin");
+                    Check(Math.Abs(row.Rect.width - list.ContentWidth) < .01f, tab + ": flexible row uses the actual client width after conditional scrollbar layout");
                     Check(row.Rect.height >= Math.Ceiling(actualStyle.CalcHeight(new GUIContent(row.Text), row.Rect.width)),
                         tab + ": final caption and selected font fit measured multi-line row height");
                 }

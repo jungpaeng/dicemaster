@@ -2,7 +2,7 @@
 
 This prerelease-only path retains the original source-restoration verifier. The
 default --scope prd2 keeps its original candidate contract. Select --scope prd4
-explicitly for the reviewed log GUI/XInput candidate and its 11 test programs.
+explicitly for the reviewed log GUI/XInput candidate and its 12 test programs.
 Neither scope claims historical runtime equivalence, feature completion or a
 Windows run of the candidate.
 No Git refs, network resources, installed plugins or game references are written.
@@ -36,7 +36,7 @@ PRD4_REQUIRED_TESTS = frozenset({
     'LogRefreshTests', 'LiveLogEngineTests', 'LifecycleTests',
     'LiveLogIntegrationTests', 'RealGameApiTests', 'GamepadTests',
     'SourceBehaviorTests', 'PreviewIntegrationTests', 'LogUiModelTests',
-    'LogUiWiringTests', 'LogUiKeyboardTests',
+    'LogUiWiringTests', 'LogUiKeyboardTests', 'LogOpenerIntegrationTests',
 })
 
 
@@ -58,7 +58,7 @@ def validate_preview_candidate(manifest, scope):
             raise RuntimeError('PRD 4 preview must preserve its exact scope and pending Windows boundaries.')
         tests = manifest.get('tests')
         if not isinstance(tests, dict) or not PRD4_REQUIRED_TESTS.issubset(tests):
-            raise RuntimeError('PRD 4 preview requires all 11 candidate test programs.')
+            raise RuntimeError('PRD 4 preview requires all 12 candidate test programs.')
         for name in PRD4_REQUIRED_TESTS:
             evidence = tests[name]
             if (not isinstance(evidence, list) or not evidence

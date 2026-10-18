@@ -88,12 +88,21 @@ namespace UnityEngine
         public sealed class ScrollViewRecord
         {
             public Rect Viewport; public Vector2 InputScroll, ReturnedScroll; public float ContentHeight, ContentWidth;
+            public bool AlwaysShowHorizontal, AlwaysShowVertical, ReservedVerticalScrollbar; public GUIStyle HorizontalScrollbar;
+            internal (int Window, int Index) CacheKey;
             public readonly List<ControlRecord> Controls = new List<ControlRecord>();
         }
         public sealed class ControlRecord
         {
             public string Text; public Rect Rect; public int FontSize; public bool Button, Enabled;
             public Rect WindowLocalRect, AncestorClip, VisibleRect;
+        }
+        // Observe actual styled vertical groups so branch blocks cannot be
+        // replaced by one concatenated label while satisfying layout checks.
+        public sealed class BoxRecord
+        {
+            public Rect Rect; public GUIStyle Style;
+            public readonly List<ControlRecord> Controls = new List<ControlRecord>();
         }
         public sealed class WindowRecord
         {
@@ -107,6 +116,7 @@ namespace UnityEngine
             internal Rect Bounds; internal bool Horizontal, Scroll, Area;
             internal float Cursor, Cross, FixedHeight; internal RectOffset Padding;
             internal ScrollViewRecord Record;
+            internal GUIStyle Style; internal int ControlStart;
             internal Vector2 SavedMouse;
             internal Rect AreaRect;
             internal int EntryCount;
@@ -116,18 +126,20 @@ namespace UnityEngine
         public static readonly List<string> Buttons = new List<string>(), LiteralLabels = new List<string>();
         public static readonly List<ScrollViewRecord> ScrollViews = new List<ScrollViewRecord>();
         public static readonly List<ControlRecord> Controls = new List<ControlRecord>();
+        public static readonly List<BoxRecord> Boxes = new List<BoxRecord>();
         public static Func<int, Vector2, Vector2> ScrollInput;
         public static Func<string, bool> ButtonInput;
         public static bool ConsumeButtonEvent;
         private static readonly Stack<Group> Groups = new Stack<Group>();
         private static readonly Dictionary<int, Rect> NativeWindows = new Dictionary<int, Rect>();
+        private static readonly Dictionary<(int Window, int Index), bool> PreviousScrollOverflow = new Dictionary<(int Window, int Index), bool>();
         private static WindowRecord activeWindow;
         public static WindowRecord LastWindow;
         public static int WindowCalls;
         public static Rect LastRect = new Rect(0, 0, 200, 30);
         public static void ResetLayout(float width = 1000, float height = 900)
         {
-            Groups.Clear(); ScrollViews.Clear(); Controls.Clear(); Buttons.Clear(); LiteralLabels.Clear();
+            Groups.Clear(); ScrollViews.Clear(); Controls.Clear(); Boxes.Clear(); Buttons.Clear(); LiteralLabels.Clear();
             Groups.Push(new Group { Bounds = new Rect(0, 0, width, height), FixedHeight = height, Clip = new Rect(0, 0, width, height) });
             LastRect = new Rect();
         }
@@ -196,7 +208,7 @@ namespace UnityEngine
         {
             Group parent = Current;
             float width = Option("Width", parent.Horizontal ? Math.Max(20, parent.Bounds.width / 6) : parent.Bounds.width, options);
-            width = Math.Max(width, Option("MinWidth", 0, options));
+            width = Math.Min(Math.Max(width, Option("MinWidth", 0, options)), Option("MaxWidth", float.MaxValue, options));
             float height = Math.Max(Option("Height", naturalHeight, options), Option("MinHeight", 0, options));
             return new Rect(parent.Bounds.x + (parent.Horizontal ? parent.Cursor : 0), parent.Bounds.y + (parent.Horizontal ? 0 : parent.Cursor), width, height);
         }
@@ -220,7 +232,7 @@ namespace UnityEngine
             {
                 Bounds = new Rect(bounds.x + (padding?.left ?? 0), bounds.y + (padding?.top ?? 0),
                     Math.Max(1, bounds.width - (padding?.horizontal ?? 0)), bounds.height),
-                Horizontal = horizontal, FixedHeight = Option("Height", 0, options), Padding = padding,
+                Horizontal = horizontal, FixedHeight = Option("Height", 0, options), Padding = padding, Style = style, ControlStart = Controls.Count,
                 GuiOrigin = Current.GuiOrigin, Clip = Current.Clip
             });
         }
@@ -229,8 +241,15 @@ namespace UnityEngine
             Group group = Groups.Pop();
             float natural = group.Horizontal ? group.Cross : group.Cursor;
             float height = group.FixedHeight > 0 ? group.FixedHeight : natural + (group.Padding?.vertical ?? 0);
-            Advance(new Rect(group.Bounds.x - (group.Padding?.left ?? 0), group.Bounds.y - (group.Padding?.top ?? 0),
-                group.Bounds.width + (group.Padding?.horizontal ?? 0), height));
+            Rect rect = new Rect(group.Bounds.x - (group.Padding?.left ?? 0), group.Bounds.y - (group.Padding?.top ?? 0),
+                group.Bounds.width + (group.Padding?.horizontal ?? 0), height);
+            if (!group.Horizontal && group.Style != null)
+            {
+                var box = new BoxRecord { Rect = rect, Style = group.Style };
+                for (int index = group.ControlStart; index < Controls.Count; index++) box.Controls.Add(Controls[index]);
+                Boxes.Add(box);
+            }
+            Advance(rect);
         }
         public static void BeginArea(Rect rect)
         {
@@ -251,15 +270,23 @@ namespace UnityEngine
         public static void BeginVertical(GUIStyle style, params GUILayoutOption[] options) => Begin(false, style, options);
         public static void EndVertical() => End();
         public static Vector2 BeginScrollView(Vector2 scroll, params GUILayoutOption[] options)
-            => BeginScrollCore(scroll, GUI.skin.verticalScrollbar, GUIStyle.none, options);
-        private static Vector2 BeginScrollCore(Vector2 scroll, GUIStyle scrollbar, GUIStyle background, GUILayoutOption[] options)
+            => BeginScrollCore(scroll, false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, options);
+        private static Vector2 BeginScrollCore(Vector2 scroll, bool alwaysShowHorizontal, bool alwaysShowVertical, GUIStyle horizontalScrollbar, GUIStyle scrollbar, GUIStyle background, GUILayoutOption[] options)
         {
             // Unbounded expansion is intentionally not assumed to fill a fixed
             // window; the renderer must supply the measured viewport height.
             Rect viewport = Allocate(Option("MinHeight", 60, options), options);
             Vector2 result = ScrollInput == null ? scroll : ScrollInput(ScrollViews.Count, scroll);
-            float contentWidth = Math.Max(1, viewport.width - scrollbar.fixedWidth - (scrollbar.margin?.left ?? 0) - (background.padding?.horizontal ?? 0));
-            var record = new ScrollViewRecord { Viewport = viewport, InputScroll = scroll, ReturnedScroll = result, ContentWidth = contentWidth };
+            // Narrow managed layout contract: converge scrollbar-dependent client
+            // width across layout/repaint passes. Unity performs its own word-wrap
+            // and overflow layout; this boundary does not execute native GUI.
+            var cacheKey = (activeWindow?.Id ?? 0, ScrollViews.Count);
+            bool reserveBar = alwaysShowVertical || PreviousScrollOverflow.TryGetValue(cacheKey, out bool previousOverflow) && previousOverflow;
+            float barWidth = reserveBar ? scrollbar.fixedWidth + (scrollbar.margin?.left ?? 0) : 0;
+            float contentWidth = Math.Max(1, viewport.width - barWidth - (background.padding?.horizontal ?? 0));
+            var record = new ScrollViewRecord { Viewport = viewport, InputScroll = scroll, ReturnedScroll = result, ContentWidth = contentWidth,
+                AlwaysShowHorizontal = alwaysShowHorizontal, AlwaysShowVertical = alwaysShowVertical, HorizontalScrollbar = horizontalScrollbar,
+                ReservedVerticalScrollbar = reserveBar, CacheKey = cacheKey };
             ScrollViews.Add(record);
             Rect viewportInWindow = Offset(viewport, Current.GuiOrigin);
             Groups.Push(new Group { Bounds = new Rect(background.padding?.left ?? 0, background.padding?.top ?? 0, contentWidth, viewport.height),
@@ -272,11 +299,12 @@ namespace UnityEngine
         }
         public static Vector2 BeginScrollView(Vector2 scroll, bool alwaysShowHorizontal, bool alwaysShowVertical,
             GUIStyle horizontalScrollbar, GUIStyle verticalScrollbar, GUIStyle background, params GUILayoutOption[] options)
-            => BeginScrollCore(scroll, verticalScrollbar, background, options);
+            => BeginScrollCore(scroll, alwaysShowHorizontal, alwaysShowVertical, horizontalScrollbar, verticalScrollbar, background, options);
         public static void EndScrollView()
         {
             Group scroll = Groups.Pop();
             scroll.Record.ContentHeight = scroll.Cursor;
+            PreviousScrollOverflow[scroll.Record.CacheKey] = scroll.Record.ContentHeight > scroll.Record.Viewport.height;
             Event.current.mousePosition = scroll.SavedMouse;
             Advance(scroll.Record.Viewport);
         }
@@ -284,6 +312,7 @@ namespace UnityEngine
         {
             Rect initial = Allocate(0, options);
             float width = Option("Width", style.fixedWidth > 0 ? style.fixedWidth : initial.width, options);
+            width = Math.Min(Math.Max(width, Option("MinWidth", 0, options)), Option("MaxWidth", float.MaxValue, options));
             float naturalHeight = style.CalcHeight(new GUIContent(text), width);
             float height = Option("Height", style.fixedHeight > 0 ? style.fixedHeight : naturalHeight, options);
             // Unity GUILayoutEntry.MinHeight raises maxHeight too. A wrapping
@@ -351,7 +380,7 @@ namespace DiceMaster.Config
     }
     public static class ConfigManager
     {
-        public static Element<float> LogWindowX = new Element<float>(20), LogWindowY = new Element<float>(20), LogWindowWidth = new Element<float>(1152), LogWindowHeight = new Element<float>(756);
+        public static Element<float> LogWindowX = new Element<float>(20), LogWindowY = new Element<float>(20), LogWindowWidth = new Element<float>(872), LogWindowHeight = new Element<float>(960);
         public static Element<int> LogFontSize = new Element<int>(20);
         public static Element<bool> EnableOptionInfo = new Element<bool>(true);
         public static Element<UnityEngine.KeyCode> LogMenuToggleKey = new Element<UnityEngine.KeyCode>(UnityEngine.KeyCode.Tab);
@@ -372,10 +401,12 @@ namespace DiceMaster.Gamepad
     {
         public static int Cancellations;
         public static Action PointerActivity;
+        public static Action PointerMotion;
         public static Action KeyboardActivity;
         public static Action Cancelled;
         public static void CancelLogInput() { Cancellations++; Cancelled?.Invoke(); }
         public static void NotifyPointerActivity() { PointerActivity?.Invoke(); }
+        public static void NotifyPointerMotion() { (PointerMotion ?? PointerActivity)?.Invoke(); }
         public static void NotifyKeyboardActivity() { KeyboardActivity?.Invoke(); }
     }
 }

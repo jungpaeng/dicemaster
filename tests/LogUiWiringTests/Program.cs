@@ -219,10 +219,27 @@ static class Program
         Check(choices.Body.Instructions.Any(i => i.Operand is FieldReference field &&
                 field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "Description") &&
                 Calls(choices).Any(c => c.Name == "Label") &&
+                !Calls(choices).Any(c => new[] { "SafeButton", "Select", "BeginReservation" }.Contains(c.Name)) &&
                 !uiMethods.SelectMany(Calls).Any(c => c.Name == "ToggleExpanded") &&
                 !uiMethods.Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
                     .Any(i => i.Operand is FieldReference field && field.Name == "Expanded"),
-            "actual choice rendering must publish its description as visible labels without collapse-state references in UI/model code");
+            "actual choice rendering must publish its description as read-only visible labels without selection/button or collapse-state references");
+        var conditionBlocks = Method(renderer, "DrawConditionDetails");
+        Check(Calls(Method(renderer, "DrawListDetail")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "DrawConditionDetails") &&
+                Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "ConditionDetails"),
+            "delivered condition detail must consume the published structured checkpoint data through its actual render dispatch");
+        Check(new[] { "Title", "Context", "Description" }.All(name => conditionBlocks.Body.Instructions.Any(i =>
+                    i.Operand is FieldReference field && field.DeclaringType.FullName == "DiceMaster.LogUI.LogConditionBranch" && field.Name == name)) &&
+                new[] { "BeginVertical", "EndVertical", "Space" }.All(name => Calls(conditionBlocks).Any(c =>
+                    c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == name)) &&
+                !Calls(conditionBlocks).Any(c => new[] { "SafeButton", "Select", "Reserve", "Split" }.Contains(c.Name)),
+            "delivered condition branches must render source title/context/body in separate spaced read-only layout blocks without parsing line breaks");
+        Check(Method(bridge, "Publish").Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "ConditionDetails") &&
+                Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.FullName == bridge && c.Name == "MapConditionDetails") &&
+                Calls(Method(bridge, "MapConditionDetails")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogConditionDetails" && c.Name == ".ctor"),
+            "actual data publication must carry fresh structured condition details into the model instead of leaving a disconnected UI-only DTO");
         var drawWindowCalls = Calls(Method(renderer, "DrawWindow")).ToArray();
         Check(new[] { "get_IsChoiceTab", "DrawChoices", "DrawListDetail" }
                 .All(name => drawWindowCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == name)) &&
@@ -236,7 +253,7 @@ static class Program
                 field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "IsStatusOnly") &&
                 Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogSnapshot" && c.Name == ".ctor"),
             "actual publication must classify status-only mission rows before constructing the ordered UI snapshot");
-        Check(new[] { "Handle", "DrawChoices", "DrawListDetail" }.All(name =>
+        Check(new[] { "Handle", "DrawListDetail" }.All(name =>
                 Calls(Method(renderer, name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanSelect")) &&
                 new[] { "Select", "get_Selected" }.All(name =>
                 Calls(Method("DiceMaster.LogUI.LogTabState", name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanSelect")),
@@ -247,6 +264,22 @@ static class Program
         Check(types.SelectMany(t => t.Methods).Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
             .Count(i => i.OpCode == OpCodes.Newobj && i.Operand is MethodReference c && c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput") == 1,
             "log and dice must share one native XInput instance");
+        Check(Calls(update).Any(c => c.DeclaringType.FullName == pad && c.Name == "PollLogOpener") &&
+                update.Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && field.Name == "EnableGamepadLogOpen") &&
+                Calls(Method(plugin, "SetLogOpen")).Any(c => c.DeclaringType.FullName == pad && c.Name == "BeginPadLog"),
+            "delivered plugin must connect configured native open requests to the actual pad-origin window entry");
+        Check(Calls(Method("DiceMaster.Gamepad.XInputHook", "Invoke")).Any(c =>
+                    c.DeclaringType.FullName == "DiceMaster.Gamepad.PadInputFilter" && c.Name == "FilterGame") &&
+                new[] { "ConfigureLogOpener", "TryConsumeLogOpen" }.All(name => Calls(Method(pad, "PollLogOpener")).Any(c =>
+                    c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput" && c.Name == name)),
+            "delivered opening requests must be detected on the real game-facing native hook and consumed by the actual bridge");
+        Check(Calls(Method(pad, "BeginPadLog")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadController" && c.Name == "BeginPadOpen") &&
+                Calls(Method("DiceMaster.LogUI.GameActionGate", "BeforeActionListeners")).Any(c => c.DeclaringType.FullName == pad && c.Name == "get_LogOpening"),
+            "actual opening device identity and pre-Update queued action capture must reach their production controller/gate boundaries");
+        Check(Calls(Method(renderer, "HandleKeyboard")).Any(c => c.DeclaringType.FullName == pad && c.Name == "NotifyPointerMotion") &&
+                Calls(Method(pad, "NotifyPointerMotion")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadController" && c.Name == "PointerMotion"),
+            "actual renderer hover events must use the entry-preserving motion path instead of unconditional pointer takeover");
         var resolver = Type("DiceMaster.Gamepad.GameInputModeResolver");
         Check(!resolver.Methods.SelectMany(Calls).Any(c => c.Name.StartsWith("set_") || c.Name == "OnControlsChanged"), "mode resolver never forces game control scheme");
         Check(module.AssemblyReferences.All(r => r.Name != "Unity.InputSystem"), "read-only mode reflection adds no unpinned assembly reference");

@@ -30,7 +30,8 @@ namespace DiceMaster.Gamepad
         private readonly PadStick stick = new PadStick();
         private int owner = -1;
         private bool wasOpen, wasFocused, wasReady, ownerConnected, waiting = true, resetPending, hardResetPending;
-        private bool padOverride, pointerPending, keyboardPending;
+        private bool padOverride, pointerPending, keyboardPending, padEntry;
+        private int openingOwner = -1;
         private LogInputMode previousMode;
         private ushort previousButtons, previousDirection;
         private double repeatAt;
@@ -45,7 +46,19 @@ namespace DiceMaster.Gamepad
             previousButtons = previousDirection = 0; repeatAt = 0; stick.Reset();
         }
         public void PointerActivity() { pointerPending = true; }
+        // Unlocking the cursor can produce hover motion without a deliberate
+        // device takeover. An explicit pad opener retains UI ownership until
+        // an actual click/touch/wheel/key or a hard lifetime boundary.
+        public void PointerMotion() { if (!padEntry && openingOwner < 0) PointerActivity(); }
         public void KeyboardActivity() { keyboardPending = true; }
+        public void BeginPadOpen(int index)
+        {
+            if (index < 0 || index >= 4) return;
+            openingOwner = index;
+            Cancel();
+        }
+        public void CancelPadEntry()
+        { openingOwner = -1; padEntry = padOverride = false; Cancel(); }
         public void Reselect(bool[] connected)
         {
             for (int offset = 1; offset <= 4; offset++)
@@ -60,9 +73,13 @@ namespace DiceMaster.Gamepad
         {
             LogPadFrame frame = new LogPadFrame();
             bool hardBoundary = open != wasOpen || focused != wasFocused || ready != wasReady;
-            if (hardBoundary || mode != previousMode)
+            // A pad opener is stronger evidence of the log's input owner than
+            // an automatic game scheme update. The game's scheme is read only;
+            // other entry paths retain the existing device transition barrier.
+            if (hardBoundary || (mode != previousMode && !padEntry))
             {
                 Cancel(!hardBoundary); padOverride = false;
+                if (hardBoundary) padEntry = false;
                 if (!open) { owner = -1; ownerConnected = false; }
             }
             if (pointerPending || keyboardPending)
@@ -74,7 +91,18 @@ namespace DiceMaster.Gamepad
                 // not erase the focus they just established in the next Update.
                 // An independent hard boundary must still discard that input.
                 if (keyboardPending && !hardResetPending) resetPending = false;
-                padOverride = false; pointerPending = keyboardPending = false;
+                padEntry = padOverride = false; pointerPending = keyboardPending = false;
+            }
+            if (openingOwner >= 0)
+            {
+                if (open && focused && ready)
+                {
+                    owner = openingOwner;
+                    ownerConnected = connected[owner];
+                    padEntry = padOverride = true;
+                    Cancel();
+                }
+                openingOwner = -1;
             }
             wasOpen = open; wasFocused = focused; wasReady = ready; previousMode = mode;
             if (open && owner < 0)
@@ -83,7 +111,7 @@ namespace DiceMaster.Gamepad
             }
             if (owner >= 0 && ownerConnected != connected[owner])
             {
-                ownerConnected = connected[owner]; Cancel();
+                ownerConnected = connected[owner]; padEntry = padOverride = false; Cancel();
             }
             frame.ResetFocus = resetPending;
             frame.PreservePointerTransaction = resetPending && !hardResetPending;

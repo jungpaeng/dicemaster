@@ -15,6 +15,29 @@ namespace DiceMaster.Gamepad
         private static LogInputMode lastMode;
         private static int controller = -1, value;
         private static string warning;
+        // Polling a configured opener is independent of the dice controller.
+        // Detection and capture happen in the real game-facing native hook;
+        // this main-thread boundary only accepts its queued owner identity.
+        public static int PollLogOpener(bool enabled, bool focused, bool open, string cacheRoot)
+        {
+            if (enabled) Initialize(cacheRoot);
+            if (!initialized || failed) return -1;
+            native.ConfigureLogOpener(enabled, focused, open);
+            if (!native.PollingFresh) { native.CancelLogOpener(); return -1; }
+            int owner;
+            return native.TryConsumeLogOpen(out owner) ? owner : -1;
+        }
+        public static bool LogOpening { get { return native.LogOpening; } }
+        public static void BeginPadLog(int owner)
+        {
+            log.BeginPadOpen(owner);
+            // Complete the callback's pending capture before any UI polling.
+            native.LogActive = true;
+            native.WindowActive = false;
+        }
+        public static void CancelLogOpener() { native.CancelLogOpener(); }
+        public static void SuspendLogOpener()
+        { native.ConfigureLogOpener(false, false, logOpen); native.CancelLogOpener(); }
         private static void Initialize(string cacheRoot)
         {
             if (initialized) return;
@@ -54,17 +77,20 @@ namespace DiceMaster.Gamepad
             lastReady = ready;
             return log.Tick(open, focused, !failed && ready, mode, time, states, pads);
         }
-        public static void CancelLogInput() { log.Cancel(); native.RequireNeutral(); adjustment.Reset(); }
+        public static void CancelLogInput() { log.Cancel(); native.CancelLogOpener(); native.RequireNeutral(); adjustment.Reset(); }
+        public static void CancelPadEntry() { log.CancelPadEntry(); }
         public static void SuspendLogInput()
         {
             // Disabling the component stops Update without destroying hooks.
             // Return ownership through the same release/neutral barrier while
             // keeping the initialized native bridge usable after re-enable.
             logOpen = logFocused = logCapture = false;
+            native.ConfigureLogOpener(false, false, false);
             native.LogActive = native.WindowActive = false;
-            CancelLogInput();
+            log.CancelPadEntry(); CancelLogInput();
         }
         public static void NotifyPointerActivity() { log.PointerActivity(); }
+        public static void NotifyPointerMotion() { log.PointerMotion(); }
         public static void NotifyKeyboardActivity() { log.KeyboardActivity(); }
         public static void ReselectLogController() { log.Reselect(pads); native.RequireNeutral(); }
         public static string LogHint()
@@ -126,6 +152,7 @@ namespace DiceMaster.Gamepad
         public static void ResetAdjustment() { adjustment.Reset(); adjusting = false; controller = -1; }
         public static void Shutdown()
         {
+            native.ConfigureLogOpener(false, false, false);
             native.LogActive = false; native.WindowActive = false; native.Dispose();
             visible = ready = connected = adjusting = false; logOpen = logFocused = false;
             ResetAdjustment(); log.Cancel();

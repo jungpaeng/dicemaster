@@ -96,7 +96,7 @@ public class DicePlugin : BaseUnityPlugin
 		logRenderer.ReselectController = GamepadBridge.ReselectLogController;
 	}
 
-	private void SetLogOpen(bool open)
+	private void SetLogOpen(bool open, int padOwner = -1)
 	{
 		showLogWindow = open;
 		logInputMode = GameInputModeResolver.Resolve();
@@ -105,6 +105,7 @@ public class DicePlugin : BaseUnityPlugin
 		EnsureLogRenderer();
 		logRenderer.ResetInputFocus();
 		GamepadBridge.CancelLogInput();
+		if (open && padOwner >= 0) GamepadBridge.BeginPadLog(padOwner);
 	}
 
 	private void Update()
@@ -113,18 +114,20 @@ public class DicePlugin : BaseUnityPlugin
 		logInputMode = GameInputModeResolver.Resolve();
 		logCursor.SetActive(showLogWindow && Application.isFocused, logInputMode);
 		GameActionGate.SetLogState(showLogWindow, Application.isFocused);
+		SynchronizeLogContext();
 		if (Input.GetKeyDown(ConfigManager.LogMenuToggleKey.Value))
 		{
 			SetLogOpen(!showLogWindow);
 		}
+		else
+		{
+			int padOwner = GamepadBridge.PollLogOpener(ConfigManager.EnableGamepadLogOpen.Value,
+				Application.isFocused, showLogWindow, Paths.CachePath);
+			if (!showLogWindow && padOwner >= 0) SetLogOpen(true, padOwner);
+		}
 		currentTab = logRenderer.CurrentTab;
 		RefreshLiveLogDisplay();
-		if (lastLogContext != LogBridge.Model.ContextId)
-		{
-			lastLogContext = LogBridge.Model.ContextId;
-			logRenderer.ResetInputFocus();
-			GamepadBridge.CancelLogInput();
-		}
+		SynchronizeLogContext();
 		// This runs even with dice adjustment disabled or the log closed: the
 		// shared owner must finish consuming held input before returning it.
 		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow, Application.isFocused,
@@ -141,6 +144,16 @@ public class DicePlugin : BaseUnityPlugin
 		if (!string.IsNullOrEmpty(gateWarning)) LogWarning(gateWarning);
 	}
 
+	private void SynchronizeLogContext()
+	{
+		if (lastLogContext != LogBridge.Model.ContextId)
+		{
+			lastLogContext = LogBridge.Model.ContextId;
+			logRenderer.ResetInputFocus();
+			GamepadBridge.CancelLogInput();
+		}
+	}
+
 	private void OnDestroy()
 	{
 		logCursor.Release();
@@ -153,6 +166,8 @@ public class DicePlugin : BaseUnityPlugin
 	{
 		logCursor.SetActive(showLogWindow && focused, logInputMode);
 		GameActionGate.SetLogState(showLogWindow, focused);
+		if (!focused) GamepadBridge.SuspendLogOpener();
+		GamepadBridge.CancelPadEntry();
 		logRenderer?.ResetInputFocus();
 		GamepadBridge.CancelLogInput();
 	}

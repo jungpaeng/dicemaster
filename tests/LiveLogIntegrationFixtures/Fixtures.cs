@@ -292,6 +292,20 @@ namespace DiceMaster
             if (checkpoint == FailingCheckpoint) throw new InvalidOperationException("fixture condition failure");
             return "current=" + CurrentValue;
         }
+        // Object is rebound by Cecil to the delivered LogConditionDetails DTO;
+        // the independent helper scenario replaces this body with actual IL.
+        public static object DescribeSwitchCheckpoint(string checkpoint)
+        {
+            ConditionReads++;
+            if (checkpoint == FailingCheckpoint) throw new InvalidOperationException("fixture condition failure");
+            Assembly assembly = typeof(DataHelper).Assembly;
+            Type branch = assembly.GetType("DiceMaster.LogUI.LogConditionBranch", true);
+            Array branches = Array.CreateInstance(branch, 2);
+            branches.SetValue(Activator.CreateInstance(branch, "분기 1", "이 조건을 만족하면", "current=" + CurrentValue), 0);
+            branches.SetValue(Activator.CreateInstance(branch, "그 외 (분기 2)", "위 분기가 모두 불충족일 때", ""), 1);
+            return Activator.CreateInstance(assembly.GetType("DiceMaster.LogUI.LogConditionDetails", true),
+                "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.", branches, "current=" + CurrentValue);
+        }
         public static Dictionary<Mortal.Core.MissionCheckData, (string, string)> GetMissions()
         {
             MissionReads++;
@@ -850,6 +864,128 @@ namespace DiceMaster
                 name = name,
                 Stage = new Mortal.Core.MissionCheckData { name = name + "_stage", _conditions = new[] { condition } }
             };
+        }
+
+        // The runner installs the delivered DataHelper body as well as the
+        // delivered bridge/model here. Only Unity/game data and localization
+        // are explicit fixtures; branch boundaries are never fabricated from
+        // line breaks, translated operators, titles or branch-state badges.
+        public static int RunConditionBlocks()
+        {
+            int before = assertions;
+            var plugin = new DicePlugin { showLogWindow = true, currentTab = "조건" }; DicePlugin.Instance = plugin;
+            Config.ConfigManager.EnableOptionInfo.Value = true;
+            var first = new Mortal.Core.StatCompareItem();
+            var compound = new Mortal.Core.StatCompareItem();
+            var second = new Mortal.Core.StatCompareItem();
+            var sibling = new Mortal.Core.StatCompareItem();
+            var checkpoint = new Mortal.Story.SwitchResultData { _items = new List<Mortal.Core.ConditionResultItem> {
+                new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { first, compound } },
+                new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { second } }
+            } };
+            var config = new Mortal.Story.SwitchResultConfig();
+            config.Items["switch_one"] = checkpoint;
+            config.Items["switch_two"] = new Mortal.Story.SwitchResultData { _items = new List<Mortal.Core.ConditionResultItem> {
+                new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { sibling } }
+            } };
+            Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager { _switchList = new[] { config } };
+            DataHelper.Ready = true; DataHelper.CurrentValue = 31; UnityEngine.Time.unscaledTime = 300;
+            NewLua(Lua("O_condition_blocks"), "condition_blocks"); Tick(plugin);
+            object Row(string raw) => ModelRows("조건").Cast<object>().Single(row => (string)Member(row, "RawId") == raw);
+            IList Branches(object details) => (IList)Member(details, "Branches");
+            string Description(object branch) => (string)Member(branch, "Description");
+            object originalRow = Row("switch_one"), original = Member(originalRow, "ConditionDetails");
+            IList originalBranches = Branches(original);
+            Check(original != null && originalBranches.Count == 3 && originalBranches.IsReadOnly,
+                "Actual helper branch DTO never reached the published immutable model list");
+            Check((string)Member(original, "Hint") == "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.",
+                "Actual model lost the first-satisfied branch-order explanation");
+            Check((string)Member(originalBranches[0], "Title") == "분기 1" &&
+                (string)Member(originalBranches[1], "Title") == "분기 2" &&
+                (string)Member(originalBranches[2], "Title") == "그 외 (분기 3)",
+                "Actual publication merged branch candidates or discarded their fallback identity");
+            Check((string)Member(originalBranches[0], "Context") == "이 조건을 만족하면" &&
+                (string)Member(originalBranches[1], "Context") == "앞 분기가 모두 불충족일 때 검사" &&
+                (string)Member(originalBranches[2], "Context") == "위 분기가 모두 불충족일 때",
+                "Actual model lost branch priority/fallback context");
+            Check(Description(originalBranches[0]).Contains("(31)") && Description(originalBranches[0]).Contains("&&") &&
+                Description(originalBranches[1]).Contains("(31)") && Description(originalBranches[2]) == "",
+                "Actual helper confused an internal compound comparison with another branch");
+            Check((string)Member(original, "DescriptionFallback") == (string)Member(originalRow, "Description") &&
+                plugin.switchEntries[0].Description == (string)Member(originalRow, "Description"),
+                "Structured branch values diverged from the same-capture compatibility description");
+            Check(first._value1.Reads == 1 && first._value2.Reads == 1 && compound._value1.Reads == 1 &&
+                compound._value2.Reads == 1 && second._value1.Reads == 1 && second._value2.Reads == 1,
+                "Actual helper evaluated branch operands twice to create UI and plaintext views");
+            object state = LogTab("조건");
+            string id = (string)Member(originalRow, "Id");
+            InstanceCall(state, "Select", id); state.GetType().GetField("DetailScroll").SetValue(state, 66f);
+            DataHelper.CurrentValue = 37; UnityEngine.Time.unscaledTime += .3f; Tick(plugin);
+            object healthy = Member(Row("switch_one"), "ConditionDetails");
+            Check((string)Member(state, "SelectedId") == id && (float)Member(state, "DetailScroll") == 66f &&
+                Description(Branches(healthy)[0]).Contains("(37)"),
+                "Actual healthy branch refresh lost the stable selection/reading scroll or kept old values");
+            Check(Description(originalBranches[0]).Contains("(31)") && !Description(originalBranches[0]).Contains("(37)"),
+                "Later refresh mutated an already-published branch snapshot");
+            second._value1.Throw = true; DataHelper.CurrentValue = 39; Tick(plugin, true);
+            object failed = Row("switch_one"), retained = Member(failed, "ConditionDetails");
+            Check(Member(failed, "RefreshState").ToString() == "RetainedFailure" && (bool)Member(failed, "HasLastGood") &&
+                Branches(retained).Count == 3 && Description(Branches(retained)[0]).Contains("(37)") &&
+                Description(Branches(retained)[1]).Contains("(37)") && !Description(Branches(retained)[0]).Contains("(39)"),
+                "A later branch failure leaked partial current values instead of the complete last-good branch set");
+            Check((string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus") &&
+                Description(Branches(Member(Row("switch_two"), "ConditionDetails"))[0]).Contains("(39)"),
+                "Failed branch details lost readable selection or blocked a healthy sibling checkpoint");
+            second._value1.Throw = false; Tick(plugin, true);
+            Check(Member(Row("switch_one"), "RefreshState").ToString() == "Healthy" &&
+                Description(Branches(Member(Row("switch_one"), "ConditionDetails"))[1]).Contains("(39)") &&
+                (string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus"),
+                "Actual helper recovery did not replace retained branch values without reviving execution focus");
+            long context = (long)Member(LogModel, "ContextId");
+            NewLua(Lua("O_condition_reset"), "condition_reset");
+            Check((long)Member(LogModel, "ContextId") != context && ModelRows("조건").Count == 0 && Member(state, "Selected") == null,
+                "New Lua retained old structured branch details or selection");
+            second._value1.Throw = true; Tick(plugin);
+            Check(Member(Row("switch_one"), "ConditionDetails") == null &&
+                Member(Row("switch_one"), "RefreshState").ToString() == "ReadFailure" &&
+                !(bool)Member(Row("switch_one"), "HasLastGood"),
+                "First branch-description failure fabricated partial details or inherited another context's last-good data");
+            second._value1.Throw = false; Tick(plugin, true);
+            InstanceCall(state, "Select", (string)Member(Row("switch_one"), "Id"));
+            config.Items.Remove("switch_one"); Tick(plugin, true);
+            Check(Member(Row("switch_one"), "ConditionDetails") == null && (string)Member(Row("switch_one"), "Description") == "" &&
+                !(bool)Member(state, "ExecutionFocus"),
+                "Unavailable checkpoint asset retained stale branch details or execution authority");
+            config.Items["switch_one"] = checkpoint; checkpoint._useCount = true; second._value1.Throw = true;
+            int countReads = first._value1.Reads + second._value1.Reads;
+            Tick(plugin, true);
+            object counted = Member(Row("switch_one"), "ConditionDetails");
+            Check(Branches(counted).Count == 0 && (string)Member(counted, "DescriptionFallback") ==
+                "이 체크포인트는 조건식 대신 실행 횟수를 기준으로 분기합니다." &&
+                countReads == first._value1.Reads + second._value1.Reads,
+                "Count-based checkpoint invented condition branches or evaluated the inactive condition route");
+            checkpoint._useCount = false; checkpoint._items = null; Tick(plugin, true);
+            Check(Branches(Member(Row("switch_one"), "ConditionDetails")).Count == 0 &&
+                (string)Member(Row("switch_one"), "Description") == "",
+                "Absent outer condition list changed the existing successful empty-description contract");
+            checkpoint._items = new List<Mortal.Core.ConditionResultItem>(); Tick(plugin, true);
+            IList empty = Branches(Member(Row("switch_one"), "ConditionDetails"));
+            Check(empty.Count == 1 && (string)Member(empty[0], "Title") == "그 외 (분기 1)" && Description(empty[0]) == "",
+                "Empty checkpoint did not expose its sole fallback branch without invented conditions");
+            checkpoint._items.Add(new Mortal.Core.ConditionResultItem()); Tick(plugin, true);
+            object emptyGroup = Member(Row("switch_one"), "ConditionDetails");
+            Check(Branches(emptyGroup).Count == 2 && Description(Branches(emptyGroup)[0]) ==
+                "등록된 조건이 없어 이 분기는 충족되지 않습니다." &&
+                (string)Member(emptyGroup, "DescriptionFallback") == "    " + Environment.NewLine,
+                "Empty condition group acquired a true/unconditional meaning or changed the plaintext contract");
+            NewLua(Lua("O_condition_removed").Replace("checkpointmanager.Switch(\"switch_one\")\n", ""), "condition_removed"); Tick(plugin);
+            Check(!ModelRows("조건").Cast<object>().Any(row => (string)Member(row, "RawId") == "switch_one") &&
+                Member(state, "Selected") == null && !(bool)Member(state, "ExecutionFocus"),
+                "Checkpoint removed from the actual new Lua context retained its branch rows or selection");
+            Check(Mortal.Story.SwitchResultData.Executions == 0 && Mortal.Core.ConditionResultData.Executions == 0 &&
+                Mortal.Core.StatGroupVariable.OriginalReads == 0 && Mortal.Core.StatCompareItem.OriginalReads == 0 && UnityEngine.Random.Calls == 0,
+                "Structured branch publication executed game conditions, a switch, or Unity RNG");
+            return assertions - before;
         }
 
         public static int RunHelpers()

@@ -153,7 +153,7 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
                  'RealGameApiFixtures', 'RealGameApiTests', 'GamepadTests',
                  'SourceBehaviorFixtures', 'SourceBehaviorTests',
                  'PreviewIntegrationFixtures', 'PreviewIntegrationTests',
-                 'LogUiModelTests', 'LogUiWiringTests', 'LogUiKeyboardTests'):
+                 'LogUiModelTests', 'LogUiWiringTests', 'LogUiKeyboardTests', 'LogOpenerIntegrationTests'):
         outputs[name] = build(dotnet, 'tests/' + name + '/' + name + '.csproj',
                               work, name, log)
     results = {}
@@ -177,6 +177,7 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
     test('LogUiModelTests')
     test('LogUiWiringTests', candidate)
     test('LogUiKeyboardTests')
+    test('LogOpenerIntegrationTests')
     return results
 
 

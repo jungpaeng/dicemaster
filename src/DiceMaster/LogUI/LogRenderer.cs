@@ -54,6 +54,7 @@ namespace DiceMaster.LogUI
         private bool CanFocusDetailControl => SupportsReservation && State.Selected != null &&
             State.Selected.CanReserve && !State.PublicationFailed;
         private float RowHeight => renderedFont * 2f + 14f;
+        private float ChoiceGap => Math.Max(8, renderedFont * .6f);
 
         public LogRenderer(LogModel model, Action refresh, Action close)
         {
@@ -204,16 +205,29 @@ namespace DiceMaster.LogUI
                 else if (command == LogPadCommand.Activate) ActivateTool(toolIndex);
                 return;
             }
+            if (IsChoiceTab)
+            {
+                // Every choice is already readable. There is no selection or
+                // action behind its heading, so directional input only reads
+                // the continuous document; confirm/left/right do nothing.
+                if (command == LogPadCommand.Up || command == LogPadCommand.Down)
+                {
+                    State.ListScroll = Math.Max(0, State.ListScroll +
+                        (command == LogPadCommand.Down ? RowHeight : -RowHeight));
+                    manualListScroll = true;
+                    ensureVisible = false;
+                }
+                return;
+            }
             if (command == LogPadCommand.Left)
             {
                 State.CancelExecution();
-                if (IsChoiceTab) return;
                 area = Area.List; detailIndex = 0; ensureVisible = true; manualListScroll = false;
                 return;
             }
             if (command == LogPadCommand.Right)
             {
-                if (IsChoiceTab || area == Area.Detail) return;
+                if (area == Area.Detail) return;
                 EnterDetail();
                 return;
             }
@@ -247,8 +261,7 @@ namespace DiceMaster.LogUI
                     foreach (LogItem row in rows) if (row.CanSelect) { Select(row.Id); break; }
                     return;
                 }
-                if (IsChoiceTab) { area = Area.List; State.CancelExecution(); ensureVisible = true; }
-                else EnterDetail();
+                EnterDetail();
             }
         }
 
@@ -378,9 +391,9 @@ namespace DiceMaster.LogUI
 
         private Vector2 BeginScroll(float y, float height)
         {
-            // Only vertical scrolling is used. GUIStyle.none gives a horizontal
-            // scrollbar zero height, so it cannot cover the selected row.
-            return GUILayout.BeginScrollView(new Vector2(0, y), false, true,
+            // Let IMGUI show the vertical bar only when the laid-out contents
+            // overflow. Horizontal bars have no style/height in these panes.
+            return GUILayout.BeginScrollView(new Vector2(0, y), false, false,
                 GUIStyle.none, GUI.skin.verticalScrollbar, scrollStyle,
                 GUILayout.Height(height), GUILayout.ExpandWidth(true));
         }
@@ -413,29 +426,26 @@ namespace DiceMaster.LogUI
             State.ListScroll = scroll.y;
             DrawOverflowChrome();
             rowRects.Clear();
-            float contentBottom = 0;
             if (rows.Count == 0) DrawEmpty();
+            bool first = true;
             foreach (LogItem row in rows)
             {
-                bool selected = row.Id == State.SelectedId;
+                if (!first) GUILayout.Space(ChoiceGap);
+                first = false;
                 GUILayout.BeginVertical(boxStyle);
                 string heading = !string.IsNullOrWhiteSpace(row.Text) ? row.Text : Title(row);
-                bool enabled = GUI.enabled;
-                GUI.enabled = enabled && row.CanSelect;
-                SafeButton((selected ? "▶ " : "") + heading, "choice:" + row.Id,
-                    () => { if (Select(row.Id)) area = Area.List; }, selected && area != Area.Tools);
-                GUI.enabled = enabled;
-                Rect headerRect = GUILayoutUtility.GetLastRect();
+                Label(heading, titleStyle);
                 Label(RowState(row), statusStyle);
                 GUILayout.Label("원본 ID: " + row.RawId, literalStyle);
                 Label(row.Description, textStyle);
                 GUILayout.EndVertical();
-                Rect rect = GUILayoutUtility.GetLastRect();
-                rowRects[row.Id] = headerRect;
-                contentBottom = Math.Max(contentBottom, rect.yMax);
             }
             GUILayout.EndScrollView();
-            CompleteListScroll(GUILayoutUtility.GetLastRect(), contentBottom);
+            // Choice headings are labels, never focus/selection anchors. A
+            // publication or resized viewport must not pull reading elsewhere.
+            if (Event.current.type == EventType.Repaint)
+                lastListViewport = GUILayoutUtility.GetLastRect();
+            ensureVisible = false;
         }
 
         private void DrawListDetail()
@@ -466,16 +476,19 @@ namespace DiceMaster.LogUI
                     waitingExplanationShown = true;
                 }
                 bool selected = row.Id == State.SelectedId;
-                string caption = (selected ? "▶ " : "") + Title(row) + "\n" + RowState(row);
+                string state = RowState(row);
+                string caption = (selected ? "▶ " : "") + Title(row) +
+                    (string.IsNullOrEmpty(state) ? "" : "\n" + state);
                 if (!row.CanSelect) caption += "\n원본 ID: " + Escape(row.RawId);
-                GUIStyle rowStyle = selected && area == Area.List ? selectedStyle : buttonStyle;
-                float rowWidth = Math.Max(1, (float)Math.Floor(listWidth - scrollStyle.padding.horizontal -
-                    GUI.skin.verticalScrollbar.fixedWidth - GUI.skin.verticalScrollbar.margin.left));
-                float rowHeight = Math.Max(renderedFont + 16, (float)Math.Ceiling(rowStyle.CalcHeight(new GUIContent(caption), rowWidth)));
                 bool enabled = GUI.enabled;
                 GUI.enabled = enabled && row.CanSelect;
+                // Native word-wrap sizing uses the actual client width. When
+                // the vertical bar is hidden the row can fill that space, and
+                // when it appears IMGUI recomputes wrapping at the narrower
+                // width. Constrain the minimum too, so a long raw ID cannot
+                // force a hidden horizontal overflow.
                 SafeButton(caption, "row:" + row.Id, () => { if (Select(row.Id)) area = Area.List; },
-                    selected && area == Area.List, rowHeight, width: rowWidth);
+                    selected && area == Area.List, maxWidth: listWidth);
                 GUI.enabled = enabled;
                 Rect rect = GUILayoutUtility.GetLastRect();
                 rowRects[row.Id] = rect;
@@ -514,7 +527,8 @@ namespace DiceMaster.LogUI
             else
             {
                 Label(Title(selectedRow), titleStyle);
-                Label(RowState(selectedRow), statusStyle);
+                string state = RowState(selectedRow);
+                if (!string.IsNullOrEmpty(state)) Label(state, statusStyle);
                 if (selectedRow.RefreshState == LogRefreshState.Waiting)
                     Label(WaitingExplanation(), statusStyle);
                 if (SupportsReservation)
@@ -525,11 +539,46 @@ namespace DiceMaster.LogUI
                 }
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
-                Label(selectedRow.Description, textStyle);
+                if (CurrentTab == "조건" && selectedRow.ConditionDetails != null)
+                    DrawConditionDetails(selectedRow.ConditionDetails);
+                else Label(selectedRow.Description, textStyle);
             }
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
+        }
+
+        private void DrawConditionDetails(LogConditionDetails details)
+        {
+            float paneWidth = Math.Max(1, BodyWidth - Math.Max(140, BodyWidth * .36f) - boxStyle.padding.horizontal);
+            float textWidth = Math.Max(1, paneWidth - boxStyle.padding.horizontal);
+            if (!string.IsNullOrEmpty(details.Hint)) BoundedLabel(details.Hint, statusStyle, paneWidth);
+            if (details.Branches.Count == 0)
+            {
+                if (!string.IsNullOrEmpty(details.DescriptionFallback)) BoundedLabel(details.DescriptionFallback, textStyle, paneWidth);
+                return;
+            }
+            bool first = true;
+            foreach (LogConditionBranch branch in details.Branches)
+            {
+                if (!first) GUILayout.Space(Math.Max(10, renderedFont * .6f));
+                first = false;
+                // Each alternative owns a real layout block. Wrapped text in
+                // one branch cannot look like a new alternative or merge into
+                // the next one; no text parsing or interactive focus is used.
+                GUILayout.BeginVertical(boxStyle, GUILayout.MinWidth(1), GUILayout.MaxWidth(paneWidth), GUILayout.ExpandWidth(true));
+                BoundedLabel(branch.Title, titleStyle, textWidth);
+                if (!string.IsNullOrEmpty(branch.Context)) BoundedLabel(branch.Context, statusStyle, textWidth);
+                if (!string.IsNullOrEmpty(branch.Description)) BoundedLabel(branch.Description, textStyle, textWidth);
+                GUILayout.EndVertical();
+            }
+        }
+
+        private static void BoundedLabel(string text, GUIStyle style, float width)
+        {
+            // Long unbroken identifiers must wrap in the detail viewport,
+            // rather than giving this vertical-only document a wide minimum.
+            Display.Label(text, style, new[] { GUILayout.MinWidth(1), GUILayout.MaxWidth(width), GUILayout.ExpandWidth(true) });
         }
 
         private void DrawEmpty()
@@ -627,7 +676,7 @@ namespace DiceMaster.LogUI
             ensureVisible = true;
         }
 
-        private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false, float width = 0)
+        private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false, float maxWidth = 0)
         {
             Event evt = Event.current;
             // Unity may translate touch to an effective mouse event; Button
@@ -636,11 +685,12 @@ namespace DiceMaster.LogUI
             bool up = IsPointerRelease(evt.rawType) || IsPointerRelease(evt.type);
             GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
             // MinHeight also forces maxHeight in Unity's word-wrap sizer. Let
-            // ordinary buttons measure their full wrapped caption; list rows
-            // supply the height measured at their exact scrollbar-free width.
-            GUILayoutOption horizontal = width > 0 ? GUILayout.Width(width) : GUILayout.ExpandWidth(true);
-            bool pressed = height > 0 ? GUILayout.Button(label, style, horizontal, GUILayout.Height(height)) :
-                GUILayout.Button(label, style, horizontal);
+            // rows measure their full wrapped caption at the final viewport
+            // width, with no fixed height or permanent scrollbar gutter.
+            bool pressed = maxWidth > 0 ?
+                GUILayout.Button(label, style, GUILayout.MinWidth(1), GUILayout.MaxWidth(maxWidth), GUILayout.ExpandWidth(true)) :
+                height > 0 ? GUILayout.Button(label, style, GUILayout.ExpandWidth(true), GUILayout.Height(height)) :
+                GUILayout.Button(label, style, GUILayout.ExpandWidth(true));
             Rect rect = GUILayoutUtility.GetLastRect();
             if (down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled)
             {
@@ -725,19 +775,23 @@ namespace DiceMaster.LogUI
             // Event/mission publications have no story-read mapping. Unknown
             // there must not look like an unread or unfinished mission result.
             string read = row.ReadState == LogReadState.Read ? "읽음" : row.ReadState == LogReadState.Unread ? "미독" : HasStoryReadState ? "읽음 정보 없음" : "";
-            string status = row.RefreshState == LogRefreshState.Healthy ? "조회 정상" :
+            string status = row.RefreshState == LogRefreshState.Healthy ? (CurrentTab == "미션" ? "" : "조회 정상") :
                 row.RefreshState == LogRefreshState.Waiting ? "설명 조회 대기" : row.RefreshStatus;
-            string result = string.IsNullOrEmpty(read) ? status : read + " · " + status;
+            string result = string.IsNullOrEmpty(read) ? status :
+                string.IsNullOrEmpty(status) ? read : read + " · " + status;
             foreach (string state in row.AnalysisStates)
-                result += " · " + (state == "Supported" ? "분석 지원" : state == "Partial" ? "추가 영향 가능" : state == "Unsupported" ? "결과는 진행 후 확인" :
-                    state == "NoEffects" ? "표시 효과 없음" : state == "Waiting" ? "분석 대기" : state == "ReadFailure" ? "분석 읽기 실패" : state);
+            {
+                string analysis = state == "Supported" ? "분석 지원" : state == "Partial" ? "추가 영향 가능" : state == "Unsupported" ? "결과는 진행 후 확인" :
+                    state == "NoEffects" ? "표시 효과 없음" : state == "Waiting" ? "분석 대기" : state == "ReadFailure" ? "분석 읽기 실패" : state;
+                if (!string.IsNullOrEmpty(analysis)) result += (string.IsNullOrEmpty(result) ? "" : " · ") + analysis;
+            }
             return result;
         }
 
         private string Hint()
         {
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
-            if (IsChoiceTab) return "현재: 선택지 비교 · ↑↓ 항목 이동 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (area == Area.Detail) return "현재: 예약 버튼 · A 예약 / 오른쪽 스틱 본문 / ←·B 목록 / Y 도구";
             if (State.Selected == null) return "현재: " + (SupportsReservation ? "목록" : "체크포인트 목록") + " · ↑↓ 항목 이동 / 오른쪽 스틱 목록 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!SupportsReservation) return "현재: 체크포인트 목록 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
@@ -791,7 +845,8 @@ namespace DiceMaster.LogUI
                 pointerIdentity = null;
                 CancelPending();
             }
-            if (IsPointerPress(evt.rawType) || IsPointerDrag(evt.rawType) || evt.rawType == EventType.MouseMove ||
+            if (evt.rawType == EventType.MouseMove) GamepadBridge.NotifyPointerMotion();
+            if (IsPointerPress(evt.rawType) || IsPointerDrag(evt.rawType) ||
                 evt.rawType == EventType.TouchStationary || evt.rawType == EventType.ScrollWheel)
                 GamepadBridge.NotifyPointerActivity();
             if (evt.type == EventType.KeyUp) { heldKeys.Remove(evt.keyCode); return; }

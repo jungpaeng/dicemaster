@@ -8,7 +8,59 @@
 
 ## PRD #4 후보와 prerelease
 
-**alpha.5는 미션 상태 안내 행까지 포함한 최신 후속**입니다. Bridge가 미션 탭의 값 없는 게시 행에만 `IsStatusOnly`를 지정하고, 모델은 일반 행과 안내 행 각각의 기존 순서를 유지한 채 안내 행을 끝에 배치합니다. UI와 모델은 모든 입력의 안내 행 선택·예약을 거부하며 상태 요약·원본 ID·진단 행 자체는 보존합니다. 실제 값이 있는 대기·실패 미션과 읽기 전용 선택지·조건은 계속 선택할 수 있습니다. [최신 변경·검사·후보·Windows 확인](ISSUE-4-MISSION-STATUS.md)을 따릅니다.
+### v1.0.5-alpha.6 게시 준비
+
+사용자가 현재 누적 후속의 커밋·prerelease 게시를 지시했습니다. 검토 후보는 `artifacts/issue-4/pad-open/`의 DLL `4bcce037713407e25378ecbd2113649c9f9e52968659b1b748a6bec795645efa`·설정 `efd4847eb096aad70bfb7c3399534caab6becf71daca75fc5359100b0638cbf8`·ZIP `fe26f96e3c9512c7a31c10226ff3ba13a13f81b5ec8c6916c44d3376184f5cb0`입니다. 고정 구현 커밋을 `verify-preview-release.py --scope prd4`로 재빌드하고 출력은 `artifacts/releases/v1.0.5-alpha.6/`로 분리합니다. [게시 설명·검사 범위·Windows 확인](ISSUE-4-ALPHA6-RELEASE.md)과 [게시 절차](RELEASING.md)를 따릅니다. 로컬 12개 검사와 고정 커밋 검증·실제 게시·공개 다운로드 결과를 구분하며, 아래 개별 로컬 후보의 당시 기록은 보존합니다.
+
+### 현재 로컬 후속: 패드 로그 열기
+
+사용자 승인에 따라 같은 소유자 XInput 패드에서 첫 스틱 클릭을 유지한 채 반대 클릭이 300ms 미만에 겹치면 닫힌 로그를 여는 경로를 추가합니다. 같은 게임 폴링에서의 동시 클릭도 허용하며, 겹치지 않는 연속 클릭과 정확히 300ms 이상의 간격은 거부합니다. 기존 `LogMenuToggleKey`(기본 Tab)는 유지합니다. 새 `[DiceMaster].EnableGamepadLogOpen=true`는 주사위 조정 옵션과 독립적이며 조합은 열기 전용입니다. 초기 PRD의 패드 열기 제외는 이번 후속 지시로 대체하고 과거 후보·공개 자산은 보존합니다.
+
+첫 조합 입력이 게임으로 새지 않도록 옵션 활성·게임 창 초점·로그 닫힘 동안 L3/R3 두 클릭을 예약합니다. 이때 단독 클릭도 게임으로 전달하지 않는 제약이 있습니다. 초기화·상태 재설정의 native 해제·중립 대기 구간에는 다른 버튼·스틱·트리거의 남은 입력도 소비합니다. `false`에서는 예약을 해제하고 남은 누름은 해제 후 반환합니다. 실제 게임의 직렬화된 바인딩 자료가 없어 스틱 클릭의 미사용을 확정하지 않습니다. 지원·검증된 native XInput 경로와 같은 소유자의 새 입력·전체 해제·중립을 사용하며 게임 scheme와 액션 맵을 변경하지 않습니다.
+
+패드 열기 의도를 로그 입력 상태로 전달해 KM로 읽히거나 scheme이 자동 변경되어도 열린 뒤 첫 새 패드 탐색 입력을 전환용으로 다시 잃지 않게 합니다. 이 진입 의도는 단순 MouseMove·호버로 취소하지 않고 실제 포인터·키 조작이나 초점·준비·연결·닫기 경계에 기존 안전 전환을 적용합니다. 기존 Tab 진입의 모드 전환·첫 입력 소비 문제는 별도이며 이번 패드 열기 경로의 결과로 해결했다고 주장하지 않습니다. [설계·검사 계획·적용·Windows 확인](ISSUE-4-PAD-OPEN.md)을 따릅니다.
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/pad-open
+```
+
+2026-10-19 06:14:54 KST에 후보를 생성했고 **전체 12개 검사 프로그램이 통과**했습니다. 새 `LogOpenerIntegrationTests`는 실제 native hook·filter·bridge·controller·action gate 소스를 연결한 관리 대역에서 28개 시나리오·993개 단언을 검증합니다. UI·입력 2,720개·모델 372개·실제 DLL 연결 47개·helper 통합 203개와 기존 분석·주사위 검사를 유지했습니다. 전체 모드 컴파일 오류 0개·기존 경고 7개입니다.
+
+빌드 입력 153개와 ZIP CRC·정확히 두 파일·각 내부 바이트·해시를 독립 확인했습니다. DLL은 582,656바이트·SHA-256 `4bcce037713407e25378ecbd2113649c9f9e52968659b1b748a6bec795645efa`, ZIP은 245,066바이트·`fe26f96e3c9512c7a31c10226ff3ba13a13f81b5ec8c6916c44d3376184f5cb0`입니다. 전체 검사·설정 해시·[최종 검증 영수증](../artifacts/issue-4/pad-open-evidence/local-verification.json)은 [후보 기록](ISSUE-4-PAD-OPEN.md)을 따릅니다.
+
+전체 C# 소스와 읽기 전용 게임 참조를 사용하며 게임 소스·DLL을 배포하지 않습니다. 실제 Windows 테스트는 사용자가 수행하고, 관리 대역에서 조합·소유권을 검증한 결과를 실게임 입력 정상으로 확대하지 않습니다. 이번 로컬 변경에서 커밋·공개 게시·이슈 #4 완료는 수행하지 않습니다.
+
+### 직전 로컬 후보: 조건 분기 블록
+
+`DataHelper.DescribeSwitchCheckpoint`가 실제 `ConditionResultItem` 단위의 `LogConditionBranch`와 `LogConditionDetails`를 한 번에 생성합니다. `LogBridge`는 이 구조를 번역·지역화해 모델에 게시하고, 렌더러는 조건 탭 상세에서 분기 제목·검사 맥락·원래 조건 설명을 별도 읽기 전용 블록으로 표시합니다. 기존 문자열 `ParseSwitchCheckpoint`는 같은 캡처의 호환 설명만 반환합니다. 줄바꿈·공백·`|`·번역된 논리 연산자에서 분기를 복원하지 않습니다.
+
+실행 횟수 분기는 조건식으로 꾸미지 않고 중립 안내로 표시합니다. 빈 조건 묶음도 무조건 충족으로 설명하지 않습니다. 실패 시 마지막 정상 구조 전체를 보존하고 회복·새 문맥·항목 소멸에 기존 갱신·선택 무효화 계약을 적용합니다. [동작·검사 경계·적용과 Windows 확인표](ISSUE-4-CONDITION-BLOCKS.md)를 따릅니다.
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/condition-blocks
+```
+
+2026-10-19 06:07:06 KST에 `artifacts/issue-4/condition-blocks/`의 새 DLL·ZIP·manifest·로그를 생성했고 **전체 11개 검사 프로그램이 통과**했습니다. UI·입력 2,720·모델 372·실제 DLL 연결 43·통합 203·선택지 통합 1,453·패드 262,831개 단언, 실제 게임 API 관리 동작 3,914개·메타데이터 1,047개를 확인했습니다. 전체 모드 컴파일 오류 0개·기존 경고 7개이며 빌드 입력 151개 일치와 ZIP CRC·정확히 두 파일·내부 바이트를 검증했습니다.
+
+DLL 579,072바이트의 SHA-256은 `285ff419f46e1fdd5b0fc05a6047372cee6a0cefaa333d9ded20a22f1e96c86b`, ZIP 243,066바이트는 `7c726afe65b7f339a76eceb0bba974ab193bf7e397540d4432313d7cc7f9fc34`입니다. 설정·전체 검사표와 [최종 검증 영수증](../artifacts/issue-4/condition-blocks-evidence/local-verification.json)은 [후보 기록](ISSUE-4-CONDITION-BLOCKS.md)에 연결했습니다. 이전 읽기 화면 후보의 결과·해시와 구분합니다.
+
+실제 새 DLL의 helper → Bridge → 모델 연결 검사는 실제 메서드 IL을 사용하되 게임 데이터·Unity·지역화는 명시적인 관리 대역입니다. Windows 확인은 대기 중이며, 로그를 연 직후 첫 패드 입력이 소비되는 문제도 이번 조건 화면 변경에서는 해결하지 않았습니다. 게임 설치·실행·커밋·공개 게시·이슈 완료는 수행하지 않습니다.
+
+### 직전 로컬 후보: 읽기 화면
+
+새 기본 창은 1920×1200의 **872×960px·본문 20px**을 기준으로 창 너비·높이와 글자 배율을 계산합니다. 기존 1080 기준 기본 배치와 60%/70% 배치를 전체 위치·크기·글자 튜플로 판별해 이행하고 사용자 지정 값은 보존합니다. 첫 표시 지연 초기화와 무효 화면 무저장을 유지합니다. [기준·설정 이행](ISSUE-4-VIEWPORT-1200.md)을 따릅니다.
+
+선택지는 버튼 대신 읽기 전용 레이블로 표시하고 ↑↓·오른쪽 스틱을 전체 본문 스크롤로 사용합니다. 항목 선택·접기·예약 진입 없이 A·좌우는 소비하며, 항목 간격은 `max(8, font × 0.6)`입니다. 미션 정상 행의 `조회 정상`만 숨기고 대기·실패·이전 값과 비활성 상태 안내 행은 보존합니다. 공통 `GUILayout.BeginScrollView`의 강제 표시 인수는 가로·세로 모두 `false`로 두어 스크롤바를 필요한 경우에만 표시합니다. [렌더링·입력·Windows 확인 계약](ISSUE-4-READING-LAYOUT.md)을 따릅니다.
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/reading-layout
+```
+
+출력 위치는 위 폴더의 `DiceMaster.dll`, `DiceMaster-source-candidate.zip`, `build-manifest.json`, `build.log`입니다. **전체 11개 검사 프로그램이 통과**했습니다. UI·입력 2,674·모델 361·실제 후보 DLL 연결 40·통합 182·패드 262,831개 단언이며 전체 모드 컴파일 오류 0개·기존 경고 7개입니다. 151개 입력이 manifest와 일치하고 ZIP CRC·두 파일·내부 바이트를 확인했습니다. DLL SHA-256은 `aaecbe9f0ef8005375c67da104baada97c288bf1f07caccb804de3c2ee8938b8`, ZIP은 `dcb44b006dfd664da80c6224b841103464d69682b3407a6be82dde5a0c157768`입니다. 이전 alpha.5의 결과를 승계하지 않습니다. 실제 Windows의 스크롤바 표시·글자 배치·터치·패드는 사용자 확인 대상입니다. 기존 cfg를 보존해 DLL만 적용하고 필요할 때 도구 기본값 복구를 사용합니다. 커밋·공개 게시·이슈 #4 완료는 이번 로컬 후속에 포함하지 않습니다.
+
+### 이전 공개 후보: alpha.5
+
+**alpha.5는 미션 상태 안내 행까지 포함한 당시 공개 후속**입니다. Bridge가 미션 탭의 값 없는 게시 행에만 `IsStatusOnly`를 지정하고, 모델은 일반 행과 안내 행 각각의 기존 순서를 유지한 채 안내 행을 끝에 배치합니다. UI와 모델은 모든 입력의 안내 행 선택·예약을 거부하며 상태 요약·원본 ID·진단 행 자체는 보존합니다. 실제 값이 있는 대기·실패 미션과 읽기 전용 선택지·조건은 계속 선택할 수 있습니다. [당시 변경·검사·후보·Windows 확인](ISSUE-4-MISSION-STATUS.md)을 따릅니다.
 
 ```sh
 python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/mission-status

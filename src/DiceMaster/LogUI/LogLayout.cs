@@ -8,15 +8,15 @@ namespace DiceMaster.LogUI
     public sealed class LogLayout
     {
         public const int MinimumFont = 12, MaximumFont = 64;
-        public const float DefaultWidth = 1152, DefaultHeight = 756;
-        public const float DefaultWidthRatio = .6f, DefaultHeightRatio = .7f;
+        public const float DefaultWidth = 872, DefaultHeight = 960;
+        public const float DefaultWidthRatio = DefaultWidth / 1920f, DefaultHeightRatio = DefaultHeight / 1200f;
         public const int DefaultFontSize = 20;
         public Rect Tabs, Status, InputStatus, Content, Footer;
         public float Gap, Padding;
         public bool CompactChrome;
 
         public static float ScreenScale(int screenHeight)
-        { return Mathf.Clamp(screenHeight / 1080f, .85f, 4f); }
+        { return Mathf.Clamp(screenHeight / 1200f, .85f, 4f); }
 
         public static int DefaultFont(int screenHeight)
         { return Mathf.Clamp((int)Math.Round(DefaultFontSize * ScreenScale(screenHeight)), MinimumFont, MaximumFont); }
@@ -34,15 +34,22 @@ namespace DiceMaster.LogUI
             if (SameLayout(rect, font, new Rect(20, 20, 750, 750), 14) ||
                 SameLayout(rect, font, new Rect(20, 20, 1200, 860), DefaultFontSize) ||
                 SameLayout(rect, font, new Rect(20, 20, 1280, 960), DefaultFontSize) ||
+                SameLayout(rect, font, new Rect(20, 20, 1152, 756), DefaultFontSize) ||
                 SameLayout(rect, font, new Rect(20, 20, DefaultWidth, DefaultHeight), DefaultFontSize)) return true;
-            float scale = ScreenScale(Screen.height);
+            // Earlier defaults used a 1080-pixel font/position scale. Do not
+            // reinterpret those layouts with the new 1200-pixel baseline.
+            float scale = Mathf.Clamp(Screen.height / 1080f, .85f, 4f);
+            int previousFont = Mathf.Clamp((int)Math.Round(DefaultFontSize * scale), MinimumFont, MaximumFont);
             foreach (Vector2 size in new[] { new Vector2(1200, 860), new Vector2(1280, 960) })
             {
                 Rect previousDefault = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale,
                     size.x * scale, size.y * scale), Screen.width, Screen.height);
-                if (SameLayout(rect, font, previousDefault, DefaultFont(Screen.height))) return true;
+                if (SameLayout(rect, font, previousDefault, previousFont)) return true;
             }
-            return false;
+            Rect previousRatioDefault = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale,
+                (float)Math.Round(Screen.width * .6f),
+                (float)Math.Round(Screen.height * .7f)), Screen.width, Screen.height);
+            return SameLayout(rect, font, previousRatioDefault, previousFont);
         }
 
         private static bool SameLayout(Rect left, int font, Rect right, int expectedFont)

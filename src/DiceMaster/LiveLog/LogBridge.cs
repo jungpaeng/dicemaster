@@ -50,6 +50,7 @@ namespace DiceMaster.LiveLog
         private sealed class Value
         {
             public string Key, Description, Text, RawId, Position;
+            public LogConditionDetails ConditionDetails;
             public object Data, Source, StoryState;
             public readonly List<string> AnalysisStates = new List<string>();
         }
@@ -490,8 +491,14 @@ namespace DiceMaster.LiveLog
                         object state = Call(Patch(), "EvaluateSwitchStoryReadState", switchStories, key);
                         string title = string.IsNullOrWhiteSpace(branches) ? (string)Call(owner, "ColorizeKeyByStoryReadState", label, state)
                             : (string)Call(TypeFor("DiceMaster.RichText"), "Golden", label) + " - " + branches;
+                        // Capture each real branch once at the normal refresh
+                        // boundary. Never infer groups from formatted lines or
+                        // evaluate descriptions a second time for the model.
+                        LogConditionDetails details = MapConditionDetails(
+                            (LogConditionDetails)Call(TypeFor("DiceMaster.DataHelper"), "DescribeSwitchCheckpoint", key), Translate);
                         return new Value { Key = title, RawId = key,
-                            Description = Translate((string)Call(TypeFor("DiceMaster.DataHelper"), "ParseSwitchCheckpoint", key)),
+                            Description = details == null ? "" : details.DescriptionFallback,
+                            ConditionDetails = details,
                             Text = branches, StoryState = state };
                     }));
                 }
@@ -630,6 +637,15 @@ namespace DiceMaster.LiveLog
         private static string Translate(string text) { return (string)Call(TypeFor("DiceMaster.UiTextMapper"), "ApplyTranslations", text); }
         private static string Localize(string text) { return (string)Call(TypeFor("DiceMaster.EmbeddedTranslations.Display"), "Translate", text); }
 
+        private static LogConditionDetails MapConditionDetails(LogConditionDetails details, Func<string, string> transform)
+        {
+            if (details == null) return null;
+            var branches = new List<LogConditionBranch>();
+            foreach (LogConditionBranch branch in details.Branches)
+                branches.Add(new LogConditionBranch(transform(branch.Title), transform(branch.Context), transform(branch.Description)));
+            return new LogConditionDetails(transform(details.Hint), branches, transform(details.DescriptionFallback));
+        }
+
         private static void CaptureAnalysis(Value value, object actions)
         {
             value.AnalysisStates.Clear();
@@ -684,6 +700,7 @@ namespace DiceMaster.LiveLog
                         Id = row.Id, RawId = value == null ? row.Id : value.RawId ?? row.Id,
                         Title = Localize(Translate(key ?? "")), Text = value == null ? "" : Localize(Translate(value.Text ?? "")),
                         Description = Localize(description ?? ""), Target = value == null ? null : value.Data,
+                        ConditionDetails = value == null ? null : MapConditionDetails(value.ConditionDetails, Localize),
                         RefreshStatus = row.Status ?? "", RefreshState = row.Status == RefreshEngine.WaitingStatus ? LogRefreshState.Waiting :
                             row.Status == RefreshEngine.RetainedFailureStatus ? LogRefreshState.RetainedFailure :
                             string.IsNullOrEmpty(row.Status) ? LogRefreshState.Healthy : LogRefreshState.ReadFailure,
