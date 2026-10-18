@@ -1,5 +1,5 @@
 // Explicit managed substitutes for Unity/native/config/game boundaries. Tests
-// compile and execute the actual renderer, model and keyboard sources; these
+// compile and execute the actual renderer, model and controller sources; these
 // substitutes cannot validate Unity layout, font rendering or XInput blocking.
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,13 @@ using System.Collections.Generic;
 namespace UnityEngine
 {
     public enum KeyCode { None, Tab, UpArrow, DownArrow, LeftArrow, RightArrow, Return, KeypadEnter, Space, Escape, Y, X }
-    public enum EventType { Layout, Repaint, MouseDown, MouseUp, MouseMove, MouseDrag, ScrollWheel, KeyDown, KeyUp, Used }
+    public enum EventType { Layout, Repaint, MouseDown, MouseUp, MouseMove, MouseDrag, ScrollWheel, KeyDown, KeyUp, Used, TouchDown, TouchUp, TouchMove, TouchEnter, TouchLeave, TouchStationary, Ignore }
+    public enum CursorLockMode { None, Locked, Confined }
+    public static class Cursor
+    {
+        public static CursorLockMode lockState;
+        public static bool visible;
+    }
     public enum FontStyle { Normal, Bold }
     public struct Vector2 { public float x, y; public Vector2(float x, float y) { this.x = x; this.y = y; } }
     public struct Rect : IEquatable<Rect>
@@ -61,11 +67,11 @@ namespace UnityEngine
         }
         public Vector2 CalcSize(GUIContent content) => new Vector2((content.text?.Length ?? 0) * Math.Max(10, fontSize) * .72f, CalcHeight(content, float.MaxValue));
     }
-    public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
+    public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
     {
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
-        public static void FocusControl(string name) { } public static void SetNextControlName(string name) { } public static void DragWindow(Rect rect) { }
+        public static void FocusControl(string name) { } public static void DragWindow(Rect rect) { }
         public static Rect Window(int id, Rect rect, Action<int> draw, string title, GUIStyle style)
             => GUILayout.InvokeWindow(id, rect, draw, style, false, Array.Empty<GUILayoutOption>());
     }
@@ -86,7 +92,7 @@ namespace UnityEngine
         }
         public sealed class ControlRecord
         {
-            public string Text; public Rect Rect; public int FontSize; public bool Button;
+            public string Text; public Rect Rect; public int FontSize; public bool Button, Enabled;
             public Rect WindowLocalRect, AncestorClip, VisibleRect;
         }
         public sealed class WindowRecord
@@ -111,10 +117,13 @@ namespace UnityEngine
         public static readonly List<ScrollViewRecord> ScrollViews = new List<ScrollViewRecord>();
         public static readonly List<ControlRecord> Controls = new List<ControlRecord>();
         public static Func<int, Vector2, Vector2> ScrollInput;
+        public static Func<string, bool> ButtonInput;
+        public static bool ConsumeButtonEvent;
         private static readonly Stack<Group> Groups = new Stack<Group>();
         private static readonly Dictionary<int, Rect> NativeWindows = new Dictionary<int, Rect>();
         private static WindowRecord activeWindow;
         public static WindowRecord LastWindow;
+        public static int WindowCalls;
         public static Rect LastRect = new Rect(0, 0, 200, 30);
         public static void ResetLayout(float width = 1000, float height = 900)
         {
@@ -133,6 +142,7 @@ namespace UnityEngine
         // path. This models that distinction; it does not execute Unity/native UI.
         internal static Rect InvokeWindow(int id, Rect rect, Action<int> draw, GUIStyle style, bool automatic, GUILayoutOption[] options)
         {
+            WindowCalls++;
             ResetLayout(rect.width, rect.height);
             var record = new WindowRecord { Id = id, RequestedRect = rect, Automatic = automatic };
             activeWindow = record;
@@ -282,7 +292,7 @@ namespace UnityEngine
             if (style.wordWrap && style.fixedHeight == 0 && Option("Height", -1, options) < 0 && Option("MinHeight", 0, options) > 0)
                 height = Option("MinHeight", height, options);
             Rect rect = Allocate(height, new[] { Width(width), Height(height) });
-            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button,
+            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button, Enabled = GUI.enabled,
                 WindowLocalRect = Offset(rect, Current.GuiOrigin), AncestorClip = Current.Clip };
             control.VisibleRect = Intersection(control.WindowLocalRect, control.AncestorClip);
             Controls.Add(control);
@@ -291,9 +301,12 @@ namespace UnityEngine
             Advance(rect);
         }
         public static bool Button(string text, GUIStyle style, params GUILayoutOption[] options)
-        { Buttons.Add(text); Control(text, style, true, options); return false; }
-        public static string TextField(string text, int maxLength, GUIStyle style, params GUILayoutOption[] options)
-        { Control(text, style, false, options); return text; }
+        {
+            Buttons.Add(text); Control(text, style, true, options);
+            bool pressed = GUI.enabled && ButtonInput != null && ButtonInput(text);
+            if (pressed && ConsumeButtonEvent) Event.current.Use();
+            return pressed;
+        }
         public static void Label(string text, GUIStyle style, params GUILayoutOption[] options)
         { LiteralLabels.Add(text); Control(text, style, false, options); }
         public static void FlexibleSpace() { }
@@ -329,11 +342,17 @@ namespace UnityEngine
 }
 namespace DiceMaster.Config
 {
-    public sealed class Element<T> { public T Value; public Element(T value) { Value = value; } }
+    public sealed class Element<T>
+    {
+        private T value;
+        public int Writes { get; private set; }
+        public T Value { get { return value; } set { this.value = value; Writes++; } }
+        public Element(T value) { this.value = value; }
+    }
     public static class ConfigManager
     {
-        public static Element<float> LogWindowX = new Element<float>(20), LogWindowY = new Element<float>(20), LogWindowWidth = new Element<float>(750), LogWindowHeight = new Element<float>(750);
-        public static Element<int> LogFontSize = new Element<int>(14);
+        public static Element<float> LogWindowX = new Element<float>(20), LogWindowY = new Element<float>(20), LogWindowWidth = new Element<float>(1152), LogWindowHeight = new Element<float>(756);
+        public static Element<int> LogFontSize = new Element<int>(20);
         public static Element<bool> EnableOptionInfo = new Element<bool>(true);
         public static Element<UnityEngine.KeyCode> LogMenuToggleKey = new Element<UnityEngine.KeyCode>(UnityEngine.KeyCode.Tab);
     }
@@ -349,12 +368,15 @@ namespace DiceMaster.EmbeddedTranslations
 }
 namespace DiceMaster.Gamepad
 {
-    public enum LogPadCommand { None, Up, Down, Left, Right, Activate, Back, Tools, Refresh, PreviousTab, NextTab }
     public static class GamepadBridge
     {
         public static int Cancellations;
-        public static void CancelLogInput() { Cancellations++; }
-        public static void NotifyPointerActivity() { }
+        public static Action PointerActivity;
+        public static Action KeyboardActivity;
+        public static Action Cancelled;
+        public static void CancelLogInput() { Cancellations++; Cancelled?.Invoke(); }
+        public static void NotifyPointerActivity() { PointerActivity?.Invoke(); }
+        public static void NotifyKeyboardActivity() { KeyboardActivity?.Invoke(); }
     }
 }
 namespace DiceMaster.LiveLog
@@ -363,7 +385,15 @@ namespace DiceMaster.LiveLog
     {
         public static int Reservations;
         public static object LastTarget;
+        public static bool ReservationResult = true;
+        public static Action DuringReservation;
         public static bool IsReserved(string tab, object target) => target != null && ReferenceEquals(target, LastTarget);
-        public static bool TryReserve(long context, string tab, string id, object target) { Reservations++; LastTarget = target; return true; }
+        public static bool TryReserve(long context, string tab, string id, object target)
+        {
+            Reservations++;
+            if (ReservationResult) LastTarget = target;
+            DuringReservation?.Invoke();
+            return ReservationResult;
+        }
     }
 }

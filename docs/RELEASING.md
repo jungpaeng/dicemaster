@@ -1,5 +1,13 @@
 # 소스 기반 Release와 게시 이력
 
+## PRD #4 alpha.5 화면·탭·터치·미션 안내 후속
+
+사용자가 현재 수정의 커밋·prerelease 게시를 명시적으로 지시했습니다. 대상은 `v1.0.5-alpha.5`, 설치 자산은 `DiceMaster-v1.0.5-alpha.5.zip`이며 [변경·설치·복구·해시·Windows 확인표](ISSUE-4-ALPHA5-RELEASE.md)를 사용합니다. 화면 60%×70% 첫 표시, 선택지 전체 공개·조건 목록/설명, 활성 예약 버튼 직접 포커스, 패드 모드 터치 복구, 검색 제거와 미션 상태 안내 비활성화를 포함합니다.
+
+검토 DLL `1ce1f0fa8d4d0dba626102c787c5e382cea5414861c050397ab4e506fe2b50d0`·설정 `fce24616e5380004bc87aa992871407386d90bf1b6ec6f30116a29347fe0f046`을 요구하고 고정 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 로컬 11개 프로그램·UI 2,597·모델 361·실제 DLL 연결 40·Bridge 통합 182 단언을 통과했습니다. 게시 검증 출력은 `artifacts/releases/v1.0.5-alpha.5/`입니다.
+
+사전 원격 확인에서 main은 작업 기준 `21b91e97eeb6bfad10b6bda5a6677f59f4a4af7c`과 일치하며 기존 Release·태그는 각각 18개입니다. Latest 정식 v1.0.4, 이슈 #2 closed·#4 open이고 alpha.5 태그·Release는 없습니다. 새 prerelease는 `prerelease=true`·`make_latest=false`로 게시하며 기존 Release·태그·자산을 보존합니다. 실제 게시·공개 다운로드 결과는 후속 기록합니다. 게임 설치·실행과 이슈 #4 완료는 수행하지 않습니다.
+
 ## PRD #4 alpha.4 카드 탐색·창 크기·목록 후속
 
 사용자가 현재 수정의 커밋 후 prerelease 게시를 명시적으로 지시했습니다. 대상은 `v1.0.5-alpha.4`, 설치 자산은 `DiceMaster-v1.0.5-alpha.4.zip`이며 [게시 설명·설치·복구·해시](ISSUE-4-ALPHA4-RELEASE.md)를 사용합니다. 선택지·조건의 ← 접기·펼친 상태 ↑↓ 이동과 자동 갱신 추종, 기본 창 1280×960, 미션 목록 행 높이와 상태 문구를 수정합니다. 게임 설치·실행과 이슈 #4 완료는 수행하지 않습니다.

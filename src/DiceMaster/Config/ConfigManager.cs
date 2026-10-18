@@ -97,11 +97,13 @@ public static class ConfigManager
 		LogMenuToggleKey = new ConfigElement<KeyCode>("LogMenuToggleKey", "Log menu toggle key", KeyCode.Tab);
 		SpeedUpKey = new ConfigElement<KeyCode>("SpeedUpKey", "Speed up key", KeyCode.LeftControl);
 		EnableGamepadAdjustment = new ConfigElement<bool>("EnableGamepadAdjustment", "Xbox 패드로 주사위를 조정합니다. LB+십자키/왼쪽 스틱: 수치 조정, LB+B: 자동.", defaultValue: true);
-		Rect layout = LogLayout.DefaultWindow(Screen.width, Screen.height);
+		// Bind a stable seed. Awake can run before the game's final resolution;
+		// the renderer resolves default geometry only when it is first drawn.
+		Rect layout = new Rect(20, 20, LogLayout.DefaultWidth, LogLayout.DefaultHeight);
 		LogWindowX = new ConfigElement<float>("LogWindowX", "로그 창 왼쪽 위치(화면 픽셀). 화면 밖/비정상 값은 화면 안으로 복구합니다.", layout.x);
 		LogWindowY = new ConfigElement<float>("LogWindowY", "로그 창 위쪽 위치(화면 픽셀). 화면 밖/비정상 값은 화면 안으로 복구합니다.", layout.y);
-		LogWindowWidth = new ConfigElement<float>("LogWindowWidth", "로그 창 너비(화면 픽셀). 기본 1080p 1280, 화면 높이에 맞춰 확대합니다. 사용자 지정값은 유지합니다.", layout.width);
-		LogWindowHeight = new ConfigElement<float>("LogWindowHeight", "로그 창 높이(화면 픽셀). 기본 1080p 960, 화면 높이에 맞춰 확대합니다. 사용자 지정값은 유지합니다.", layout.height);
-		LogFontSize = new ConfigElement<int>("LogFontSize", "로그 창 글자 크기. 12~64px, 기본 1080p 20px(화면 높이에 맞춰 확대). 창 크기로 다시 축소하지 않습니다.", LogLayout.DefaultFont(Screen.height));
+		LogWindowWidth = new ConfigElement<float>("LogWindowWidth", "로그 창 너비(화면 픽셀). 새 기본 배치는 화면 너비의 약 60%(1080p 1152)로 처음 표시할 때 적용합니다. 사용자 지정값은 유지합니다.", layout.width);
+		LogWindowHeight = new ConfigElement<float>("LogWindowHeight", "로그 창 높이(화면 픽셀). 새 기본 배치는 화면 높이의 약 70%(1080p 756)로 처음 표시할 때 적용합니다. 사용자 지정값은 유지합니다.", layout.height);
+		LogFontSize = new ConfigElement<int>("LogFontSize", "로그 창 글자 크기. 12~64px, 기본 1080p 20px(처음 표시하는 화면 높이에 맞춰 확대). 창 크기로 다시 축소하지 않습니다.", LogLayout.DefaultFontSize);
 	}
 }

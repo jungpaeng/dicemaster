@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace DiceMaster.LogUI
 {
@@ -18,18 +17,10 @@ namespace DiceMaster.LogUI
         public LogRefreshState RefreshState;
         public bool HasLastGood;
         public object Target;
+        public bool IsStatusOnly;
         public bool ReservationAllowed = true;
-        public bool CanReserve { get { return Target != null && ReservationAllowed && RefreshState == LogRefreshState.Healthy; } }
-        private string searchText;
-        private static readonly Regex richTags = new Regex(@"</?(?:color|size|b|i|material|quad)(?:[=\s][^>]*)?>", RegexOptions.IgnoreCase);
-        internal string SearchText
-        {
-            get
-            {
-                if (searchText == null) searchText = RawId + "\n" + richTags.Replace((Title ?? "") + "\n" + (Text ?? "") + "\n" + (Description ?? ""), "");
-                return searchText;
-            }
-        }
+        public bool CanSelect { get { return !IsStatusOnly; } }
+        public bool CanReserve { get { return CanSelect && Target != null && ReservationAllowed && RefreshState == LogRefreshState.Healthy; } }
     }
 
     public sealed class LogSnapshot
@@ -40,7 +31,21 @@ namespace DiceMaster.LogUI
         public LogSnapshot(long contextId, string tab, IList<LogItem> rows)
         {
             ContextId = contextId; Tab = tab ?? "";
-            Rows = new List<LogItem>(rows ?? new List<LogItem>()).AsReadOnly();
+            // Keep diagnostic rows visible after all actionable/readable rows.
+            // Classification is supplied by the bridge, never inferred here
+            // from a translated title, missing Target or failed reservation.
+            var ordered = new List<LogItem>(rows == null ? 0 : rows.Count);
+            List<LogItem> statusRows = null;
+            if (rows != null)
+                foreach (LogItem row in rows)
+                    if (row.IsStatusOnly)
+                    {
+                        if (statusRows == null) statusRows = new List<LogItem>();
+                        statusRows.Add(row);
+                    }
+                    else ordered.Add(row);
+            if (statusRows != null) ordered.AddRange(statusRows);
+            Rows = ordered.AsReadOnly();
         }
     }
 
@@ -60,9 +65,7 @@ namespace DiceMaster.LogUI
         public LogSnapshot Snapshot { get; private set; }
         public bool HasPublished { get; private set; }
         public bool PublicationFailed { get; private set; }
-        public string Search { get; private set; } = "";
         public string SelectedId { get; private set; }
-        public readonly HashSet<string> Expanded = new HashSet<string>(StringComparer.Ordinal);
         public float ListScroll, DetailScroll;
         public bool ExecutionFocus;
         private long selectionVersion;
@@ -75,51 +78,17 @@ namespace DiceMaster.LogUI
             get
             {
                 foreach (LogItem row in Snapshot.Rows)
-                    if (row.Id == SelectedId && Matches(row)) return row;
+                    if (row.Id == SelectedId && row.CanSelect) return row;
                 return null;
             }
-        }
-
-        public IList<LogItem> VisibleRows()
-        {
-            var result = new List<LogItem>();
-            foreach (LogItem row in Snapshot.Rows) if (Matches(row)) result.Add(row);
-            return result;
-        }
-
-        public int HiddenErrorCount
-        {
-            get
-            {
-                int count = 0;
-                foreach (LogItem row in Snapshot.Rows)
-                    if (row.RefreshState != LogRefreshState.Healthy && !Matches(row)) count++;
-                return count;
-            }
-        }
-
-        private bool Matches(LogItem row)
-        {
-            return Search.Length == 0 || Contains(row.SearchText, Search);
-        }
-
-        private static bool Contains(string text, string query)
-        { return text != null && text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0; }
-
-        public void SetSearch(string search)
-        {
-            search = search ?? "";
-            if (Search == search) return;
-            Search = search;
-            CancelExecution();
-            if (Selected == null) ClearSelection();
         }
 
         public bool Select(string id)
         {
             foreach (LogItem row in Snapshot.Rows)
-                if (row.Id == id && Matches(row))
+                if (row.Id == id)
                 {
+                    if (!row.CanSelect) return false;
                     if (SelectedId != id) { CancelExecution(); DetailScroll = 0; }
                     SelectedId = id;
                     return true;
@@ -134,21 +103,12 @@ namespace DiceMaster.LogUI
         public void CancelExecution()
         { ExecutionFocus = false; selectionVersion++; }
 
-        public bool ToggleExpanded(string id)
-        {
-            foreach (LogItem row in Snapshot.Rows)
-                if (row.Id == id && Matches(row))
-                { if (!Expanded.Remove(id)) Expanded.Add(id); return Expanded.Contains(id); }
-            return false;
-        }
-
         internal void Publish(LogSnapshot snapshot)
         {
             LogItem previous = Selected;
             Snapshot = snapshot;
             HasPublished = true;
             PublicationFailed = false;
-            Expanded.RemoveWhere(id => !HasId(id));
             LogItem next = Selected;
             if (SelectedId != null && (next == null || previous != null && !ReferenceEquals(previous.Target, next.Target)))
                 ClearSelection();
@@ -158,12 +118,9 @@ namespace DiceMaster.LogUI
         internal void Reset(long contextId)
         {
             Snapshot = new LogSnapshot(contextId, Snapshot.Tab, null);
-            HasPublished = false; PublicationFailed = false; Search = "";
-            ClearSelection(); Expanded.Clear(); ListScroll = DetailScroll = 0;
+            HasPublished = false; PublicationFailed = false;
+            ClearSelection(); ListScroll = DetailScroll = 0;
         }
-
-        private bool HasId(string id)
-        { foreach (LogItem row in Snapshot.Rows) if (row.Id == id) return true; return false; }
 
         public ReservationTicket BeginReservation()
         {

@@ -72,6 +72,7 @@ static class LogOwnershipTests
         }
         string Command(object frame) => frameType.GetField("Command").GetValue(frame).ToString();
         bool ResetFocus(object frame) => (bool)frameType.GetField("ResetFocus").GetValue(frame);
+        bool PreservePointer(object frame) => (bool)frameType.GetField("PreservePointerTransaction").GetValue(frame);
         int Owner() => (int)controllerType.GetProperty("Owner").GetValue(controller);
         const int A = 0x1000, B = 0x2000, X = 0x4000, Up = 1;
         Check(ResetFocus(Tick(0, A)), "Opening cancels focus");
@@ -120,6 +121,45 @@ static class LogOwnershipTests
         Check(Command(Tick(4.7f, A, mode:"Unknown", slot:1)) == "Activate", "Unknown game scheme supports pad");
         Tick(4.8f, mode:"Unknown", slot:1);
         Check((float)frameType.GetField("Scroll").GetValue(Tick(4.9f, mode:"Unknown", ry:32767, slot:1)) < -.9f, "Right stick scrolls without action");
+
+        // A touch/click can change the game's scheme between its down and up.
+        // Only this soft device transition may keep the pointer transaction;
+        // all lifecycle/safety boundaries must win even in the same frame.
+        controller = Activator.CreateInstance(controllerType);
+        for (int i = 0; i < 4; i++) states.SetValue(State(), i);
+        pads[0] = pads[1] = true;
+        object frame = Tick(10);
+        Check(ResetFocus(frame) && !PreservePointer(frame), "First ownership is a hard reset");
+        Tick(10.1f);
+        void Pointer() => controllerType.GetMethod("PointerActivity").Invoke(controller, null);
+        Pointer(); frame = Tick(10.2f, A);
+        Check(ResetFocus(frame) && PreservePointer(frame) && Command(frame) == "None",
+            "Gamepad scheme pointer activity preserves click while consuming simultaneous A");
+        Check(Command(Tick(10.3f, A)) == "None", "Pointer takeover consumes held pad A");
+        Tick(10.4f);
+        Check(Command(Tick(10.5f, A)) == "Activate", "New pad A after pointer takeover requires full neutral");
+        Pointer(); frame = Tick(10.6f, A, mode:"KeyboardMouse");
+        Check(ResetFocus(frame) && PreservePointer(frame) && Command(frame) == "None",
+            "Touch-caused game scheme transition preserves pointer transaction without pad activation");
+        Check(Command(Tick(10.7f, A, mode:"KeyboardMouse")) == "None", "Mode transition consumes old A");
+        frame = Tick(10.8f, mode:"Unknown");
+        Check(ResetFocus(frame) && PreservePointer(frame), "Temporary unknown scheme alone is a soft device reset");
+        Pointer(); frame = Tick(10.9f, B, focused:false);
+        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Alt-Tab wins over same-frame pointer takeover");
+        frame = Tick(11, B);
+        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Focus return cannot revive an old click or held B");
+        Tick(11.1f); Pointer(); frame = Tick(11.2f, A, ready:false);
+        Check(ResetFocus(frame) && !PreservePointer(frame), "Lost capture readiness wins over pointer takeover");
+        frame = Tick(11.3f, A);
+        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Capture recovery requires new pointer/pad input");
+        Tick(11.4f); Pointer(); pads[0] = false; frame = Tick(11.5f);
+        Check(ResetFocus(frame) && !PreservePointer(frame), "Owner disconnect is a hard reset even with pointer activity");
+        pads[0] = true; Pointer(); frame = Tick(11.6f, A);
+        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Owner reconnect cannot retain a pending click");
+        Tick(11.7f); controllerType.GetMethod("Cancel").Invoke(controller, null); Pointer(); frame = Tick(11.8f);
+        Check(ResetFocus(frame) && !PreservePointer(frame), "Explicit context/target cancellation cannot be softened by pointer activity");
+        Pointer(); frame = Tick(11.9f, B, open:false);
+        Check(ResetFocus(frame) && !PreservePointer(frame), "Log closing always discards old pointer transactions");
         Type resolver = assembly.GetType("DiceMaster.Gamepad.GameInputModeResolver", true);
         string Mode(string scheme, bool active = true) => resolver.GetMethod("FromScheme").Invoke(null, new object[] { scheme, active }).ToString();
         Check(Mode(null) == "Unknown" && Mode("") == "Unknown" && Mode("unexpected") == "Unknown", "Unknown getter-zero states never imply mouse mode");
@@ -140,6 +180,26 @@ static class LogOwnershipTests
         nativeType.GetField("lastPoll", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(native,
             System.Diagnostics.Stopwatch.GetTimestamp() - System.Diagnostics.Stopwatch.Frequency - 1);
         Check(!(bool)nativeType.GetProperty("PollingFresh").GetValue(native), "Capture evidence expires instead of staying sticky");
+        Type bridge = assembly.GetType("DiceMaster.Gamepad.GamepadBridge", true);
+        object sharedNative = bridge.GetField("native", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+        object sharedFilter = nativeType.GetField("Filter", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(sharedNative);
+        foreach (string field in new[] { "logOpen", "logFocused", "logCapture" })
+            bridge.GetField(field, BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, true);
+        nativeType.GetProperty("LogActive").SetValue(sharedNative, true);
+        nativeType.GetField("WindowActive").SetValue(sharedNative, true);
+        object SharedFilter(object input) => filterMethod.Invoke(sharedFilter, new[] { (object)(uint)0, input, false });
+        Check(Neutral(SharedFilter(held)), "Shared bridge captures a held log input before disable");
+        bridge.GetMethod("SuspendLogInput").Invoke(null, null);
+        Check(Array.TrueForAll(new[] { "logOpen", "logFocused", "logCapture" }, field =>
+                !(bool)bridge.GetField(field, BindingFlags.Static | BindingFlags.NonPublic).GetValue(null)),
+            "Component disable releases log bridge ownership without waiting for a stopped Update");
+        Check(!(bool)nativeType.GetField("WindowActive").GetValue(sharedNative) && Neutral(SharedFilter(held)),
+            "Disable stops dice capture but still consumes all held log channels");
+        SharedFilter(State());
+        Check(!Neutral(SharedFilter(State(A))), "New input returns to game only after disable neutral boundary");
+        Check(ReferenceEquals(sharedNative, bridge.GetField("native", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null)) &&
+                !(bool)nativeType.GetField("disposed", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(sharedNative),
+            "Disable preserves the shared hook instance for component re-enable");
         Console.WriteLine("Log input: full-channel/all-slot ownership, release/neutral barriers, fixed owner, mode/focus/reconnect safety pass.");
         return assertions;
     }

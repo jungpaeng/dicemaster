@@ -18,6 +18,108 @@ static class Program
     { foreach (var type in types) { yield return type; foreach (var child in All(type.NestedTypes)) yield return child; } }
     static IEnumerable<MethodReference> Calls(MethodDefinition method) => method.HasBody
         ? method.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>() : Enumerable.Empty<MethodReference>();
+    static IEnumerable<MethodDefinition> WithinType(MethodDefinition entry)
+    {
+        var pending = new Stack<MethodDefinition>();
+        var visited = new HashSet<MethodDefinition>();
+        pending.Push(entry);
+        while (pending.Count > 0)
+        {
+            var method = pending.Pop();
+            if (!visited.Add(method)) continue;
+            yield return method;
+            foreach (var call in Calls(method).Where(c => c.DeclaringType.FullName == entry.DeclaringType.FullName))
+            {
+                var target = entry.DeclaringType.Methods.FirstOrDefault(m => m.FullName == call.FullName);
+                if (target != null) pending.Push(target);
+            }
+        }
+    }
+    // Walk only the delivered Draw prefix up to layout initialization. Unknown
+    // game/UI values take both branches; an unsupported instruction fails the
+    // proof conservatively. This checks display guards without executing Unity
+    // or reproducing the renderer's geometry/default calculation.
+    static bool CanReachInitialization(MethodDefinition draw, MethodDefinition initialize, int screenWidth, int screenHeight)
+    {
+        var instructions = draw.Body.Instructions;
+        var pending = new Stack<(int Index, List<int?> Stack, Dictionary<int, int?> Locals)>();
+        pending.Push((0, new List<int?>(), new Dictionary<int, int?>()));
+        int remaining = 10000;
+        while (pending.Count > 0 && remaining-- > 0)
+        {
+            var state = pending.Pop();
+            int index = state.Index;
+            var stack = state.Stack;
+            var locals = state.Locals;
+            int? Pop() { if (stack.Count == 0) return null; int? value = stack[^1]; stack.RemoveAt(stack.Count - 1); return value; }
+            void PushPath(int destination) => pending.Push((destination, new List<int?>(stack), new Dictionary<int, int?>(locals)));
+            if (index < 0 || index >= instructions.Count) continue;
+            Instruction instruction = instructions[index];
+            int? left, right, condition;
+            int local;
+            switch (instruction.OpCode.Code)
+            {
+                case Code.Nop: break;
+                case Code.Ret: case Code.Throw: continue;
+                case Code.Ldc_I4_M1: stack.Add(-1); break;
+                case Code.Ldc_I4_0: case Code.Ldc_I4_1: case Code.Ldc_I4_2: case Code.Ldc_I4_3: case Code.Ldc_I4_4:
+                case Code.Ldc_I4_5: case Code.Ldc_I4_6: case Code.Ldc_I4_7: case Code.Ldc_I4_8:
+                    stack.Add((int)instruction.OpCode.Code - (int)Code.Ldc_I4_0); break;
+                case Code.Ldc_I4: case Code.Ldc_I4_S: stack.Add(Convert.ToInt32(instruction.Operand)); break;
+                case Code.Ldarg: case Code.Ldarg_S: case Code.Ldarg_0: case Code.Ldarg_1: case Code.Ldarg_2: case Code.Ldarg_3:
+                case Code.Ldsfld: case Code.Ldnull: stack.Add(null); break;
+                case Code.Ldfld: Pop(); stack.Add(null); break;
+                case Code.Pop: Pop(); break;
+                case Code.Dup: stack.Add(stack.Count == 0 ? null : stack[^1]); break;
+                case Code.Ldloc: case Code.Ldloc_S:
+                    stack.Add(locals.GetValueOrDefault(((VariableDefinition)instruction.Operand).Index)); break;
+                case Code.Ldloc_0: case Code.Ldloc_1: case Code.Ldloc_2: case Code.Ldloc_3:
+                    stack.Add(locals.GetValueOrDefault((int)instruction.OpCode.Code - (int)Code.Ldloc_0)); break;
+                case Code.Stloc: case Code.Stloc_S:
+                    locals[((VariableDefinition)instruction.Operand).Index] = Pop(); break;
+                case Code.Stloc_0: case Code.Stloc_1: case Code.Stloc_2: case Code.Stloc_3:
+                    local = (int)instruction.OpCode.Code - (int)Code.Stloc_0; locals[local] = Pop(); break;
+                case Code.Call: case Code.Callvirt:
+                    var call = (MethodReference)instruction.Operand;
+                    if (call.FullName == initialize.FullName) return true;
+                    for (int parameter = 0; parameter < call.Parameters.Count + (call.HasThis ? 1 : 0); parameter++) Pop();
+                    if (call.ReturnType.FullName != "System.Void") stack.Add(call.DeclaringType.FullName == "UnityEngine.Screen"
+                        ? call.Name == "get_width" ? screenWidth : call.Name == "get_height" ? screenHeight : null : null);
+                    break;
+                case Code.Br: case Code.Br_S:
+                    PushPath(instructions.IndexOf((Instruction)instruction.Operand)); continue;
+                case Code.Brfalse: case Code.Brfalse_S: case Code.Brtrue: case Code.Brtrue_S:
+                    condition = Pop();
+                    bool jumpOnTrue = instruction.OpCode.Code == Code.Brtrue || instruction.OpCode.Code == Code.Brtrue_S;
+                    if (!condition.HasValue || (condition.Value != 0) == jumpOnTrue)
+                        PushPath(instructions.IndexOf((Instruction)instruction.Operand));
+                    if (condition.HasValue && (condition.Value != 0) == jumpOnTrue) continue;
+                    break;
+                case Code.Beq: case Code.Beq_S: case Code.Bne_Un: case Code.Bne_Un_S:
+                case Code.Bgt: case Code.Bgt_S: case Code.Bge: case Code.Bge_S:
+                case Code.Blt: case Code.Blt_S: case Code.Ble: case Code.Ble_S:
+                    right = Pop(); left = Pop();
+                    bool? take = !left.HasValue || !right.HasValue ? null : instruction.OpCode.Code switch {
+                        Code.Beq or Code.Beq_S => left == right,
+                        Code.Bne_Un or Code.Bne_Un_S => left != right,
+                        Code.Bgt or Code.Bgt_S => left > right,
+                        Code.Bge or Code.Bge_S => left >= right,
+                        Code.Blt or Code.Blt_S => left < right,
+                        _ => left <= right };
+                    if (!take.HasValue || take.Value) PushPath(instructions.IndexOf((Instruction)instruction.Operand));
+                    if (take == true) continue;
+                    break;
+                case Code.Ceq: case Code.Cgt: case Code.Clt:
+                    right = Pop(); left = Pop();
+                    stack.Add(!left.HasValue || !right.HasValue ? null : instruction.OpCode.Code switch {
+                        Code.Ceq => left == right ? 1 : 0, Code.Cgt => left > right ? 1 : 0, _ => left < right ? 1 : 0 });
+                    break;
+                default: return true;
+            }
+            PushPath(index + 1);
+        }
+        return remaining <= 0;
+    }
     static void Main(string[] args)
     {
         using var assembly = AssemblyDefinition.ReadAssembly(args.Single());
@@ -35,6 +137,28 @@ static class Program
         Check(update.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "LogMenuToggleKey"), "existing configurable open key is used");
         Check(updateCalls.Any(c => c.Name == "GetKeyDown"), "keyboard open entry point retained");
         Check(Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Draw"), "actual OnGUI calls replacement renderer");
+        const string cursor = "DiceMaster.LogUI.LogCursorScope";
+        Check(new[] { "SetLogOpen", "Update", "OnGUI", "OnApplicationFocus" }.All(name =>
+                Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == cursor && c.Name == "SetActive")) &&
+                new[] { "OnDisable", "OnDestroy" }.All(name =>
+                Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == cursor && c.Name == "Release")),
+            "actual plugin owns temporary cursor access during log visibility/focus and releases on disable/destruction");
+        Check(update.Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                field.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && field.Name == "PreservePointerTransaction") &&
+                updateCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == "ResetInputFocus" &&
+                    c.Parameters.Count == 1 && c.Parameters[0].ParameterType.FullName == "System.Boolean"),
+            "actual TickLog frame reset reason reaches renderer instead of discarding every touch down/up transaction");
+        Check(Calls(Method("DiceMaster.LogUI.GameActionGate", "ReleaseIfNeutral"))
+                .Any(c => c.DeclaringType.FullName == "UnityEngine.Input" && c.Name == "get_touchCount"),
+            "actual gameplay release gate waits for touchscreen contact as well as held keyboard/mouse input");
+        Check(Calls(Method(plugin, "OnDisable")).Any(c => c.DeclaringType.FullName == pad && c.Name == "SuspendLogInput") &&
+                Calls(Method(plugin, "OnDisable")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.GameActionGate" && c.Name == "SetLogState") &&
+                Calls(Method(pad, "SuspendLogInput")).Any(c => c.Name == "set_LogActive") &&
+                Calls(Method(pad, "SuspendLogInput")).Any(c => c.Name == "CancelLogInput"),
+            "component disable must release both gameplay gates through the neutral barrier without disposing hooks needed for re-enable");
+        Check(Calls(Method(renderer, "HandleKeyboard")).Any(c => c.DeclaringType.FullName == pad && c.Name == "NotifyKeyboardActivity") &&
+                Calls(Method(pad, "NotifyKeyboardActivity")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadController" && c.Name == "KeyboardActivity"),
+            "actual keyboard navigation must use the synchronous-command takeover path rather than a delayed pointer-focus reset");
         // BeginArea content does not contribute entries to GUILayout.Window's
         // root layout. Inspect the shipped Draw call itself: fixture rendering
         // alone cannot catch Unity shrinking that empty automatic root.
@@ -47,7 +171,76 @@ static class Program
             "actual renderer Draw must call the five-argument fixed-rect GUI.Window API exactly once");
         Check(!Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "Window"),
             "actual renderer must not call automatic GUILayout.Window: BeginArea leaves its root layout empty");
+        // Awake can precede the game's final display resolution. The shipped
+        // assembly, not only the portable layout fixture, must defer geometry
+        // and config writes until a positive display reaches real rendering.
+        var constructor = Type(renderer).Methods.Single(m => m.IsConstructor && !m.IsStatic);
+        var constructorCalls = WithinType(constructor).SelectMany(Calls).ToArray();
+        Check(!constructorCalls.Any(c => c.DeclaringType.FullName == "UnityEngine.Screen" ||
+                c.DeclaringType.FullName == renderer && new[] { "InitializeLayoutIfNeeded", "ConstrainWindow", "PersistLayout" }.Contains(c.Name) ||
+                c.DeclaringType.FullName == "DiceMaster.LogUI.LogLayout" && new[] { "IsDefaultSeed", "DefaultWindow", "DefaultFont", "ScreenScale" }.Contains(c.Name) ||
+                c.DeclaringType.Namespace == "DiceMaster.Config" && c.Name == "set_Value"),
+            "actual renderer constructor must not normalize against startup Screen, initialize layout or write configuration");
+        var initialize = Method(renderer, "InitializeLayoutIfNeeded");
+        Check(new[] { (0, 1080), (-1, 1080), (1920, 0), (1920, -1) }
+                .All(size => !CanReachInitialization(draw, initialize, size.Item1, size.Item2)) &&
+                CanReachInitialization(draw, initialize, 1920, 1080),
+            "actual Draw must reject nonpositive Screen width and height before reaching layout initialization");
+        var initializationCalls = Calls(initialize).ToArray();
+        string[] initializationStages = { "IsDefaultSeed", "DefaultWindow", "ConstrainWindow", "PersistLayout" };
+        int[] stagePositions = initializationStages.Select(name => Array.FindIndex(initializationCalls, c => c.Name == name)).ToArray();
+        var layoutFields = new[] { "LogWindowX", "LogWindowY", "LogWindowWidth", "LogWindowHeight", "LogFontSize" };
+        var beforeDefaultRecognition = initialize.Body.Instructions.TakeWhile(i => !(i.Operand is MethodReference call && call.Name == "IsDefaultSeed")).ToArray();
+        Check(layoutFields.All(name => beforeDefaultRecognition.Any(i => i.Operand is FieldReference field &&
+                field.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && field.Name == name)) &&
+                stagePositions.All(index => index >= 0) && stagePositions.SequenceEqual(stagePositions.OrderBy(index => index)),
+            "actual first-draw initialization must read current layout config before default recognition, sizing, constraints and persistence");
+        var configRegistration = Method("DiceMaster.Config.ConfigManager", "CreateConfigElements");
+        Check(!WithinType(configRegistration).SelectMany(Calls).Any(c => c.DeclaringType.FullName == "UnityEngine.Screen" ||
+                c.DeclaringType.FullName == "DiceMaster.LogUI.LogLayout" && new[] { "DefaultWindow", "DefaultFont", "ScreenScale" }.Contains(c.Name)),
+            "actual configuration registration must bind resolution-independent seeds without sampling startup Screen");
+        // Keep the candidate's publication/rendering/permission boundaries
+        // connected. Detailed tab navigation and wrapping are behavioral UI
+        // tests; these checks do not model their implementation in IL.
+        var choices = Method(renderer, "DrawChoices");
+        var uiMethods = types.Where(t => t.Namespace == "DiceMaster.LogUI").SelectMany(t => t.Methods).ToArray();
+        Check(!types.Any(t => t.FullName == "DiceMaster.LogUI.LocalSearchKeyboard") &&
+                !Type("DiceMaster.LogUI.LogItem").Fields.Any(f => f.Name.IndexOf("search", StringComparison.OrdinalIgnoreCase) >= 0) &&
+                !Type("DiceMaster.LogUI.LogTabState").Methods.Any(m => new[] { "get_Search", "SetSearch", "Matches", "Contains", "VisibleRows", "get_HiddenErrorCount" }.Contains(m.Name)),
+            "delivered UI model must remove search state, text cache, filtering, hidden-error accounting and the local search keyboard type");
+        Check(!uiMethods.Any(m => new[] { "DrawSearch", "ClearSearch", "OpenKeyboard", "BuildKeyboardCells", "AddKeyboardAction", "DrawKeyboard", "NavigateKeyboard", "PressKeyboardCell" }.Contains(m.Name)) &&
+                !new[] { Type(renderer), Type("DiceMaster.LogUI.LogLayout") }.SelectMany(t => t.Fields)
+                    .Any(f => f.Name.IndexOf("search", StringComparison.OrdinalIgnoreCase) >= 0),
+            "delivered renderer and layout must not retain removed search controls, composition/navigation or reserved geometry");
+        Check(!uiMethods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "TextField") &&
+                !uiMethods.Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
+                    .Any(i => i.OpCode == OpCodes.Ldstr && i.Operand is string value && value.Contains("검색")),
+            "delivered UI must have no search text field or search-only tool, empty-result and hint strings");
+        Check(choices.Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "Description") &&
+                Calls(choices).Any(c => c.Name == "Label") &&
+                !uiMethods.SelectMany(Calls).Any(c => c.Name == "ToggleExpanded") &&
+                !uiMethods.Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
+                    .Any(i => i.Operand is FieldReference field && field.Name == "Expanded"),
+            "actual choice rendering must publish its description as visible labels without collapse-state references in UI/model code");
+        var drawWindowCalls = Calls(Method(renderer, "DrawWindow")).ToArray();
+        Check(new[] { "get_IsChoiceTab", "DrawChoices", "DrawListDetail" }
+                .All(name => drawWindowCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == name)) &&
+                Calls(Method(renderer, "RowState")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_HasStoryReadState"),
+            "actual renderer must connect choice comparison/split detail dispatch and retain the separate story-read-state boundary");
+        Check(new[] { "DrawListDetail", "Handle", "Reserve" }.All(name =>
+                Calls(Method(renderer, name)).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_SupportsReservation")),
+            "actual split detail, pad activation and final reservation entry must all consult reservation support for their tab");
         Check(Type(plugin).Fields.Any(f => f.FieldType.FullName == renderer), "plugin retains renderer instance across frames");
+        Check(Method(bridge, "Publish").Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
+                field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "IsStatusOnly") &&
+                Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogSnapshot" && c.Name == ".ctor"),
+            "actual publication must classify status-only mission rows before constructing the ordered UI snapshot");
+        Check(new[] { "Handle", "DrawChoices", "DrawListDetail" }.All(name =>
+                Calls(Method(renderer, name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanSelect")) &&
+                new[] { "Select", "get_Selected" }.All(name =>
+                Calls(Method("DiceMaster.LogUI.LogTabState", name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanSelect")),
+            "actual input/rendering and model selection must share the status-only selection guard");
         Check(Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.Namespace == "DiceMaster.LogUI" && c.Name == "Publish"), "actual data publication reaches structured UI model");
         Check(Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve"), "renderer reservation uses current bridge validation");
         Check(Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved"), "reservation display reads actual reservation source");

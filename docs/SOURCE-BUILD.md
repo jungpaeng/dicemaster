@@ -8,6 +8,28 @@
 
 ## PRD #4 후보와 prerelease
 
+**alpha.5는 미션 상태 안내 행까지 포함한 최신 후속**입니다. Bridge가 미션 탭의 값 없는 게시 행에만 `IsStatusOnly`를 지정하고, 모델은 일반 행과 안내 행 각각의 기존 순서를 유지한 채 안내 행을 끝에 배치합니다. UI와 모델은 모든 입력의 안내 행 선택·예약을 거부하며 상태 요약·원본 ID·진단 행 자체는 보존합니다. 실제 값이 있는 대기·실패 미션과 읽기 전용 선택지·조건은 계속 선택할 수 있습니다. [최신 변경·검사·후보·Windows 확인](ISSUE-4-MISSION-STATUS.md)을 따릅니다.
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/mission-status
+```
+
+일반 전체 C# 소스 빌드와 11개 자동 검사 프로그램을 통과했습니다. 모델 361·UI/입력 2,597·실제 DLL 연결 40·실제 Bridge 통합 182·패드 262,831 단언을 확인했으며, 컴파일 오류 0개·기존 경고 7개입니다. [후보·해시·실제 DLL 경계와 최종 검사](ISSUE-4-MISSION-STATUS.md)를 따릅니다. 검색 없는 전체 행·17개 도구·터치·예약·설정 계약을 유지하고 ZIP은 cfg와 새 DLL 두 파일입니다. 게임 DLL은 읽기 전용 외부 참조입니다.
+
+사용자 승인에 따라 `v1.0.5-alpha.5`의 고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 검토 DLL `1ce1f0fa8d4d0dba626102c787c5e382cea5414861c050397ab4e506fe2b50d0`과 설정 `fce24616e5380004bc87aa992871407386d90bf1b6ec6f30116a29347fe0f046`을 요구하며 결과는 `artifacts/releases/v1.0.5-alpha.5/`에 분리합니다. [설치·복구·검증 범위](ISSUE-4-ALPHA5-RELEASE.md)를 따르고 실제 게시 결과는 별도 기록합니다. Windows 실행과 이슈 #4 완료는 주장하지 않습니다.
+
+아래 별도 출력 경로와 게시 정보는 **이전 후보·공개 버전의 재현 기록**입니다. 그 기록의 검색·자판·검사·해시는 당시 상태이며 최신 후보에 승계하지 않습니다.
+
+검색 제거 후보는 `--output-dir artifacts/issue-4/no-search`에 보존합니다. [검색·자판·관련 모델 로직 제거와 당시 검사·해시](ISSUE-4-NO-SEARCH.md)는 그 후보의 기록이며 이번 미션 상태 안내 행 후보의 최종 수치로 재사용하지 않습니다.
+
+패드 모드의 터치 복구 후속은 `--output-dir artifacts/issue-4/touch-input`에 생성합니다. [임시 커서 접근·입력 전환 보호·후보와 Windows 확인](ISSUE-4-TOUCH-INPUT.md)을 따릅니다. 모드 조회는 계속 읽기 전용이며 실제 Windows 터치 확인과 공개 게시를 구분합니다.
+
+상세 제목의 포커스 단계를 없애고 활성 예약 컨트롤에 직접 진입하는 후속은 `--output-dir artifacts/issue-4/action-focus`에 생성합니다. [실행 가능한 컨트롤 진입 보호·조작·검사](ISSUE-4-ACTION-FOCUS.md)를 따릅니다. 앞선 탭 구성·첫 표시 초기화·화면 비율 수정을 함께 빌드하며 이전 후보는 당시 결과로 보존합니다.
+
+선택지 항상 공개·조건 목록/상세 분리 후속은 `--output-dir artifacts/issue-4/tab-layout`에 생성합니다. [탭 성격·변경·후보와 검사](ISSUE-4-TAB-LAYOUT.md)를 따릅니다. 앞선 첫 표시 초기화·화면 비율 로컬 변경도 함께 빌드하고 이전 후보와 공개 자산을 보존합니다.
+
+첫 표시 때 기본값을 적용하고 창을 화면의 약 60%×70%로 조정한 로컬 후보는 `--output-dir artifacts/issue-4/viewport-defaults`에 생성합니다. [초기 해상도·설정 경계와 후보 검사](ISSUE-4-VIEWPORT-DEFAULTS.md)를 따릅니다. 생성자는 설정을 정규화·저장하지 않고 첫 유효한 Draw가 적용하며, 실제 DLL과 관리 코드 회귀 검사·Windows 확인을 구분합니다.
+
 사용자 후속 지시로 카드 탐색·창 확대·목록 행 높이 수정의 `v1.0.5-alpha.4`를 2026-10-19 04:46:13 KST에 게시했습니다. 소스 커밋 `2bb45aa75b3c863f91d70bf1d78fd413c9a6a45d`를 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 검토 DLL `06485af8929579f6f7d3744f183aa3359ec40545a6d155257c4bfebadc3b7d44`·설정 `b351703e2b0f1b5ea6b4a5894c1f5309a13dece5d6b06ed909330c0771801259`와 바이트 일치를 확인했습니다. 11개 검사 프로그램·UI 11,996/연결 23 단언과 공개 페이지·ZIP의 CRC/바이트/해시 검증을 통과했습니다. 출력·게시 영수증은 `artifacts/releases/v1.0.5-alpha.4/`이며 [설치·복구·해시·미확인 범위](ISSUE-4-ALPHA4-RELEASE.md)를 따릅니다. 기존 자산과 Latest 정식 v1.0.4, 이슈 #4 open을 유지하며 Windows 확인은 대기 중입니다.
 
 카드 방향키·기본 창 1280×960·목록 행 높이·상태 안내의 로컬 후속은 `--output-dir artifacts/issue-4/card-navigation`에 생성합니다. [변경·후보 해시·자동 검사와 Windows 검증](ISSUE-4-CARD-NAVIGATION.md)을 따릅니다. 전체 소스와 11개 검사 프로그램을 사용하며 기존 후보·공개 자산은 보존합니다.

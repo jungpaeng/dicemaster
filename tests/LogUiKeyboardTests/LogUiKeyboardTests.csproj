@@ -6,9 +6,11 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../src/DiceMaster/LogUI/LocalSearchKeyboard.cs" Link="LocalSearchKeyboard.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogRenderer.cs" Link="LogRenderer.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/LogCursorScope.cs" Link="LogCursorScope.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
+    <Compile Include="../../src/DiceMaster/Gamepad/LogPadController.cs" Link="LogPadController.cs" />
+    <Compile Include="../../src/DiceMaster/Gamepad/PadController.cs" Link="PadController.cs" />
   </ItemGroup>
 </Project>

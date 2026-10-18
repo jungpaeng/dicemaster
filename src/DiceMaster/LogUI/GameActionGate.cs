@@ -52,7 +52,7 @@ namespace DiceMaster.LogUI
         }
         private static void ReleaseIfNeutral()
         {
-            if (releasing && !active && Application.isFocused && !Input.anyKey) releasing = false;
+            if (releasing && !active && Application.isFocused && !Input.anyKey && Input.touchCount == 0) releasing = false;
         }
         private static bool BeforeActionListeners(object __2)
         {

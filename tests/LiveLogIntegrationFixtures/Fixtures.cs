@@ -273,6 +273,7 @@ namespace DiceMaster
         public static int CurrentValue, ConditionReads, MissionReads, ScriptReads;
         public static bool Ready = true;
         public static object LiveMissionFilter;
+        public static object EmptyMission;
         public static string FailingCheckpoint;
         public static Func<string, object> PreviewScriptReader;
         public static object ReadPreviewScriptBoundary(string name)
@@ -294,6 +295,10 @@ namespace DiceMaster
         public static Dictionary<Mortal.Core.MissionCheckData, (string, string)> GetMissions()
         {
             MissionReads++;
+            // An available game helper may return no mission in this period.
+            // The actual bridge/refresh IL must distinguish that from failure.
+            if (EmptyMission != null && ReferenceEquals(LiveMissionFilter, EmptyMission))
+                return new Dictionary<Mortal.Core.MissionCheckData, (string, string)>();
             return new Dictionary<Mortal.Core.MissionCheckData, (string, string)> { [Scenario.Mission] = ("fixture mission", "current=" + CurrentValue) };
         }
         public static string ExtractConditions(Mortal.Core.ConditionResultItem value, out bool inPeriod) => throw new InvalidOperationException("Actual condition helper IL not installed");
@@ -477,7 +482,125 @@ namespace DiceMaster
             NewLua(Lua("O_next_model"), "model-next");
             Check((long)Member(LogModel, "ContextId") != context && Member(LogTab("미션"), "Selected") == null && ModelRows("미션").Count == 0, "Closed-window context boundary did not invalidate UI state");
             Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", id, Mission), "Prior-context target survived actual Lua publication boundary");
+            CheckMissionStatusPublications();
             return assertions - before;
+        }
+
+        // Run the delivered bridge, refresh engine, snapshot ordering and model
+        // together. Only the game helper's value/absence boundary is a fixture.
+        static void CheckMissionStatusPublications()
+        {
+            object previousEmpty = DataHelper.EmptyMission;
+            string previousFailure = DataHelper.FailingCheckpoint;
+            int previousValue = DataHelper.CurrentValue;
+            try
+            {
+                var plugin = new DicePlugin { showLogWindow = true, currentTab = "미션" };
+                DicePlugin.Instance = plugin;
+                DataHelper.FailingCheckpoint = null;
+                DataHelper.CurrentValue = 41;
+                var waiting = new Mortal.Core.MissionData { name = "status_waiting", Stage = Mission, CurrentKey = "" };
+                var first = new Mortal.Core.MissionData { name = "readable_first", Stage = Mission, CurrentKey = Mission.Key };
+                var failed = new Mortal.Core.MissionData { name = "status_failed", Stage = Mission, CurrentKey = "undefined_stage" };
+                var last = new Mortal.Core.MissionData { name = "readable_last", Stage = Mission, CurrentKey = Mission.Key };
+                var absent = new Mortal.Core.MissionData { name = "successful_absence", Stage = Mission, CurrentKey = "clear" };
+                var missions = new Mortal.Core.MissionCollection();
+                missions.List = new List<object> { waiting, first, failed, last, absent };
+                Mortal.Core.MissionManagerData.Instance = new Mortal.Core.MissionManagerData { _subMissions = missions };
+                Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager();
+                DataHelper.EmptyMission = absent;
+                UnityEngine.Time.unscaledTime = 200;
+                NewLua(Lua("O_status_rows"), "status_rows");
+                Tick(plugin);
+                long context = (long)Member(LogModel, "ContextId");
+                IList rows = ModelRows("미션");
+                Check(rows.Count == 4 && plugin.missionEntries.Count == 4,
+                    "Actual successful mission absence must stay omitted rather than becoming a diagnostic row");
+                Check((string)Member(rows[0], "RawId") == first.name + "/" + Mission.Key &&
+                    (string)Member(rows[1], "RawId") == last.name + "/" + Mission.Key,
+                    "Actual snapshot must stably place readable missions before value-less status rows");
+                Check(Member(rows[2], "RefreshState").ToString() == "Waiting" &&
+                    Member(rows[3], "RefreshState").ToString() == "ReadFailure",
+                    "Waiting and first-read failure diagnostics must remain visible in stable bottom order");
+                string waitingId = (string)Member(rows[2], "Id"), failedId = (string)Member(rows[3], "Id");
+                string firstId = (string)Member(rows[0], "Id");
+                object state = LogTab("미션");
+                Check((bool)InstanceCall(state, "Select", firstId), "Readable actual mission must remain selectable");
+                state.GetType().GetField("DetailScroll").SetValue(state, 37f);
+                state.GetType().GetField("ExecutionFocus").SetValue(state, true);
+                object ticket = InstanceCall(state, "BeginReservation");
+                foreach (object status in new[] { rows[2], rows[3] })
+                {
+                    string statusId = (string)Member(status, "Id");
+                    Check((bool)Member(status, "IsStatusOnly") && !(bool)Member(status, "CanSelect") &&
+                        !(bool)Member(status, "CanReserve") && Member(status, "Target") == null && !(bool)Member(status, "HasLastGood"),
+                        "Actual value-less mission publication must carry explicit nonselectable/nonreservable status classification");
+                    Check(!(bool)InstanceCall(state, "Select", statusId) && (string)Member(state, "SelectedId") == firstId &&
+                        (float)Member(state, "DetailScroll") == 37f && (bool)InstanceCall(state, "CanActivate", ticket),
+                        "Rejecting a status row must preserve the prior readable selection, scroll and valid ticket");
+                    Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", statusId, Mission),
+                        "Diagnostic mission ID must not reach the actual reservation field through another target");
+                }
+
+                InstanceCall(state, "ClearSelection");
+                waiting.CurrentKey = failed.CurrentKey = Mission.Key;
+                UnityEngine.Time.unscaledTime = 201;
+                Tick(plugin, true);
+                rows = ModelRows("미션");
+                Check(rows.Count == 4 && (string)Member(rows[0], "Id") == waitingId &&
+                    (string)Member(rows[2], "Id") == failedId,
+                    "Recovered status missions must rejoin their original discovery order with stable identities");
+                Check(rows.Cast<object>().All(row => !(bool)Member(row, "IsStatusOnly") && (bool)Member(row, "CanSelect")),
+                    "Successful actual mission recovery must remove status-only classification");
+                Check(Member(state, "Selected") == null && !(bool)Member(state, "ExecutionFocus") &&
+                    InstanceCall(state, "BeginReservation") == null,
+                    "Status-only recovery must not automatically select or arm any mission");
+
+                InstanceCall(state, "Select", firstId);
+                state.GetType().GetField("ExecutionFocus").SetValue(state, true);
+                ticket = InstanceCall(state, "BeginReservation");
+                first.CurrentKey = "";
+                UnityEngine.Time.unscaledTime = 202;
+                Tick(plugin, true);
+                object retained = ModelRows("미션").Cast<object>().Single(row => (string)Member(row, "Id") == firstId);
+                Check(Member(retained, "RefreshState").ToString() == "Waiting" && (bool)Member(retained, "HasLastGood") &&
+                    !(bool)Member(retained, "IsStatusOnly") && (bool)Member(retained, "CanSelect") && !(bool)Member(retained, "CanReserve"),
+                    "Waiting with an existing mission value must remain readable/selectable but nonreservable");
+                Check((string)Member(state, "SelectedId") == firstId && ReferenceEquals(Member(retained, "Target"), Mission) &&
+                    ((string)Member(retained, "Description")).Contains("current=41") && !(bool)InstanceCall(state, "CanActivate", ticket),
+                    "Actual waiting publication must preserve selected description/target while revoking its old reservation ticket");
+                first.CurrentKey = "undefined_stage";
+                UnityEngine.Time.unscaledTime = 203;
+                Tick(plugin, true);
+                retained = ModelRows("미션").Cast<object>().Single(row => (string)Member(row, "Id") == firstId);
+                Check(Member(retained, "RefreshState").ToString() == "RetainedFailure" && (bool)Member(retained, "HasLastGood") &&
+                    !(bool)Member(retained, "IsStatusOnly") && (bool)Member(retained, "CanSelect") && !(bool)Member(retained, "CanReserve"),
+                    "A retained mission failure must not be mistaken for a value-less disabled information row");
+                Check((bool)InstanceCall(state, "Select", firstId), "Retained failed mission details must remain explicitly selectable");
+                first.CurrentKey = Mission.Key;
+                UnityEngine.Time.unscaledTime = 204;
+                Tick(plugin, true);
+                Check((string)Member(state, "SelectedId") == firstId && !(bool)Member(state, "ExecutionFocus") &&
+                    !ModelRows("미션").Cast<object>().Any(row => (bool)Member(row, "IsStatusOnly")),
+                    "Recovery of selected retained data must keep selection without restoring execution authority");
+
+                DataHelper.FailingCheckpoint = "switch_one";
+                plugin.currentTab = "조건";
+                UnityEngine.Time.unscaledTime = 205;
+                Tick(plugin, true);
+                object condition = ModelRows("조건").Cast<object>().Single(row => (string)Member(row, "RawId") == "switch_one");
+                Check(Member(condition, "RefreshState").ToString() == "ReadFailure" && Member(condition, "Target") == null &&
+                    !(bool)Member(condition, "IsStatusOnly") && (bool)Member(condition, "CanSelect"),
+                    "Mission status classification must not disable a value-less failed condition");
+                Check((bool)InstanceCall(LogTab("조건"), "Select", (string)Member(condition, "Id")),
+                    "Actual failed condition publication must retain the existing selectable-detail contract");
+            }
+            finally
+            {
+                DataHelper.EmptyMission = previousEmpty;
+                DataHelper.FailingCheckpoint = previousFailure;
+                DataHelper.CurrentValue = previousValue;
+            }
         }
 
         public static int Run()

@@ -687,7 +687,10 @@ namespace DiceMaster.LiveLog
                         RefreshStatus = row.Status ?? "", RefreshState = row.Status == RefreshEngine.WaitingStatus ? LogRefreshState.Waiting :
                             row.Status == RefreshEngine.RetainedFailureStatus ? LogRefreshState.RetainedFailure :
                             string.IsNullOrEmpty(row.Status) ? LogRefreshState.Healthy : LogRefreshState.ReadFailure,
-                        HasLastGood = row.Value != null, ReservationAllowed = !discoveryFailed && lifecycle.IsReady
+                        HasLastGood = row.Value != null, ReservationAllowed = !discoveryFailed && lifecycle.IsReady,
+                        // No mission value means a diagnostic row, not a
+                        // mission whose description can be inspected/acted on.
+                        IsStatusOnly = tab == "미션" && value == null
                     };
                     if (value != null)
                     {

@@ -55,7 +55,17 @@ namespace DiceMaster.Gamepad
             return log.Tick(open, focused, !failed && ready, mode, time, states, pads);
         }
         public static void CancelLogInput() { log.Cancel(); native.RequireNeutral(); adjustment.Reset(); }
+        public static void SuspendLogInput()
+        {
+            // Disabling the component stops Update without destroying hooks.
+            // Return ownership through the same release/neutral barrier while
+            // keeping the initialized native bridge usable after re-enable.
+            logOpen = logFocused = logCapture = false;
+            native.LogActive = native.WindowActive = false;
+            CancelLogInput();
+        }
         public static void NotifyPointerActivity() { log.PointerActivity(); }
+        public static void NotifyKeyboardActivity() { log.KeyboardActivity(); }
         public static void ReselectLogController() { log.Reselect(pads); native.RequireNeutral(); }
         public static string LogHint()
         {

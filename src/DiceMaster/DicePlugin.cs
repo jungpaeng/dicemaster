@@ -46,6 +46,8 @@ public class DicePlugin : BaseUnityPlugin
 	private bool showLogWindow;
 	private string currentTab = "선택지";
 	private LogRenderer logRenderer;
+	private readonly LogCursorScope logCursor = new LogCursorScope();
+	private LogInputMode logInputMode;
 	private long lastLogContext = -1;
 
 	internal float nextLiveLogRefresh;
@@ -97,6 +99,8 @@ public class DicePlugin : BaseUnityPlugin
 	private void SetLogOpen(bool open)
 	{
 		showLogWindow = open;
+		logInputMode = GameInputModeResolver.Resolve();
+		logCursor.SetActive(open && Application.isFocused, logInputMode);
 		GameActionGate.SetLogState(open, Application.isFocused);
 		EnsureLogRenderer();
 		logRenderer.ResetInputFocus();
@@ -106,6 +110,8 @@ public class DicePlugin : BaseUnityPlugin
 	private void Update()
 	{
 		EnsureLogRenderer();
+		logInputMode = GameInputModeResolver.Resolve();
+		logCursor.SetActive(showLogWindow && Application.isFocused, logInputMode);
 		GameActionGate.SetLogState(showLogWindow, Application.isFocused);
 		if (Input.GetKeyDown(ConfigManager.LogMenuToggleKey.Value))
 		{
@@ -122,8 +128,8 @@ public class DicePlugin : BaseUnityPlugin
 		// This runs even with dice adjustment disabled or the log closed: the
 		// shared owner must finish consuming held input before returning it.
 		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow, Application.isFocused,
-			GameInputModeResolver.Resolve(), Time.unscaledTime, Paths.CachePath);
-		if (frame.ResetFocus) logRenderer.ResetInputFocus();
+			logInputMode, Time.unscaledTime, Paths.CachePath);
+		if (frame.ResetFocus) logRenderer.ResetInputFocus(frame.PreservePointerTransaction);
 		if (showLogWindow && Application.isFocused)
 		{
 			logRenderer.Handle(frame.Command);
@@ -137,18 +143,40 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void OnDestroy()
 	{
+		logCursor.Release();
 		GameActionGate.SetLogState(false, false);
 		_harmony?.UnpatchSelf();
 		GamepadBridge.Shutdown();
 	}
 
+	private void OnApplicationFocus(bool focused)
+	{
+		logCursor.SetActive(showLogWindow && focused, logInputMode);
+		GameActionGate.SetLogState(showLogWindow, focused);
+		logRenderer?.ResetInputFocus();
+		GamepadBridge.CancelLogInput();
+	}
+
+	private void OnDisable()
+	{
+		logCursor.Release();
+		GameActionGate.SetLogState(false, Application.isFocused);
+		logRenderer?.ResetInputFocus();
+		GamepadBridge.SuspendLogInput();
+	}
+
 	private void OnGUI()
 	{
+		// The game can relock the cursor after Update when its scheme changes.
+		// Keep the visible log reachable without changing that game scheme.
 		if (showLogWindow)
 		{
+			logInputMode = GameInputModeResolver.Resolve();
+			logCursor.SetActive(Application.isFocused, logInputMode);
 			EnsureLogRenderer();
 			logRenderer.Draw();
 		}
+		else logCursor.Release();
 		DicePatch.DrawGamepadHint();
 	}
 

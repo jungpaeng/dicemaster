@@ -3,14 +3,15 @@ using UnityEngine;
 
 namespace DiceMaster.LogUI
 {
-    // Physical pixel settings remain physical pixels. Only a new/default layout
-    // is scaled from the 1080p reference, as in the referenced ToolWindow.
+    // Saved layouts remain physical pixels. Only a new/default layout uses a
+    // share of the current viewport; its font follows the game's height scale.
     public sealed class LogLayout
     {
         public const int MinimumFont = 12, MaximumFont = 64;
-        public const float DefaultWidth = 1280, DefaultHeight = 960;
+        public const float DefaultWidth = 1152, DefaultHeight = 756;
+        public const float DefaultWidthRatio = .6f, DefaultHeightRatio = .7f;
         public const int DefaultFontSize = 20;
-        public Rect Tabs, Status, InputStatus, Search, Content, Footer;
+        public Rect Tabs, Status, InputStatus, Content, Footer;
         public float Gap, Padding;
         public bool CompactChrome;
 
@@ -24,18 +25,24 @@ namespace DiceMaster.LogUI
         {
             float scale = ScreenScale(screenHeight);
             return LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale,
-                DefaultWidth * scale, DefaultHeight * scale), screenWidth, screenHeight);
+                (float)Math.Round(screenWidth * DefaultWidthRatio),
+                (float)Math.Round(screenHeight * DefaultHeightRatio)), screenWidth, screenHeight);
         }
 
         public static bool IsDefaultSeed(Rect rect, int font)
         {
             if (SameLayout(rect, font, new Rect(20, 20, 750, 750), 14) ||
                 SameLayout(rect, font, new Rect(20, 20, 1200, 860), DefaultFontSize) ||
+                SameLayout(rect, font, new Rect(20, 20, 1280, 960), DefaultFontSize) ||
                 SameLayout(rect, font, new Rect(20, 20, DefaultWidth, DefaultHeight), DefaultFontSize)) return true;
             float scale = ScreenScale(Screen.height);
-            Rect previousDefault = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale,
-                1200 * scale, 860 * scale), Screen.width, Screen.height);
-            return SameLayout(rect, font, previousDefault, DefaultFont(Screen.height));
+            foreach (Vector2 size in new[] { new Vector2(1200, 860), new Vector2(1280, 960) })
+            {
+                Rect previousDefault = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale,
+                    size.x * scale, size.y * scale), Screen.width, Screen.height);
+                if (SameLayout(rect, font, previousDefault, DefaultFont(Screen.height))) return true;
+            }
+            return false;
         }
 
         private static bool SameLayout(Rect left, int font, Rect right, int expectedFont)
@@ -46,7 +53,7 @@ namespace DiceMaster.LogUI
                 Math.Abs(left.width - right.width) < .01f && Math.Abs(left.height - right.height) < .01f;
         }
 
-        public static LogLayout Calculate(Rect window, int font, bool search,
+        public static LogLayout Calculate(Rect window, int font,
             float statusHeight, float inputHeight, float footerHeight, float minimumBodyHeight = 0)
         {
             var result = new LogLayout();
@@ -59,15 +66,13 @@ namespace DiceMaster.LogUI
             result.Status = new Rect(x, y, width, statusHeight); y += statusHeight + result.Gap;
             if (inputHeight > 0)
             { result.InputStatus = new Rect(x, y, width, inputHeight); y += inputHeight + result.Gap; }
-            if (search)
-            { result.Search = new Rect(x, y, width, row); y += row + result.Gap; }
             float footerY = window.height - result.Padding - footerHeight;
             if (footerY - result.Gap - y < Math.Max(font * 3 + 32, minimumBodyHeight))
             {
                 // Keep the chosen body font and a usable, scrollable recovery
-                // area. Status and search remain reachable inside that area.
+                // area. Status remains reachable inside that area.
                 result.CompactChrome = true;
-                result.Status = result.InputStatus = result.Search = new Rect();
+                result.Status = result.InputStatus = new Rect();
                 y = result.Tabs.yMax + result.Gap;
                 footerHeight = font + 10;
                 footerY = window.height - result.Padding - footerHeight;
