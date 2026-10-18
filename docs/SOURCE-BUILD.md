@@ -2,9 +2,9 @@
 
 [개발 안내](DEVELOPMENT.md) · [Release·전환 조건](RELEASING.md) · [PRD #3](https://github.com/jungpaeng/dicemaster/issues/3)
 
-전체 소스 빌드를 기본 개발·배포 경로로 전환하고 정식 `v1.0.3` 발행을 준비합니다. 일반 컴파일은 기존 모드 DLL 없이 `src/DiceMaster/`의 C#·모드 리소스와 읽기 전용 외부 게임 참조를 사용합니다. 기존 패치 도구는 비교·복구용으로 보존하며 기준 DLL은 고정 Git 이력에서 해시를 검증해 재생성합니다. 후보 출력 이름 `artifacts/source-candidate/`는 기존 명령 호환성을 위해 유지합니다. 기본 정책·사용자 확인과 정식 전환 근거는 `build/release-policy.json`에 기록합니다.
+전체 소스 빌드를 기본 개발·배포 경로로 전환하고 [정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다. 소스 태그 커밋은 `ced38df9f0560a212559e34fd281fddbd2581ff4`이며 이슈 #3은 같은 날 00:11:02 KST에 완료로 닫았습니다. 일반 컴파일은 기존 모드 DLL 없이 `src/DiceMaster/`의 C#·모드 리소스와 읽기 전용 외부 게임 참조를 사용합니다. 기존 패치 도구는 비교·복구용으로 보존하며 기준 DLL은 고정 Git 이력에서 해시를 검증해 재생성합니다. 후보 출력 이름 `artifacts/source-candidate/`는 기존 명령 호환성을 위해 유지합니다. 기본 정책·사용자 확인과 정식 전환 근거는 `build/release-policy.json`에 기록합니다.
 
-2026-10-19 사용자가 공개 [v1.0.3-alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상은 아래 alpha.4 해시이며 현재 주석 정리 DLL을 새로 실행한 결과로 간주하지 않습니다. [사용자 확인과 기본 전환](#사용자-windows-확인과-기본-전환)에 근거 범위를 구분하고 [배포 기록](ISSUE-3-RELEASE.md)에 정식 준비·게시 결과를 남깁니다. 이슈 #1·#2의 기능이나 상태는 추가 변경하지 않습니다.
+2026-10-19 사용자가 공개 [v1.0.3-alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상은 아래 alpha.4 해시이며 현재 주석 정리 DLL을 새로 실행한 결과로 간주하지 않습니다. [사용자 확인과 기본 전환](#사용자-windows-확인과-기본-전환)에 근거 범위를 구분하고 [배포 기록](ISSUE-3-RELEASE.md)에 정식 게시·공개 다운로드·이슈 완료 결과를 기록했습니다. 이슈 #1·#2의 기능이나 상태는 추가 변경하지 않습니다.
 
 ## 고정 기준과 최초 복원 시작 상태
 
@@ -51,7 +51,7 @@ UI/번역 리소스 5개와 MinHook x86/x64 DLL·라이선스 3개는 `src/DiceM
 
 기준 DLL의 `ModTranslation.txt`는 44,349바이트 / SHA-256 `6fc71ac1780be28b78e5ee193835a38e47d1526cbb9a143d05ff5206eceef1ec`입니다. 별도 모드 자료 정리에 따라 주석 세 줄만 수정했으며 공용 게임 UI·플래그·참고문 번역은 DiceMaster에서 사용하므로 유지합니다. 다른 7개 리소스와 모든 C# 파일은 이 정리로 바꾸지 않습니다. 복원 도구도 새 임시 추출에 같은 주석 보정을 적용하므로 이전 임시 자료 없이 현재 소스를 재생성합니다.
 
-어셈블리 이름 `DiceMaster`, Assembly/FileVersion `1.0.0.0`, InformationalVersion `1.0.0`, BepInPlugin GUID/이름 `DiceMaster`와 버전 `1.0.0`은 기준과 동일합니다. 배포 태그와 어셈블리 내부 버전은 별도 식별입니다. 이미 게시한 소스 빌드의 배포 태그는 `v1.0.3-alpha.4`이며 정식 준비 버전은 `v1.0.3`입니다. 이후 정리 결과와 각 게시 파일은 아래 별도 기록으로 구분합니다. 내부 버전은 기존 계약 보존을 위해 올리지 않습니다. DLL SHA-256으로 실제 산출물을 구분합니다.
+어셈블리 이름 `DiceMaster`, Assembly/FileVersion `1.0.0.0`, InformationalVersion `1.0.0`, BepInPlugin GUID/이름 `DiceMaster`와 버전 `1.0.0`은 기준과 동일합니다. 배포 태그와 어셈블리 내부 버전은 별도 식별입니다. 이미 게시한 소스 빌드의 배포 태그는 `v1.0.3-alpha.4`이며 정식 배포 태그는 `v1.0.3`입니다. 이후 정리 결과와 각 게시 파일은 아래 별도 기록으로 구분합니다. 내부 버전은 기존 계약 보존을 위해 올리지 않습니다. DLL SHA-256으로 실제 산출물을 구분합니다.
 
 기존 UI·한국어·네 탭·50자 선택지 요약/로그 전체 설명·설정 키와 기본값·세이브 형식·주사위/패드·로그/난수·수명주기 계약을 유지합니다. 이슈 #2 효과 분석 확대나 버그 수정은 포함하지 않습니다. 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기할 수 있는 alpha.3의 기존 제한은 그대로 남습니다. 이번 전환 때문에 이슈 #1·#2의 범위나 상태를 변경하지 않습니다.
 
@@ -263,7 +263,7 @@ python3 build/verify-source-failures.py \
 
 현재 소스의 출처·입력 해시·SDK·참조·검사·ZIP 영수증은 `artifacts/release-candidate/release-verification.json`과 같은 폴더의 빌드/호환성 보고서에 있습니다. 고정 커밋 재현은 `artifacts/release-alpha4-reproduction/`, 격리/실패/기존 패치/출력 보호 로그는 `artifacts/root-removal-checks/`, 기준 재생성 13종은 `artifacts/baseline-checks/baseline-checks.json`에 기록했습니다. 현재 소스 검증은 미커밋 작업 트리 입력임을 영수증에 명시합니다.
 
-이 절의 검증 당시에는 commit·push·태그·Release 게시를 수행하지 않았습니다. 이후 사용자가 이 변경의 commit·push를 승인하여 커밋 `0c520c5ed177cd1266d92be50b202caf64bbeb7d`를 `origin/main`에 반영했습니다. 이 시점에는 Windows 사용자 확인과 기본 소스 빌드 전환, PRD #3 전체 완료를 보류했으며 아래 2026-10-19 사용자 확인·정식 준비 절과 구분합니다. 루트 사본을 제거해도 고정 Git 이력이 있으면 같은 alpha.3 기준을 재생성할 수 있고, 게임 DLL·게임 소스는 저장소·설치 ZIP에 포함하지 않습니다.
+이 절의 검증 당시에는 commit·push·태그·Release 게시를 수행하지 않았습니다. 이후 사용자가 이 변경의 commit·push를 승인하여 커밋 `0c520c5ed177cd1266d92be50b202caf64bbeb7d`를 `origin/main`에 반영했습니다. 이 시점에는 Windows 사용자 확인과 기본 소스 빌드 전환, PRD #3 전체 완료를 보류했으며 아래 2026-10-19 사용자 확인·정식 게시 절과 구분합니다. 루트 사본을 제거해도 고정 Git 이력이 있으면 같은 alpha.3 기준을 재생성할 수 있고, 게임 DLL·게임 소스는 저장소·설치 ZIP에 포함하지 않습니다.
 
 ## 별도 모드 자료 정리 후 로컬 검증
 
@@ -369,16 +369,31 @@ macOS에서 Python `3.9.6`·.NET SDK `8.0.426`과 위 읽기 전용 참조를 �
 | 원본 소스 커밋 | `46bbf7486ab424696f1f5ba7d4126f6c12d11184` |
 | 게임·BepInEx·패드·Steam Input 환경 | 사용자 제공 없음 |
 | 항목별 실행 로그·성능 수치 | 사용자 제공 없음. 포괄 완료 확인을 환경 조합별 통과나 측정 결과로 확대하지 않음 |
-| 현재 정식 준비 DLL | `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1`; 이 DLL 자체를 Windows에서 새로 실행했다는 확인은 없음 |
+| 정식 v1.0.3 DLL | `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1`; 이 DLL 자체를 Windows에서 새로 실행했다는 확인은 없음 |
 | alpha.4 이후 제품 변경 | 제품 C# 34개·패키지 설정·내장 리소스 7개 유지. `ModTranslation.txt`의 주석 세 줄만 변경하며 비주석 데이터·빈 행·줄바꿈 유지 |
 | 기본 경로 | 전체 소스 빌드·검증·패키징. `tools/LegacyPatch/`는 비교·복구용 |
 
-현재 산출물과 alpha.4의 런타임 계약·메서드 IL·내장 번역 비주석 데이터 비교 결과는 정식 검증 영수증과 [배포 기록](ISSUE-3-RELEASE.md)에 기록합니다. 사용자 Windows 확인, 이 자동 비교, 새 소스 커밋의 격리 빌드·자동 검사·설치 ZIP 검증을 정식 전환 근거로 함께 사용합니다. DLL 전체 바이트 일치나 현재 DLL의 새 Windows 실행 결과를 주장하지 않습니다.
+정식 산출물과 alpha.4의 런타임 계약·메서드 IL·내장 번역 비주석 데이터 비교 결과는 정식 검증 영수증과 [배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 사용자 Windows 확인, 이 자동 비교, 새 소스 커밋의 격리 빌드·자동 검사·설치 ZIP 검증을 정식 전환 근거로 함께 사용합니다. DLL 전체 바이트 일치나 현재 DLL의 새 Windows 실행 결과를 주장하지 않습니다.
 
 정식 전환 준비 입력의 Release 검사·Git 없는 격리 빌드·실패 경로 11종을 다시 실행해 통과했습니다. DLL SHA-256은 `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1`, ZIP은 `72c14f2743d0d65f668825ceec9d557e31d48302730f5afaa293c781190829a7`로 격리 빌드와 같습니다. Release 검사는 Windows 확인 대상의 고정 소스 커밋을 새로 컴파일하여 공개 alpha.4 DLL·ZIP 해시를 재현하고, 정식 후보와 설정 바이트 및 전체 런타임 인벤토리를 비교합니다.
 
 `tools/ReleaseAudit/`로 타입 91개·메서드 525개(본문 496개)·메타데이터/IL 1,313항목·Harmony 속성 61개·P/Invoke 3개의 일치와 변조 8종 거부를 확인했습니다. 리소스 7개와 설정은 바이트 일치하며 하나의 리소스는 고정 전후 SHA와 정확한 주석 세 줄 교체만 허용합니다. 이 근거를 `release-verification.json`·`runtime-equivalence.json`에 기록하며 정식 DLL의 직접 Windows 실행으로 확대하지 않습니다.
 
-기본 빌드는 `python3 build/build-source.py --references '<읽기 전용 참조 루트>'`이며 Release 사전 검증은 `python3 build/verify-release.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/<새 검증 폴더> --version v1.0.3`입니다. `build/release-policy.json`에서 기본 소스 빌드와 확인 대상 파일·근거를 관리합니다. 최종 태그·게시·공개 다운로드·이슈 #3 종료 결과는 실제 완료 뒤 [배포 기록](ISSUE-3-RELEASE.md)에 남깁니다.
+기본 빌드는 `python3 build/build-source.py --references '<읽기 전용 참조 루트>'`이며 Release 사전 검증은 `python3 build/verify-release.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/<새 검증 폴더> --version v1.0.3`입니다. `build/release-policy.json`에서 기본 소스 빌드와 확인 대상 파일·근거를 관리합니다. 최종 태그·게시·공개 다운로드·이슈 #3 종료 결과는 [배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다.
+
+### 정식 v1.0.3 최종 빌드·게시 — 2026-10-19
+
+태그 커밋 `ced38df9f0560a212559e34fd281fddbd2581ff4`의 입력 102개를 새 소스 스냅샷으로 고정하고 기존 `DiceMaster.dll` 0개에서 새로 컴파일했습니다. 일곱 검사 묶음, alpha.3 기준 계약 2,750개·변조 12종 거부·번역/주사위 4,341개, alpha.4 대비 타입 91개·메서드 525개(본문 496개)·런타임 비교 1,313항목과 변조 8종 거부를 모두 통과했습니다. 이 빌드는 사용자가 확인한 alpha.4 DLL·ZIP도 고정 소스 커밋에서 새로 재현하여 알려진 공개 해시와 대조했습니다.
+
+| 최종 산출물 | 식별값 |
+|---|---|
+| DLL | 461,312바이트 / SHA-256 `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1` |
+| [DiceMaster-v1.0.3.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3/DiceMaster-v1.0.3.zip) | 191,442바이트 / SHA-256 `72c14f2743d0d65f668825ceec9d557e31d48302730f5afaa293c781190829a7` |
+| [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3) | 2026-10-19 00:10:53 KST, ID `416518288`, `draft=false`, `prerelease=false`, Latest `v1.0.3` |
+| 설치 asset | ID `653759221` |
+| 익명 공개 검증 | API·ZIP CRC·정확히 두 파일·빌드 DLL/커밋 설정 바이트·DLL/ZIP SHA-256 일치 |
+| PRD #3 | 완료 조건 10개 확인, 2026-10-19 00:11:02 KST에 `completed`로 종료 |
+
+영수증은 `artifacts/releases/v1.0.3/`의 `release-verification.json`, `build-manifest.json`, `compatibility.json`, `runtime-equivalence.json`, `source-provenance.json`, `github-publication.json`, `anonymous-verification.json`, `issue-closure.json`에 있습니다. 기존 일곱 Release·태그·설치 자산을 보존했고 이슈 #1 closed·#2 open 상태는 변경하지 않았습니다. 이 결과를 기록하는 후속 문서 커밋은 정식 소스 태그와 설치 자산을 바꾸지 않습니다.
 
 기존 패치 공정과 배포 DLL은 고정 Git 커밋·기존 게시 자산으로 보존합니다. 비교·복구가 필요하면 `build/baseline.py`로 같은 alpha.3 기준을 재생성하고 별도 후보 경로를 사용합니다. 게임 종료 후 보관 DLL만 복원하면 설정·세이브를 유지하는 기존 배포 구조를 따릅니다. 더 오래된 v1.0.2로 복원하면 선택지 결과 소실 문제가 다시 나타날 수 있고 v1.0.1에는 자동 갱신이 없습니다. 에이전트는 이 작업에서 Windows 설치·게임 실행을 수행하거나 요청하지 않습니다.

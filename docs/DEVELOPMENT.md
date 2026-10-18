@@ -4,11 +4,11 @@
 
 ## 개발 범위
 
-현재 기본 개발·배포 경로는 `src/DiceMaster/DiceMaster.csproj`의 전체 소스 빌드입니다. [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 전체 모드 C#·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 기존 `DiceMaster.dll`을 컴파일 입력으로 읽거나 패치하지 않습니다. 루트 솔루션·검증·Release 패키징을 이 경로에 맞춰 사용하며 정식 `v1.0.3` 발행을 준비합니다. 기본 정책과 사용자 확인 근거는 `build/release-policy.json`에서 관리합니다.
+현재 기본 개발·배포 경로는 `src/DiceMaster/DiceMaster.csproj`의 전체 소스 빌드입니다. [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 전체 모드 C#·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 기존 `DiceMaster.dll`을 컴파일 입력으로 읽거나 패치하지 않습니다. 루트 솔루션·검증·Release 패키징을 이 경로에 맞춰 사용하며 [정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다. 소스 태그 커밋은 `ced38df9f0560a212559e34fd281fddbd2581ff4`이며 이슈 #3은 00:11:02 KST에 완료로 닫았습니다. 기본 정책과 사용자 확인 근거는 `build/release-policy.json`에서 관리합니다.
 
 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 구성·재생성·빌드·검사·실패 처리는 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 패치 공정은 비교·복구용으로 보존하며 입력은 고정 Git 커밋에서 해시를 검증해 재생성하고 출력은 `artifacts/legacy-candidate/`에 분리합니다.
 
-2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 대상은 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`에서 빌드한 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 현재 정식 준비 DLL은 번역 리소스의 주석 세 줄 정리로 전체 해시가 다릅니다. Windows 사용자 확인과 두 DLL의 자동 비교를 별도 증거로 기록하며 현재 정식 준비 DLL 자체를 Windows에서 새로 실행한 결과로 바꾸어 쓰지 않습니다. 게임·로더·패드 환경과 세부 검증 결과는 제공되지 않았습니다. 이 작업 중 에이전트가 Windows 설치·게임 실행을 수행하거나 요청하지 않습니다.
+2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 대상은 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`에서 빌드한 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 정식 v1.0.3 DLL은 번역 리소스의 주석 세 줄 정리로 전체 해시가 다릅니다. Windows 사용자 확인과 두 DLL의 자동 비교를 별도 증거로 기록하며 정식 v1.0.3 DLL 자체를 Windows에서 새로 실행한 결과로 바꾸어 쓰지 않습니다. 게임·로더·패드 환경과 세부 검증 결과는 제공되지 않았습니다. 이 작업 중 에이전트가 Windows 설치·게임 실행을 수행하거나 요청하지 않습니다.
 
 이 전환은 기존 동작을 보존하는 소스 복원 범위입니다. 로그 갱신과 모드 전용 난수는 alpha.3에서 이어지며 실제 게임의 미래 판정을 예측하지 않습니다. 이슈 #1·#2의 기능이나 상태를 이번 작업에서 추가 변경하지 않습니다. 다음 성공 Lua까지 기다릴 수 있는 기존 수명주기 제한과 과거 검증 기록은 보존합니다. 이전 prerelease의 게시 커밋·검사·해시는 [배포 기록](ISSUE-3-RELEASE.md)과 [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md)에서 당시 기록으로 확인할 수 있습니다.
 
@@ -301,7 +301,7 @@ v1.0.1 DLL에는 별도 비교로 다음을 확인했습니다.
 
 사용자가 2026-10-19 공개 alpha.4를 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 에이전트가 직접 게임을 실행한 결과와 구분하며 사용자 확인의 파일 식별·환경 제공 범위는 [소스 빌드 안내](SOURCE-BUILD.md#사용자-windows-확인과-기본-전환)에 기록합니다. 상세 항목이 없는 포괄 확인을 게임 버전·모드 베이스·BepInEx·패드·Steam Input 조합별 통과 결과로 확대하지 않습니다.
 
-수신된 기존 파일·로그는 Steam appid `1859910` / buildid `26021712`, Unity `2020.3.49f1`, BepInEx `6.0.0-be.692`를 식별합니다. 이 정적 자료의 환경을 이번 사용자 Windows 검증 환경으로 간주하지 않습니다. 현재 산출물과 사용자가 확인한 alpha.4의 자동 비교, 정식 발행 검사는 [배포 기록](ISSUE-3-RELEASE.md)에 구분합니다.
+수신된 기존 파일·로그는 Steam appid `1859910` / buildid `26021712`, Unity `2020.3.49f1`, BepInEx `6.0.0-be.692`를 식별합니다. 이 정적 자료의 환경을 이번 사용자 Windows 검증 환경으로 간주하지 않습니다. 정식 산출물과 사용자가 확인한 alpha.4의 자동 비교, 고정 소스 커밋의 새 빌드·정식 게시·공개 다운로드 검증은 [배포 기록](ISSUE-3-RELEASE.md)에 구분합니다.
 
 ## 원본과 사용 라이브러리
 

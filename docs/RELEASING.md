@@ -6,9 +6,11 @@
 
 사용자는 PRD #3 완료 시 정식 Release 게시와 이슈 종료를 지시했고, 2026-10-19 KST에 **Windows 검증을 완료했으며 공개된 alpha.4를 직접 내려받아 사용했다**고 확인했습니다. 이를 alpha.4 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`에 대한 사용자 확인으로 기록합니다. 게임·BepInEx 버전, 패드/Steam Input 환경, 항목별 결과·로그·업데이트/롤백 증거는 별도 제공되지 않았습니다. 이 환경을 과거 수신 참조의 환경으로 추정하거나 정식 후보를 직접 Windows에서 실행했다고 기록하지 않습니다.
 
-현재 정식 `v1.0.3` 게시를 준비합니다. 일반 개발·배포 경로는 전체 소스 빌드이며 정책·사용자 확인·비교 근거는 `build/release-policy.json`과 [이슈 #3 완료 근거](ISSUE-3-RELEASE.md)에 연결합니다. alpha.4 이후 제품 C# 34개와 설정은 바꾸지 않았고 번역 리소스 주석 세 줄을 정리했으므로 DLL 전체 해시는 달라집니다. 정식 후보는 새 자동 검사와 alpha.4 대비 전체 IL·메타데이터·native 리소스·실제 번역 데이터 동등성 검사를 통과한 결과만 게시합니다. 이는 사용자 확인 대상과 새 후보의 연결 근거이며 새 후보에 대한 별도 Windows 실행 기록은 아닙니다.
+**[정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시하고 Latest 정식 버전으로 지정했습니다.** 소스 커밋은 `ced38df9f0560a212559e34fd281fddbd2581ff4`, Release ID는 `416518288`, 상태는 `draft=false`·`prerelease=false`입니다. 일반 개발·배포 경로를 전체 소스 빌드로 전환했으며 정책·사용자 확인·비교 근거는 `build/release-policy.json`과 [이슈 #3 완료 근거](ISSUE-3-RELEASE.md)에 연결합니다.
 
-정식 자산은 `DiceMaster-v1.0.3.zip`이며 설정과 새 소스 빌드 DLL 두 파일만 포함합니다. 고정 소스 커밋의 Release 사전 검증, 게시 후 익명 공개 다운로드·CRC·파일/해시 검증을 마친 뒤 이슈 #3을 종료합니다. 기존 태그·Release·공개 파일은 덮어쓰지 않습니다. 이슈 #1의 과거 수용 기준이나 이슈 #2의 기능 확장 완료를 이 전환의 결과로 선언하지 않으며 두 이슈 상태도 변경하지 않습니다.
+정식 자산은 [DiceMaster-v1.0.3.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3/DiceMaster-v1.0.3.zip), asset ID `653759221`이며 설정과 새 소스 빌드 DLL 두 파일만 포함합니다. 고정 소스 커밋의 새 빌드·일곱 자동 검사·alpha.3 계약 2,750개·변조 거부 12종·번역/주사위 관찰값 4,341개와, alpha.4 대비 전체 IL·메타데이터 동등성 1,313개 항목 및 변조 거부 8종을 통과했습니다. alpha.4 이후 C# 34개·설정과 번역 데이터를 유지하며 번역 리소스 주석 세 줄만 정리해 DLL 전체 해시는 다릅니다. 사용자 확인 대상과 정식 DLL을 연결하는 동등성 비교이며 정식 DLL의 직접 Windows 실행 기록은 아닙니다.
+
+게시 후 익명 공개 다운로드·CRC·정확히 두 파일·빌드 DLL/설정 바이트·SHA-256을 확인했고 [이슈 #3](https://github.com/jungpaeng/dicemaster/issues/3)의 수용 기준 10개를 확인해 2026-10-19 00:11:02 KST에 `closed`·`completed`로 종료했습니다. 이전 일곱 Release의 ID·자산·바이트를 보존했습니다. 이슈 #1은 `closed`, #2는 `open`인 기존 상태를 유지하며 이슈 #1의 과거 수용 기준이나 #2의 기능 확장 완료를 새로 선언하지 않습니다. 최종 DLL은 461,312바이트 / SHA-256 `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1`, ZIP은 191,442바이트 / SHA-256 `72c14f2743d0d65f668825ceec9d557e31d48302730f5afaa293c781190829a7`입니다. 게시 결과를 기록하는 후속 문서 커밋은 위 소스 태그·설치 자산을 바꾸지 않습니다.
 
 ## alpha.4 및 이전 prerelease의 당시 승인 범위
 

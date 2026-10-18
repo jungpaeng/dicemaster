@@ -5,7 +5,7 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
-기본 개발·배포 경로를 전체 C# 소스 빌드로 전환하고 **정식 `v1.0.3` 발행을 준비합니다.** [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 모드 소스·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 일반 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 DLL 해시로 고정하며 기존 패치 공정은 비교·복구용으로 보존합니다.
+기본 개발·배포 경로를 전체 C# 소스 빌드로 전환하고 **[정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다.** [설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3/DiceMaster-v1.0.3.zip) · [PRD #3 완료](https://github.com/jungpaeng/dicemaster/issues/3). [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 모드 소스·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 일반 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 DLL 해시로 고정하며 기존 패치 공정은 비교·복구용으로 보존합니다.
 
 2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상 DLL은 SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 현재 빌드는 번역 주석 세 줄 정리를 포함하므로 DLL 전체 해시가 다릅니다. 사용자 확인 범위와 두 DLL의 비교, 자동 검사·정식 게시 결과는 [소스 빌드 안내](docs/SOURCE-BUILD.md)와 [배포 기록](docs/ISSUE-3-RELEASE.md)에 구분합니다.
 
@@ -133,7 +133,9 @@ python3 tools/LegacyPatch/build-log-refresh.py \
 
 ## Release 등록
 
-정식 `v1.0.3`은 태그 커밋의 전체 소스 프로젝트를 새로 빌드하고 같은 커밋의 `packaging/config/DiceMaster.cfg`와 함께 패키징하는 방식으로 준비합니다. [Release 등록 안내](docs/RELEASING.md)의 자동 검사·기준 비교·사용자 확인 근거를 확인한 뒤 게시하며, 게시 결과와 자산 식별은 [배포 기록](docs/ISSUE-3-RELEASE.md)에 남깁니다.
+정식 [v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)은 태그 커밋 `ced38df9f0560a212559e34fd281fddbd2581ff4`의 전체 소스 프로젝트를 새로 빌드하고 같은 커밋의 `packaging/config/DiceMaster.cfg`와 함께 패키징했습니다. `draft=false`, `prerelease=false`로 게시하여 Latest 정식 버전으로 지정했으며, 공개 다운로드의 CRC·정확히 두 파일·DLL/설정 바이트·SHA-256을 확인했습니다. [이슈 #3](https://github.com/jungpaeng/dicemaster/issues/3)은 2026-10-19 00:11:02 KST에 완료로 닫았습니다. [상세 게시 기록](docs/ISSUE-3-RELEASE.md)을 참고하세요.
+
+설치 DLL은 461,312바이트 / SHA-256 `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1`, [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3/DiceMaster-v1.0.3.zip)은 191,442바이트 / SHA-256 `72c14f2743d0d65f668825ceec9d557e31d48302730f5afaa293c781190829a7`입니다. Release ID는 `416518288`, asset ID는 `653759221`입니다. 기존 일곱 Release·자산과 alpha.4 태그는 보존했습니다.
 
 태그는 `vX.Y.Z`, ZIP 이름은 `DiceMaster-vX.Y.Z.zip` 형식입니다. 다음 두 파일만 폴더 구조를 유지해 포함합니다.
 
