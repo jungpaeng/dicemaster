@@ -433,8 +433,8 @@ namespace DiceMaster.LogUI
                 if (!first) GUILayout.Space(ChoiceGap);
                 first = false;
                 GUILayout.BeginVertical(boxStyle);
-                string heading = !string.IsNullOrWhiteSpace(row.Text) ? row.Text : Title(row);
-                Label(heading, titleStyle);
+                string heading = !string.IsNullOrWhiteSpace(row.Text) ? Display.TranslateLabel(row.Text) : Title(row);
+                GUILayout.Label(heading, titleStyle);
                 Label(RowState(row), statusStyle);
                 GUILayout.Label("원본 ID: " + row.RawId, literalStyle);
                 Label(row.Description, textStyle);
@@ -526,7 +526,7 @@ namespace DiceMaster.LogUI
                     "목록에서 대상을 선택하세요.\n자동 갱신으로 대상이 없어지면 다시 선택해야 합니다.", textStyle);
             else
             {
-                Label(Title(selectedRow), titleStyle);
+                GUILayout.Label(Title(selectedRow), titleStyle);
                 string state = RowState(selectedRow);
                 if (!string.IsNullOrEmpty(state)) Label(state, statusStyle);
                 if (selectedRow.RefreshState == LogRefreshState.Waiting)
@@ -768,14 +768,17 @@ namespace DiceMaster.LogUI
             return cachedSummary + (State.PublicationFailed ? " · 게시 실패 · 이전 값" + (SupportsReservation ? " (예약 불가)" : "") : "");
         }
         private static void Label(string text, GUIStyle style) => Display.Label(text, style, Array.Empty<GUILayoutOption>());
-        private static string Title(LogItem row) => string.IsNullOrWhiteSpace(row.Title) ? string.IsNullOrWhiteSpace(row.Text) ? Escape(row.RawId) : row.Text : row.Title;
+        // Finalize only display names. A literal ID fallback and the separate
+        // original-ID labels must never pass through label translation.
+        private static string Title(LogItem row) => string.IsNullOrWhiteSpace(row.Title) ?
+            string.IsNullOrWhiteSpace(row.Text) ? Escape(row.RawId) : Display.TranslateLabel(row.Text) : Display.TranslateLabel(row.Title);
         private static string Escape(string value) => (value ?? "").Replace("<", "＜").Replace(">", "＞");
         private string RowState(LogItem row)
         {
             // Event/mission publications have no story-read mapping. Unknown
             // there must not look like an unread or unfinished mission result.
             string read = row.ReadState == LogReadState.Read ? "읽음" : row.ReadState == LogReadState.Unread ? "미독" : HasStoryReadState ? "읽음 정보 없음" : "";
-            string status = row.RefreshState == LogRefreshState.Healthy ? (CurrentTab == "미션" ? "" : "조회 정상") :
+            string status = row.RefreshState == LogRefreshState.Healthy ? "" :
                 row.RefreshState == LogRefreshState.Waiting ? "설명 조회 대기" : row.RefreshStatus;
             string result = string.IsNullOrEmpty(read) ? status :
                 string.IsNullOrEmpty(status) ? read : read + " · " + status;

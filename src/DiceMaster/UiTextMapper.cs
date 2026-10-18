@@ -374,7 +374,7 @@ public static class UiTextMapper
 			{
 				continue;
 			}
-			int num = text2.IndexOf('=');
+			int num = FindTranslationSeparator(text2);
 			if (num > 0 && num < text2.Length - 1)
 			{
 				string text3 = text2.Substring(0, num).Trim();
@@ -390,6 +390,18 @@ public static class UiTextMapper
 				AddReplacementWithEscapedVariants(replacements, text3, text4);
 			}
 		}
+	}
+
+	private static int FindTranslationSeparator(string text)
+	{
+		int slashes = 0;
+		for (int i = 0; i < text.Length; i++)
+		{
+			char c = text[i];
+			if (c == '=' && slashes % 2 == 0) return i;
+			slashes = c == '\\' ? slashes + 1 : 0;
+		}
+		return -1;
 	}
 
 	private static void LoadStoryMappingCharacterNames(Dictionary<string, string> replacements)
@@ -749,7 +761,40 @@ public static class UiTextMapper
 			string key2 = key.Replace("\\r\\n", "\n").Replace("\\n", "\n").Replace("\\r", "\n");
 			string value2 = value.Replace("\\r\\n", "\n").Replace("\\n", "\n").Replace("\\r", "\n");
 			AddReplacementIfMissing(replacements, key2, value2);
+			// Keep both existing escaped/newline spellings while also accepting
+			// the literal in-game form of escaped '=' and backslashes.
+			string literalKey = DecodeTranslationEscapes(key), literalValue = DecodeTranslationEscapes(value);
+			AddReplacementIfMissing(replacements, literalKey, literalValue);
+			if (key.Contains("\\="))
+			{
+				// ApplyTranslations preserves the primary display dictionary's
+				// precedence by translating it first. Accept that intermediate
+				// spelling too, so a translated prefix cannot hide this full pair.
+				AddReplacementIfMissing(replacements, Display.PreTranslate(key), value);
+				AddReplacementIfMissing(replacements, Display.PreTranslate(key2), value2);
+				AddReplacementIfMissing(replacements, Display.PreTranslate(literalKey), literalValue);
+			}
 		}
+	}
+
+	private static string DecodeTranslationEscapes(string text)
+	{
+		var result = new System.Text.StringBuilder(text.Length);
+		for (int i = 0; i < text.Length; i++)
+		{
+			char c = text[i];
+			if (c != '\\' || i + 1 == text.Length) { result.Append(c); continue; }
+			char next = text[i + 1];
+			if (next == '=' || next == '\\') { result.Append(next); i++; }
+			else if (next == 'n') { result.Append('\n'); i++; }
+			else if (next == 'r')
+			{
+				result.Append('\n'); i++;
+				if (i + 2 < text.Length && text[i + 1] == '\\' && text[i + 2] == 'n') i += 2;
+			}
+			else result.Append(c);
+		}
+		return result.ToString();
 	}
 
 	private static void AddReplacementIfMissing(Dictionary<string, string> replacements, string key, string value)

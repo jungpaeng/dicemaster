@@ -279,7 +279,6 @@ internal static class Display
 	public static void Label(string text, GUIStyle style, GUILayoutOption[] options)
 	{
 		string text2 = TranslateLabel(text);
-		RecordUnknown(text2);
 		GUILayout.Label(text2, style, options);
 	}
 
@@ -304,7 +303,11 @@ internal static class Display
 				_ => "기타", 
 			} + "_" + m.Groups[2].Value;
 		}
-		return regex.Replace(text2, CS_0024_003C_003E9__CachedAnonymousMethodDelegate9);
+		string result = regex.Replace(text2, CS_0024_003C_003E9__CachedAnonymousMethodDelegate9);
+		// Buttons, cached event names and the game's narrative/summary text
+		// share this display boundary as well as ordinary IMGUI labels.
+		RecordUnknown(result);
+		return result;
 	}
 
 	public static void DebugLabel(string text, GUIStyle style, GUILayoutOption[] options)

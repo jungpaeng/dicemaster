@@ -5,6 +5,18 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
+## 현재 로컬 후속 — 한국어 표시 경로 통일
+
+조건·이벤트·미션의 목록과 상세 제목에 같은 한국어 표시 번역을 적용합니다. 게임 기본 서술 로그의 이벤트명·본문과 선택지 효과 요약도 같은 표시 변환을 사용하며 번역 파일의 이스케이프 등호 처리와 전체 문장 매칭을 보완합니다. 원본 ID·내부 식별자·예약 대상은 보존합니다. 전체 소스 빌드·12개 검사 프로그램과 실제 DLL 번역/서술 로그 3,511개·UI/입력 3,073개·DLL 연결 55개 검사가 통과했습니다. [적용 범위·후보·SHA-256·Windows 확인](docs/ISSUE-4-TRANSLATION-COVERAGE.md)을 따르며 `artifacts/issue-4/translation-coverage/`의 DLL만 교체해 cfg를 보존합니다. 앞선 정상 문구 생략과 시간 제한 없는 L3/R3 열기를 포함하고 기존 후보·공개 자산은 보존합니다. 실제 Windows 확인은 대기이며 커밋·공개 게시를 수행하지 않았습니다.
+
+## 이전 로컬 후속 — 정상 조회 문구 생략
+
+네 탭의 항목에서 반복되는 `조회 정상` 문구를 생략합니다. 읽음·미독·읽음 정보 없음, 분석 상태와 대기·실패·이전 값 안내는 유지합니다. 조회 정상은 조건 충족을 뜻하지 않으며 정상 조회 모델·갱신·예약 검증은 그대로입니다. [문구의 의미·후보·적용과 Windows 확인](docs/ISSUE-4-STATUS-LABELS.md)을 따릅니다. 앞선 시간 제한 없는 L3/R3 겹침 열기를 포함한 전체 소스 빌드와 12개 검사 프로그램이 통과했습니다. 후보는 `artifacts/issue-4/status-labels/`이며 DLL만 교체해 기존 cfg를 보존합니다. 실제 Windows 확인은 대기이고 커밋·공개 게시를 수행하지 않았습니다. 기존 후보·공개 alpha.6은 보존합니다.
+
+## 이전 로컬 후속 — 패드 열기 시간 제한 제거
+
+같은 패드에서 **L3 또는 R3를 먼저 누른 채 기다렸다가 반대쪽도 눌러 겹치면** 로그를 열도록 300ms 제한을 제거합니다. 순서·동시 클릭이 모두 가능하며 전체 해제·중립·반복 방지와 다른 입력/초점/연결 변화의 취소 보호는 유지합니다. 게임 폴링의 1초 신선도 보호는 입력 경로 중단을 감지하는 조건이며 첫 클릭 홀드 시간 제한이 아닙니다. 단독 L3/R3 예약·`EnableGamepadLogOpen`·기존 Tab과 B 닫기는 그대로입니다. [동작·후보 SHA-256·DLL만 적용·복구·Windows 확인표](docs/ISSUE-4-PAD-OVERLAP.md)를 따릅니다. `artifacts/issue-4/pad-overlap/`에 새 DLL·ZIP을 생성하고 전체 12개 검사 프로그램을 통과했습니다. 패드 열기 1,408개 단언·35개 시나리오와 실제 DLL 연결 48개 검사를 포함합니다. 실제 Windows 확인은 대기입니다. 이번 지시는 로컬 수정이며 새 커밋·게시를 포함하지 않습니다. 아래 공개 alpha.6은 기존 300ms 조합을 제공하는 별도 파일입니다.
+
 ## PRD #4 — v1.0.5-alpha.6 prerelease
 
 **2026-10-19 06:21:15 KST에 [v1.0.5-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.6)을 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip)은 창 크기·선택지 읽기·조건 분기 블록·미션 문구·자동 스크롤바·패드 열기를 포함합니다. 소스 커밋 `de0d511e60c99a6b84be33c9e3d7676746986c76`의 깨끗한 재빌드·12개 검사와 인증 없는 공개 ZIP의 바이트·CRC·해시를 확인했습니다. [변경·SHA-256·DLL만 적용·복구·Windows 확인표](docs/ISSUE-4-ALPHA6-RELEASE.md)를 따릅니다. 기존 cfg는 보존하고 새 기본 배치가 필요하면 창 위치·크기·글자 기본값 복구를 사용합니다. 실제 Windows 테스트는 대기이며 이슈 #4는 open입니다. 아래 로컬 후보의 미게시 설명·해시·검사는 alpha.6에 포함하기 전 각 후보를 만든 당시 기록입니다.

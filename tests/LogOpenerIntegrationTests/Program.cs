@@ -139,7 +139,7 @@ internal static class Program
         foreach (string schedule in new[] { "game", "bridge" })
             foreach (string mode in new[] { "Gamepad", "KeyboardMouse", "Unknown" })
                 foreach (int slot in new[] { 0, 2 }) cases.Add("open/" + schedule + "/" + mode + "/" + slot);
-        cases.AddRange(new[] { "raw-only", "no-polling", "pending-stale", "cancel", "disable", "focus", "disconnect", "cross-slot", "held-reopen", "entry-mode-hover", "hard-entry-boundaries", "full-neutral", "dice-roundtrip", "entry-readiness", "entry-disconnect", "pure-gesture" });
+        cases.AddRange(new[] { "raw-only", "no-polling", "pending-stale", "cancel", "disable", "focus", "disconnect", "cross-slot", "held-reopen", "entry-mode-hover", "hard-entry-boundaries", "full-neutral", "dice-roundtrip", "entry-readiness", "entry-disconnect", "held-order/left", "held-order/right", "half/cancel", "half/focus", "half/disconnect", "half/stale", "closing-half", "pure-gesture" });
         int total = 0;
         foreach (string scenario in cases)
         {
@@ -196,6 +196,48 @@ internal static class Program
             FirstNavigation(b, owner, mode);
             return;
         }
+        if (scenario.StartsWith("held-order/", StringComparison.Ordinal))
+        {
+            ushort first = scenario.EndsWith("left", StringComparison.Ordinal) ? LeftThumb : RightThumb;
+            var b = new Boundary(2); b.Connected[0] = true; b.Arm();
+            b.State(2, first); b.State(0, first == LeftThumb ? RightThumb : LeftThumb);
+            var held = Stopwatch.StartNew();
+            int polls = 0;
+            // Real elapsed time exceeds both the removed 300ms gesture limit
+            // and native polling's one-second freshness interval. Repeated
+            // real callback polls keep that independent safety path healthy.
+            for (int index = 0; index < 32; index++)
+            {
+                b.GamePollAll(); polls++;
+                Check(b.Poll() == -1 && !GamepadBridge.LogOpening && b.Native.PollingFresh,
+                    "a long-held single thumb stays eligible while ongoing game polling remains fresh and another pad cannot complete its chord");
+                System.Threading.Thread.Sleep(40);
+            }
+            Check(polls > 10 && held.Elapsed.TotalSeconds >= 1.25, "actual source-linked hook exercise includes a sustained hold beyond the former timeout");
+            b.State(2, Chord); b.GamePollAll();
+            Check(GamepadBridge.LogOpening && b.Poll() == 2 && b.OpenRequests == 1,
+                "the opposite click opens immediately after a long hold in either order using the same physical device");
+            b.Captured("long-hold pending handoff"); b.Accept(2, "Keyboard&Mouse");
+            b.State(0); FirstNavigation(b, 2, "KeyboardMouse"); return;
+        }
+        if (scenario.StartsWith("half/", StringComparison.Ordinal))
+        {
+            var b = new Boundary(); b.Arm(); b.State(0, LeftThumb); b.GamePollAll();
+            Check(b.Poll() == -1 && !GamepadBridge.LogOpening, "the first half alone cannot queue an open request");
+            string reason = scenario.Substring("half/".Length);
+            if (reason == "cancel") GamepadBridge.CancelLogOpener();
+            if (reason == "focus") { b.Focused = UnityEngine.Application.isFocused = false; GamepadBridge.SuspendLogOpener(); }
+            if (reason == "disconnect") { b.Connected[0] = false; b.GamePoll(0); }
+            if (reason == "stale") typeof(NativeXInput).GetField("lastPoll", PrivateInstance)
+                .SetValue(b.Native, Stopwatch.GetTimestamp() - Stopwatch.Frequency * 2);
+            Check(b.Poll() == -1 && !GamepadBridge.LogOpening, "a safety boundary cancels an unfinished half gesture");
+            b.Focused = UnityEngine.Application.isFocused = true; b.Connected[0] = true;
+            b.State(0, Chord); b.GamePollAll();
+            Check(b.Poll() == -1 && !GamepadBridge.LogOpening,
+                "adding the other click after cancel/focus/reconnect/stale recovery cannot reuse the old held half");
+            b.State(0); b.GamePollAll(); b.Poll(); b.OpenGesture(0);
+            Check(b.Poll() == 0, "a fresh neutral and new overlap recover after a cancelled half gesture"); return;
+        }
         if (scenario == "pure-gesture") { PureGestures(); return; }
         var boundary = new Boundary();
         Mortal.Core.FakePlayerInput.Current.SetScheme("Keyboard&Mouse");
@@ -246,6 +288,16 @@ internal static class Program
             Check(boundary.Poll() == 0, "recovery accepts a new gesture after full neutral"); return;
         }
         int request = boundary.Poll(); boundary.Accept(request, "Keyboard&Mouse");
+        if (scenario == "closing-half")
+        {
+            boundary.Neutral(0); boundary.State(0, LeftThumb); boundary.GamePollAll(); boundary.Tick();
+            boundary.Open = false; GameActionGate.SetLogState(false, true); GamepadBridge.CancelLogInput(); boundary.Poll(); boundary.Tick();
+            boundary.State(0, Chord); boundary.GamePollAll();
+            Check(boundary.Poll() == -1 && !GamepadBridge.LogOpening,
+                "a single click held while closing cannot combine with a later click to reopen before full release");
+            boundary.State(0); boundary.GamePollAll(); boundary.Poll(); boundary.OpenGesture(0);
+            Check(boundary.Poll() == 0, "full release permits a completely new chord after closing with one thumb held"); return;
+        }
         if (scenario == "held-reopen")
         {
             boundary.Open = false; GameActionGate.SetLogState(false, true); GamepadBridge.CancelLogInput();
@@ -348,26 +400,45 @@ internal static class Program
     {
         void Configure(PadInputFilter filter) => filter.ConfigureLogOpener(true, true, false);
         PadState State(ushort buttons = 0, short lx = 0, short ry = 0, byte lt = 0) => new PadState { Buttons = buttons, LeftX = lx, RightY = ry, LeftTrigger = lt };
-        foreach (double separation in new[] { .0, .299, .301 })
+        foreach (ushort first in new[] { LeftThumb, RightThumb })
+            foreach (double nominalSeconds in new[] { .0, .299, .300, .301, 1, 5, 60 })
+            {
+                var filter = new PadInputFilter(); Configure(filter); filter.FilterGame(0, State(), false);
+                Check((filter.FilterGame(0, State(first), false).Buttons & first) == 0, "reserved single thumb is hidden from game polling");
+                // This is a polling-history stress test, not a claim that 60
+                // real seconds elapsed. No clock is supplied to this API.
+                int samples = (int)Math.Ceiling(nominalSeconds * 60);
+                for (int index = 0; index < samples; index++) filter.FilterGame(0, State(first), false);
+                Check(!filter.LogOpening, "any number of half-held callback polls remains pending without opening");
+                filter.FilterGame(0, State(Chord), false);
+                Check(filter.TryConsumeLogOpen(out int owner) && owner == 0,
+                    "either held order accepts overlap after the polling sequence for nominal " + nominalSeconds + " seconds without a gesture timeout");
+            }
+        var samePoll = new PadInputFilter(); Configure(samePoll); samePoll.FilterGame(0, State(), false);
+        samePoll.FilterGame(0, State(Chord), false);
+        Check(samePoll.TryConsumeLogOpen(out int sameOwner) && sameOwner == 0, "both clicks becoming held in one callback open once");
+        foreach (ushort first in new[] { LeftThumb, RightThumb })
         {
-            var filter = new PadInputFilter(); Configure(filter);
-            filter.FilterGame(0, State(), false, 1);
-            Check((filter.FilterGame(0, State(LeftThumb), false, 2).Buttons & LeftThumb) == 0, "reserved single thumb is hidden from game polling");
-            filter.FilterGame(0, State(Chord), false, 2 + separation);
-            Check(filter.TryConsumeLogOpen(out int owner) == (separation < .3) && (owner == 0 || owner == -1), "chord overlap window uses elapsed time rather than poll count");
+            var nonoverlap = new PadInputFilter(); Configure(nonoverlap); nonoverlap.FilterGame(0, State(), false);
+            nonoverlap.FilterGame(0, State(first), false);
+            nonoverlap.FilterGame(0, State(first == LeftThumb ? RightThumb : LeftThumb), false);
+            nonoverlap.FilterGame(0, State(Chord), false);
+            Check(!nonoverlap.TryConsumeLogOpen(out _), "non-overlapping clicks never combine or revive without a neutral boundary");
+            nonoverlap.FilterGame(0, State(), false); nonoverlap.FilterGame(0, State(Chord), false);
+            Check(nonoverlap.TryConsumeLogOpen(out int owner) && owner == 0, "full neutral permits a new overlapping chord after non-overlap rejection");
         }
         foreach (PadState invalid in new[] { State((ushort)(Chord | PadButtons.A)), State(Chord, lx:8001), State(Chord, ry:-8001), State(Chord, lt:31) })
         {
-            var filter = new PadInputFilter(); Configure(filter); filter.FilterGame(0, State(), false, 0);
-            filter.FilterGame(0, invalid, false, 1);
+            var filter = new PadInputFilter(); Configure(filter); filter.FilterGame(0, State(), false);
+            filter.FilterGame(0, invalid, false);
             Check(!filter.TryConsumeLogOpen(out _), "an extra button, off-center stick or trigger cancels the opener instead of sharing gameplay input");
-            filter.FilterGame(0, State(Chord), false, 1.1);
+            filter.FilterGame(0, State(Chord), false);
             Check(!filter.TryConsumeLogOpen(out _), "removing the extra channel without full neutral cannot revive a cancelled chord");
-            filter.FilterGame(0, State(), false, 1.2); filter.FilterGame(0, State(Chord), false, 1.3);
+            filter.FilterGame(0, State(), false); filter.FilterGame(0, State(Chord), false);
             Check(filter.TryConsumeLogOpen(out int owner) && owner == 0, "full neutral and a new chord recover after an invalid gesture");
         }
-        var duplicate = new PadInputFilter(); Configure(duplicate); duplicate.FilterGame(0, State(), false, 0);
-        for (int i = 0; i < 10; i++) duplicate.FilterGame(0, State(Chord), false, 1 + i * .001);
+        var duplicate = new PadInputFilter(); Configure(duplicate); duplicate.FilterGame(0, State(), false);
+        for (int i = 0; i < 10; i++) duplicate.FilterGame(0, State(Chord), false);
         Check(duplicate.TryConsumeLogOpen(out int duplicateOwner) && duplicateOwner == 0 && !duplicate.TryConsumeLogOpen(out _), "repeated native callbacks and unchanged held packets produce exactly one request");
     }
 }

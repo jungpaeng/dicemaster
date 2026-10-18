@@ -15,12 +15,191 @@ static class Program
         BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic).Invoke(null, args);
     static IEnumerable<TypeDefinition> Types(IEnumerable<TypeDefinition> roots)
     { foreach (var type in roots) { yield return type; foreach (var child in Types(type.NestedTypes)) yield return child; } }
+    const string ParserFixtureResource = "SourceBehavior.TranslationParserCases";
+    const string ParserFixture = """
+        ﻿# 주석=적용 안 함
+        // 다른 주석=적용 안 함
+
+        일반=일반 값
+        Note: 隱藏\=甲=참고: 숨김\=갑
+        路徑\\=경로
+        旗標\\\=甲=플래그\=갑
+        중복=먼저
+        중복=나중
+        값=중간=등호 유지
+        줄\n바꿈=줄\n번역
+        未知\q=알 수 없는\q
+        구분자없음\=무시
+        =빈 키
+        빈 값=
+        """;
+    static void CheckDisplayLabels(Type display)
+    {
+        string Label(string text) => (string)Call(display, "TranslateLabel", text);
+        string[] source = { "大成功", "大失敗", "成功", "失敗", "正常", "特殊", "其他" };
+        string[] translated = { "대성공", "대실패", "성공", "실패", "일반", "특수", "기타" };
+        string[] wrappers = { "{0}", "<color=#FFD700>{0}</color>", "위치이벤트: <color=#FFD700>{0}</color>", "▶ {0}\n미독" };
+        for (int state = 0; state < source.Length; state++)
+            foreach (string number in new[] { "0", "1", "42", "9999" })
+                foreach (string wrapper in wrappers)
+                {
+                    string input = string.Format(wrapper, "P_" + source[state] + "_" + number);
+                    string expected = string.Format(wrapper, "P_" + translated[state] + "_" + number);
+                    Check(Label(input) == expected, "display result title uses Korean: " + input);
+                    Check(Label(expected) == expected, "display title conversion is idempotent: " + expected);
+                }
+        foreach (string identifier in new[] { "Flag_成功", "S_條件_1", "C_成功_1", "P_成功_1_extra", "Mission_特殊_1", "XP_成功_1", "P_成功_1x" })
+            foreach (string wrapper in wrappers)
+            {
+                string input = string.Format(wrapper, identifier);
+                Check(Label(input) == input, "non-result identifiers retain their identity: " + input);
+            }
+        Check(Label(null) == null && Label("") == "", "display label preserves null and empty input");
+    }
+    static void CheckTranslationLoader(Assembly assembly)
+    {
+        Type mapper = assembly.GetType("DiceMaster.UiTextMapper", true);
+        Dictionary<string, string> Load(string name)
+        {
+            var result = new Dictionary<string, string>();
+            Call(mapper, "LoadPairsFromEmbeddedResource", name, result);
+            return result;
+        }
+        var sample = Load(ParserFixtureResource);
+        foreach (var expected in new Dictionary<string, string>
+        {
+            ["일반"] = "일반 값",
+            [@"隱藏\=甲"] = @"숨김\=갑",
+            ["隱藏=甲"] = "숨김=갑",
+            [@"路徑\\"] = "경로",
+            [@"路徑\"] = "경로",
+            [@"旗標\\\=甲"] = @"플래그\=갑",
+            [@"旗標\=甲"] = "플래그=갑",
+            ["중복"] = "먼저",
+            ["값"] = "중간=등호 유지",
+            [@"줄\n바꿈"] = @"줄\n번역",
+            ["줄\n바꿈"] = "줄\n번역",
+            [@"未知\q"] = @"알 수 없는\q"
+        })
+            Check(sample.TryGetValue(expected.Key, out string value) && value == expected.Value,
+                "actual resource loader preserves delimiters and escaped variants: " + expected.Key);
+        Check(!sample.ContainsKey("") && !sample.ContainsKey("빈 값") && !sample.ContainsKey(@"구분자없음\") &&
+            !sample.Keys.Any(key => key.StartsWith("//") || key.StartsWith("#")), "actual loader skips invalid and comment rows");
+        Check(!sample.ContainsKey(@"隱藏\") && !sample.ContainsKey(@"旗標\\\"),
+            "actual loader does not create a key truncated at an escaped delimiter");
+
+        int rows = 0, escapedRows = 0;
+        string escapedSource = null, escapedValue = null;
+        foreach (string resource in new[] { "DiceMaster.Translations._Substitutions.txt", "DiceMaster.Translations.ModTranslation.txt", "DiceMaster.Translations.TriggerTranslation1.0.5v.txt" })
+        {
+            var loaded = Load(resource);
+            var seen = new HashSet<string>();
+            using var reader = new StreamReader(assembly.GetManifestResourceStream(resource), Encoding.UTF8);
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                string text = line.TrimStart('\ufeff').Trim();
+                if (text.Length == 0 || text.StartsWith("//") || text.StartsWith("#")) continue;
+                // Independently find each possible delimiter, then reject one preceded
+                // by an odd number of backslashes. Values may contain further '='.
+                int split = Enumerable.Range(0, text.Length).Where(index => text[index] == '=')
+                    .FirstOrDefault(index => text.Take(index).Reverse().TakeWhile(c => c == '\\').Count() % 2 == 0, -1);
+                if (split <= 0 || split >= text.Length - 1) continue;
+                string key = text.Substring(0, split).Trim();
+                string expected = text.Substring(split + 1).Trim();
+                if (key.StartsWith("Note:")) key = key.Substring("Note:".Length).Trim();
+                if (expected.StartsWith("참고:")) expected = expected.Substring("참고:".Length).Trim();
+                rows++;
+                if (key.Contains(@"\=")) { escapedRows++; escapedSource = key; escapedValue = expected; }
+                if (seen.Add(key))
+                    Check(loaded.TryGetValue(key, out string value) && value == expected,
+                        "embedded loader keeps complete source/value pair: " + resource + ":" + key);
+            }
+        }
+        Check(rows == 847 && escapedRows == 1, "embedded translation corpus includes 847 pairs and the escaped-equals row");
+
+        const string source = "大師兄對龍湘的好感\n最終決定大師兄會否和龍湘在一起。\n={{A}}，主角不攻略龍湘，龍湘會追著大師兄跑\n={{B}}，主角攻略龍湘，大師兄會退讓\n={{C}}，主角攻略龍湘，大師兄會和你決鬥";
+        const string expectedValue = "용상에 대한 대사형의 호감도\n대사형이 용상과 함께할지 여부 최종 결정\n={{A}}, 주인공이 용상을 공략하지 않으면 용상이 대사형을 쫓아다님\n={{B}}, 주인공이 용상을 공략하면 대사형이 양보함\n={{C}}, 주인공이 용상을 공략하면 대사형과 결투함";
+        var modPairs = Load("DiceMaster.Translations.ModTranslation.txt");
+        Check(modPairs.TryGetValue(source, out string restored) && restored == expectedValue,
+            "actual escaped-equals line loads the complete runtime multiline key and Korean value");
+        string applied = (string)Call(mapper, "ApplyTranslations", source);
+        Check(applied == expectedValue,
+            "actual escaped-equals line reaches the Korean value through ApplyTranslations; actual: " + applied);
+        Check((string)Call(mapper, "ApplyTranslations", escapedSource) == escapedValue,
+            "raw embedded escaped-equals spelling reaches the complete Korean value");
+        string NormalizeNewlines(string value) => value.Replace(@"\r\n", "\n").Replace(@"\n", "\n").Replace(@"\r", "\n");
+        Check((string)Call(mapper, "ApplyTranslations", NormalizeNewlines(escapedSource)) == NormalizeNewlines(escapedValue),
+            "runtime multiline spelling with escaped equals reaches the complete Korean value");
+        foreach (string input in new[] { "Flag_成功", "S_條件_1", "C_成功_1", "Mission_特殊_1" })
+            Check((string)Call(mapper, "ApplyTranslations", input) == input, "full mapper keeps internal identifier: " + input);
+        Check((string)Call(mapper, "ApplyTranslations", "小師妹") == "소사매", "actual mapper continues normal dictionary translation");
+        Type display = assembly.GetType("DiceMaster.EmbeddedTranslations.Display", true);
+        foreach (var pair in new Dictionary<string, string>
+        {
+            ["大成功"] = "대성공", ["大失敗"] = "대실패", ["成功"] = "성공", ["失敗"] = "실패",
+            ["正常"] = "일반", ["特殊"] = "특수", ["其他"] = "기타"
+        })
+        {
+            string mapped = (string)Call(mapper, "ApplyTranslations", "위치이벤트: P_" + pair.Key + "_42");
+            Check((string)Call(display, "TranslateLabel", mapped) == "위치이벤트: P_" + pair.Value + "_42",
+                "full display pipeline converts result titles after mapper masking: " + pair.Key);
+        }
+    }
+    static void CheckNarrativeOutput(Assembly assembly)
+    {
+        Type patch = assembly.GetType("DiceMaster.OptionInfoPatch", true);
+        Type managerType = assembly.GetType("Fungus.FungusManager", true);
+        PropertyInfo instanceProperty = managerType.GetProperty("Instance");
+        object manager = instanceProperty.GetValue(null);
+        PropertyInfo logProperty = managerType.GetProperty("NarrativeLog");
+        object log = logProperty.GetValue(manager);
+        var entries = (System.Collections.IList)log.GetType().GetField("Entries").GetValue(log);
+        foreach (var pair in new Dictionary<string, string>
+        {
+            ["大成功"] = "대성공", ["大失敗"] = "대실패", ["成功"] = "성공", ["失敗"] = "실패",
+            ["正常"] = "일반", ["特殊"] = "특수", ["其他"] = "기타"
+        })
+            foreach (string number in new[] { "0", "1", "42", "9999" })
+                foreach (string wrapper in new[] { "{0}", "<color=#FFD700>{0}</color>", "위치이벤트: <color=#FFD700>{0}</color>", "▶ {0}\n미독" })
+                {
+                    entries.Clear();
+                    string input = "\r\n" + string.Format(wrapper, "P_" + pair.Key + "_" + number) + "\r\n\r\n";
+                    string expected = "<size=18>" + string.Format(wrapper, "P_" + pair.Value + "_" + number) + "</size>";
+                    Call(patch, "PrintToNarrativeLog", input);
+                    Check(entries.Count == 1, "actual narrative route writes exactly one entry: " + input);
+                    object entry = entries[0];
+                    Check((string)entry.GetType().GetField("name").GetValue(entry) == "DiceMaster" &&
+                        (string)entry.GetType().GetField("text").GetValue(entry) == expected,
+                        "actual narrative route translates, strips blank lines and preserves formatting: " + input);
+                }
+        foreach (string identifier in new[] { "Flag_成功", "S_條件_1", "C_成功_1", "P_成功_1_extra", "Mission_特殊_1" })
+        {
+            entries.Clear();
+            Call(patch, "PrintToNarrativeLog", identifier);
+            Check(entries.Count == 1 && (string)entries[0].GetType().GetField("text").GetValue(entries[0]) == "<size=18>" + identifier + "</size>",
+                "actual narrative route preserves non-result IDs: " + identifier);
+        }
+        entries.Clear();
+        Call(patch, "PrintToNarrativeLog", "\r\n \n\t\n ");
+        Check(entries.Count == 0, "actual narrative route does not emit blank entries");
+        instanceProperty.SetValue(null, null);
+        Call(patch, "PrintToNarrativeLog", "P_成功_1");
+        Check(entries.Count == 0, "missing narrative manager is harmless");
+        instanceProperty.SetValue(null, manager);
+        logProperty.SetValue(manager, null);
+        Call(patch, "PrintToNarrativeLog", "P_成功_1");
+        Check(entries.Count == 0, "missing narrative sink is harmless");
+        logProperty.SetValue(manager, log);
+    }
     static List<string> Run(string candidate, string fixture, string output, string name)
     {
         using var source = AssemblyDefinition.ReadAssembly(candidate);
         using var target = AssemblyDefinition.ReadAssembly(fixture);
-        new PayloadCopier(source.MainModule, target.MainModule, type =>
-            type.FullName is "DiceMaster.EmbeddedTranslations.Display" or "DiceMaster.DicePatch");
+        var copier = new PayloadCopier(source.MainModule, target.MainModule, type =>
+            type.FullName is "DiceMaster.EmbeddedTranslations.Display" or "DiceMaster.DicePatch" or "DiceMaster.UiTextMapper");
+        copier.CopyMethod(source.MainModule.GetType("DiceMaster.OptionInfoPatch").Methods.Single(method => method.Name == "PrintToNarrativeLog"),
+            target.MainModule.GetType("DiceMaster.OptionInfoPatch"));
         foreach (var type in Types(target.MainModule.Types))
         {
             type.CustomAttributes.Clear();
@@ -29,6 +208,8 @@ static class Program
         }
         foreach (EmbeddedResource resource in source.MainModule.Resources.OfType<EmbeddedResource>())
             target.MainModule.Resources.Add(new EmbeddedResource(resource.Name, resource.Attributes, resource.GetResourceData()));
+        target.MainModule.Resources.Add(new EmbeddedResource(ParserFixtureResource, Mono.Cecil.ManifestResourceAttributes.Private,
+            Encoding.UTF8.GetBytes(ParserFixture)));
         string patched = Path.Combine(output, name + ".dll");
         target.Write(patched);
         var context = new AssemblyLoadContext(name, true);
@@ -66,6 +247,14 @@ static class Program
         }
         const string identifier = "Flag_成功";
         Check(Translate("PostTranslate", Translate("PreTranslate", identifier)) == identifier, "identifier mask/unmask");
+        // New expected-output checks apply only to the candidate. The historical
+        // observation list below stays identical for optional baseline parity.
+        if (name == "candidate")
+        {
+            CheckDisplayLabels(display);
+            CheckTranslationLoader(assembly);
+            CheckNarrativeOutput(assembly);
+        }
         Type dice = assembly.GetType("DiceMaster.DicePatch", true);
         Type plugin = assembly.GetType("DiceMaster.DicePlugin", true);
         object instance = plugin.GetProperty("Instance").GetValue(null);
@@ -104,6 +293,6 @@ static class Program
             var baseline = Run(args[3], args[1], args[2], "baseline");
             Check(candidate.SequenceEqual(baseline), "baseline translation/dice observations differ");
         }
-        Console.WriteLine($"PASS: {assertions} source translation/dice behavior assertions; actual mod IL and embedded translation data, Unity/loader/input boundaries are fixtures. Windows/UI/native NOT executed.");
+        Console.WriteLine($"PASS: {assertions} source translation/parser/narrative/dice behavior assertions; actual mod IL and embedded translation data, Unity/loader/locale/game-table/narrative-sink/input boundaries are fixtures. Windows/UI/native NOT executed.");
     }
 }

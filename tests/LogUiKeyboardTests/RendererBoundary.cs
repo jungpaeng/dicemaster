@@ -3,6 +3,7 @@
 // substitutes cannot validate Unity layout, font rendering or XInput blocking.
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace UnityEngine
 {
@@ -391,8 +392,22 @@ namespace DiceMaster.EmbeddedTranslations
     public static class Display
     {
         public static readonly List<string> TranslatedLabels = new List<string>();
+        // A deterministic display boundary for renderer-routing checks only.
+        // The real helper, dictionaries and built-DLL wiring are verified by
+        // SourceBehaviorTests; this fixture deliberately knows just seven
+        // event-result labels and cannot establish translation completeness.
+        private static readonly Regex EventResult = new Regex("(?<![A-Za-z0-9_])P_(大成功|大失敗|成功|失敗|正常|特殊|其他)_([0-9]+)(?![A-Za-z0-9_])", RegexOptions.CultureInvariant);
+        public static string TranslateLabel(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return EventResult.Replace(text, match => "P_" + (match.Groups[1].Value switch
+            {
+                "大成功" => "대성공", "大失敗" => "대실패", "成功" => "성공", "失敗" => "실패",
+                "正常" => "일반", "特殊" => "특수", _ => "기타"
+            }) + "_" + match.Groups[2].Value);
+        }
         public static void Label(string text, UnityEngine.GUIStyle style, UnityEngine.GUILayoutOption[] options)
-        { TranslatedLabels.Add(text); UnityEngine.GUILayout.Label(text, style, options); }
+        { TranslatedLabels.Add(text); UnityEngine.GUILayout.Label(TranslateLabel(text), style, options); }
     }
 }
 namespace DiceMaster.Gamepad
@@ -416,12 +431,15 @@ namespace DiceMaster.LiveLog
     {
         public static int Reservations;
         public static object LastTarget;
+        public static long LastReservedContext;
+        public static string LastReservedTab, LastReservedId;
         public static bool ReservationResult = true;
         public static Action DuringReservation;
         public static bool IsReserved(string tab, object target) => target != null && ReferenceEquals(target, LastTarget);
         public static bool TryReserve(long context, string tab, string id, object target)
         {
             Reservations++;
+            LastReservedContext = context; LastReservedTab = tab; LastReservedId = id;
             if (ReservationResult) LastTarget = target;
             DuringReservation?.Invoke();
             return ReservationResult;

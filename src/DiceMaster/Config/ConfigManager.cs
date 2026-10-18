@@ -96,7 +96,7 @@ public static class ConfigManager
 		EnableDiceController = new ConfigElement<bool>("EnableDiceController", "Enable dice controller", defaultValue: true);
 		EnableOptionInfo = new ConfigElement<bool>("EnableOptionInfo", "Enable option info", defaultValue: true);
 		LogMenuToggleKey = new ConfigElement<KeyCode>("LogMenuToggleKey", "Log menu toggle key", KeyCode.Tab);
-		EnableGamepadLogOpen = new ConfigElement<bool>("EnableGamepadLogOpen", "양쪽 스틱 클릭(LS+RS)을 300ms 안에 함께 눌러 로그를 엽니다. 활성화하면 게임에 초점이 있는 동안 두 스틱 클릭을 로그 전용으로 사용합니다. 끄면 버튼 해제 후 원래 게임 입력으로 돌아갑니다. Tab 열기는 유지합니다.", defaultValue: true);
+		EnableGamepadLogOpen = new ConfigElement<bool>("EnableGamepadLogOpen", "같은 패드의 양쪽 스틱 클릭(LS+RS) 누름이 겹치면 로그를 엽니다. 한쪽을 누른 채 다른 쪽을 누르면 되며 순서와 간격 제한은 없습니다. 활성화하면 게임에 초점이 있는 동안 두 스틱 클릭을 로그 전용으로 사용합니다. 끄면 버튼 해제 후 원래 게임 입력으로 돌아갑니다. Tab 열기는 유지합니다.", defaultValue: true);
 		SpeedUpKey = new ConfigElement<KeyCode>("SpeedUpKey", "Speed up key", KeyCode.LeftControl);
 		EnableGamepadAdjustment = new ConfigElement<bool>("EnableGamepadAdjustment", "Xbox 패드로 주사위를 조정합니다. LB+십자키/왼쪽 스틱: 수치 조정, LB+B: 자동.", defaultValue: true);
 		// Bind a stable seed. Awake can run before the game's final resolution;

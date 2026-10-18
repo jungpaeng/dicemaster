@@ -224,6 +224,37 @@ static class Program
                 !uiMethods.Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
                     .Any(i => i.Operand is FieldReference field && field.Name == "Expanded"),
             "actual choice rendering must publish its description as read-only visible labels without selection/button or collapse-state references");
+        const string display = "DiceMaster.EmbeddedTranslations.Display";
+        var title = Method(renderer, "Title");
+        Check(Calls(title).Any(c => c.DeclaringType.FullName == display && c.Name == "TranslateLabel") &&
+                !title.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld),
+            "delivered list captions must apply the same final display translation as detail labels without mutating published row data");
+        var listDetailCalls = Calls(Method(renderer, "DrawListDetail")).ToArray();
+        int detailTitle = Array.FindLastIndex(listDetailCalls, c => c.DeclaringType.FullName == renderer && c.Name == "Title");
+        var detailHeadingSink = listDetailCalls.Skip(detailTitle + 1).First(c => c.Name == "Label" &&
+            new[] { renderer, display, "UnityEngine.GUILayout" }.Contains(c.DeclaringType.FullName));
+        Check(listDetailCalls.Count(c => c.DeclaringType.FullName == renderer && c.Name == "Title") == 2 &&
+                detailHeadingSink.DeclaringType.FullName == "UnityEngine.GUILayout",
+            "actual list/detail must share the title boundary and display its literal-ID fallback without a second translation pass");
+        Check(Calls(choices).Any(c => c.DeclaringType.FullName == display && c.Name == "TranslateLabel") &&
+                Calls(choices).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "Label"),
+            "delivered read-only choice headings must finalize named text at the display boundary while retaining a literal fallback sink");
+        Check(Calls(Method(display, "TranslateLabel")).Any(c => c.DeclaringType.FullName == display && c.Name == "RecordUnknown") &&
+                !Calls(Method(display, "Label")).Any(c => c.DeclaringType.FullName == display && c.Name == "RecordUnknown"),
+            "delivered display-label finalization must retain unknown-text diagnostics for button, narrative and label consumers without duplicate label logging");
+        var eventName = Method("DiceMaster.PositionEventCache", "GetPositionEventName");
+        Check(Calls(eventName).Any(c => c.DeclaringType.FullName == display && c.Name == "TranslateLabel") &&
+                !eventName.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
+                    field.DeclaringType.Namespace.StartsWith("Mortal.", StringComparison.Ordinal)),
+            "delivered event display-name cache must finalize Korean result labels without rewriting game event identity");
+        foreach (string entry in new[] { "LeanLocalizationResolver_GetStoryText_Postfix", "PrintToNarrativeLog" })
+        {
+            var calls = Calls(Method("DiceMaster.OptionInfoPatch", entry)).ToArray();
+            int mapped = Array.FindIndex(calls, c => c.DeclaringType.FullName == "DiceMaster.UiTextMapper" && c.Name == "ApplyTranslations");
+            int finalized = Array.FindIndex(calls, c => c.DeclaringType.FullName == display && c.Name == "TranslateLabel");
+            Check(mapped >= 0 && finalized > mapped,
+                "delivered option summary/narrative entry must finalize display-only labels after the identifier-preserving mapper: " + entry);
+        }
         var conditionBlocks = Method(renderer, "DrawConditionDetails");
         Check(Calls(Method(renderer, "DrawListDetail")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "DrawConditionDetails") &&
                 Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.Operand is FieldReference field &&
@@ -274,6 +305,13 @@ static class Program
                 new[] { "ConfigureLogOpener", "TryConsumeLogOpen" }.All(name => Calls(Method(pad, "PollLogOpener")).Any(c =>
                     c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput" && c.Name == name)),
             "delivered opening requests must be detected on the real game-facing native hook and consumed by the actual bridge");
+        var openerFilter = Type("DiceMaster.Gamepad.PadInputFilter");
+        var openerMethods = new[] { Method(openerFilter.FullName, "FilterGame"), Method(openerFilter.FullName, "ObserveOpener") };
+        Check(Method(openerFilter.FullName, "FilterGame").Parameters.Count == 3 &&
+                !openerMethods.SelectMany(Calls).Any(c => new[] { "System.Diagnostics.Stopwatch", "System.DateTime", "System.DateTimeOffset", "System.Threading.Timer" }.Contains(c.DeclaringType.FullName)) &&
+                !openerMethods.SelectMany(m => m.Body.Instructions).Select(i => i.Operand).OfType<FieldReference>()
+                    .Any(field => new[] { "System.Double", "System.Double[]", "System.Single", "System.Single[]", "System.TimeSpan", "System.DateTime" }.Contains(field.FieldType.FullName)),
+            "delivered thumb overlap detection must have no elapsed-time input, clock call or timestamp state; native polling freshness remains a separate boundary");
         Check(Calls(Method(pad, "BeginPadLog")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadController" && c.Name == "BeginPadOpen") &&
                 Calls(Method("DiceMaster.LogUI.GameActionGate", "BeforeActionListeners")).Any(c => c.DeclaringType.FullName == pad && c.Name == "get_LogOpening"),
             "actual opening device identity and pre-Update queued action capture must reach their production controller/gate boundaries");

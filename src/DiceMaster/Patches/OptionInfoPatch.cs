@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using BepInEx;
 using DiceMaster.Config;
+using DiceMaster.EmbeddedTranslations;
 using DiceMaster.LiveLog;
 using DiceMaster.LuaParse;
 using Fungus;
@@ -70,7 +71,7 @@ internal static class OptionInfoPatch
 		}
 		if (!text.IsNullOrWhiteSpace())
 		{
-			string text2 = Regex.Replace(UiTextMapper.ApplyTranslations(text), "<.*?>", string.Empty);
+			string text2 = Regex.Replace(Display.TranslateLabel(UiTextMapper.ApplyTranslations(text)), "<.*?>", string.Empty);
 			text2 = Regex.Replace(text2, @"\s*[\r\n]+\s*", " / ");
 			if (text2.Length > 50)
 			{
@@ -271,7 +272,7 @@ internal static class OptionInfoPatch
 
 	private static void PrintToNarrativeLog(string message)
 	{
-		string text = Regex.Replace(message, "^\\s*$\\n|\\r", string.Empty, RegexOptions.Multiline).Trim();
+		string text = Regex.Replace(Display.TranslateLabel(UiTextMapper.ApplyTranslations(message)), "^\\s*$\\n|\\r", string.Empty, RegexOptions.Multiline).Trim();
 		if (!string.IsNullOrEmpty(text))
 		{
 			FungusManager instance = FungusManager.Instance;

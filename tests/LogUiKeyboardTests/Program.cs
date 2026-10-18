@@ -31,8 +31,9 @@ internal static class Program
         RendererStructuredConditionBlocks();
         RendererChoiceAndConditionReflow();
         RendererAutomaticScrollbars();
-        RendererMissionRefreshWording();
+        RendererRefreshWording();
         RendererRenderingBoundaries();
+        RendererLocalizedTitlesAndLiteralIdentities();
         LayoutGeometry();
         RendererViewportAndFocus();
         RendererCompactAndPointerScroll();
@@ -1200,7 +1201,7 @@ internal static class Program
             Check(GUILayout.LiteralLabels.Contains(row.Description), scenario + ": every choice body is drawn independently of selection");
             Check(GUILayout.LiteralLabels.Contains("원본 ID: " + row.RawId), scenario + ": every original choice ID remains available");
             string read = row.ReadState == LogReadState.Read ? "읽음" : row.ReadState == LogReadState.Unread ? "미독" : "읽음 정보 없음";
-            Check(GUILayout.LiteralLabels.Contains(read + " · 조회 정상"), scenario + ": every choice read/refresh state is displayed without opening detail");
+            Check(GUILayout.LiteralLabels.Contains(read), scenario + ": every choice keeps its story-read badge without redundant healthy retrieval wording");
             Check(GUILayout.Controls.Exists(control => control.Text == row.Description && control.VisibleRect.height > 0),
                 scenario + ": both short comparison bodies have visible pixels inside the viewport");
         }
@@ -1589,7 +1590,7 @@ internal static class Program
         finally { ConfigureLayout(saved, oldFont); Screen.width = oldWidth; Screen.height = oldHeight; }
     }
 
-    private static void RendererMissionRefreshWording()
+    private static void RendererRefreshWording()
     {
         Rect saved = ConfiguredRect();
         int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
@@ -1597,36 +1598,60 @@ internal static class Program
         {
             Screen.width = 1920; Screen.height = 1200;
             ConfigureLayout(new Rect(60, 50, 872, 960), 20);
-            var model = new LogModel();
-            LogItem healthy = Item("healthy", new object()); healthy.Title = "정상 미션 제목";
-            LogItem read = Item("read", new object()); read.ReadState = LogReadState.Read;
-            LogItem unread = Item("unread", new object()); unread.ReadState = LogReadState.Unread;
-            LogItem analyzed = Item("analyzed", new object()); analyzed.AnalysisStates.Add("Partial");
-            LogItem waiting = Item("waiting"); waiting.RefreshState = LogRefreshState.Waiting;
-            LogItem failed = Item("failed"); failed.RefreshState = LogRefreshState.ReadFailure; failed.RefreshStatus = "조회 실패 원인";
-            LogItem retained = Item("retained"); retained.RefreshState = LogRefreshState.RetainedFailure; retained.RefreshStatus = "이전 값 유지 원인"; retained.HasLastGood = true;
-            var renderer = MissionRenderer(model, new[] { healthy, read, unread, analyzed, waiting, failed, retained });
-            renderer.Handle(LogPadCommand.Activate);
-            Repaint(renderer);
-            Check(!GUILayout.Controls.Exists(control => control.Text.Contains("조회 정상", StringComparison.Ordinal)),
-                "mission list and selected detail omit redundant healthy retrieval wording");
-            var pane = GUILayout.ScrollViews[0];
-            Check(pane.Controls.Exists(control => control.Button && control.Text == "▶ " + healthy.Title),
-                "healthy mission caption has no trailing blank status row or separator");
-            Check(!GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && string.IsNullOrEmpty(control.Text)),
-                "healthy mission detail does not allocate a blank state label");
-            Check(pane.Controls.Exists(control => control.Button && control.Text.Contains(read.Id, StringComparison.Ordinal) && control.Text.EndsWith("읽음", StringComparison.Ordinal))
-                && pane.Controls.Exists(control => control.Button && control.Text.Contains(unread.Id, StringComparison.Ordinal) && control.Text.EndsWith("미독", StringComparison.Ordinal)),
-                "mission explicit read state remains visible without dangling join punctuation");
-            Check(pane.Controls.Exists(control => control.Button && control.Text == analyzed.Title + "\n추가 영향 가능")
-                && !pane.Controls.Exists(control => control.Button && control.Text.Contains("\n · ", StringComparison.Ordinal)),
-                "healthy mission analysis state begins directly with its explanation and no leading separator");
-            Check(pane.Controls.Exists(control => control.Button && control.Text.Contains(waiting.Id, StringComparison.Ordinal) && control.Text.Contains("설명 조회 대기", StringComparison.Ordinal))
-                && pane.Controls.Exists(control => control.Button && control.Text.Contains(failed.Id, StringComparison.Ordinal) && control.Text.Contains(failed.RefreshStatus, StringComparison.Ordinal))
-                && pane.Controls.Exists(control => control.Button && control.Text.Contains(retained.Id, StringComparison.Ordinal) && control.Text.Contains(retained.RefreshStatus, StringComparison.Ordinal)),
-                "mission waiting, failed and retained status explanations remain available");
-            Check(healthy.RefreshState == LogRefreshState.Healthy && failed.RefreshState == LogRefreshState.ReadFailure && retained.HasLastGood,
-                "mission healthy-label removal changes presentation without changing publication or reservation state");
+            foreach (string tab in new[] { "선택지", "조건", "이벤트", "미션" })
+            {
+                bool storyRead = tab == "선택지" || tab == "조건";
+                var model = new LogModel(); model.ResetContext(309);
+                LogItem healthy = Item("healthy", new object()); healthy.Title = "정상 " + tab + " 제목";
+                LogItem read = Item("read", new object()); read.ReadState = LogReadState.Read;
+                LogItem unread = Item("unread", new object()); unread.ReadState = LogReadState.Unread;
+                LogItem analyzed = Item("analyzed", new object()); analyzed.AnalysisStates.Add("Partial");
+                LogItem waiting = Item("waiting", new object()); waiting.RefreshState = LogRefreshState.Waiting;
+                LogItem failed = Item("failed", new object()); failed.RefreshState = LogRefreshState.ReadFailure; failed.RefreshStatus = "조회 실패 원인";
+                LogItem retained = Item("retained", new object()); retained.RefreshState = LogRefreshState.RetainedFailure; retained.RefreshStatus = "이전 값 유지 원인"; retained.HasLastGood = true;
+                Publish(model, tab, healthy, read, unread, analyzed, waiting, failed, retained);
+                var renderer = new LogRenderer(model, null, null);
+                renderer.Handle(LogPadCommand.None);
+                while (renderer.CurrentTab != tab) renderer.Handle(LogPadCommand.NextTab);
+                renderer.Handle(LogPadCommand.Activate);
+                Repaint(renderer);
+                Check(!GUILayout.Controls.Exists(control => control.Text.Contains("조회 정상", StringComparison.Ordinal)),
+                    tab + ": readable content, list and selected detail omit redundant healthy retrieval wording");
+                var pane = GUILayout.ScrollViews[0];
+                if (tab == "선택지")
+                {
+                    Check(pane.Controls.Exists(control => !control.Button && control.Text == "읽음 정보 없음")
+                        && pane.Controls.Exists(control => !control.Button && control.Text == "읽음")
+                        && pane.Controls.Exists(control => !control.Button && control.Text == "미독")
+                        && pane.Controls.Exists(control => !control.Button && control.Text == "읽음 정보 없음 · 추가 영향 가능"),
+                        "choice public comparison preserves unknown/read/unread story badges and analysis independently of healthy retrieval state");
+                }
+                else
+                {
+                    string healthyCaption = "▶ " + healthy.Title + (storyRead ? "\n읽음 정보 없음" : "");
+                    Check(pane.Controls.Exists(control => control.Button && control.Text == healthyCaption),
+                        tab + ": healthy caption keeps only applicable story-read information without a trailing blank status row");
+                    Check(!GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && string.IsNullOrEmpty(control.Text)),
+                        tab + ": healthy detail does not allocate a blank state label");
+                    Check(pane.Controls.Exists(control => control.Button && control.Text == read.Title + "\n읽음")
+                        && pane.Controls.Exists(control => control.Button && control.Text == unread.Title + "\n미독"),
+                        tab + ": explicit read state remains visible without dangling join punctuation");
+                    Check(pane.Controls.Exists(control => control.Button && control.Text == analyzed.Title + "\n" + (storyRead ? "읽음 정보 없음 · " : "") + "추가 영향 가능")
+                        && !pane.Controls.Exists(control => control.Button && control.Text.Contains("\n · ", StringComparison.Ordinal)),
+                        tab + ": healthy analysis explanation retains its context without a leading separator");
+                    if (!storyRead)
+                        Check(!GUILayout.Controls.Exists(control => control.Text.Contains("읽음 정보 없음", StringComparison.Ordinal)),
+                            tab + ": absent story-read mapping does not become an unknown-read badge in list or detail");
+                }
+                Check(pane.Controls.Exists(control => control.Text.Contains("설명 조회 대기", StringComparison.Ordinal))
+                    && pane.Controls.Exists(control => control.Text.Contains(failed.RefreshStatus, StringComparison.Ordinal))
+                    && pane.Controls.Exists(control => control.Text.Contains(retained.RefreshStatus, StringComparison.Ordinal)),
+                    tab + ": waiting, failed and retained status explanations remain available");
+                Check(healthy.RefreshState == LogRefreshState.Healthy && healthy.CanReserve
+                    && failed.RefreshState == LogRefreshState.ReadFailure && !failed.CanReserve
+                    && !waiting.CanReserve && retained.HasLastGood && !retained.CanReserve,
+                    tab + ": healthy-label removal preserves publication data and reservation eligibility");
+            }
         }
         finally { ConfigureLayout(saved, oldFont); Screen.width = oldWidth; Screen.height = oldHeight; }
     }
@@ -1676,6 +1701,139 @@ internal static class Program
             Check(summary.Contains("게시 실패 · 이전 값", StringComparison.Ordinal)
                 && (tab == "미션" ? summary.Contains("(예약 불가)", StringComparison.Ordinal) : !summary.Contains("예약", StringComparison.Ordinal)),
                 tab + ": failed publication explains retained data and mentions reservation only for tabs that support it");
+        }
+    }
+
+    private static void RendererLocalizedTitlesAndLiteralIdentities()
+    {
+        string[,] results =
+        {
+            { "成功", "성공" }, { "大成功", "대성공" }, { "失敗", "실패" }, { "大失敗", "대실패" },
+            { "正常", "일반" }, { "特殊", "특수" }, { "其他", "기타" }
+        };
+        int savedReservations = LogBridge.Reservations;
+        object savedTarget = LogBridge.LastTarget;
+        long savedContext = LogBridge.LastReservedContext;
+        string savedTab = LogBridge.LastReservedTab, savedId = LogBridge.LastReservedId;
+        try
+        {
+            for (int result = 0; result < results.GetLength(0); result++)
+            {
+                string originalTitle = "P_" + results[result, 0] + "_42";
+                string translatedTitle = "P_" + results[result, 1] + "_42";
+                foreach (string tab in new[] { "조건", "이벤트", "미션" })
+                    foreach (bool titleFallback in new[] { false, true })
+                    {
+                        const long context = 951;
+                        string identity = "P_" + results[result, 0] + "_7001";
+                        string raw = "P_" + results[result, 0] + "_9001<raw>";
+                        object target = new object();
+                        var row = new LogItem
+                        {
+                            Id = identity, RawId = raw, Title = titleFallback ? "  " : originalTitle,
+                            Text = titleFallback ? originalTitle : "별도 본문", Description = "실제 상세 설명", Target = target
+                        };
+                        var status = new LogItem
+                        {
+                            Id = "status", RawId = "P_" + results[result, 0] + "_9002<raw>",
+                            Title = originalTitle, IsStatusOnly = true
+                        };
+                        var model = new LogModel(); model.ResetContext(context);
+                        Publish(model, tab, row, status);
+                        var renderer = new LogRenderer(model, null, null);
+                        renderer.Handle(LogPadCommand.None);
+                        while (renderer.CurrentTab != tab) renderer.Handle(LogPadCommand.NextTab);
+                        renderer.Handle(LogPadCommand.Activate);
+                        Repaint(renderer);
+                        string scenario = tab + "/" + results[result, 0] + (titleFallback ? "/Text fallback" : "/Title");
+                        var list = GUILayout.ScrollViews[0];
+                        var detail = GUILayout.ScrollViews[1];
+                        Check(list.Controls.Exists(control => control.Button && control.Enabled && control.Text.Contains(translatedTitle, StringComparison.Ordinal))
+                            && !list.Controls.Exists(control => control.Button && control.Enabled && control.Text.Contains(originalTitle, StringComparison.Ordinal)),
+                            scenario + ": the selectable list title uses the same Korean display result as its detail");
+                        Check(detail.Controls.Exists(control => !control.Button && control.Text == translatedTitle),
+                            scenario + ": the selected detail title is localized");
+                        Check(detail.Controls.Exists(control => !control.Button && control.Text == "원본 ID: " + raw),
+                            scenario + ": detail raw identity remains literal, including markup characters");
+                        string escapedStatusRaw = status.RawId.Replace("<", "＜").Replace(">", "＞");
+                        Check(list.Controls.Exists(control => control.Button && !control.Enabled
+                            && control.Text.Contains(translatedTitle, StringComparison.Ordinal)
+                            && control.Text.Contains("원본 ID: " + escapedStatusRaw, StringComparison.Ordinal)),
+                            scenario + ": disabled information translates its title while preserving the raw identity embedded in its caption");
+                        Check(model.Tab(tab).SelectedId == identity && ReferenceEquals(model.Tab(tab).Selected.Target, target)
+                            && row.RawId == raw && row.Title == (titleFallback ? "  " : originalTitle)
+                            && row.Text == (titleFallback ? originalTitle : "별도 본문"),
+                            scenario + ": localization cannot mutate publication fields, selected identity or target");
+                        int before = LogBridge.Reservations;
+                        renderer.Handle(LogPadCommand.Activate);
+                        renderer.Handle(LogPadCommand.Activate);
+                        if (tab == "조건")
+                            Check(LogBridge.Reservations == before && !model.Tab(tab).ExecutionFocus,
+                                scenario + ": condition localization never creates a reservation control");
+                        else
+                            Check(LogBridge.Reservations == before + 1 && LogBridge.LastReservedContext == context
+                                && LogBridge.LastReservedTab == tab && LogBridge.LastReservedId == identity
+                                && ReferenceEquals(LogBridge.LastTarget, target),
+                                scenario + ": an actual renderer reservation retains the original context, tab, identity and target");
+                    }
+
+                foreach (string tab in new[] { "선택지", "조건", "이벤트", "미션" })
+                {
+                    string raw = "P_" + results[result, 0] + "_9003<raw>";
+                    var row = new LogItem { Id = "raw-only", RawId = raw, Title = null, Text = "  " };
+                    var model = new LogModel(); model.ResetContext(952); Publish(model, tab, row);
+                    var renderer = new LogRenderer(model, null, null); renderer.Handle(LogPadCommand.None);
+                    while (renderer.CurrentTab != tab) renderer.Handle(LogPadCommand.NextTab);
+                    if (tab != "선택지") renderer.Handle(LogPadCommand.Activate);
+                    Repaint(renderer);
+                    string escaped = raw.Replace("<", "＜").Replace(">", "＞");
+                    var list = GUILayout.ScrollViews[0];
+                    Check(list.Controls.Exists(control => control.Button == (tab != "선택지") && control.Text.Contains(escaped, StringComparison.Ordinal))
+                        && !list.Controls.Exists(control => control.Text.Contains("P_" + results[result, 1] + "_9003", StringComparison.Ordinal)),
+                        tab + "/" + results[result, 0] + ": an absent display title uses escaped raw identity without localizing it");
+                    if (tab != "선택지")
+                        Check(GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && control.Text == escaped),
+                            tab + "/" + results[result, 0] + ": detail raw-title fallback follows the same literal rule as the list");
+                }
+
+                foreach (bool textPreferred in new[] { false, true })
+                {
+                    var row = new LogItem
+                    {
+                        Id = "choice-localized", RawId = "P_" + results[result, 0] + "_9004<raw>",
+                        Title = textPreferred ? "별도 제목" : originalTitle,
+                        Text = textPreferred ? originalTitle : null, Description = "읽기 전용 선택지 비교"
+                    };
+                    var model = new LogModel(); model.ResetContext(953); Publish(model, "선택지", row);
+                    var renderer = new LogRenderer(model, null, null); renderer.Handle(LogPadCommand.None);
+                    Repaint(renderer);
+                    var body = GUILayout.ScrollViews[0];
+                    Check(body.Controls.Exists(control => !control.Button && control.Text == translatedTitle)
+                        && !body.Controls.Exists(control => control.Button),
+                        "선택지/" + results[result, 0] + (textPreferred ? "/Text" : "/Title fallback") + ": read-only headings translate without introducing selection");
+                    Check(body.Controls.Exists(control => !control.Button && control.Text == "원본 ID: " + row.RawId)
+                        && model.Tab("선택지").SelectedId == null,
+                        "선택지/" + results[result, 0] + ": original identity remains literal and the card remains unselected");
+                }
+            }
+
+            foreach (string tab in new[] { "선택지", "조건", "이벤트", "미션" })
+            {
+                var row = new LogItem { Id = "null-display", RawId = null, Title = null, Text = null };
+                var model = new LogModel(); model.ResetContext(954); Publish(model, tab, row);
+                var renderer = new LogRenderer(model, null, null); renderer.Handle(LogPadCommand.None);
+                while (renderer.CurrentTab != tab) renderer.Handle(LogPadCommand.NextTab);
+                if (tab != "선택지") renderer.Handle(LogPadCommand.Activate);
+                Repaint(renderer);
+                Check(row.RawId == null && row.Title == null && row.Text == null
+                    && (tab == "선택지" ? model.Tab(tab).SelectedId == null : model.Tab(tab).SelectedId == row.Id),
+                    tab + ": null display fields render safely without rewriting source data or selection identity");
+            }
+        }
+        finally
+        {
+            LogBridge.Reservations = savedReservations; LogBridge.LastTarget = savedTarget;
+            LogBridge.LastReservedContext = savedContext; LogBridge.LastReservedTab = savedTab; LogBridge.LastReservedId = savedId;
         }
     }
 

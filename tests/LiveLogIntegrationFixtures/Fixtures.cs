@@ -227,6 +227,7 @@ namespace DiceMaster
             public static bool Throw;
             public static string Translate(string value)
             { if (Throw) throw new InvalidOperationException("fixture translation failure"); return value; }
+            public static string TranslateLabel(string value) => Translate(value);
         }
     }
     public static class Probe { public static int ParserEntries; }

@@ -67,9 +67,40 @@ namespace Mortal.Story
 {
     public class DiceMenuDialog : UnityEngine.Component { public int _currentRandomValue; }
 }
-namespace BepInEx { public static class Paths { public static string CachePath { get; set; } = "/tmp"; } }
+namespace Fungus
+{
+    // Capture the game-owned narrative sink; its text is produced by copied mod IL.
+    public class NarrativeLogEntry { public string name; public string text; }
+    public class NarrativeLog : UnityEngine.Object
+    {
+        public readonly System.Collections.Generic.List<NarrativeLogEntry> Entries = new System.Collections.Generic.List<NarrativeLogEntry>();
+        public void AddLine(NarrativeLogEntry entry) => Entries.Add(entry);
+    }
+    public class FungusManager : UnityEngine.Object
+    {
+        public static FungusManager Instance { get; set; } = new FungusManager();
+        public NarrativeLog NarrativeLog { get; set; } = new NarrativeLog();
+    }
+}
+namespace BepInEx
+{
+    public static class Paths
+    {
+        public static string CachePath { get; set; } = "/tmp";
+        // UiTextMapper's optional game-table boundary must not read the host game.
+        public static string GameRootPath { get; set; } = "/__dicemaster_source_behavior_no_game_tables__";
+    }
+}
 namespace DiceMaster
 {
+    public static class OptionInfoPatch
+    {
+        public static int DisplayRefreshDepth;
+        // Locale lookup is a game boundary; no locale tables are supplied here.
+        private static string GetLocalizedSystemText(string key, string defaultValue) => defaultValue;
+    }
+    // The mapper's optional dynamic flag-name lookup remains a game boundary.
+    public static class DataHelper { public static string GetFlagName(string id) => id; }
     public class DicePlugin
     {
         public static DicePlugin Instance { get; set; } = new DicePlugin();

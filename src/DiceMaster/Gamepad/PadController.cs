@@ -102,8 +102,6 @@ namespace DiceMaster.Gamepad
         private int pendingOpen = -1;
         private readonly bool[] openerAwaitNeutral = { true, true, true, true };
         private readonly ushort[] openerFirst = new ushort[4];
-        private readonly double[] openerStarted = new double[4];
-        public const double LogOpenChordSeconds = 0.30;
 
         public bool LogOpening { get { lock (gate) return openerOpening; } }
 
@@ -149,12 +147,12 @@ namespace DiceMaster.Gamepad
             pendingOpen = -1; openerOpening = false;
             for (int i = 0; i < 4; i++)
             {
-                openerFirst[i] = 0; openerStarted[i] = 0; openerAwaitNeutral[i] = true;
+                openerFirst[i] = 0; openerAwaitNeutral[i] = true;
                 if (requireGameNeutral) slots[i].AwaitNeutral = true;
             }
         }
 
-        private void ObserveOpener(uint index, PadState raw, double time)
+        private void ObserveOpener(uint index, PadState raw)
         {
             if (!openerEnabled || !openerFocused || openerOpen || openerOpening || logCapture) return;
             if (openerAwaitNeutral[index])
@@ -166,7 +164,7 @@ namespace DiceMaster.Gamepad
             bool invalid = (raw.Buttons & ~PadButtons.ThumbClicks) != 0
                 || raw.LeftTrigger > 30 || raw.RightTrigger > 30
                 || !PadStick.IsNeutral(raw.LeftX, raw.LeftY) || !PadStick.IsNeutral(raw.RightX, raw.RightY);
-            if (invalid || openerFirst[index] != 0 && time - openerStarted[index] >= LogOpenChordSeconds)
+            if (invalid)
             {
                 openerFirst[index] = 0; openerAwaitNeutral[index] = true;
                 return;
@@ -179,7 +177,6 @@ namespace DiceMaster.Gamepad
             if (openerFirst[index] == 0)
             {
                 openerFirst[index] = thumbs;
-                openerStarted[index] = time;
             }
             else if ((thumbs & openerFirst[index]) == 0)
             {
@@ -188,18 +185,20 @@ namespace DiceMaster.Gamepad
                 return;
             }
             if (thumbs != PadButtons.ThumbClicks) return;
+            // The first click may be held indefinitely. Only overlap matters;
+            // ordering, packet count and elapsed time do not gate this chord.
             pendingOpen = (int)index; openerOpening = true;
             foreach (Slot slot in slots) slot.AwaitNeutral = true;
         }
 
         // Only an actual game caller invokes this path. UI raw polling and the
         // compatibility Filter method cannot create or advance an open request.
-        public PadState FilterGame(uint index, PadState state, bool windowActive, double time)
+        public PadState FilterGame(uint index, PadState state, bool windowActive)
         {
             if (index >= 4) return state;
             lock (gate)
             {
-                ObserveOpener(index, state, time);
+                ObserveOpener(index, state);
                 return Filter(index, state, windowActive);
             }
         }

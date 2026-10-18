@@ -31,8 +31,7 @@ namespace DiceMaster.Gamepad
                 if (error == 0 && NativeXInput.RawDepth == 0 && NativeXInput.CallbackDepth == 1)
                 {
                     Owner.ObserveGamePoll();
-                    state = Owner.Filter.FilterGame(user, state, Owner.WindowActive,
-                        (double)Stopwatch.GetTimestamp() / Stopwatch.Frequency);
+                    state = Owner.Filter.FilterGame(user, state, Owner.WindowActive);
                 }
                 else if (error != 0 && NativeXInput.RawDepth == 0 && NativeXInput.CallbackDepth == 1)
                     Owner.Filter.Disconnected(user);

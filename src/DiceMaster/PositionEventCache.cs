@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DiceMaster.EmbeddedTranslations;
 using DiceMaster.LiveLog;
 using DiceMaster.LuaParse;
 using Mortal.Core;
@@ -48,17 +49,17 @@ public class PositionEventCache
 	{
 		if (eventData == null)
 		{
-			return GetLocalizedSystemTextForCache("System/Event/UnknownEventName", "(알수없는 이벤트명)", "시스템_이벤트명");
+			return Display.TranslateLabel(GetLocalizedSystemTextForCache("System/Event/UnknownEventName", "(알수없는 이벤트명)", "시스템_이벤트명"));
 		}
 		if (eventKeyCache.TryGetValue(eventData, out var value))
 		{
-			return value;
+			return Display.TranslateLabel(value);
 		}
 		string key = positionEventDataCache.FirstOrDefault((KeyValuePair<string, List<PositionEventData>> p) => p.Value.Contains(eventData)).Key;
 		string eventName = DataHelper.GetEventName(eventData);
 		value = key + "이벤트: " + eventName;
 		eventKeyCache[eventData] = value;
-		return value;
+		return Display.TranslateLabel(value);
 	}
 
 	public string GetPositionEventDesc(PositionEventData eventData)
