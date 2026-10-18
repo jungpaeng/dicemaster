@@ -1,0 +1,65 @@
+{
+  "description": "Read-only compilation references for alpha.3 source reconstruction; no game binaries are stored here. Hashes pin the supplied game/loader versions. Framework references come from the net48 NuGet package, not the game.",
+  "files": {
+    "Mortal_Data/Managed/UnityEngine.CoreModule.dll": {
+      "bytes": 1167792,
+      "sha256": "33435ff1025f34c7ac661477dbcaa329af7c5d7ae2bac81bcb8b0d636ca07aee"
+    },
+    "Mortal_Data/Managed/UnityEngine.AssetBundleModule.dll": {
+      "bytes": 33704,
+      "sha256": "d54754d60d8f66a821227691deaab97df902d03cd2037aa2c45be2772e268775"
+    },
+    "Mortal_Data/Managed/Mortal.Core.dll": {
+      "bytes": 343552,
+      "sha256": "0c20ee36782666f3ab70ec8889068bdf230acc2d630446ea1db551836866e8fa"
+    },
+    "Mortal_Data/Managed/Mortal.Story.dll": {
+      "bytes": 115712,
+      "sha256": "ee9139a5e4631dc275b80cc3ff6a81a4959f3c908a3fe751e778a42350372249"
+    },
+    "Mortal_Data/Managed/OBB.Framework.dll": {
+      "bytes": 12800,
+      "sha256": "bc6ebc4bdf1df52e74fafa687d66112bf94808c1ecd25b80d3d3f3913c93175f"
+    },
+    "Mortal_Data/Managed/UnityEngine.UI.dll": {
+      "bytes": 233472,
+      "sha256": "9c24bd42864c5de3b3f51fea9c213f392e51082f3f58e319d64fa0bc240771cf"
+    },
+    "Mortal_Data/Managed/UnityEngine.IMGUIModule.dll": {
+      "bytes": 171952,
+      "sha256": "e84bcf2d25a2bc56b3f31361009b46509482da06279f6780dca8cec1fb91db12"
+    },
+    "Mortal_Data/Managed/Mortal.Free.dll": {
+      "bytes": 32256,
+      "sha256": "0abc19100f216515bca88975e52051afce11955a8439ffacf4ff02118fd27920"
+    },
+    "Mortal_Data/Managed/Fungus.dll": {
+      "bytes": 1117184,
+      "sha256": "bcb6d47eb31dedc5d23d0da281e0835af0f939f30b64a39aae7d5f6dab96cad2"
+    },
+    "Mortal_Data/Managed/UnityEngine.TextRenderingModule.dll": {
+      "bytes": 38832,
+      "sha256": "f63a6813df206e699f7eb44b29c9940affef17d3f464c23cde4147986a59201a"
+    },
+    "Mortal_Data/Managed/UnityEngine.InputLegacyModule.dll": {
+      "bytes": 36784,
+      "sha256": "f98037d0db9813beeecbf28297d99003875d2d050ae128e3fa0c3193559d918a"
+    },
+    "BepInEx/core/0Harmony.dll": {
+      "bytes": 263168,
+      "sha256": "93c0a24085babf49d8478b28b8271217a76dd02a5db68794e222baaa3ce6f2fb"
+    },
+    "BepInEx/core/BepInEx.Core.dll": {
+      "bytes": 128512,
+      "sha256": "0c3ae15668f9aeff35feb05d29a65a249c025c7b9418d7149404ee8f234b866e"
+    },
+    "BepInEx/core/BepInEx.Unity.Mono.dll": {
+      "bytes": 34816,
+      "sha256": "f1f0cdc821a6f7d824a4a027950fae95e12f7de12219b5d0f57f3ae875a935c8"
+    },
+    "Mortal_Data/Managed/UnityEngine.dll": {
+      "bytes": 103848,
+      "sha256": "057b2cd09b7001a2fb93c6362206253616dd5d2b15e918f139e84cbaacbaddb5"
+    }
+  }
+}

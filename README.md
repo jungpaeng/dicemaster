@@ -3,9 +3,11 @@
 활협전의 선택지 결과를 미리 확인하고 주사위 판정값을 직접 지정할 수 있는 DiceMaster 수정 배포본입니다.
 기존 모드를 기반으로 한국어 표시를 정리하고, Xbox/XInput 패드의 십자키·왼쪽 스틱 조정을 추가했습니다.
 
-**[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md)
+**[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드 후보](docs/SOURCE-BUILD.md)
 
-현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. 사용자가 게임 RNG와 분리된 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 화면에 부가 표기를 붙이지 않고, 모드 전용 `System.Random`으로 난수를 생성해 숫자와 조건 색상을 같은 평가 결과에서 만듭니다. 실제 게임 판정의 예측값은 아닙니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·두 파일 로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록과 남은 검증 범위는 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 구분해 기록합니다.
+현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 C# 소스·리소스 복원과 별도 소스 빌드 후보 검증입니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 아래 게시 DLL로 고정합니다. 일반 소스 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 기존 기본 패치 빌드·배포 DLL은 보존하며, 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 빌드를 전환하거나 이슈 #3을 완료로 처리하지 않습니다. 이슈 #2의 기능 확장은 포함하지 않습니다. 명령·검사 범위·후보 식별은 [전체 소스 빌드 안내](docs/SOURCE-BUILD.md)에 기록합니다.
+
+다음은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. 사용자가 게임 RNG와 분리된 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 화면에 부가 표기를 붙이지 않고, 모드 전용 `System.Random`으로 난수를 생성해 숫자와 조건 색상을 같은 평가 결과에서 만듭니다. 실제 게임 판정의 예측값은 아닙니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·두 파일 로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록과 남은 검증 범위는 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 구분해 기록합니다.
 
 **기능 완료·정식 Release 공개는 보류합니다.** [`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 prerelease로 게시하고 각각 익명 공개 다운로드·배포 커밋 바이트 일치를 검증했습니다. 기존 Latest `v1.0.2`는 유지합니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다.
 
@@ -97,8 +99,9 @@ prerelease 파일이 게시되었어도 현재 Windows PC의 후보 설치·실�
 
 ## 개발 및 빌드
 
-추가한 패드 지원 소스와 로그 갱신 패치·테스트·DLL 통합 도구는 `development/`에서 관리합니다.
-Python 3와 .NET 8 SDK를 준비한 뒤 저장소 루트에서 실행합니다.
+전체 모드 소스와 기존 Gamepad·LiveLog 소스, 검사·빌드 도구는 `development/`에서 관리합니다. [별도 전체 소스 후보](docs/SOURCE-BUILD.md)는 Python 3, .NET 8 SDK와 읽기 전용 게임/로더 참조로 빌드합니다. 후보는 `development/releases/source-candidate/`에 생성하며 저장소 배포 DLL을 교체하지 않습니다.
+
+아래는 전환 전까지 보존하는 **기존 기본 패치 빌드**의 별도 출력 예시입니다. Python 3와 .NET 8 SDK를 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```sh
 python3 development/tools/build-log-refresh.py \

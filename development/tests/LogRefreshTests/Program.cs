@@ -69,6 +69,26 @@ static class LogRefreshTests
     static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
     static MethodDefinition Find(ModuleDefinition module, string owner, string name) => module.GetType(owner).Methods.Single(m => m.Name == name);
     static bool Calls(MethodDefinition method, string owner, string name) => method.Body.Instructions.Any(i => i.Operand is MethodReference called && called.DeclaringType.FullName == owner && called.Name == name);
+    static bool HasPreviewGuard(MethodDefinition method)
+    {
+        var code = method.Body.Instructions.Where(instruction => instruction.OpCode != OpCodes.Nop).ToArray();
+        bool Depth(Instruction instruction) => instruction.OpCode == OpCodes.Ldsfld && instruction.Operand is FieldReference field &&
+            field.DeclaringType.FullName == "DiceMaster.OptionInfoPatch" && field.Name == "DisplayRefreshDepth";
+        // An empty old Lua prefix has no gameplay side effects. Roslyn emits a
+        // read/pop for its empty if block; the injected assembly uses two rets.
+        if (method.Name == "LuaEnvironment_LoadLuaFunction_Prefix" &&
+            (code.Length == 1 && code[0].OpCode == OpCodes.Ret ||
+             code.Length == 3 && Depth(code[0]) && code[1].OpCode == OpCodes.Pop && code[2].OpCode == OpCodes.Ret)) return true;
+        if (code.Length < 4 || !Depth(code[0]) || code.Count(Depth) != 1) return false;
+        // Both encodings return immediately for every nonzero depth. Check the
+        // exact branch destination as well as its polarity, including short IL.
+        if (code[1].OpCode == OpCodes.Brfalse || code[1].OpCode == OpCodes.Brfalse_S)
+            return code[2].OpCode == OpCodes.Ret && ReferenceEquals(code[1].Operand, code[3]);
+        if (code[1].OpCode == OpCodes.Brtrue || code[1].OpCode == OpCodes.Brtrue_S)
+            return code[1].Operand is Instruction target && target.OpCode == OpCodes.Ret &&
+                ReferenceEquals(target, code[^1]);
+        return false;
+    }
     static int Main(string[] args)
     {
         if (args.Length != 2) throw new ArgumentException("Usage: LogRefreshTests DiceMaster.dll Fixtures.dll");
@@ -86,9 +106,7 @@ static class LogRefreshTests
             "DiceMaster.LiveLog.LogBridge", "CompleteLua"), "Successful Lua boundary missing");
         foreach (var name in new[] { "LuaEnvironment_LoadLuaFunction_Prefix", "PrefixExecuteConditionResult", "PrefixExecuteSwitchResult", "PrefixCheckMission", "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" })
         {
-            var body = Find(module, "DiceMaster.OptionInfoPatch", name).Body.Instructions;
-            Check(body[0].OpCode == OpCodes.Ldsfld && ((FieldReference)body[0].Operand).Name == "DisplayRefreshDepth" &&
-                body[1].OpCode == OpCodes.Brfalse && body[2].OpCode == OpCodes.Ret, "Missing preview guard: " + name);
+            Check(HasPreviewGuard(Find(module, "DiceMaster.OptionInfoPatch", name)), "Missing preview guard: " + name);
         }
         var update = Find(module, "DiceMaster.DicePlugin", "Update");
         Check(update.Body.Instructions.Count(i => i.Operand is MethodReference r && r.Name == "RefreshLiveLogDisplay") == 1, "Live hook missing or duplicated");

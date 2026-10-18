@@ -1,0 +1,4 @@
+# Keep source recovery portable and native embedded resources byte-exact.
+development/**/*.cs text eol=lf
+development/tools/SourceRecovery/*.template text eol=lf
+development/src/DiceMaster.Gamepad/native/* -text

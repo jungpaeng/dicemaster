@@ -1,6 +1,6 @@
 # prerelease 게시와 정식 Release 조건
 
-[사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [prerelease 설명](ISSUE-1-RELEASE-DRAFT.md)
+[사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [prerelease 설명](ISSUE-1-RELEASE-DRAFT.md)
 
 사용자가 모드 전용 독립 난수의 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. 실제 게임 판정의 예측값이 아니라는 의미는 문서·게시 설명에 기록합니다. 최종 자동 검사·파일·로컬 ZIP 검증과 새 prerelease 게시·익명 공개 다운로드 검증을 마쳤습니다. 기존 수치를 승계하지 않습니다.
 
@@ -9,6 +9,21 @@
 **[`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 2026-10-18 21:08:36 KST에 게시하고 공개 다운로드 검증을 마쳤습니다.** GitHub 상태는 `draft=false`, `prerelease=true`입니다. 이 게시로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
 
 현재 Windows PC는 기존 파일·정보 읽기만 허용되어 있으며 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. prerelease 게시 승인은 이 PC에서의 게임 실행 승인이 아닙니다. 실행을 요청하거나 수행하지 않습니다.
+
+## 이슈 #3 전체 소스 후보의 전환 조건
+
+전체 소스 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`이며 기준 DLL SHA-256은 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. [전체 소스 빌드](SOURCE-BUILD.md)는 별도 로컬 후보 DLL과 두 파일 ZIP만 만듭니다. 새 버전·태그·게시 일정은 정하지 않았으며 최초 로컬 작업 이후 소스 변경의 commit·push만 별도 사용자 지시로 승인받았습니다. 태그 생성·Prerelease/Release 게시·이슈 종료는 승인되지 않았습니다.
+
+후보를 기본 개발·배포 경로로 바꾸려면 같은 후보 식별값으로 다음 증거를 모두 확보해야 합니다.
+
+- 기존 모드 DLL 없이 새 소스 빌드·ZIP 생성, 기존 자동 검사 및 기준과의 동작·메타데이터·후킹·native ABI·8개 내장 리소스 비교 통과
+- 향후 별도 승인 후 사용자가 기록한 Windows 설치·설정 유지·네 탭/UI/번역·주사위/패드·Harmony/native·로그·난수·수명주기 확인
+- 게임 DLL·게임 소스가 저장소와 ZIP에 없고 ZIP이 설정·새 DLL 두 파일만 포함한다는 확인
+- 기본 명령·문서·산출물 생성 경로를 전환하고 이전 기본 빌드·배포 DLL로 복구할 수 있다는 확인
+
+Windows 설치·실행은 현재 수행하거나 요청하지 않습니다. 자동 검사만 통과한 후보는 이슈 #3 완료나 기본 전환의 근거가 되지 않습니다. 이슈 #1의 알려진 제한과 미완료 조건, 이슈 #2의 기능 확장은 별도로 유지합니다. 과거 prerelease 게시 승인은 새 후보 게시나 Windows 실행 승인이 아닙니다.
+
+전환 전 복구는 후보 출력 디렉터리를 다시 만들거나 별도로 보관하고 기존 기본 패치 빌드·`plugins/DiceMaster/DiceMaster.dll`을 그대로 사용하는 것입니다. 참조 폴더나 기존 배포 파일을 덮어쓰지 않습니다. 향후 승인된 설치 뒤 문제가 생기면 게임을 종료하고 보관한 alpha.3 DLL을 복원하며 기존 설정과 세이브를 유지합니다. 이 실제 Windows 업데이트·롤백은 아직 확인하지 않았습니다. v1.0.2의 선택지 결과 소실, 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기하는 alpha.3의 알려진 제한은 소스 복원으로 해결했다고 표시하지 않습니다.
 
 ## alpha.3 게시 기록
 

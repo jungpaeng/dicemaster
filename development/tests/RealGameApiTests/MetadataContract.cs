@@ -122,7 +122,10 @@ static partial class RealGameApiTests
             oldLuaInstructions[0].Operand is FieldReference guard && guard.DeclaringType.FullName == patch.FullName && guard.Name == "DisplayRefreshDepth" &&
             oldLuaInstructions[1].OpCode == OpCodes.Brfalse && oldLuaInstructions[1].Operand == oldLuaInstructions[3] &&
             oldLuaInstructions[2].OpCode == OpCodes.Ret && oldLuaInstructions[3].OpCode == OpCodes.Ret;
-        Check(emptyOldLua || guardedEmptyOldLua, "old Lua prefix is a no-op with optional preview guard");
+        bool compiledEmptyOldLua = oldLuaInstructions.Length == 3 && oldLuaInstructions[0].OpCode == OpCodes.Ldsfld &&
+            oldLuaInstructions[0].Operand is FieldReference read && read.DeclaringType.FullName == patch.FullName && read.Name == "DisplayRefreshDepth" &&
+            oldLuaInstructions[1].OpCode == OpCodes.Pop && oldLuaInstructions[2].OpCode == OpCodes.Ret;
+        Check(emptyOldLua || guardedEmptyOldLua || compiledEmptyOldLua, "old Lua prefix is a no-op with optional preview guard");
         foreach (var item in new[] { ("LiveLog_LuaStage_Prefix", "StageLua"), ("LiveLog_LuaComplete_Postfix", "CompleteLua") })
         {
             var method = hooks.Single(hook => hook.Name == item.Item1);

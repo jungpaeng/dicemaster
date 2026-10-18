@@ -1,18 +1,18 @@
 # 개발 안내
 
-[사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
+[사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
 ## 개발 범위
 
-현재 작업은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 숫자 갱신 후속 구현입니다. 사용자가 모드 전용 `System.Random`으로 계산하고 UI 부가 문구를 붙이지 않는 변경과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명 안에서 결과를 재사용해 숫자·조건 색상·이벤트 확률 설명을 일치시키며, 게임 RNG와 조건 실행 카운터는 변경하지 않습니다. 실제 게임의 미래 판정을 예측하는 기능은 아닙니다. 새 소스의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 관리 동작 3,914개·메타데이터 1,011개·통합 134개를 최초/반복에서, 최종 패드 525,430개를 통과했고 11개 프로젝트의 MSBuild 경고·오류는 0입니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록 문서 후속 커밋은 위 태그·ZIP의 기준을 바꾸지 않습니다. [검증 기록](ISSUE-1-VALIDATION.md)에 파일 해시·검사 범위를 남기고 이전 버전 결과를 승계하지 않습니다.
+현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 모드 C#·리소스 복원과 별도 전체 소스 빌드 후보입니다. 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 전체 소스 구성·재생성·빌드·검사·실패 처리와 남은 검증은 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 기본 패치 빌드와 배포 DLL은 유지합니다.
+
+다음은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 숫자 갱신 후속 구현입니다. 사용자가 모드 전용 `System.Random`으로 계산하고 UI 부가 문구를 붙이지 않는 변경과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명 안에서 결과를 재사용해 숫자·조건 색상·이벤트 확률 설명을 일치시키며, 게임 RNG와 조건 실행 카운터는 변경하지 않습니다. 실제 게임의 미래 판정을 예측하는 기능은 아닙니다. 새 소스의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 관리 동작 3,914개·메타데이터 1,011개·통합 134개를 최초/반복에서, 최종 패드 525,430개를 통과했고 11개 프로젝트의 MSBuild 경고·오류는 0입니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록 문서 후속 커밋은 위 태그·ZIP의 기준을 바꾸지 않습니다. [검증 기록](ISSUE-1-VALIDATION.md)에 파일 해시·검사 범위를 남기고 이전 버전 결과를 승계하지 않습니다.
 
 [`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST에 배포 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 게시했습니다. 두 prerelease의 공개 다운로드·ZIP·DLL 바이트 일치를 검증했으며 각 이력을 보존합니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능·이슈 완료로 표시하거나 정식 Release를 공개하지 않습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했지만 runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다.
 
-이 저장소는 기존 DiceMaster DLL을 기반으로 유지보수합니다.
-`development/`에는 패드 지원 소스, 로그 표시 엔진·게임 경계 어댑터, DLL 패치 도구와 동작 검사가 있습니다.
-선택지 분석과 기존 번역 기능의 전체 C# 소스를 새로 빌드하는 프로젝트는 아닙니다.
+전환 전 **기존 기본 빌드**는 `plugins/DiceMaster/DiceMaster.dll`에 패드 확장·로그 갱신 패치를 적용합니다. 아래 기존 패치 도구 안내는 비교·복구 경로로 보존합니다. 별도 소스 빌드는 선택지 파서·번역·UI를 포함한 전체 모드를 관리 소스에서 컴파일하며 기존 모드 DLL을 읽거나 패치하지 않습니다.
 
-빌드는 현재 `plugins/DiceMaster/DiceMaster.dll`을 입력으로 사용합니다. 패드 확장과 로그 갱신 패치를 각각 적용하며 다른 기능을 유지하는 방식입니다.
+자동 검사와 사용자 Windows 확인을 모두 통과하기 전에는 기본 빌드를 바꾸지 않습니다. 이슈 #2 확장, 이슈 #1 미완료 조건 해결, Windows 설치·게임 실행, 태그·Release 게시·이슈 종료는 이번 작업에 포함하지 않습니다. 소스 변경의 commit·push는 후속 사용자 지시로 별도 승인받았습니다.
 
 ## 파일 구성
 
@@ -22,12 +22,14 @@ CHANGELOG.md                           # 배포 버전별 변경 이력
 docs/
 ├── DEVELOPMENT.md                     # 개발·빌드·검증
 ├── RELEASING.md                       # Release 등록 절차와 공개 조건
+├── SOURCE-BUILD.md                    # 이슈 #3 복원·별도 후보 빌드·검증·전환 조건
 ├── ISSUE-1-VALIDATION.md               # 요구사항·자동 검사·Windows 확인 기록
 ├── ISSUE-1-RELEASE-DRAFT.md            # alpha.3 상태와 alpha.2·alpha.1 게시 이력
 ├── GAME-API-AUDIT.md                   # 모드·실제 API·검증 범위의 분석 개요
 ├── REAL-GAME-API-FINDINGS.md           # 수신 게임 DLL의 표시 API 정적 분석
 └── GAME-LIFECYCLE-ANALYSIS.md           # 실제 새 게임·로드·Lua 경계 분석
 development/
+├── src/DiceMaster/                    # alpha.3에서 복원한 전체 모드 프로젝트·리소스
 ├── src/DiceMaster.Gamepad/
 │   ├── PadController.cs                # 조정·반복·입력 필터·안내 문구
 │   ├── NativeXInput.cs                 # Windows XInput·MinHook 연결
@@ -54,7 +56,12 @@ development/
 │   ├── SafeEvaluationHooks.cs         # 모드 설명 호출을 순수 평가에 연결
 │   └── LifecycleHooks.cs              # 실제 SaveSystem·씬·Lua 경계 연결
 ├── tools/Shared/                      # DLL payload 복사 도구
-├── tools/build-gamepad.py              # 빌드·통합·검증 실행
+├── tools/build-source.py               # 별도 전체 소스 빌드 후보 생성
+├── tools/verify-source.py              # 기준과 후보의 메타데이터·동작 비교
+├── tools/verify-clean-source.py        # 기존 모드 DLL 없는 격리 빌드
+├── tools/verify-source-failures.py     # 실패 진단·기존 산출물 보존 검사
+├── tools/recover-source.py            # 고정 DLL에서 최초 복원 재현
+├── tools/build-gamepad.py              # 기존 패치 빌드·통합·검증 실행
 ├── tools/build-log-refresh.py          # 로그 패치·검증 실행
 └── releases/                          # 생성한 배포 파일, Git 제외
 ```
@@ -73,7 +80,9 @@ DLL 통합 도구와 테스트는 .NET 8을 대상으로 하며, 통합 도구�
 
 모드의 실제 패드 실행 대상은 Windows/XInput입니다. 다른 OS에서 입력 로직을 빌드·검증하는 것과 Windows 게임에서 실행하는 것은 별도의 확인 항목입니다.
 
-## 빌드 방법
+## 기존 기본 패치 빌드 방법
+
+전체 소스 후보의 일반 빌드와 검사는 [SOURCE-BUILD.md](SOURCE-BUILD.md)를 따릅니다. 아래 기존 패치 명령은 이전 공정을 재현하거나 비교·복구할 때 사용합니다. 자동 검사와 사용자 Windows 확인이 모두 완료되기 전에는 소스 후보로 기본 경로를 바꾸지 않습니다.
 
 아래 명령은 macOS의 로컬 개발 후보 생성·검사 예시이며 Windows 게임 설치·실행이나 배포가 아닙니다. 읽기 전용 수신 참조는 입력으로만 사용합니다.
 
@@ -133,7 +142,7 @@ LB를 먼저 놓아도 조정에 사용한 B·방향키는 해당 버튼을 놓�
 
 ## 기존 기능의 구현 위치
 
-다음 기능은 기존 DLL 안에 있습니다. 아래 이름은 DLL을 분석할 때의 탐색 기준입니다.
+다음 기능은 전체 소스 후보에서 `development/src/DiceMaster/`로 복원합니다. 아래 이름은 기준 DLL과 복원 소스를 대조할 때의 탐색 기준입니다. 기존 기본 패치 빌드는 같은 기능이 들어 있는 DLL을 계속 입력으로 사용합니다.
 
 | 기능 | 주요 클래스·메서드 |
 |---|---|
@@ -227,6 +236,8 @@ python3 development/tools/build-log-refresh.py \
 자동 검사를 통과한 뒤 기본 출력으로 빌드하면 저장소 실행용 DLL을 갱신합니다. 패드 빌드와 로그 패치는 서로의 변경을 유지해야 하며, 반복 적용·두 도구의 교차 실행 후에도 갱신 호출과 패드 호출이 중복되지 않아야 합니다.
 
 ## 검증
+
+전체 소스 후보는 새 DLL을 기존 관리 코드·실제 파서 통합·게임 API 메타데이터·수명주기·패드 검사에 연결합니다. 컴파일러가 바꿀 수 있는 메서드 IL 지문과 보존해야 하는 동작·메타데이터·후킹·native ABI·리소스 계약을 구분한 검사와 이번 실행 결과는 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 아래 과거 패치 검사 기록은 새 소스 후보의 통과 기록으로 승계하지 않습니다.
 
 ### 패드 빌드 검사
 

@@ -1,0 +1,90 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>DiceMaster</AssemblyName>
+    <RootNamespace>DiceMaster</RootNamespace>
+    <LangVersion>12.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
+    <DebugType>none</DebugType>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
+    <!-- The reviewed managed sources are the only definitions of these types. -->
+    <Compile Include="../DiceMaster.Gamepad/*.cs" Link="Gamepad/%(Filename)%(Extension)" />
+    <Compile Include="../DiceMaster.LiveLog/*.cs" Link="LiveLog/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Resources/DiceMaster.Assets.mortaldice" LogicalName="DiceMaster.Assets.mortaldice" Access="Public" />
+    <EmbeddedResource Include="Resources/DiceMaster.Translations.*" LogicalName="%(Filename)%(Extension)" Access="Private" />
+    <EmbeddedResource Include="../DiceMaster.Gamepad/native/MinHook.x64.dll" LogicalName="DiceMaster.Gamepad.Native.MinHook.x64.dll" Access="Private" />
+    <EmbeddedResource Include="../DiceMaster.Gamepad/native/MinHook.x86.dll" LogicalName="DiceMaster.Gamepad.Native.MinHook.x86.dll" Access="Private" />
+    <EmbeddedResource Include="../DiceMaster.Gamepad/native/MinHook.LICENSE.txt" LogicalName="DiceMaster.Gamepad.Native.LICENSE.txt" Access="Private" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mortal.Core">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/Mortal.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mortal.Story">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/Mortal.Story.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Mortal.Free">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/Mortal.Free.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="OBB.Framework">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/OBB.Framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Fungus">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/Fungus.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(GameReferences)/BepInEx/core/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Core">
+      <HintPath>$(GameReferences)/BepInEx/core/BepInEx.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Unity.Mono">
+      <HintPath>$(GameReferences)/BepInEx/core/BepInEx.Unity.Mono.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="ValidateGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(GameReferences)' == ''" Text="Set GameReferences to the read-only reference root containing Mortal_Data/Managed and BepInEx/core." />
+    <Error Condition="'%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)')" Text="Missing external compile reference: %(Reference.HintPath)" />
+  </Target>
+</Project>

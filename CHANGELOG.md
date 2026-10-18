@@ -3,6 +3,13 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
+## 미게시 — 이슈 #3 전체 소스 빌드 후보
+
+- `v1.0.3-alpha.3`의 고정 커밋·DLL에서 전체 C# 모드 소스·어셈블리 속성·내장 리소스를 복원하고 기존 Gamepad·LiveLog 관리 소스를 통합합니다. 이슈 #2 기능은 추가하지 않습니다.
+- 기존 `DiceMaster.dll`을 빌드 입력으로 읽지 않는 .NET Framework 4.8 전체 소스 빌드와 별도 후보 생성·검사 경로를 추가합니다. 게임/Unity/로더 참조는 로컬에서 읽기 전용으로 사용하며 게임 DLL·게임 소스를 저장소나 설치 ZIP에 포함하지 않습니다.
+- 기준과의 동작·메타데이터·후킹·native ABI·리소스 계약 비교, 기존 자동 검사의 새 DLL 연결과 실제 명령·결과는 [전체 소스 빌드 안내](docs/SOURCE-BUILD.md)에 기록합니다. 재컴파일한 DLL 전체의 바이트 일치는 요구하지 않습니다.
+- 기존 기본 빌드·배포 DLL과 아래 게시 이력은 보존합니다. 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 전환·이슈 완료로 처리하지 않습니다. Windows 설치·게임 실행과 새 배포 게시 승인은 포함하지 않습니다.
+
 ## [v1.0.3-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3) — 2026-10-18 (prerelease)
 
 사용자가 모드 전용 난수의 숫자 갱신과 새 prerelease 게시를 승인했습니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트·해시 일치를 검증했습니다. Release ID는 `416474001`, 상태는 `draft=false`, `prerelease=true`이며 Latest 정식 `v1.0.2`와 이슈 #1 open을 유지합니다. 아래 alpha.2의 결과를 승계하지 않습니다.
