@@ -1,6 +1,6 @@
 # DiceMaster v1.0.5-alpha.5
 
-alpha.4 이후 요청한 창 초기 크기, 탭 배치, 예약 버튼 포커스, 패드 모드의 터치 접근, 검색 제거와 미션 안내 행 처리를 모은 **prerelease 게시 준비 기록**입니다. 현재 기록한 해시는 검토한 로컬 후보의 값이며, 커밋을 고정한 재빌드와 공개 파일 검증 결과는 게시 후 별도로 기록합니다. **이 후보의 실제 Windows 게임 확인은 아직 하지 않았으며 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)는 미완료로 유지합니다.**
+alpha.4 이후 요청한 창 초기 크기, 탭 배치, 예약 버튼 포커스, 패드 모드의 터치 접근, 검색 제거와 미션 안내 행 처리를 모은 **테스트용 prerelease**입니다. 소스 커밋 `70e045e17351ffd01ff0e19f5f8ba638b2b062c4`의 깨끗한 재빌드·11개 검사와 검토 후보의 DLL·설정·ZIP 해시 일치를 확인했습니다. 인증 없는 공개 다운로드의 바이트·해시까지 확인했습니다. **이 후보의 실제 Windows 게임 확인은 아직 하지 않았으며 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)는 미완료로 유지합니다.**
 
 ## 이번 변경
 
@@ -15,13 +15,13 @@ alpha.4 이후 요청한 창 초기 크기, 탭 배치, 예약 버튼 포커스,
 
 로그 열기는 기존 `[DiceMaster].LogMenuToggleKey`(기본 **Tab**)를 사용하며 패드 열기 조합은 없습니다. LB/RB 탭, ↑↓ 항목 이동, A 확인, B 복귀·닫기, 오른쪽 스틱 본문 읽기, Y 도구, X 새로고침을 유지합니다. 창은 빈 본문을 포함한 드래그 가능한 영역에서 이동할 수 있습니다. 버튼·스크롤 같은 활성 조작은 우선합니다.
 
-이벤트·미션의 **예약**은 즉시 발생을 보장하지 않습니다. 버튼에 진입한 입력을 해제한 뒤 별도의 새 확인 입력으로 예약합니다. 대상 소멸·새 문맥·조회 실패·게시 실패는 이전 선택과 실행 권한을 취소하며, 자동 회복만으로 예약 권한이 되살아나지 않습니다. 자동 갱신 중 같은 유효 항목의 선택·스크롤 유지와 직접 스크롤한 뒤 다음 탐색부터 선택 추종을 재개하는 규칙도 보존합니다.
+이벤트·미션의 **예약**은 즉시 발생을 보장하지 않습니다. 버튼에 진입한 입력을 해제한 뒤 별도의 새 확인 입력으로 예약합니다. 대상 소멸·새 문맥은 이전 선택과 실행 권한을 취소합니다. 조회 실패·게시 실패는 예약 권한을 취소하되 읽을 수 있는 기존 값과 유효 선택은 보존할 수 있으며, 자동 회복만으로 예약 권한이 되살아나지 않습니다. 자동 갱신 중 같은 유효 항목의 선택·스크롤 유지와 직접 스크롤한 뒤 다음 탐색부터 선택 추종을 재개하는 규칙도 보존합니다.
 
 이전 기본 배치와 위치·너비·높이·글자 크기가 모두 일치하는 설정만 새 기본값으로 이행합니다. 사용자 지정 값은 화면 안에서 보존합니다. 창 위치·크기·글자는 기존 BepInEx cfg에 저장하고, 선택·스크롤과 실행 포커스는 실행 중 상태입니다. 검색 상태와 접힘 상태는 제거했습니다.
 
 ## 자동 검사와 확인 한계
 
-검토한 로컬 후보는 전체 C# 소스 빌드에서 오류 0개·기존 경고 7개이며 **11개 검사 프로그램을 모두 통과**했습니다.
+고정 소스 커밋의 재빌드는 전체 C# 소스 빌드에서 오류 0개·기존 경고 7개이며 **11개 검사 프로그램을 모두 통과**했습니다.
 
 | 검사 프로그램 | 결과 |
 | --- | --- |
@@ -65,7 +65,7 @@ alpha.4 이후 요청한 창 초기 크기, 탭 배치, 예약 버튼 포커스,
 
 ## 설치와 복구
 
-게시 예정 설치 자산은 **[DiceMaster-v1.0.5-alpha.5.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.5/DiceMaster-v1.0.5-alpha.5.zip)**입니다. 게시 완료 기록 전에는 이 링크의 공개 여부를 보장하지 않습니다. GitHub의 자동 `Source code` 압축 파일과 구분합니다. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함합니다.
+설치 자산은 **[DiceMaster-v1.0.5-alpha.5.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.5/DiceMaster-v1.0.5-alpha.5.zip)**입니다. GitHub의 자동 `Source code` 압축 파일과 구분합니다. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함합니다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 게임 폴더 밖에 백업합니다.
 2. ZIP을 임시 폴더에 풀고 아래 해시와 대조한 뒤 **DLL만** 플러그인 경로에 교체합니다. 기존 cfg를 보존합니다. 패키지 cfg 전체 교체는 새 설치용이며 이번 업데이트에 필요하지 않습니다.
@@ -87,6 +87,13 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 
 결과에는 DLL 해시, 해상도·배율·창 모드, 게임·BepInEx·패드·Steam Input 환경, 탭·항목 ID, 재현 순서와 관련 BepInEx 최초 실패·복구 로그를 남깁니다. 사용자가 실제 게임의 패드 탐색·스크롤·버튼 조작과 주요 회귀를 확인한 뒤 이슈 #4의 완료 여부를 결정합니다.
 
-## 게시 준비 상태
+## 소스와 검증 기록
 
-로컬 후보와 검증 영수증은 `artifacts/issue-4/mission-status/`와 `artifacts/issue-4/mission-status-evidence/local-verification.json`에 보존합니다. 소스 커밋 고정 후 같은 해시의 DLL·cfg·ZIP을 재빌드하고, 새 prerelease의 메타데이터·태그·익명 다운로드를 확인한 결과를 별도 게시 영수증에 기록할 예정입니다. 기존 Release·태그·자산과 Latest 정식 v1.0.4를 보존하며 이슈 #4를 닫지 않습니다.
+로컬 후보와 검증 영수증은 `artifacts/issue-4/mission-status/`와 `artifacts/issue-4/mission-status-evidence/local-verification.json`에 보존합니다. 소스 커밋 `70e045e17351ffd01ff0e19f5f8ba638b2b062c4`에서 검토 후보와 같은 해시의 DLL·cfg·ZIP을 재빌드했습니다. 고정 커밋 검증은 `artifacts/releases/v1.0.5-alpha.5/release-verification.json`에 보존하고, 새 prerelease의 메타데이터·태그·익명 다운로드 검증 결과도 같은 폴더에 별도 기록합니다. 기존 Release·태그·자산과 Latest 정식 v1.0.4를 보존하며 이슈 #4를 닫지 않습니다.
+
+
+## 실제 게시 결과
+
+**2026-10-19 05:37:30 KST에 [v1.0.5-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.5) prerelease를 게시했습니다.** 소스 태그 커밋은 `70e045e17351ffd01ff0e19f5f8ba638b2b062c4`, Release ID는 `416698408`, asset ID는 `654431988`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.5/DiceMaster-v1.0.5-alpha.5.zip)은 고정 커밋의 깨끗한 재빌드·전체 11개 검사와 검토 후보의 DLL·cfg·ZIP 해시 일치를 확인한 파일입니다.
+
+인증 없는 공개 페이지·ZIP 다운로드에서 CRC·정확히 두 파일·DLL/설정 바이트·SHA-256을 확인했습니다. 기존 18개 Release·태그 커밋·자산, Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.5/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 로그에 있습니다. 게시 본문은 같은 폴더의 `release-body.md`로 보존합니다. 커밋 문서에서 준비 문구를 검증·설치 안내로 바꾸고, 상대 문서 링크를 고정 소스 URL로 풀었으며 조회 실패 시 읽기 가능한 선택 보존 문구를 명확히 했습니다. 이 게시 기록의 후속 문서 커밋은 태그·공개 ZIP을 바꾸지 않습니다. **실제 Windows 게임 확인은 대기이며 이슈 #4를 완료하지 않았습니다.**

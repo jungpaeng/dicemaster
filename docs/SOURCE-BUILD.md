@@ -18,6 +18,8 @@ python3 build/build-source.py --references '<읽기 전용 참조 루트>' --out
 
 사용자 승인에 따라 `v1.0.5-alpha.5`의 고정 소스 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 검토 DLL `1ce1f0fa8d4d0dba626102c787c5e382cea5414861c050397ab4e506fe2b50d0`과 설정 `fce24616e5380004bc87aa992871407386d90bf1b6ec6f30116a29347fe0f046`을 요구하며 결과는 `artifacts/releases/v1.0.5-alpha.5/`에 분리합니다. [설치·복구·검증 범위](ISSUE-4-ALPHA5-RELEASE.md)를 따르고 실제 게시 결과는 별도 기록합니다. Windows 실행과 이슈 #4 완료는 주장하지 않습니다.
 
+2026-10-19 05:37:30 KST에 [alpha.5 prerelease](ISSUE-4-ALPHA5-RELEASE.md)를 게시했습니다. 소스 태그 `70e045e17351ffd01ff0e19f5f8ba638b2b062c4`의 깨끗한 재빌드·11개 검사·공개 페이지/ZIP의 CRC·두 파일·바이트·해시가 통과했습니다. 검토 DLL·설정뿐 아니라 ZIP `4b15898c0c2eee42c6680839fb884403d93f779429d8452a6aa98e4965c61c8c`도 같으며 게시 영수증은 위 release 출력 폴더에 보존합니다. 기존 18개 Release·태그·자산과 Latest 정식 v1.0.4를 유지하고 이슈 #4는 open입니다.
+
 아래 별도 출력 경로와 게시 정보는 **이전 후보·공개 버전의 재현 기록**입니다. 그 기록의 검색·자판·검사·해시는 당시 상태이며 최신 후보에 승계하지 않습니다.
 
 검색 제거 후보는 `--output-dir artifacts/issue-4/no-search`에 보존합니다. [검색·자판·관련 모델 로직 제거와 당시 검사·해시](ISSUE-4-NO-SEARCH.md)는 그 후보의 기록이며 이번 미션 상태 안내 행 후보의 최종 수치로 재사용하지 않습니다.

@@ -8,6 +8,10 @@
 
 사전 원격 확인에서 main은 작업 기준 `21b91e97eeb6bfad10b6bda5a6677f59f4a4af7c`과 일치하며 기존 Release·태그는 각각 18개입니다. Latest 정식 v1.0.4, 이슈 #2 closed·#4 open이고 alpha.5 태그·Release는 없습니다. 새 prerelease는 `prerelease=true`·`make_latest=false`로 게시하며 기존 Release·태그·자산을 보존합니다. 실제 게시·공개 다운로드 결과는 후속 기록합니다. 게임 설치·실행과 이슈 #4 완료는 수행하지 않습니다.
 
+**2026-10-19 05:37:30 KST에 [v1.0.5-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.5) prerelease를 게시했습니다.** 소스 태그 커밋은 `70e045e17351ffd01ff0e19f5f8ba638b2b062c4`, Release ID는 `416698408`, asset ID는 `654431988`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.5/DiceMaster-v1.0.5-alpha.5.zip)은 고정 커밋의 깨끗한 재빌드·전체 11개 검사와 검토 후보의 DLL·cfg·ZIP 해시 일치를 확인한 파일입니다.
+
+인증 없는 공개 페이지·ZIP 다운로드에서 CRC·정확히 두 파일·DLL/설정 바이트·SHA-256을 확인했습니다. 기존 18개 Release·태그 커밋·자산, Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.5/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 로그에 있습니다. 게시 본문은 같은 폴더의 `release-body.md`로 보존합니다. 커밋 문서에서 준비 문구를 검증·설치 안내로 바꾸고, 상대 문서 링크를 고정 소스 URL로 풀었으며 조회 실패 시 읽기 가능한 선택 보존 문구를 명확히 했습니다. 이 게시 기록의 후속 문서 커밋은 태그·공개 ZIP을 바꾸지 않습니다. **실제 Windows 게임 확인은 대기이며 이슈 #4를 완료하지 않았습니다.**
+
 ## PRD #4 alpha.4 카드 탐색·창 크기·목록 후속
 
 사용자가 현재 수정의 커밋 후 prerelease 게시를 명시적으로 지시했습니다. 대상은 `v1.0.5-alpha.4`, 설치 자산은 `DiceMaster-v1.0.5-alpha.4.zip`이며 [게시 설명·설치·복구·해시](ISSUE-4-ALPHA4-RELEASE.md)를 사용합니다. 선택지·조건의 ← 접기·펼친 상태 ↑↓ 이동과 자동 갱신 추종, 기본 창 1280×960, 미션 목록 행 높이와 상태 문구를 수정합니다. 게임 설치·실행과 이슈 #4 완료는 수행하지 않습니다.
