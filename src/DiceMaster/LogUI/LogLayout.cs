@@ -8,7 +8,7 @@ namespace DiceMaster.LogUI
     public sealed class LogLayout
     {
         public const int MinimumFont = 12, MaximumFont = 64;
-        public const float DefaultWidth = 1200, DefaultHeight = 860;
+        public const float DefaultWidth = 1280, DefaultHeight = 960;
         public const int DefaultFontSize = 20;
         public Rect Tabs, Status, InputStatus, Search, Content, Footer;
         public float Gap, Padding;
@@ -29,9 +29,21 @@ namespace DiceMaster.LogUI
 
         public static bool IsDefaultSeed(Rect rect, int font)
         {
-            return rect.x == 20 && rect.y == 20 &&
-                ((rect.width == 750 && rect.height == 750 && font == 14) ||
-                 (rect.width == DefaultWidth && rect.height == DefaultHeight && font == DefaultFontSize));
+            if (SameLayout(rect, font, new Rect(20, 20, 750, 750), 14) ||
+                SameLayout(rect, font, new Rect(20, 20, 1200, 860), DefaultFontSize) ||
+                SameLayout(rect, font, new Rect(20, 20, DefaultWidth, DefaultHeight), DefaultFontSize)) return true;
+            float scale = ScreenScale(Screen.height);
+            Rect previousDefault = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale,
+                1200 * scale, 860 * scale), Screen.width, Screen.height);
+            return SameLayout(rect, font, previousDefault, DefaultFont(Screen.height));
+        }
+
+        private static bool SameLayout(Rect left, int font, Rect right, int expectedFont)
+        {
+            // BepInEx serializes fractional physical pixels. Only tolerate that
+            // small round trip, not a moved/resized/custom-font layout.
+            return font == expectedFont && Math.Abs(left.x - right.x) < .01f && Math.Abs(left.y - right.y) < .01f &&
+                Math.Abs(left.width - right.width) < .01f && Math.Abs(left.height - right.height) < .01f;
         }
 
         public static LogLayout Calculate(Rect window, int font, bool search,

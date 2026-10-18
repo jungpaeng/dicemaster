@@ -158,15 +158,26 @@ namespace DiceMaster.LogUI
                 else if (command == LogPadCommand.Activate) ActivateTool(toolIndex);
                 return;
             }
-            if (command == LogPadCommand.Left) { State.CancelExecution(); area = Area.List; detailIndex = 0; return; }
-            if (command == LogPadCommand.Right)
+            if (command == LogPadCommand.Left)
             {
-                if (State.Selected != null) { State.CancelExecution(); area = Area.Detail; detailIndex = 0; if (Cards) State.Expanded.Add(State.SelectedId); }
+                State.CancelExecution();
+                if (Cards && State.SelectedId != null) State.Expanded.Remove(State.SelectedId);
+                area = Area.List; detailIndex = 0; ensureVisible = true; manualListScroll = false;
                 return;
             }
-            if (area == Area.Detail)
+            if (command == LogPadCommand.Right)
             {
-                if (!Cards && (command == LogPadCommand.Down || command == LogPadCommand.Up))
+                if (State.Selected != null)
+                {
+                    State.CancelExecution(); area = Area.Detail; detailIndex = 0;
+                    if (Cards) State.Expanded.Add(State.SelectedId);
+                    ensureVisible = true; manualListScroll = false;
+                }
+                return;
+            }
+            if (area == Area.Detail && !Cards)
+            {
+                if (command == LogPadCommand.Down || command == LogPadCommand.Up)
                 {
                     detailIndex = command == LogPadCommand.Down && State.Selected != null && State.Selected.CanReserve && !State.PublicationFailed ? 1 : 0;
                     State.ExecutionFocus = detailIndex == 1;
@@ -259,7 +270,10 @@ namespace DiceMaster.LogUI
             // must not make a supposedly fixed pane grow past its clip area.
             foreach (GUIStyle style in new[] { textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle,
                 statusStyle, fieldStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle })
+            {
                 style.margin = new RectOffset(0, 0, 0, 0);
+                style.fixedWidth = style.fixedHeight = 0;
+            }
             stylesReady = true;
         }
 
@@ -418,8 +432,13 @@ namespace DiceMaster.LogUI
             foreach (LogItem row in rows)
             {
                 bool selected = row.Id == State.SelectedId;
-                SafeButton((selected ? "▶ " : "") + Title(row) + "\n" + RowState(row), "row:" + row.Id,
-                    () => { Select(row.Id); area = Area.List; }, selected && area == Area.List);
+                string caption = (selected ? "▶ " : "") + Title(row) + "\n" + RowState(row);
+                GUIStyle rowStyle = selected && area == Area.List ? selectedStyle : buttonStyle;
+                float rowWidth = Math.Max(1, (float)Math.Floor(listWidth - scrollStyle.padding.horizontal -
+                    GUI.skin.verticalScrollbar.fixedWidth - GUI.skin.verticalScrollbar.margin.left));
+                float rowHeight = Math.Max(renderedFont + 16, (float)Math.Ceiling(rowStyle.CalcHeight(new GUIContent(caption), rowWidth)));
+                SafeButton(caption, "row:" + row.Id, () => { Select(row.Id); area = Area.List; },
+                    selected && area == Area.List, rowHeight, width: rowWidth);
                 Rect rect = GUILayoutUtility.GetLastRect();
                 rowRects[row.Id] = rect;
                 contentBottom = Math.Max(contentBottom, rect.yMax);
@@ -455,6 +474,10 @@ namespace DiceMaster.LogUI
             {
                 Label(Title(selectedRow), titleStyle);
                 Label(RowState(selectedRow), statusStyle);
+                if (selectedRow.RefreshState == LogRefreshState.Waiting)
+                    Label(CurrentTab == "미션" ?
+                        "현재 미션 단계가 없거나 설명 조회에 필요한 게임 자료를 얻지 못했습니다. 미션 미완료·조건 미충족을 뜻하지 않습니다. 이 탭을 연 동안 재조회하며 새로고침으로 다시 확인할 수 있습니다." :
+                        "설명 조회에 필요한 게임 자료를 아직 얻지 못했습니다. 이 탭을 연 동안 재조회하며 새로고침으로 다시 확인할 수 있습니다.", statusStyle);
                 Label(CurrentTab == "이벤트" ? "다음 해당 판정의 가중치를 높입니다. 즉시 발생하거나 지정 이벤트가 발생함을 보장하지 않습니다." :
                     "해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
                 if (!reservable) Label("최신 조회 성공 상태의 대상만 예약할 수 있습니다.", statusStyle);
@@ -670,10 +693,15 @@ namespace DiceMaster.LogUI
             ensureVisible = true;
         }
 
-        private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false)
+        private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false, float width = 0)
         {
             GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
-            bool pressed = GUILayout.Button(label, style, height > 0 ? GUILayout.Height(height) : GUILayout.MinHeight((chrome ? chromeFont : renderedFont) + 16), GUILayout.ExpandWidth(true));
+            // MinHeight also forces maxHeight in Unity's word-wrap sizer. Let
+            // ordinary buttons measure their full wrapped caption; list rows
+            // supply the height measured at their exact scrollbar-free width.
+            GUILayoutOption horizontal = width > 0 ? GUILayout.Width(width) : GUILayout.ExpandWidth(true);
+            bool pressed = height > 0 ? GUILayout.Button(label, style, horizontal, GUILayout.Height(height)) :
+                GUILayout.Button(label, style, horizontal);
             Rect rect = GUILayoutUtility.GetLastRect();
             Event evt = Event.current;
             // rawType remains MouseDown/MouseUp after IMGUI consumes the event.
@@ -757,10 +785,14 @@ namespace DiceMaster.LogUI
         private static void Label(string text, GUIStyle style) => Display.Label(text, style, Array.Empty<GUILayoutOption>());
         private static string Title(LogItem row) => string.IsNullOrWhiteSpace(row.Title) ? string.IsNullOrWhiteSpace(row.Text) ? Escape(row.RawId) : row.Text : row.Title;
         private static string Escape(string value) => (value ?? "").Replace("<", "＜").Replace(">", "＞");
-        private static string RowState(LogItem row)
+        private string RowState(LogItem row)
         {
-            string read = row.ReadState == LogReadState.Read ? "읽음" : row.ReadState == LogReadState.Unread ? "미독" : "읽음 불명";
-            string result = read + " · " + (row.RefreshState == LogRefreshState.Healthy ? "조회 정상" : row.RefreshStatus);
+            // Event/mission publications have no story-read mapping. Unknown
+            // there must not look like an unread or unfinished mission result.
+            string read = row.ReadState == LogReadState.Read ? "읽음" : row.ReadState == LogReadState.Unread ? "미독" : Cards ? "읽음 정보 없음" : "";
+            string status = row.RefreshState == LogRefreshState.Healthy ? "조회 정상" :
+                row.RefreshState == LogRefreshState.Waiting ? "설명 조회 대기" : row.RefreshStatus;
+            string result = string.IsNullOrEmpty(read) ? status : read + " · " + status;
             foreach (string state in row.AnalysisStates)
                 result += " · " + (state == "Supported" ? "분석 지원" : state == "Partial" ? "추가 영향 가능" : state == "Unsupported" ? "결과는 진행 후 확인" :
                     state == "NoEffects" ? "표시 효과 없음" : state == "Waiting" ? "분석 대기" : state == "ReadFailure" ? "분석 읽기 실패" : state);
@@ -771,9 +803,9 @@ namespace DiceMaster.LogUI
         {
             if (area == Area.Keyboard) return "현재: 검색 자판 · ↑↓←→ 이동 / A 입력 / B 취소 / 오른쪽 스틱 스크롤";
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
-            if (area == Area.Detail) return Cards ? "현재: 펼친 카드 · 오른쪽 스틱 본문 스크롤 / B 카드 목록 / Y 도구" :
-                "현재: 상세 · ↑↓ 본문/예약 버튼 / A 예약 버튼 작동 / 오른쪽 스틱 본문 / B 목록 / Y 도구";
-            return "현재: " + (Cards ? "카드" : "목록") + " · ↑↓ 이동 / A " + (Cards ? "펼침" : "상세") + " / → 상세 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (Cards) return "현재: 카드 · ↑↓ 항목 이동 / ← 접기 / → 펼치기 / A 전환 / 오른쪽 스틱 본문 / Y 도구 / B 복귀·닫기";
+            if (area == Area.Detail) return "현재: 상세 · ↑↓ 본문/예약 버튼 / A 예약 버튼 작동 / 오른쪽 스틱 본문 / B 목록 / Y 도구";
+            return "현재: 목록 · ↑↓ 이동 / A 상세 / → 상세 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
         }
 
         private void CompleteListScroll(Rect viewport, float contentBottom)
@@ -784,7 +816,7 @@ namespace DiceMaster.LogUI
             if (State.SelectedId == null || !rowRects.TryGetValue(State.SelectedId, out selected)) return;
             bool changed = lastMeasuredId == State.SelectedId && lastMeasuredTab == CurrentTab &&
                 (selected != lastSelectedBounds || viewport.height != lastListViewportHeight);
-            if (ensureVisible || changed && area == Area.List && !manualListScroll)
+            if (ensureVisible || changed && (area == Area.List || Cards && area == Area.Detail) && !manualListScroll)
             {
                 State.ListScroll = LogLayout.BringIntoView(State.ListScroll, selected, viewport.height, contentBottom);
                 ensureVisible = false;

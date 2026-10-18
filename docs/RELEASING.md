@@ -1,5 +1,13 @@
 # 소스 기반 Release와 게시 이력
 
+## PRD #4 alpha.4 카드 탐색·창 크기·목록 후속
+
+사용자가 현재 수정의 커밋 후 prerelease 게시를 명시적으로 지시했습니다. 대상은 `v1.0.5-alpha.4`, 설치 자산은 `DiceMaster-v1.0.5-alpha.4.zip`이며 [게시 설명·설치·복구·해시](ISSUE-4-ALPHA4-RELEASE.md)를 사용합니다. 선택지·조건의 ← 접기·펼친 상태 ↑↓ 이동과 자동 갱신 추종, 기본 창 1280×960, 미션 목록 행 높이와 상태 문구를 수정합니다. 게임 설치·실행과 이슈 #4 완료는 수행하지 않습니다.
+
+검토 DLL `06485af8929579f6f7d3744f183aa3359ec40545a6d155257c4bfebadc3b7d44`·설정 `b351703e2b0f1b5ea6b4a5894c1f5309a13dece5d6b06ed909330c0771801259`를 요구하고 고정 커밋을 `verify-preview-release.py --scope prd4`로 재빌드합니다. 전체 11개 프로그램·UI 11,996·실제 DLL 연결 23 단언과 ZIP/바이트/해시를 확인합니다. 출력은 `artifacts/releases/v1.0.5-alpha.4/`입니다.
+
+사전 GitHub 확인에서 기존 Release·태그는 각각 17개, Latest 정식은 v1.0.4, 이슈 #2 closed·#4 open이고 alpha.4는 없습니다. 원격 main은 작업 기준 `9aebf796ca7bbf4da7b35899ad7ce107676dd578`과 일치합니다. 새 prerelease는 `prerelease=true`·`make_latest=false`로 게시하고 기존 태그·Release·자산을 보존합니다. 실제 게시와 공개 다운로드 결과는 후속 기록으로 구분합니다.
+
 ## PRD #4 alpha.3 작은 빈 창 후속
 
 alpha.2에서 좌측 상단의 작은 빈 창만 보인다는 실제 Windows 실패를 확인하고 자동 크기 창을 고정 사각형 창으로 교체합니다. 기존 prerelease 지시의 후속인 `v1.0.5-alpha.3`은 [원인·검사 보강](ISSUE-4-WINDOW-SIZE-REGRESSION.md)과 [설치·복구·해시](ISSUE-4-ALPHA3-RELEASE.md)를 따릅니다. 에이전트는 게임을 실행하지 않았으며 실제 수정 성공과 이슈 #4 완료는 주장하지 않습니다.

@@ -40,6 +40,7 @@ namespace UnityEngine
     public sealed class GUIStyle
     {
         public int fontSize; public bool richText, wordWrap; public RectOffset padding, margin; public FontStyle fontStyle;
+        public float fixedWidth, fixedHeight;
         public GUIStyleState normal = new GUIStyleState();
         public static GUIStyle none = new GUIStyle();
         public GUIStyle() { }
@@ -47,6 +48,7 @@ namespace UnityEngine
         {
             fontSize = source.fontSize; richText = source.richText; wordWrap = source.wordWrap;
             padding = source.padding; margin = source.margin; fontStyle = source.fontStyle;
+            fixedWidth = source.fixedWidth; fixedHeight = source.fixedHeight;
         }
         public float CalcHeight(GUIContent content, float width)
         {
@@ -54,12 +56,12 @@ namespace UnityEngine
             float available = Math.Max(font, width - (padding?.horizontal ?? 0));
             int lines = 0;
             foreach (string line in (content.text ?? "").Split('\n'))
-                lines += wordWrap ? Math.Max(1, (int)Math.Ceiling(line.Length * font * .72f / available)) : 1;
+                lines += wordWrap ? Math.Max(1, (int)Math.Ceiling(line.Length * font * (fontStyle == FontStyle.Bold ? .78f : .72f) / available)) : 1;
             return lines * (font + 4) + (padding?.vertical ?? 0);
         }
         public Vector2 CalcSize(GUIContent content) => new Vector2((content.text?.Length ?? 0) * Math.Max(10, fontSize) * .72f, CalcHeight(content, float.MaxValue));
     }
-    public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle(); }
+    public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
     {
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
@@ -79,7 +81,7 @@ namespace UnityEngine
         // content-local positions. No native layout/font correctness is claimed.
         public sealed class ScrollViewRecord
         {
-            public Rect Viewport; public Vector2 InputScroll, ReturnedScroll; public float ContentHeight;
+            public Rect Viewport; public Vector2 InputScroll, ReturnedScroll; public float ContentHeight, ContentWidth;
             public readonly List<ControlRecord> Controls = new List<ControlRecord>();
         }
         public sealed class ControlRecord
@@ -239,15 +241,18 @@ namespace UnityEngine
         public static void BeginVertical(GUIStyle style, params GUILayoutOption[] options) => Begin(false, style, options);
         public static void EndVertical() => End();
         public static Vector2 BeginScrollView(Vector2 scroll, params GUILayoutOption[] options)
+            => BeginScrollCore(scroll, GUI.skin.verticalScrollbar, GUIStyle.none, options);
+        private static Vector2 BeginScrollCore(Vector2 scroll, GUIStyle scrollbar, GUIStyle background, GUILayoutOption[] options)
         {
             // Unbounded expansion is intentionally not assumed to fill a fixed
             // window; the renderer must supply the measured viewport height.
             Rect viewport = Allocate(Option("MinHeight", 60, options), options);
             Vector2 result = ScrollInput == null ? scroll : ScrollInput(ScrollViews.Count, scroll);
-            var record = new ScrollViewRecord { Viewport = viewport, InputScroll = scroll, ReturnedScroll = result };
+            float contentWidth = Math.Max(1, viewport.width - scrollbar.fixedWidth - (scrollbar.margin?.left ?? 0) - (background.padding?.horizontal ?? 0));
+            var record = new ScrollViewRecord { Viewport = viewport, InputScroll = scroll, ReturnedScroll = result, ContentWidth = contentWidth };
             ScrollViews.Add(record);
             Rect viewportInWindow = Offset(viewport, Current.GuiOrigin);
-            Groups.Push(new Group { Bounds = new Rect(0, 0, Math.Max(1, viewport.width - 18), viewport.height),
+            Groups.Push(new Group { Bounds = new Rect(background.padding?.left ?? 0, background.padding?.top ?? 0, contentWidth, viewport.height),
                 Scroll = true, Record = record, FixedHeight = viewport.height, SavedMouse = Event.current.mousePosition,
                 GuiOrigin = new Vector2(viewportInWindow.x - result.x, viewportInWindow.y - result.y),
                 Clip = Intersection(Current.Clip, viewportInWindow) });
@@ -257,7 +262,7 @@ namespace UnityEngine
         }
         public static Vector2 BeginScrollView(Vector2 scroll, bool alwaysShowHorizontal, bool alwaysShowVertical,
             GUIStyle horizontalScrollbar, GUIStyle verticalScrollbar, GUIStyle background, params GUILayoutOption[] options)
-            => BeginScrollView(scroll, options);
+            => BeginScrollCore(scroll, verticalScrollbar, background, options);
         public static void EndScrollView()
         {
             Group scroll = Groups.Pop();
@@ -268,7 +273,15 @@ namespace UnityEngine
         private static void Control(string text, GUIStyle style, bool button, GUILayoutOption[] options)
         {
             Rect initial = Allocate(0, options);
-            Rect rect = Allocate(style.CalcHeight(new GUIContent(text), initial.width), options);
+            float width = Option("Width", style.fixedWidth > 0 ? style.fixedWidth : initial.width, options);
+            float naturalHeight = style.CalcHeight(new GUIContent(text), width);
+            float height = Option("Height", style.fixedHeight > 0 ? style.fixedHeight : naturalHeight, options);
+            // Unity GUILayoutEntry.MinHeight raises maxHeight too. A wrapping
+            // sizer caches both forced values and therefore skips CalcHeight,
+            // leaving an old MinHeight(font+16) button at that single-line size.
+            if (style.wordWrap && style.fixedHeight == 0 && Option("Height", -1, options) < 0 && Option("MinHeight", 0, options) > 0)
+                height = Option("MinHeight", height, options);
+            Rect rect = Allocate(height, new[] { Width(width), Height(height) });
             var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button,
                 WindowLocalRect = Offset(rect, Current.GuiOrigin), AncestorClip = Current.Clip };
             control.VisibleRect = Intersection(control.WindowLocalRect, control.AncestorClip);

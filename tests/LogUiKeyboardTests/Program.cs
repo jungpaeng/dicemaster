@@ -90,10 +90,14 @@ internal static class Program
         WindowRootContract();
         RendererNativeWindowBounds();
         RendererNavigation();
+        RendererCardDirectionalNavigation();
+        RendererCardDetailReflow();
         RendererRenderingBoundaries();
         LayoutGeometry();
         RendererViewportAndFocus();
         RendererCompactAndPointerScroll();
+        WrappingLayoutBoundary();
+        RendererDefaultsAndMeasuredRows();
         Console.WriteLine("PASS: LogUiKeyboardTests: " + checks + " checks passed; actual renderer/model/local keyboard sources with explicit Unity/game boundaries and managed window/clip contract model (not native Unity execution); all 11,172 modern Hangul syllables.");
     }
 
@@ -107,6 +111,12 @@ internal static class Program
         Event.current = new Event { type = type, rawType = type, keyCode = key };
         typeof(LogRenderer).GetMethod("HandleKeyboard", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
     }
+    private static void PressKey(LogRenderer renderer, KeyCode key)
+    { Input.Held.Add(key); Key(renderer, EventType.KeyDown, key); }
+    private static void ReleaseKey(LogRenderer renderer, KeyCode key)
+    { Input.Held.Remove(key); Key(renderer, EventType.KeyUp, key); }
+    private static void TapKey(LogRenderer renderer, KeyCode key)
+    { PressKey(renderer, key); ReleaseKey(renderer, key); }
 
     private static void WindowRootContract()
     {
@@ -290,6 +300,167 @@ internal static class Program
         Check(closes == 2, "all tools navigable through pad, including close");
     }
 
+    private static void RendererCardDirectionalNavigation()
+    {
+        int reservations = LogBridge.Reservations;
+        foreach (string tab in new[] { "선택지", "조건" })
+        {
+            var model = new LogModel(); model.ResetContext(300);
+            Publish(model, tab, Item("first"), Item("second"), Item("third"));
+            int closes = 0;
+            var renderer = new LogRenderer(model, null, () => closes++);
+            renderer.Handle(LogPadCommand.None);
+            if (tab == "조건") renderer.Handle(LogPadCommand.NextTab);
+            renderer.Handle(LogPadCommand.Down);
+            renderer.Handle(LogPadCommand.Right);
+            Check(model.Tab(tab).SelectedId == "first" && model.Tab(tab).Expanded.SetEquals(new[] { "first" }), tab + ": right opens the selected card");
+            renderer.Handle(LogPadCommand.Down);
+            Check(model.Tab(tab).SelectedId == "second" && model.Tab(tab).Expanded.Contains("first"), tab + ": down moves from open card without folding it");
+            renderer.Handle(LogPadCommand.Right);
+            Check(model.Tab(tab).Expanded.SetEquals(new[] { "first", "second" }), tab + ": right opens another card while preserving comparisons");
+            renderer.Handle(LogPadCommand.Up);
+            Check(model.Tab(tab).SelectedId == "first" && model.Tab(tab).Expanded.SetEquals(new[] { "first", "second" }), tab + ": up moves from open card and preserves all expanded bodies");
+            renderer.Handle(LogPadCommand.Left);
+            Check(model.Tab(tab).Expanded.SetEquals(new[] { "second" }), tab + ": left folds only the selected card");
+            renderer.Handle(LogPadCommand.Left);
+            Check(model.Tab(tab).Expanded.SetEquals(new[] { "second" }) && closes == 0, tab + ": repeated left stays folded and does not close the window");
+            renderer.Handle(LogPadCommand.Right);
+            renderer.Handle(LogPadCommand.Right);
+            Check(model.Tab(tab).Expanded.SetEquals(new[] { "first", "second" }), tab + ": repeated right remains an open action rather than toggling");
+            renderer.Handle(LogPadCommand.Back);
+            Check(Area(renderer) == "List" && closes == 0 && model.Tab(tab).Expanded.Count == 2, tab + ": B leaves card detail while keeping expanded comparisons");
+            renderer.Handle(LogPadCommand.Back);
+            Check(closes == 1, tab + ": another B from the list closes the window");
+        }
+        foreach (string tab in new[] { "이벤트", "미션" })
+        {
+            var model = new LogModel(); model.ResetContext(303);
+            Publish(model, tab, Item("reserve-first", new object()), Item("reserve-second", new object()));
+            var renderer = new LogRenderer(model, null, null);
+            renderer.Handle(LogPadCommand.None);
+            for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
+            renderer.Handle(LogPadCommand.Activate);
+            renderer.Handle(LogPadCommand.Right);
+            renderer.Handle(LogPadCommand.Down);
+            Check(model.Tab(tab).SelectedId == "reserve-first" && model.Tab(tab).ExecutionFocus,
+                tab + ": detail down still focuses reservation instead of selecting another row");
+            renderer.Handle(LogPadCommand.Up);
+            Check(model.Tab(tab).SelectedId == "reserve-first" && !model.Tab(tab).ExecutionFocus,
+                tab + ": detail up returns to body without moving selection");
+            TapKey(renderer, KeyCode.DownArrow);
+            Check(model.Tab(tab).SelectedId == "reserve-first" && model.Tab(tab).ExecutionFocus,
+                tab + ": keyboard detail down preserves reservation-focus behavior");
+            TapKey(renderer, KeyCode.UpArrow);
+            Check(model.Tab(tab).SelectedId == "reserve-first" && !model.Tab(tab).ExecutionFocus,
+                tab + ": keyboard detail up preserves selection and clears reservation focus");
+        }
+
+        // Exercise the real keyboard dispatch path rather than translating keys
+        // into pad commands in the test. A repeated KeyDown must not become a
+        // second movement or operate a replacement card after a context change.
+        var keyboardModel = new LogModel(); keyboardModel.ResetContext(301);
+        Publish(keyboardModel, "선택지", Item("key-first"), Item("key-second"), Item("key-third"));
+        int keyboardCloses = 0;
+        var keyboardRenderer = new LogRenderer(keyboardModel, null, () => keyboardCloses++);
+        keyboardRenderer.Handle(LogPadCommand.None);
+        try
+        {
+            TapKey(keyboardRenderer, KeyCode.Return);
+            TapKey(keyboardRenderer, KeyCode.RightArrow);
+            Check(keyboardModel.Tab("선택지").Expanded.Contains("key-first"), "keyboard right opens the selected card through HandleKeyboard");
+            PressKey(keyboardRenderer, KeyCode.DownArrow);
+            PressKey(keyboardRenderer, KeyCode.DownArrow);
+            Check(keyboardModel.Tab("선택지").SelectedId == "key-second", "held down arrow moves once from open card and ignores repeat KeyDown");
+            ReleaseKey(keyboardRenderer, KeyCode.DownArrow);
+            TapKey(keyboardRenderer, KeyCode.RightArrow);
+            TapKey(keyboardRenderer, KeyCode.UpArrow);
+            Check(keyboardModel.Tab("선택지").SelectedId == "key-first" && keyboardModel.Tab("선택지").Expanded.SetEquals(new[] { "key-first", "key-second" }),
+                "keyboard up/down and right preserve multiple card comparisons");
+            TapKey(keyboardRenderer, KeyCode.LeftArrow);
+            Check(keyboardModel.Tab("선택지").Expanded.SetEquals(new[] { "key-second" }), "keyboard left folds only current card");
+            TapKey(keyboardRenderer, KeyCode.DownArrow);
+            TapKey(keyboardRenderer, KeyCode.DownArrow);
+            Check(keyboardModel.Tab("선택지").SelectedId == "key-third", "released direction keys can move to a later card");
+            PressKey(keyboardRenderer, KeyCode.RightArrow);
+            keyboardModel.ResetContext(302);
+            Publish(keyboardModel, "선택지", Item("replacement"));
+            keyboardRenderer.ResetInputFocus();
+            keyboardRenderer.Handle(LogPadCommand.None);
+            PressKey(keyboardRenderer, KeyCode.RightArrow);
+            Check(keyboardModel.Tab("선택지").SelectedId == null && keyboardModel.Tab("선택지").Expanded.Count == 0,
+                "held right arrow cannot select or open a card in a replacement context");
+            TapKey(keyboardRenderer, KeyCode.Return);
+            PressKey(keyboardRenderer, KeyCode.RightArrow);
+            Check(keyboardModel.Tab("선택지").SelectedId == "replacement" && keyboardModel.Tab("선택지").Expanded.Count == 0,
+                "selecting a replacement card does not re-arm the still-held expand key");
+            ReleaseKey(keyboardRenderer, KeyCode.RightArrow);
+            TapKey(keyboardRenderer, KeyCode.RightArrow);
+            Check(keyboardModel.Tab("선택지").Expanded.Contains("replacement"), "fresh right press works after release in replacement context");
+            TapKey(keyboardRenderer, KeyCode.Escape);
+            Check(Area(keyboardRenderer) == "List" && keyboardCloses == 0, "keyboard Escape returns from card detail before closing");
+            TapKey(keyboardRenderer, KeyCode.Escape);
+            Check(keyboardCloses == 1, "fresh keyboard Escape from list closes window");
+            Check(LogBridge.Reservations == reservations, "card directional navigation never invokes event or mission reservation");
+        }
+        finally { Input.Held.Clear(); }
+    }
+
+    private static void RendererCardDetailReflow()
+    {
+        var saved = new Rect(DiceMaster.Config.ConfigManager.LogWindowX.Value, DiceMaster.Config.ConfigManager.LogWindowY.Value,
+            DiceMaster.Config.ConfigManager.LogWindowWidth.Value, DiceMaster.Config.ConfigManager.LogWindowHeight.Value);
+        int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
+        try
+        {
+            Screen.width = 1920; Screen.height = 1080;
+            ConfigureLayout(new Rect(20, 20, 1200, 900), 24);
+            foreach (string tab in new[] { "선택지", "조건" })
+            {
+                var targets = new[] { new object(), new object(), new object() };
+                Func<int, LogItem[]> publication = length =>
+                {
+                    var rows = new[] { Item("before", targets[0]), Item("selected", targets[1]), Item("after", targets[2]) };
+                    rows[0].Text = "비교 카드 앞"; rows[0].Description = new string('긴', length);
+                    rows[1].Text = "비교 카드 선택"; rows[1].Description = new string('설', 200);
+                    rows[2].Text = "비교 카드 다음";
+                    foreach (LogItem row in rows) row.Title = row.Text;
+                    return rows;
+                };
+                var model = new LogModel(); model.ResetContext(304);
+                Publish(model, tab, publication(40));
+                var renderer = new LogRenderer(model, null, null);
+                renderer.Handle(LogPadCommand.None);
+                if (tab == "조건") renderer.Handle(LogPadCommand.NextTab);
+                renderer.Handle(LogPadCommand.Down);
+                renderer.Handle(LogPadCommand.Right);
+                renderer.Handle(LogPadCommand.Down);
+                renderer.Handle(LogPadCommand.Right);
+                Repaint(renderer); Repaint(renderer);
+                Check(Area(renderer) == "Detail" && model.Tab(tab).SelectedId == "selected" && !(bool)Field(renderer, "ensureVisible"),
+                    tab + ": detail selection has consumed its explicit follow request before publication changes");
+                Publish(model, tab, publication(8000));
+                FocusVisible(renderer, model, tab, "비교 카드 선택", tab + " detail follows preceding expanded-body growth");
+                Check(Area(renderer) == "Detail" && model.Tab(tab).SelectedId == "selected" && model.Tab(tab).Expanded.SetEquals(new[] { "before", "selected" }),
+                    tab + ": automatic reflow preserves detail focus, selected stable ID and comparison expansions");
+                renderer.Scroll(1);
+                float manualOffset = model.Tab(tab).ListScroll;
+                Publish(model, tab, publication(12000));
+                Repaint(renderer); Repaint(renderer);
+                Check(model.Tab(tab).ListScroll == manualOffset && Area(renderer) == "Detail",
+                    tab + ": manual detail-body scroll keeps ownership through another preceding-card reflow");
+                renderer.Handle(LogPadCommand.Down);
+                FocusVisible(renderer, model, tab, "비교 카드 다음", tab + " new direction resumes detail follow after manual scroll");
+                Check(Area(renderer) == "Detail" && model.Tab(tab).SelectedId == "after" && model.Tab(tab).Expanded.SetEquals(new[] { "before", "selected" }),
+                    tab + ": direction navigation restores following without folding comparison cards");
+            }
+        }
+        finally
+        {
+            ConfigureLayout(saved, oldFont);
+            Screen.width = oldWidth; Screen.height = oldHeight;
+        }
+    }
+
     private static void Invoke(LogRenderer renderer, string method) => typeof(LogRenderer).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
     private static void RendererRenderingBoundaries()
     {
@@ -367,7 +538,7 @@ internal static class Program
         Check(scroll.ContentHeight > scroll.Viewport.height * 2, message + ": fixture contains genuinely overflowing, positioned content");
         Check(Math.Abs(scroll.InputScroll.y - offset) < .01f, message + ": requested scroll reaches following frame");
         Check(control.Rect.y >= offset - .01f && control.Rect.yMax <= offset + scroll.Viewport.height + .01f,
-            message + ": focused header stays within its actual scroll viewport");
+            message + ": focused header stays within its actual scroll viewport (row=" + control.Rect.y + "+" + control.Rect.height + ", scroll=" + offset + ", viewport=" + scroll.Viewport.height + ")");
     }
 
     private static LogItem[] LongRows(int count)
@@ -740,6 +911,158 @@ internal static class Program
             DiceMaster.Config.ConfigManager.LogWindowHeight.Value = heightBefore;
             Screen.width = screenWidth; Screen.height = screenHeight;
             for (int index = 0; index < skinStyles.Length; index++) skinStyles[index].margin = originalMargins[index];
+        }
+    }
+
+    private static void WrappingLayoutBoundary()
+    {
+        var style = new GUIStyle { fontSize = 24, wordWrap = true, padding = new RectOffset(6, 6, 6, 6) };
+        const string caption = "여러 줄로 읽어야 하는 미션 제목과 상태\n설명 조회 대기";
+        float required = style.CalcHeight(new GUIContent(caption), 140);
+        GUILayout.ResetLayout(140, 900);
+        GUILayout.Button(caption, style, GUILayout.Width(140), GUILayout.MinHeight(40));
+        Check(GUILayout.LastRect.height == 40 && required > 40,
+            "negative wrapping control: Unity forced MinHeight/maxHeight leaves multi-line text clipped");
+        GUILayout.ResetLayout(140, 900);
+        GUILayout.Button(caption, style, GUILayout.Width(140));
+        Check(GUILayout.LastRect.height >= required, "unforced wrapping control uses its full measured text height");
+        var bold = new GUIStyle(style) { fontStyle = FontStyle.Bold };
+        Check(bold.CalcHeight(new GUIContent("가나다라마바사아"), 160) > style.CalcHeight(new GUIContent("가나다라마바사아"), 160),
+            "fixture distinguishes selected bold wrapping from ordinary text wrapping");
+        var inherited = new GUIStyle(style) { fixedHeight = 32 };
+        GUILayout.ResetLayout(140, 900);
+        GUILayout.Button(caption, inherited, GUILayout.Width(140));
+        Check(GUILayout.LastRect.height == 32 && required > 32, "negative fixed-skin control models inherited single-line height");
+    }
+
+    private static void ConfigureLayout(Rect rect, int font)
+    {
+        DiceMaster.Config.ConfigManager.LogWindowX.Value = rect.x;
+        DiceMaster.Config.ConfigManager.LogWindowY.Value = rect.y;
+        DiceMaster.Config.ConfigManager.LogWindowWidth.Value = rect.width;
+        DiceMaster.Config.ConfigManager.LogWindowHeight.Value = rect.height;
+        DiceMaster.Config.ConfigManager.LogFontSize.Value = font;
+    }
+
+    private static void RendererDefaultsAndMeasuredRows()
+    {
+        var saved = new Rect(DiceMaster.Config.ConfigManager.LogWindowX.Value, DiceMaster.Config.ConfigManager.LogWindowY.Value,
+            DiceMaster.Config.ConfigManager.LogWindowWidth.Value, DiceMaster.Config.ConfigManager.LogWindowHeight.Value);
+        int oldFont = DiceMaster.Config.ConfigManager.LogFontSize.Value, oldWidth = Screen.width, oldHeight = Screen.height;
+        GUIStyle[] skinStyles = { GUI.skin.label, GUI.skin.button, GUI.skin.textField, GUI.skin.box, GUI.skin.window };
+        var fixedSizes = new List<Vector2>();
+        foreach (GUIStyle style in skinStyles) fixedSizes.Add(new Vector2(style.fixedWidth, style.fixedHeight));
+        float oldBarWidth = GUI.skin.verticalScrollbar.fixedWidth;
+        RectOffset oldBarMargin = GUI.skin.verticalScrollbar.margin;
+        try
+        {
+            Check(LogLayout.DefaultWidth == 1280 && LogLayout.DefaultHeight == 960, "new reference window default reserves 1280 by 960 pixels at 1080p");
+            foreach (int[] screen in new[] { new[] { 1280, 720 }, new[] { 1920, 1080 }, new[] { 2560, 1440 }, new[] { 3840, 2160 } })
+            {
+                Screen.width = screen[0]; Screen.height = screen[1];
+                float scale = LogLayout.ScreenScale(Screen.height);
+                Rect previous = LogRenderer.ConstrainWindow(new Rect(20 * scale, 20 * scale, 1200 * scale, 860 * scale), Screen.width, Screen.height);
+                int previousFont = LogLayout.DefaultFont(Screen.height);
+                Rect serialized = previous;
+                serialized.x += .005f; serialized.width += .005f;
+                ConfigureLayout(serialized, previousFont);
+                var migrated = new LogRenderer(new LogModel(), null, null);
+                Check(migrated.WindowRect == LogLayout.DefaultWindow(Screen.width, Screen.height), "previous scaled default migrates after fractional config round-trip at " + Screen.height);
+                Check(DiceMaster.Config.ConfigManager.LogWindowWidth.Value == migrated.WindowRect.width, "migrated default persists its coherent new size immediately");
+                Rect moved = previous; moved.x += 1;
+                ConfigureLayout(moved, previousFont);
+                Check(new LogRenderer(new LogModel(), null, null).WindowRect == LogRenderer.ConstrainWindow(moved, Screen.width, Screen.height), "custom physical window position survives default migration");
+                Rect resized = previous; resized.width -= 1;
+                ConfigureLayout(resized, previousFont);
+                Check(new LogRenderer(new LogModel(), null, null).WindowRect == resized, "custom physical window size survives default migration");
+                ConfigureLayout(previous, previousFont + 1);
+                Check(new LogRenderer(new LogModel(), null, null).WindowRect == previous && DiceMaster.Config.ConfigManager.LogFontSize.Value == previousFont + 1,
+                    "custom font makes old physical layout a preserved user setting");
+            }
+            Screen.width = 1920; Screen.height = 1080;
+            ConfigureLayout(new Rect(20, 20, 1200, 860), 20);
+            Check(new LogRenderer(new LogModel(), null, null).WindowRect.width == 1280, "unscaled previous default seed migrates to wider window");
+            Check(!LogLayout.IsDefaultSeed(new Rect(20.02f, 20, 1200, 860), 20), "serialization tolerance does not classify a changed physical position as a default");
+            foreach (GUIStyle style in skinStyles) { style.fixedHeight = 32; style.fixedWidth = 96; }
+            GUI.skin.verticalScrollbar.fixedWidth = 20;
+            GUI.skin.verticalScrollbar.margin = new RectOffset(3, 0, 0, 0);
+            foreach (string tab in new[] { "이벤트", "미션" })
+            {
+                ConfigureLayout(new Rect(20, 20, 540, 600), 24);
+                var model = new LogModel(); model.ResetContext(401);
+                var rows = new LogItem[12];
+                for (int index = 0; index < rows.Length; index++)
+                {
+                    rows[index] = Item("multi-" + index.ToString("D2"), new object());
+                    rows[index].Title = "미션 제목 " + index.ToString("D2") + " " + new string('긴', 8 + index % 3 * 6);
+                }
+                rows[0].RefreshState = LogRefreshState.Waiting;
+                rows[0].RefreshStatus = "원본 대기 사유";
+                rows[1].ReadState = LogReadState.Read;
+                rows[2].ReadState = LogReadState.Unread;
+                rows[11].Title = rows[11].Text = "";
+                rows[11].RawId = "LONG_MISSION_ID_" + new string('R', 180) + "<raw>";
+                Publish(model, tab, rows);
+                var renderer = new LogRenderer(model, null, null);
+                renderer.Handle(LogPadCommand.None);
+                for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
+                renderer.Handle(LogPadCommand.Activate);
+                Repaint(renderer); Repaint(renderer);
+                GUILayout.ScrollViewRecord list = GUILayout.ScrollViews[0];
+                var normal = (GUIStyle)Field(renderer, "buttonStyle");
+                var selected = (GUIStyle)Field(renderer, "selectedStyle");
+                Check(normal.fixedHeight == 0 && normal.fixedWidth == 0 && selected.fixedHeight == 0 && selected.fixedWidth == 0,
+                    tab + ": renderer clears inherited fixed skin sizes before measuring multi-line rows");
+                foreach (GUILayout.ControlRecord row in list.Controls)
+                {
+                    if (!row.Button) continue;
+                    GUIStyle actualStyle = row.Text.StartsWith("▶ ", StringComparison.Ordinal) ? selected : normal;
+                    Check(row.Rect.width == (float)Math.Floor(list.ContentWidth), tab + ": row width excludes actual 20px scrollbar and 3px margin");
+                    Check(row.Rect.height >= Math.Ceiling(actualStyle.CalcHeight(new GUIContent(row.Text), row.Rect.width)),
+                        tab + ": final caption and selected font fit measured multi-line row height");
+                }
+                GUILayout.ControlRecord waiting = list.Controls.Find(control => control.Button && control.Text.Contains("미션 제목 00", StringComparison.Ordinal));
+                Check(waiting.Rect.height > 24 + 16 && waiting.Text.Contains("설명 조회 대기", StringComparison.Ordinal)
+                    && !waiting.Text.Contains("읽음", StringComparison.Ordinal) && !waiting.Text.Contains("미독", StringComparison.Ordinal),
+                    tab + ": unknown story read state is omitted while waiting means description retrieval");
+                Check(list.Controls.Exists(control => control.Button && control.Text.Contains("미션 제목 01", StringComparison.Ordinal) && control.Text.Contains("읽음", StringComparison.Ordinal))
+                    && list.Controls.Exists(control => control.Button && control.Text.Contains("미션 제목 02", StringComparison.Ordinal) && control.Text.Contains("미독", StringComparison.Ordinal)),
+                    tab + ": explicit read and unread publications remain visible");
+                Check(GUILayout.Controls.Exists(control => !control.Button && control.Text.Contains("설명 조회에 필요한 게임 자료", StringComparison.Ordinal)), tab + ": waiting detail explains the missing description data");
+                if (tab == "미션") Check(GUILayout.Controls.Exists(control => control.Text.Contains("미션 미완료·조건 미충족을 뜻하지 않습니다", StringComparison.Ordinal)), "mission waiting detail separates retrieval delay from completion and conditions");
+                Check(rows[0].ReadState == LogReadState.Unknown && rows[0].RefreshState == LogRefreshState.Waiting, "display wording leaves original read and refresh model states intact");
+                Check(list.Controls.Exists(control => control.Button && control.Text.Contains(new string('R', 100), StringComparison.Ordinal) && control.Rect.height > list.Viewport.height),
+                    tab + ": long fallback raw ID retains full wrapping height instead of truncating a single-line row");
+                for (int index = 0; index < 5; index++) renderer.Handle(LogPadCommand.Down);
+                FocusVisible(renderer, model, tab, "미션 제목 05", tab + " measured multi-line selected row");
+                list = GUILayout.ScrollViews[0];
+                GUILayout.ControlRecord focused = list.Controls.Find(control => control.Button && control.Text.Contains("미션 제목 05", StringComparison.Ordinal));
+                Check(focused.VisibleRect.height >= focused.Rect.height - .01f && focused.VisibleRect.width >= focused.Rect.width - .01f,
+                    tab + ": focused row has full visible pixels inside both list and native window clip");
+                Rect shorter = renderer.WindowRect; shorter.height = 440;
+                SetField(renderer, "window", shorter);
+                for (int index = 0; index < 6; index++) renderer.Handle(LogPadCommand.Down);
+                Repaint(renderer); Repaint(renderer);
+                list = GUILayout.ScrollViews[0];
+                GUILayout.ControlRecord oversized = list.Controls.Find(control => control.Button && control.Text.Contains(new string('R', 100), StringComparison.Ordinal));
+                Check(oversized.Rect.height > list.Viewport.height && oversized.Rect.y == model.Tab(tab).ListScroll && oversized.VisibleRect.height > 0,
+                    tab + ": oversized raw-ID row aligns its beginning when the narrow window also becomes short");
+            }
+            ConfigureLayout(new Rect(20, 20, 540, 440), 24);
+            var cards = new LogModel(); cards.ResetContext(402);
+            Publish(cards, "선택지", Item("card-unknown"));
+            var cardRenderer = new LogRenderer(cards, null, null);
+            cardRenderer.Handle(LogPadCommand.None);
+            Repaint(cardRenderer);
+            Check(GUILayout.LiteralLabels.Exists(label => label.Contains("읽음 정보 없음", StringComparison.Ordinal)), "card unknown read state has a neutral information label");
+        }
+        finally
+        {
+            ConfigureLayout(saved, oldFont);
+            Screen.width = oldWidth; Screen.height = oldHeight;
+            GUI.skin.verticalScrollbar.fixedWidth = oldBarWidth;
+            GUI.skin.verticalScrollbar.margin = oldBarMargin;
+            for (int index = 0; index < skinStyles.Length; index++) { skinStyles[index].fixedWidth = fixedSizes[index].x; skinStyles[index].fixedHeight = fixedSizes[index].y; }
         }
     }
 }

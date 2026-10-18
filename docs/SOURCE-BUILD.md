@@ -8,6 +8,10 @@
 
 ## PRD #4 후보와 prerelease
 
+사용자 후속 지시로 카드 탐색·창 확대·목록 행 높이 수정의 `v1.0.5-alpha.4`를 준비합니다. 검토 DLL `06485af8929579f6f7d3744f183aa3359ec40545a6d155257c4bfebadc3b7d44`·설정 `b351703e2b0f1b5ea6b4a5894c1f5309a13dece5d6b06ed909330c0771801259`와 고정 커밋의 새 빌드를 `verify-preview-release.py --scope prd4`로 비교합니다. 출력은 `artifacts/releases/v1.0.5-alpha.4/`이며 [설치·복구·해시·미확인 범위](ISSUE-4-ALPHA4-RELEASE.md)를 따릅니다.
+
+카드 방향키·기본 창 1280×960·목록 행 높이·상태 안내의 로컬 후속은 `--output-dir artifacts/issue-4/card-navigation`에 생성합니다. [변경·후보 해시·자동 검사와 Windows 검증](ISSUE-4-CARD-NAVIGATION.md)을 따릅니다. 전체 소스와 11개 검사 프로그램을 사용하며 기존 후보·공개 자산은 보존합니다.
+
 alpha.3은 소스 커밋 `3b245130a1e6530e4b482d2a4965eb3456d6ec91`의 깨끗한 재빌드·11개 검사·검토 후보 해시 일치를 확인한 뒤 2026-10-19 04:24:38 KST에 게시했습니다. 인증 없는 공개 페이지·설치 ZIP 검증도 통과했습니다. [게시 결과와 해시](ISSUE-4-ALPHA3-RELEASE.md)를 따르며 실제 Windows 성공 여부는 확인 대기입니다.
 
 alpha.2의 작은 빈 창 회귀는 [별도 원인·검사 기록](ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따릅니다. 고정 크기 창 API로 바꾼 후보는 `artifacts/issue-4/fixed-window/`, 게시 전 고정 커밋 검증은 `artifacts/releases/v1.0.5-alpha.3/`에 분리합니다. 기존 후보·자산과 설정을 보존하고 실제 Unity/native 검증은 사용자가 수행합니다.

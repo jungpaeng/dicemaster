@@ -100,8 +100,8 @@ public static class ConfigManager
 		Rect layout = LogLayout.DefaultWindow(Screen.width, Screen.height);
 		LogWindowX = new ConfigElement<float>("LogWindowX", "로그 창 왼쪽 위치(화면 픽셀). 화면 밖/비정상 값은 화면 안으로 복구합니다.", layout.x);
 		LogWindowY = new ConfigElement<float>("LogWindowY", "로그 창 위쪽 위치(화면 픽셀). 화면 밖/비정상 값은 화면 안으로 복구합니다.", layout.y);
-		LogWindowWidth = new ConfigElement<float>("LogWindowWidth", "로그 창 너비(화면 픽셀). 기본 1080p 1200, 화면 높이에 맞춰 확대합니다. 사용자 지정값은 유지합니다.", layout.width);
-		LogWindowHeight = new ConfigElement<float>("LogWindowHeight", "로그 창 높이(화면 픽셀). 기본 1080p 860, 화면 높이에 맞춰 확대합니다. 사용자 지정값은 유지합니다.", layout.height);
+		LogWindowWidth = new ConfigElement<float>("LogWindowWidth", "로그 창 너비(화면 픽셀). 기본 1080p 1280, 화면 높이에 맞춰 확대합니다. 사용자 지정값은 유지합니다.", layout.width);
+		LogWindowHeight = new ConfigElement<float>("LogWindowHeight", "로그 창 높이(화면 픽셀). 기본 1080p 960, 화면 높이에 맞춰 확대합니다. 사용자 지정값은 유지합니다.", layout.height);
 		LogFontSize = new ConfigElement<int>("LogFontSize", "로그 창 글자 크기. 12~64px, 기본 1080p 20px(화면 높이에 맞춰 확대). 창 크기로 다시 축소하지 않습니다.", LogLayout.DefaultFont(Screen.height));
 	}
 }
