@@ -3,9 +3,9 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
-## v1.0.3-alpha.3 — 자동 검사 완료·게시 대기 (prerelease)
+## [v1.0.3-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3) — 2026-10-18 (prerelease)
 
-사용자가 모드 전용 난수의 숫자 갱신과 새 prerelease 게시를 승인했습니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 태그 커밋·게시·익명 공개 다운로드는 대기 중이며 아래 alpha.2의 결과를 승계하지 않습니다.
+사용자가 모드 전용 난수의 숫자 갱신과 새 prerelease 게시를 승인했습니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트·해시 일치를 검증했습니다. Release ID는 `416474001`, 상태는 `draft=false`, `prerelease=true`이며 Latest 정식 `v1.0.2`와 이슈 #1 open을 유지합니다. 아래 alpha.2의 결과를 승계하지 않습니다.
 
 - 게임 RNG와 분리된 단일 `System.Random` 인스턴스로 난수 숫자를 생성합니다. 열린 현재 탭의 기존 0.25초 갱신 주기를 유지합니다.
 - 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명의 평가 안에서 동일 객체의 결과를 재사용해 숫자·색상·이벤트 확률을 일치시킵니다. 미션·스위치의 서로 다른 조건 항목은 별도로 평가합니다. 실제 게임 판정의 예측값은 아닙니다.

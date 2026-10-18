@@ -5,7 +5,7 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md)
 
-현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. 사용자가 게임 RNG와 분리된 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 화면에 부가 표기를 붙이지 않고, 모드 전용 `System.Random`으로 난수를 생성해 숫자와 조건 색상을 같은 평가 결과에서 만듭니다. 실제 게임 판정의 예측값은 아닙니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·두 파일 로컬 ZIP 검증을 마쳤습니다. 태그 커밋·prerelease 게시·익명 공개 다운로드 검증은 대기 중이며 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 구분해 기록합니다.
+현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. 사용자가 게임 RNG와 분리된 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 화면에 부가 표기를 붙이지 않고, 모드 전용 `System.Random`으로 난수를 생성해 숫자와 조건 색상을 같은 평가 결과에서 만듭니다. 실제 게임 판정의 예측값은 아닙니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·두 파일 로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록과 남은 검증 범위는 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 구분해 기록합니다.
 
 **기능 완료·정식 Release 공개는 보류합니다.** [`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 prerelease로 게시하고 각각 익명 공개 다운로드·배포 커밋 바이트 일치를 검증했습니다. 기존 Latest `v1.0.2`는 유지합니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다.
 
@@ -111,7 +111,7 @@ python3 development/tools/build-log-refresh.py \
 
 ## Release 등록
 
-`v1.0.3-alpha.3`의 최종 DLL(462,336바이트, SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`)과 두 파일 로컬 ZIP(191,369바이트, SHA-256 `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9`)을 검증했습니다. 새 태그 커밋·게시·익명 공개 다운로드 검증은 대기 중입니다. 이전 alpha.2는 배포 태그 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트 일치를 검증했습니다. 이전 prerelease를 덮어쓰지 않고 기존 Latest `v1.0.2`를 유지합니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
+`v1.0.3-alpha.3`의 최종 DLL(462,336바이트, SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`)과 두 파일 로컬 ZIP(191,369바이트, SHA-256 `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9`)을 검증했습니다. 2026-10-18 22:43:45 KST에 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 prerelease로 게시하고 익명 공개 다운로드의 CRC·두 파일·태그/커밋 바이트·해시 일치를 검증했습니다. 게시 기록의 문서 후속 커밋은 태그·ZIP 기준을 바꾸지 않습니다. 이전 alpha.2는 배포 태그 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트 일치를 검증했습니다. 이전 prerelease를 덮어쓰지 않고 기존 Latest `v1.0.2`를 유지합니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
 
 태그는 `vX.Y.Z`, ZIP 이름은 `DiceMaster-vX.Y.Z.zip` 형식입니다. 다음 두 파일만 폴더 구조를 유지해 포함합니다.
 

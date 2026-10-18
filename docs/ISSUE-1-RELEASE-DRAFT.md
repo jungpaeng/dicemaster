@@ -1,6 +1,6 @@
-# DiceMaster v1.0.3-alpha.3 — prerelease 게시 준비
+# DiceMaster v1.0.3-alpha.3 — prerelease 게시 기록
 
-사용자가 모드 전용 독립 난수의 숫자 갱신과 새 prerelease 게시를 승인했습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증은 마쳤고 태그 커밋·게시·익명 다운로드는 대기 중이며 아래 alpha.2/alpha.1의 기록을 새 버전 결과로 승계하지 않습니다.
+사용자가 모드 전용 독립 난수의 숫자 갱신과 새 prerelease 게시를 승인했습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 아래 alpha.2/alpha.1의 기록을 새 버전 결과로 승계하지 않습니다.
 
 ## alpha.3 변경
 
@@ -14,7 +14,7 @@
 
 | alpha.3 식별·검사 | 현재 상태 |
 |---|---|
-| 태그·파일 | `v1.0.3-alpha.3` 예정 / `DiceMaster-v1.0.3-alpha.3.zip` 로컬 검증 완료 |
+| 태그·파일 | [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3) / `DiceMaster-v1.0.3-alpha.3.zip` 공개 다운로드 검증 완료 |
 | 캐시/보호·표시 엔진·수명주기 | 19개·16개 시나리오/70개 단언·4,023개 단언 통과 |
 | 실제 파서·표시 통합 | 최초·반복 각각 134개 통과. 0.24초 유지·0.26초 새 추첨 확인 포함 |
 | 실제 관리 동작·메타데이터 계약 | 최초·반복 각각 3,914개·1,011개 단언 통과 |
@@ -28,7 +28,11 @@
 | alpha.3 로컬 ZIP | `DiceMaster-v1.0.3-alpha.3.zip`, 191,369바이트 |
 | ZIP SHA-256 | `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9` |
 | 로컬 ZIP 검증 | 정확히 config/DiceMaster.cfg·plugins/DiceMaster/DiceMaster.dll 두 파일, CRC 정상·작업 트리 바이트 일치 |
-| 배포 커밋·게시·익명 공개 다운로드 | 대기 중 |
+| 배포 태그 커밋 | `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` — 게시 기록 문서 후속 커밋과 별개로 고정 |
+| GitHub 게시 상태·시각 | Release ID `416474001`, asset ID `653584113`, `draft=false`, `prerelease=true`, 2026-10-18 13:43:45 UTC / 22:43:45 KST |
+| 공개 다운로드 검증 | 익명 API·다운로드·CRC·정확히 두 파일·태그 커밋·각 파일의 커밋 바이트·ZIP/DLL SHA-256 일치 완료 |
+| 기존 Latest·이슈 #1 | Latest 정식 `v1.0.2` 유지, 이슈 #1 open 유지 |
+| 게시·익명 검증 영수증 | `development/releases/v1.0.3-alpha.3/github-publication.json`·`anonymous-verification.json` |
 | Windows·native·실제 게임 리소스·게임 성능 | 미승인·미실행/미검증 |
 
 ZIP은 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함하며 태그 커밋과 바이트를 일치시킵니다. 기존 prerelease를 덮어쓰지 않고 Latest 정식 `v1.0.2`를 유지합니다. Windows 설치·게임 실행은 새로 승인되지 않았고 실행하거나 요청하지 않습니다. 기능·이슈 완료와 정식 Release는 계속 보류합니다. [검증 기록](ISSUE-1-VALIDATION.md)과 [난수 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)에 증거·한계를 구분해 기록합니다.

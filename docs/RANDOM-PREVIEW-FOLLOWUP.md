@@ -1,8 +1,8 @@
-# 이슈 #1 후속 구현 — 독립 난수 숫자 갱신 (alpha.3)
+# 이슈 #1 후속 구현 — 독립 난수 숫자 갱신 (alpha.3 게시)
 
 [PRD #1](https://github.com/jungpaeng/dicemaster/issues/1) · [현재 검증 기록](ISSUE-1-VALIDATION.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md)
 
-기록일: 2026-10-18. 사용자가 게임 RNG와 분리된 모드 난수의 0.25초 숫자 갱신과 새 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. UI에 `표시용` 같은 부가 문구는 붙이지 않습니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 태그 커밋·게시·익명 다운로드 검증은 대기 중이며 이전 버전의 수치를 승계하지 않습니다. Windows 설치·게임 실행은 새로 승인되지 않았으며 실행하거나 요청하지 않습니다. 기능·이슈 완료와 정식 Release는 계속 보류합니다.
+기록일: 2026-10-18. 사용자가 게임 RNG와 분리된 모드 난수의 0.25초 숫자 갱신과 새 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. UI에 `표시용` 같은 부가 문구는 붙이지 않습니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 이전 버전의 수치를 승계하지 않습니다. Windows 설치·게임 실행은 새로 승인되지 않았으며 실행하거나 요청하지 않습니다. 기능·이슈 완료와 정식 Release는 계속 보류합니다.
 
 ## alpha.3 구현 계약
 
@@ -31,7 +31,11 @@
 | alpha.3 로컬 ZIP | `DiceMaster-v1.0.3-alpha.3.zip`, 191,369바이트 |
 | ZIP SHA-256 | `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9` |
 | 로컬 ZIP 검증 | 정확히 config/DiceMaster.cfg·plugins/DiceMaster/DiceMaster.dll 두 파일, CRC 정상·작업 트리 바이트 일치 |
-| 태그 커밋·prerelease 게시·공개 다운로드 | 사용자 승인됨, 대기 중 |
+| 배포 태그 커밋 | `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` — 게시 기록 문서 후속 커밋과 별개로 고정 |
+| GitHub 게시 상태·시각 | Release ID `416474001`, asset ID `653584113`, `draft=false`, `prerelease=true`, 2026-10-18 13:43:45 UTC / 22:43:45 KST |
+| 공개 다운로드 검증 | 익명 API·다운로드·CRC·정확히 두 파일·태그 커밋·각 파일의 커밋 바이트·ZIP/DLL SHA-256 일치 완료 |
+| 기존 Latest·이슈 #1 | Latest 정식 `v1.0.2` 유지, 이슈 #1 open 유지 |
+| 게시·익명 검증 영수증 | `development/releases/v1.0.3-alpha.3/github-publication.json`·`anonymous-verification.json` |
 | 검사 기록 | `development/releases/v1.0.3-alpha.3/test-verification.json`·`release-manifest.json` |
 | 게임 RNG·조건 실행 카운터·일반 진행 보존 | 관리 코드·경계 대역 검증과 실제 게임 실행을 구분해 기록 |
 | Windows·native Unity·실제 리소스·게임 성능 | 미승인·미실행/미검증 |

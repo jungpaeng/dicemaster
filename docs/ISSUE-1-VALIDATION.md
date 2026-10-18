@@ -4,7 +4,7 @@
 
 기록일: 2026-10-18 (Asia/Seoul). 기준 회귀: v1.0.2 / `e7d6dfeade5da9bba12825668f4948f56aea9e26`.
 
-**현재 상태: 사용자가 모드 전용 `System.Random`을 사용하는 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다.** UI에 `표시용` 같은 부가 문구는 붙이지 않습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명의 숫자·색상·확률은 같은 평가 결과를 사용하고 게임 RNG와 `_count`는 변경하지 않습니다. 실제 게임 판정의 예측값은 아닙니다. 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤고 아래에 새 파일 해시와 결과를 기록했습니다. 태그 커밋·게시·익명 공개 다운로드는 대기 중이며 alpha.2의 결과를 승계하지 않습니다. Windows 실행 승인은 추가되지 않았고 기능·이슈 완료와 정식 Release는 계속 보류합니다. [후속 구현 범위](RANDOM-PREVIEW-FOLLOWUP.md)를 따릅니다.
+**현재 상태: 사용자가 모드 전용 `System.Random`을 사용하는 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다.** UI에 `표시용` 같은 부가 문구는 붙이지 않습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명의 숫자·색상·확률은 같은 평가 결과를 사용하고 게임 RNG와 `_count`는 변경하지 않습니다. 실제 게임 판정의 예측값은 아닙니다. 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤고 아래에 새 파일 해시와 결과를 기록했습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. alpha.2의 결과를 승계하지 않습니다. Windows 실행 승인은 추가되지 않았고 기능·이슈 완료와 정식 Release는 계속 보류합니다. [후속 구현 범위](RANDOM-PREVIEW-FOLLOWUP.md)를 따릅니다.
 
 **이전 게시 기록:** [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) 게시와 공개 다운로드 검증을 마쳤습니다. 게시 시각은 2026-10-18 21:08:36 KST, 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`입니다. 실제 게임 DLL의 관련 API 분석과 사용자 Windows 검증을 모두 충족하기 전에는 기능·이슈 완료 또는 정식 Release로 처리하지 않습니다. Windows 설치·게임 실행 검증은 승인되지 않았습니다.
 
@@ -12,7 +12,7 @@
 
 | 항목 | 현재 상태 |
 |---|---|
-| 대상 버전 | `v1.0.3-alpha.3` prerelease 게시 승인 |
+| 대상 버전 | [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3) 게시·익명 공개 다운로드 검증 완료 |
 | 변경 계약 | 모드 전용 난수·0.25초 숫자 갱신·개별 조건 항목/전체 이벤트의 결과 재사용·UI 부가 표기 제거 |
 | 지원 경계 | Sum/Max/Min/Multiply·중첩/다중 난수·조건 설정·숫자 이벤트 확률. 전체 int 양끝 포함, 역순 구간 정규화 |
 | 캐시/보호·표시 엔진·수명주기 | 19개·16개 시나리오/70개 단언·4,023개 단언 통과 |
@@ -28,7 +28,11 @@
 | alpha.3 로컬 ZIP | `DiceMaster-v1.0.3-alpha.3.zip`, 191,369바이트 |
 | ZIP SHA-256 | `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9` |
 | 로컬 ZIP 검증 | 정확히 config/DiceMaster.cfg·plugins/DiceMaster/DiceMaster.dll 두 파일, CRC 정상·작업 트리 바이트 일치 |
-| 배포 커밋·게시·공개 다운로드 | 대기 중. 최종 자동 검사와 공개 검증을 구분 |
+| 배포 태그 커밋 | `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` — 게시 기록 문서 후속 커밋과 별개로 고정 |
+| GitHub 게시 상태·시각 | Release ID `416474001`, asset ID `653584113`, `draft=false`, `prerelease=true`, 2026-10-18 13:43:45 UTC / 22:43:45 KST |
+| 공개 다운로드 검증 | 익명 API·다운로드·CRC·정확히 두 파일·태그 커밋·각 파일의 커밋 바이트·ZIP/DLL SHA-256 일치 완료 |
+| 기존 Latest·이슈 #1 | Latest 정식 `v1.0.2` 유지, 이슈 #1 open 유지 |
+| 게시·익명 검증 영수증 | `development/releases/v1.0.3-alpha.3/github-publication.json`·`anonymous-verification.json` |
 | 검사 기록 | `development/releases/v1.0.3-alpha.3/test-verification.json`·`release-manifest.json` |
 | Windows·native·실제 게임 리소스·게임 성능 | 미승인·미실행/미검증 |
 
