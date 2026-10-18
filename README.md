@@ -5,6 +5,14 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
+## PRD #4 — v1.0.5-alpha.1 prerelease 준비
+
+로그 화면을 선택지·조건의 복수 펼침 카드와 이벤트·미션의 검색 목록/상세로 개편했습니다. 기존 `LogMenuToggleKey`(기본 Tab)로 열며 패드 열기 조합은 없습니다. 열린 창은 LB/RB 탭, 십자키/왼쪽 스틱 이동, A 선택, 오른쪽 스틱 본문 스크롤, Y 도구, X 새로고침, B 복귀/닫기를 사용합니다. 도구에서 검색/한글 화면 키보드·지우기·위치/크기/글자 크기·닫기와 패드 소유자 재선택에 접근합니다.
+
+창 설정만 기존 BepInEx 설정에 저장합니다. 검색·선택·펼침·스크롤은 실행 중 상태이며 새 문맥의 이전 실행 초점은 취소됩니다. 게임 입력 모드가 유효하면 우선 사용하고 불명일 때 양쪽 입력을 지원합니다. 패드 조작은 실제 XInput 차단 경로가 확인돼야 동작하며 로그가 주사위보다 우선합니다. 버튼은 기존 기능의 의미에 맞춰 `이벤트 우선 예약`·`미션 조건 통과 예약`으로 표시하고 즉시 발생을 보장하지 않습니다.
+
+사용자 지시에 따라 [v1.0.5-alpha.1 prerelease](docs/ISSUE-4-ALPHA1-RELEASE.md)를 준비합니다. [후보 경로·해시·구현/자동 검사](docs/ISSUE-4-IMPLEMENTATION.md), [적용·복구 및 Windows 검증표](docs/ISSUE-4-WINDOWS-VALIDATION.md), [입력 상세와 미확인 범위](docs/GAMEPAD.md)를 확인하세요. **실제 Windows 패드 탐색·스크롤·버튼과 한글 가독성은 확인 대기이며 이슈 #4는 미완료**입니다. 아래 공개 버전의 과거 검증을 새 후보의 결과로 승계하지 않습니다.
+
 기본 개발·배포 경로를 전체 C# 소스 빌드로 전환하고 **[정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다.** [설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3/DiceMaster-v1.0.3.zip) · [PRD #3 완료](https://github.com/jungpaeng/dicemaster/issues/3). [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 모드 소스·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 일반 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 DLL 해시로 고정하며 기존 패치 공정은 비교·복구용으로 보존합니다.
 
 2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상 DLL은 SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 정식 v1.0.3 빌드는 번역 주석 세 줄 정리를 포함하므로 DLL 전체 해시가 다릅니다. 사용자 확인 범위와 두 DLL의 비교, 자동 검사·정식 게시 결과는 [소스 빌드 안내](docs/SOURCE-BUILD.md)와 [배포 기록](docs/ISSUE-3-RELEASE.md)에 구분합니다.

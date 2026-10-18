@@ -86,7 +86,7 @@ static class LiveLogIntegrationTests
         using var fixtures = AssemblyDefinition.ReadAssembly(args[1]);
         target = fixtures.MainModule;
         var module = source.MainModule;
-        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || type.Namespace == "DiceMaster.LiveLog");
+        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
         PreviewFixtureBoundary.Install(target);
         var probe = target.GetType("DiceMaster.Probe").Fields.Single(field => field.Name == "ParserEntries");
         foreach (var method in target.GetType("DiceMaster.LuaParse.LuaParser").Methods.Where(method => method.Name.StartsWith("Extract") && method.HasBody))
@@ -126,6 +126,7 @@ static class LiveLogIntegrationTests
         fixtures.Write(output);
         int assertions = Run(output, "Run");
         assertions += Run(output, "RunLifecycle");
+        if (target.GetType("DiceMaster.LogUI.LogModel") != null) assertions += Run(output, "RunLogModel");
         var helperSource = module.GetType("DiceMaster.DataHelper");
         var helperTarget = target.GetType("DiceMaster.DataHelper");
         foreach (var method in helperSource.Methods.Where(method => method.Name == "GetMissions" || method.Name == "ExtractConditions" || method.Name == "IsValidMission" || method.Name == "ParseSwitchCheckpoint"))

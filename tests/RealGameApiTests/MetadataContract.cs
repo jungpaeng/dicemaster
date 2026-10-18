@@ -19,6 +19,7 @@ static partial class RealGameApiTests
     // game's coroutine/native execution are not performed by this test suite.
     static void VerifyMetadataContract(AssemblyDefinition candidate, string managedRoot)
     {
+        VerifyLogInputContract(candidate, managedRoot);
         using var actualCore = AssemblyDefinition.ReadAssembly(Path.Combine(managedRoot, "Mortal.Core.dll"));
         using var actualFungus = AssemblyDefinition.ReadAssembly(Path.Combine(managedRoot, "Fungus.dll"));
         string harmonyPath = Path.GetFullPath(Path.Combine(managedRoot, "..", "..", "BepInEx", "core", "0Harmony.dll"));

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/DiceMaster/LogUI/LocalSearchKeyboard.cs" Link="LocalSearchKeyboard.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/LogRenderer.cs" Link="LogRenderer.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
+  </ItemGroup>
+</Project>

@@ -7,7 +7,7 @@ namespace DiceMaster.Gamepad
     public static class PadButtons
     {
         public const ushort Up = 0x0001, Down = 0x0002, Left = 0x0004, Right = 0x0008;
-        public const ushort LB = 0x0100, B = 0x2000;
+        public const ushort LB = 0x0100, RB = 0x0200, A = 0x1000, B = 0x2000, X = 0x4000, Y = 0x8000;
         public const ushort Directions = Up | Down | Left | Right;
         public const ushort Captured = Directions | LB | B;
     }
@@ -82,147 +82,145 @@ namespace DiceMaster.Gamepad
         }
     }
 
-    // Each physical button remains hidden until released, even if LB is released
-    // first. The left stick remains hidden until centered for the same reason.
+    // Filtering is shared by the log and dice owners. The log always captures
+    // every XInput channel on all four slots; release latches survive closing.
     public sealed class PadInputFilter
     {
         private readonly object gate = new object();
-        private readonly ushort[] latched = new ushort[4];
-        private readonly uint[] packets = new uint[4];
-        private readonly uint[] originalPackets = new uint[4];
-        private readonly ushort[] previousButtons = new ushort[4];
-        private readonly short[] previousLeftX = new short[4], previousLeftY = new short[4];
-        private readonly bool[] stickLatched = new bool[4];
-        private readonly bool[] initialized = new bool[4];
-        private readonly bool[] virtualized = new bool[4];
+        private sealed class Slot
+        {
+            internal ushort DiceButtons, LogButtons;
+            internal bool DiceStick, LogLeft, LogRight, LogLT, LogRT, AwaitNeutral;
+            internal bool Initialized, Virtualized, Seen;
+            internal uint Packet, OriginalPacket;
+            internal PadState Previous, Raw;
+        }
+        private readonly Slot[] slots = { new Slot(), new Slot(), new Slot(), new Slot() };
+        private bool logCapture;
 
+        public static bool IsNeutral(PadState state)
+        {
+            return state.Buttons == 0 && state.LeftTrigger <= 30 && state.RightTrigger <= 30
+                && PadStick.IsNeutral(state.LeftX, state.LeftY) && PadStick.IsNeutral(state.RightX, state.RightY);
+        }
+        private static void Capture(Slot slot, PadState state)
+        {
+            slot.LogButtons |= state.Buttons;
+            slot.LogLeft |= !PadStick.IsNeutral(state.LeftX, state.LeftY);
+            slot.LogRight |= !PadStick.IsNeutral(state.RightX, state.RightY);
+            slot.LogLT |= state.LeftTrigger > 30; slot.LogRT |= state.RightTrigger > 30;
+        }
+        public void SetLogCapture(bool active)
+        {
+            lock (gate)
+            {
+                if (active && !logCapture)
+                    foreach (Slot slot in slots) if (slot.Seen) Capture(slot, slot.Raw);
+                logCapture = active;
+            }
+        }
+        // Used on focus/mode/context boundaries, including previously blocked
+        // non-owner pads. Reconnection cannot turn a held input into a new press.
+        public void RequireNeutral()
+        {
+            lock (gate) foreach (Slot slot in slots) slot.AwaitNeutral = true;
+        }
+        public bool CanUseRaw(uint index)
+        {
+            if (index >= 4) return false;
+            lock (gate)
+            {
+                Slot slot = slots[index];
+                return !logCapture && !slot.AwaitNeutral && slot.LogButtons == 0
+                    && !slot.LogLeft && !slot.LogRight && !slot.LogLT && !slot.LogRT;
+            }
+        }
+        public void ObserveRaw(uint index, PadState state)
+        {
+            if (index >= 4) return;
+            lock (gate) Observe(slots[index], state);
+        }
+        private void Observe(Slot slot, PadState raw)
+        {
+            slot.Raw = raw; slot.Seen = true;
+            slot.LogButtons &= raw.Buttons;
+            if (PadStick.IsNeutral(raw.LeftX, raw.LeftY)) slot.LogLeft = false;
+            if (PadStick.IsNeutral(raw.RightX, raw.RightY)) slot.LogRight = false;
+            if (raw.LeftTrigger <= 30) slot.LogLT = false;
+            if (raw.RightTrigger <= 30) slot.LogRT = false;
+            if (slot.AwaitNeutral && IsNeutral(raw)) slot.AwaitNeutral = false;
+            if (logCapture) Capture(slot, raw);
+        }
         public PadState Filter(uint index, PadState state, bool windowActive)
         {
             if (index >= 4) return state;
             lock (gate)
             {
-                ushort raw = state.Buttons;
-                uint rawPacket = state.Packet;
-                short rawX = state.LeftX, rawY = state.LeftY;
-                if (!windowActive) { latched[index] = 0; stickLatched[index] = false; }
+                Slot slot = slots[index];
+                PadState raw = state;
+                Observe(slot, raw);
+                if (!windowActive) { slot.DiceButtons = 0; slot.DiceStick = false; }
                 else
                 {
-                    latched[index] &= raw;
-                    if ((raw & PadButtons.LB) != 0)
+                    slot.DiceButtons &= raw.Buttons;
+                    if ((raw.Buttons & PadButtons.LB) != 0)
                     {
-                        latched[index] |= (ushort)(raw & PadButtons.Captured);
-                        stickLatched[index] = true;
+                        slot.DiceButtons |= (ushort)(raw.Buttons & PadButtons.Captured);
+                        slot.DiceStick = true;
                     }
-                    else if (PadStick.IsNeutral(rawX, rawY)) stickLatched[index] = false;
+                    else if (PadStick.IsNeutral(raw.LeftX, raw.LeftY)) slot.DiceStick = false;
                 }
-                ushort filtered = (ushort)(raw & ~latched[index]);
-                if (stickLatched[index]) { state.LeftX = 0; state.LeftY = 0; }
-                if (!initialized[index])
+                if (logCapture || slot.AwaitNeutral)
                 {
-                    packets[index] = state.Packet;
-                    originalPackets[index] = state.Packet;
-                    previousButtons[index] = raw;
-                    previousLeftX[index] = rawX; previousLeftY[index] = rawY;
-                    initialized[index] = true;
+                    state.Buttons = 0; state.LeftTrigger = state.RightTrigger = 0;
+                    state.LeftX = state.LeftY = state.RightX = state.RightY = 0;
                 }
-                if (filtered != raw || state.LeftX != rawX || state.LeftY != rawY) virtualized[index] = true;
-                if (virtualized[index])
+                else
                 {
-                    if (state.Packet != originalPackets[index] || filtered != previousButtons[index]
-                        || state.LeftX != previousLeftX[index] || state.LeftY != previousLeftY[index])
-                        packets[index] = unchecked(packets[index] + 1);
-                    state.Packet = packets[index];
+                    state.Buttons &= (ushort)~(slot.LogButtons | slot.DiceButtons);
+                    if (slot.LogLeft || slot.DiceStick) state.LeftX = state.LeftY = 0;
+                    if (slot.LogRight) state.RightX = state.RightY = 0;
+                    if (slot.LogLT) state.LeftTrigger = 0;
+                    if (slot.LogRT) state.RightTrigger = 0;
                 }
-                originalPackets[index] = rawPacket;
-                previousButtons[index] = filtered;
-                previousLeftX[index] = state.LeftX; previousLeftY[index] = state.LeftY;
-                state.Buttons = filtered;
+                if (!slot.Initialized)
+                {
+                    slot.Packet = raw.Packet; slot.OriginalPacket = raw.Packet;
+                    slot.Previous = raw; slot.Initialized = true;
+                }
+                if (!SameInput(raw, state)) slot.Virtualized = true;
+                if (slot.Virtualized)
+                {
+                    if (raw.Packet != slot.OriginalPacket || !SameInput(slot.Previous, state))
+                        slot.Packet = unchecked(slot.Packet + 1);
+                    state.Packet = slot.Packet;
+                }
+                slot.OriginalPacket = raw.Packet; slot.Previous = state;
                 return state;
             }
         }
-
+        private static bool SameInput(PadState a, PadState b)
+        {
+            return a.Buttons == b.Buttons && a.LeftTrigger == b.LeftTrigger && a.RightTrigger == b.RightTrigger
+                && a.LeftX == b.LeftX && a.LeftY == b.LeftY && a.RightX == b.RightX && a.RightY == b.RightY;
+        }
         public void Reset()
         {
             lock (gate)
             {
-                Array.Clear(latched, 0, 4); Array.Clear(initialized, 0, 4);
-                Array.Clear(virtualized, 0, 4);
-                Array.Clear(stickLatched, 0, 4);
+                logCapture = false;
+                for (int i = 0; i < slots.Length; i++) slots[i] = new Slot();
             }
         }
-
         public void Disconnected(uint index)
         {
             if (index >= 4) return;
             lock (gate)
             {
-                latched[index] = 0; initialized[index] = false; virtualized[index] = false; stickLatched[index] = false;
+                Slot old = slots[index];
+                slots[index] = new Slot { AwaitNeutral = logCapture || old.AwaitNeutral || old.LogButtons != 0
+                    || old.LogLeft || old.LogRight || old.LogLT || old.LogRT };
             }
-        }
-    }
-
-    public static class GamepadBridge
-    {
-        private static readonly PadAdjustment adjustment = new PadAdjustment();
-        private static readonly NativeXInput native = new NativeXInput();
-        private static bool initialized, failed, visible, connected, ready, adjusting;
-        private static int controller = -1;
-        private static string warning;
-        private static int value;
-
-        public static int Tick(bool enabled, bool windowVisible, int current, float time, string cacheRoot)
-        {
-            visible = enabled && windowVisible;
-            value = current;
-            if (!enabled) { native.WindowActive = false; ResetAdjustment(); return current; }
-            if (!initialized)
-            {
-                initialized = true;
-                try { native.Initialize(cacheRoot); }
-                catch (Exception e) { failed = true; warning = "패드 조정을 시작하지 못했습니다: " + e.Message; }
-            }
-            native.WindowActive = visible && !failed;
-            if (failed) { ResetAdjustment(); return current; }
-            // Do not activate controls if the game is not actually polling the
-            // filtered XInput path. Avoid modifying values without capture.
-            ready = native.GamePollingObserved;
-            PadState state = default(PadState);
-            bool found = false;
-            int selected = -1;
-            for (uint i = 0; i < 4; i++)
-            {
-                PadState next;
-                if (!native.ReadRaw(i, out next)) continue;
-                if (!found || (next.Buttons & PadButtons.LB) != 0)
-                {
-                    found = true; state = next; selected = (int)i;
-                    if ((next.Buttons & PadButtons.LB) != 0) break;
-                }
-            }
-            connected = found;
-            if (selected != controller) { adjustment.Reset(); controller = selected; }
-            adjusting = visible && ready && connected && (state.Buttons & PadButtons.LB) != 0;
-            value = adjustment.Tick(adjusting, state.Buttons, time, current, state.LeftX, state.LeftY);
-            return value;
-        }
-
-        public static bool ShowHint { get { return visible; } }
-        public static string Hint()
-        {
-            if (failed) return "패드 조정을 사용할 수 없습니다. 로그를 확인해 주세요.";
-            if (!connected) return "패드를 연결하면 LB를 누른 채 주사위 수치를 조정할 수 있습니다.";
-            if (!ready) return "게임의 패드 입력을 기다리는 중입니다.";
-            string current = value == 0 ? "자동" : value.ToString(CultureInfo.InvariantCulture);
-            return "주사위: " + current + (adjusting ? "  [LB 조정 중]" : "")
-                + "\nLB + 십자키/왼쪽 스틱: ←/→ ±1   ↑/↓ ±10\nLB+B: 자동 (0)";
-        }
-        public static string ConsumeWarning() { string result = warning; warning = null; return result; }
-        public static void ResetAdjustment() { adjustment.Reset(); adjusting = false; controller = -1; }
-        public static void Shutdown()
-        {
-            native.WindowActive = false; native.Dispose();
-            visible = ready = connected = adjusting = false;
-            ResetAdjustment();
         }
     }
 }

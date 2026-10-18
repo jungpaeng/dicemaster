@@ -1,7 +1,10 @@
 """Rebuild an explicitly selected preview commit and verify the reviewed DLL/config.
 
-This prerelease-only path retains the original source-restoration verifier. It
-does not claim alpha.4 runtime equivalence or a Windows run of PRD 2 changes.
+This prerelease-only path retains the original source-restoration verifier. The
+default --scope prd2 keeps its original candidate contract. Select --scope prd4
+explicitly for the reviewed log GUI/XInput candidate and its 11 test programs.
+Neither scope claims historical runtime equivalence, feature completion or a
+Windows run of the candidate.
 No Git refs, network resources, installed plugins or game references are written.
 """
 from pathlib import Path
@@ -19,8 +22,60 @@ from source_build import (ARTIFACTS, BUILD, artifact_directory, digest, record,
                           run, write_json)
 
 
+PRD4_VALIDATION = {
+    'scope': 'PRD 4 log GUI and XInput navigation local candidate',
+    'windows_runtime': 'not-run; maintainer confirmation required',
+    'real_lua_comparison': 'PRD 2 analysis unchanged; see existing evidence',
+    'final_trace_limits': 'PRD 2 limits preserved',
+    'historical_windows_confirmation_applies_to_this_candidate': False,
+}
+PRD4_RUNTIME_BOUNDARY = (
+    'PRD 4 changes GUI and input behavior; previous Windows confirmation does not '
+    'validate this candidate. Maintainer Windows verification is pending.')
+PRD4_REQUIRED_TESTS = frozenset({
+    'LogRefreshTests', 'LiveLogEngineTests', 'LifecycleTests',
+    'LiveLogIntegrationTests', 'RealGameApiTests', 'GamepadTests',
+    'SourceBehaviorTests', 'PreviewIntegrationTests', 'LogUiModelTests',
+    'LogUiWiringTests', 'LogUiKeyboardTests',
+})
+
+
+def validate_preview_candidate(manifest, scope):
+    """Reject a mismatched scope or evidence that overstates a preview build."""
+    validation = manifest.get('candidate_validation')
+    if not isinstance(validation, dict):
+        raise RuntimeError('Preview candidate validation boundaries are missing.')
+    if scope == 'prd2':
+        if (validation.get('windows_runtime') != 'not-run'
+                or validation.get('real_lua_comparison') != 'not-run'
+                or validation.get('historical_windows_confirmation_applies_to_this_candidate') is not False):
+            raise RuntimeError('PRD 2 preview validation boundaries must remain explicit.')
+    elif scope == 'prd4':
+        if (validation != PRD4_VALIDATION
+                or validation.get('historical_windows_confirmation_applies_to_this_candidate') is not False
+                or manifest.get('runtime_equivalence') != PRD4_RUNTIME_BOUNDARY
+                or manifest.get('windows_validation', {}).get('new_release_dll_directly_windows_tested') is not False):
+            raise RuntimeError('PRD 4 preview must preserve its exact scope and pending Windows boundaries.')
+        tests = manifest.get('tests')
+        if not isinstance(tests, dict) or not PRD4_REQUIRED_TESTS.issubset(tests):
+            raise RuntimeError('PRD 4 preview requires all 11 candidate test programs.')
+        for name in PRD4_REQUIRED_TESTS:
+            evidence = tests[name]
+            if (not isinstance(evidence, list) or not evidence
+                    or any(not isinstance(line, str) or not line.strip() for line in evidence)):
+                raise RuntimeError('PRD 4 preview test evidence is empty or malformed: ' + name)
+    else:
+        raise RuntimeError('Unsupported preview candidate scope: ' + str(scope))
+    for claim in ('historical_full_runtime_equivalence_claimed', 'feature_or_issue_completion_claimed'):
+        if claim in manifest and manifest[claim] is not False:
+            raise RuntimeError('Preview must not claim runtime equivalence or feature/issue completion.')
+    return validation
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--scope', choices=('prd2', 'prd4'), default='prd2',
+                        help='Candidate validation contract (default: prd2). PRD 4 requires explicit selection.')
     parser.add_argument('--references', type=Path, required=True)
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--version', required=True)
@@ -81,11 +136,7 @@ def main():
                         or package.read('config/DiceMaster.cfg') != config.read_bytes()
                         or package.read('plugins/DiceMaster/DiceMaster.dll') != dll.read_bytes()):
                     raise RuntimeError('Two-file ZIP, CRC or committed artifact bytes do not match.')
-            validation = manifest['candidate_validation']
-            if (validation['windows_runtime'] != 'not-run'
-                    or validation['real_lua_comparison'] != 'not-run'
-                    or validation['historical_windows_confirmation_applies_to_this_candidate']):
-                raise RuntimeError('Preview validation boundaries must remain explicit.')
+            validation = validate_preview_candidate(manifest, args.scope)
             stage = work / 'verified'
             stage.mkdir()
             for name in ('DiceMaster.dll', 'build-manifest.json', 'build.log'):
@@ -96,7 +147,7 @@ def main():
             write_json(stage / 'release-verification.json', {
                 'status': 'prerelease-commit-build-verified', 'published': False,
                 'created_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                'source_commit': commit, 'version': args.version,
+                'source_commit': commit, 'version': args.version, 'preview_scope': args.scope,
                 'preexisting_managed_dll_count': 0,
                 'build_input_sha256': manifest['build_input_sha256'],
                 'dll': manifest['dll'], 'zip': manifest['zip'], 'config': manifest['config'],

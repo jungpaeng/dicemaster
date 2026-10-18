@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.CompilerServices;
+using DiceMaster.LogUI;
 
 namespace DiceMaster.LiveLog
 {
@@ -31,6 +32,12 @@ namespace DiceMaster.LiveLog
         private static readonly Dictionary<string, string> boundaryFailures = new Dictionary<string, string>();
         private static readonly Dictionary<string, Value> partialOptions = new Dictionary<string, Value>();
         private static readonly Dictionary<string, Value> partialEvents = new Dictionary<string, Value>();
+        public static readonly LogModel Model = new LogModel();
+        private static long contextId;
+        private static long nextIdentity;
+        private static readonly Dictionary<object, long> identities = new Dictionary<object, long>(new ReferenceIdentity());
+        private static readonly Dictionary<string, Dictionary<string, Value>> publishedValues = new Dictionary<string, Dictionary<string, Value>>();
+        private static readonly HashSet<string> failedPublications = new HashSet<string>(StringComparer.Ordinal);
         public static int AnalysisCount;
 
         private sealed class EventSource
@@ -42,8 +49,22 @@ namespace DiceMaster.LiveLog
 
         private sealed class Value
         {
-            public string Key, Description, Text;
-            public object Data, StoryState;
+            public string Key, Description, Text, RawId, Position;
+            public object Data, Source, StoryState;
+            public readonly List<string> AnalysisStates = new List<string>();
+        }
+
+        private sealed class ReferenceIdentity : IEqualityComparer<object>
+        {
+            public new bool Equals(object left, object right) { return ReferenceEquals(left, right); }
+            public int GetHashCode(object value) { return RuntimeHelpers.GetHashCode(value); }
+        }
+
+        private static long Identity(object value)
+        {
+            long id;
+            if (!identities.TryGetValue(value, out id)) { id = checked(++nextIdentity); identities.Add(value, id); }
+            return id;
         }
 
         private static Type TypeFor(string name)
@@ -277,6 +298,10 @@ namespace DiceMaster.LiveLog
 
         private static void ResetCore()
         {
+            Model.ResetContext(checked(++contextId));
+            publishedValues.Clear();
+            failedPublications.Clear();
+            identities.Clear(); nextIdentity = 0;
             engine.ResetContext();
             parsed = false;
             options = optionStories = switchStories = null;
@@ -429,6 +454,7 @@ namespace DiceMaster.LiveLog
                     queries.Add(new DisplayQuery(key, () => {
                         object state = Call(Patch(), "EvaluateStoryReadState", optionStories, key);
                         Value value = new Value {
+                            RawId = key,
                             Key = (string)Call(owner, "ColorizeKeyByStoryReadState", key, state),
                             Text = (string)Call(Patch(), "ResolveOptionStoryText", key), StoryState = state
                         };
@@ -436,12 +462,14 @@ namespace DiceMaster.LiveLog
                         try
                         {
                             value.Description = Translate((string)Call(TypeFor("DiceMaster.LuaParse.LuaParser"), "Description", actions));
+                            CaptureAnalysis(value, actions);
                             partialOptions.Remove(key);
                             return value;
                         }
                         catch (PreviewReadException failure)
                         {
                             value.Description = Translate(failure.PartialDescription);
+                            CaptureAnalysis(value, actions);
                             partialOptions[key] = value;
                             if (failure.IsWaiting) throw new DataNotReadyException();
                             throw new InvalidOperationException("Preview read boundary failed.");
@@ -462,7 +490,7 @@ namespace DiceMaster.LiveLog
                         object state = Call(Patch(), "EvaluateSwitchStoryReadState", switchStories, key);
                         string title = string.IsNullOrWhiteSpace(branches) ? (string)Call(owner, "ColorizeKeyByStoryReadState", label, state)
                             : (string)Call(TypeFor("DiceMaster.RichText"), "Golden", label) + " - " + branches;
-                        return new Value { Key = title,
+                        return new Value { Key = title, RawId = key,
                             Description = Translate((string)Call(TypeFor("DiceMaster.DataHelper"), "ParseSwitchCheckpoint", key)),
                             Text = branches, StoryState = state };
                     }));
@@ -512,21 +540,23 @@ namespace DiceMaster.LiveLog
                     {
                         object data = entry;
                         if (data == null) continue;
-                        string id = position + "/" + RuntimeHelpers.GetHashCode(data);
+                        string id = position + "/" + Identity(data);
                         queries.Add(new DisplayQuery(id, () => {
-                            Value value = new Value { Data = data,
+                            Value value = new Value { Data = data, Position = position, RawId = (string)Read(data, "name"),
                                 Key = (string)Call(Cache(), "GetPositionEventName", data) };
                             Call(Cache(), "RetryDefinitionReads", data);
                             try
                             {
                                 PrepareEventDefinition(data);
                                 value.Description = Translate((string)Call(Cache(), "GetPositionEventDesc", data));
+                                CaptureEventAnalysis(value, data);
                                 partialEvents.Remove(id);
                                 return value;
                             }
                             catch (PreviewReadException failure)
                             {
                                 value.Description = Translate(failure.PartialDescription);
+                                CaptureEventAnalysis(value, data);
                                 partialEvents[id] = value;
                                 if (failure.IsWaiting) throw new DataNotReadyException();
                                 throw new InvalidOperationException("Preview event read boundary failed.");
@@ -545,7 +575,7 @@ namespace DiceMaster.LiveLog
                 {
                     object mission = entry;
                     if (mission == null) continue;
-                    queries.Add(new DisplayQuery("mission/" + RuntimeHelpers.GetHashCode(mission), () => {
+                    queries.Add(new DisplayQuery("mission/" + Identity(mission), () => {
                         ValidateMissionStage(mission);
                         Type helper = TypeFor("DiceMaster.DataHelper");
                         Write(helper, "LiveMissionFilter", mission);
@@ -553,7 +583,7 @@ namespace DiceMaster.LiveLog
                         {
                             IDictionary result = (IDictionary)Call(helper, "GetMissions");
                             foreach (DictionaryEntry item in result)
-                                return new Value { Data = item.Key, Key = (string)Read(item.Value, "Item1"), Description = Translate((string)Read(item.Value, "Item2")) };
+                                return new Value { Data = item.Key, Source = mission, RawId = (string)Read(mission, "name") + "/" + (string)Read(item.Key, "Key"), Key = (string)Read(item.Value, "Item1"), Description = Translate((string)Read(item.Value, "Item2")) };
                             return null; // A completed/out-of-period mission is a successful absence.
                         }
                         finally { Write(helper, "LiveMissionFilter", null); }
@@ -598,36 +628,149 @@ namespace DiceMaster.LiveLog
         }
 
         private static string Translate(string text) { return (string)Call(TypeFor("DiceMaster.UiTextMapper"), "ApplyTranslations", text); }
+        private static string Localize(string text) { return (string)Call(TypeFor("DiceMaster.EmbeddedTranslations.Display"), "Translate", text); }
+
+        private static void CaptureAnalysis(Value value, object actions)
+        {
+            value.AnalysisStates.Clear();
+            foreach (object action in (IEnumerable)actions)
+            {
+                PreviewAnalysis analysis = Read(action, "Analysis") as PreviewAnalysis;
+                if (analysis == null) continue;
+                string state = analysis.State.ToString();
+                if (!value.AnalysisStates.Contains(state)) value.AnalysisStates.Add(state);
+            }
+        }
+
+        private static void CaptureEventAnalysis(Value value, object data)
+        {
+            // Read the fixed-analysis result prepared by GenerateStaticDesc.
+            // Publishing/searching never extracts a script or evaluates a game value.
+            if (eventParser == null) return;
+            IDictionary prefixes = (IDictionary)Read(Cache(), "scriptPrefixCache");
+            string prefix = prefixes.Contains(data) ? (string)prefixes[data] : (string)Read(data, "name");
+            string key = prefix + "_" + Read(data, "ResultType");
+            IDictionary descriptions = (IDictionary)Read(eventParser, "luaModification");
+            if (descriptions.Contains(key)) CaptureAnalysis(value, descriptions[key]);
+        }
 
         private static void Publish(string tab, List<DisplayRow> rows)
         {
-            string field = tab == "선택지" ? "optionEntries" : tab == "조건" ? "switchEntries" : tab == "이벤트" ? "eventEntries" : "missionEntries";
-            IList entries = (IList)Read(owner, field);
-            IList staged = (IList)Activator.CreateInstance(entries.GetType());
-            Type tuple = entries.GetType().GetGenericArguments()[0];
-            foreach (DisplayRow row in rows)
+            // If any conversion/publication boundary fails, the previous view
+            // remains visible but its formerly healthy action is no longer current.
+            failedPublications.Add(tab);
+            try
             {
-                Value value = row.Value as Value;
-                if (value == null && tab == "선택지" && !string.IsNullOrEmpty(row.Status))
-                    partialOptions.TryGetValue(row.Id, out value);
-                if (value == null && tab == "이벤트" && !string.IsNullOrEmpty(row.Status))
-                    partialEvents.TryGetValue(row.Id, out value);
-                if (value == null && string.IsNullOrEmpty(row.Status)) continue;
-                string key = value == null ? row.Id : value.Key;
-                if (value == null && (row.Id == RefreshEngine.DiscoveryRowId || tab == "이벤트" || tab == "미션"))
-                    key = tab + " 정보";
-                string description = value == null ? "" : value.Description;
-                if (!string.IsNullOrEmpty(row.Status)) description += "\n" + row.Status;
-                if (tab == "선택지" || tab == "조건")
+                string field = tab == "선택지" ? "optionEntries" : tab == "조건" ? "switchEntries" : tab == "이벤트" ? "eventEntries" : "missionEntries";
+                IList entries = (IList)Read(owner, field);
+                IList staged = (IList)Activator.CreateInstance(entries.GetType());
+                Type tuple = entries.GetType().GetGenericArguments()[0];
+                var modelRows = new List<LogItem>();
+                var values = new Dictionary<string, Value>(StringComparer.Ordinal);
+                bool discoveryFailed = rows.Exists(row => row.Id == RefreshEngine.DiscoveryRowId && !string.IsNullOrEmpty(row.Status));
+                foreach (DisplayRow row in rows)
                 {
-                    object[] parts = tab == "선택지" ? new object[] { key, value == null ? "" : value.Text, description }
-                        : new object[] { key, description };
-                    staged.Add(Activator.CreateInstance(tuple, parts));
+                    Value value = row.Value as Value;
+                    if (value == null && tab == "선택지" && !string.IsNullOrEmpty(row.Status))
+                        partialOptions.TryGetValue(row.Id, out value);
+                    if (value == null && tab == "이벤트" && !string.IsNullOrEmpty(row.Status))
+                        partialEvents.TryGetValue(row.Id, out value);
+                    if (value == null && string.IsNullOrEmpty(row.Status)) continue;
+                    string key = value == null ? row.Id : value.Key;
+                    if (value == null && (row.Id == RefreshEngine.DiscoveryRowId || tab == "이벤트" || tab == "미션"))
+                        key = tab + " 정보";
+                    string description = value == null ? "" : value.Description;
+                    var modelRow = new LogItem {
+                        Id = row.Id, RawId = value == null ? row.Id : value.RawId ?? row.Id,
+                        Title = Localize(Translate(key ?? "")), Text = value == null ? "" : Localize(Translate(value.Text ?? "")),
+                        Description = Localize(description ?? ""), Target = value == null ? null : value.Data,
+                        RefreshStatus = row.Status ?? "", RefreshState = row.Status == RefreshEngine.WaitingStatus ? LogRefreshState.Waiting :
+                            row.Status == RefreshEngine.RetainedFailureStatus ? LogRefreshState.RetainedFailure :
+                            string.IsNullOrEmpty(row.Status) ? LogRefreshState.Healthy : LogRefreshState.ReadFailure,
+                        HasLastGood = row.Value != null, ReservationAllowed = !discoveryFailed && lifecycle.IsReady
+                    };
+                    if (value != null)
+                    {
+                        string state = value.StoryState == null ? "" : value.StoryState.ToString();
+                        modelRow.ReadState = state == "Read" ? LogReadState.Read : state == "Unread" ? LogReadState.Unread : LogReadState.Unknown;
+                        modelRow.AnalysisStates.AddRange(value.AnalysisStates);
+                        values[row.Id] = value;
+                    }
+                    modelRows.Add(modelRow);
+                    if (!string.IsNullOrEmpty(row.Status)) description += "\n" + row.Status;
+                    if (tab == "선택지" || tab == "조건")
+                    {
+                        object[] parts = tab == "선택지" ? new object[] { key, value == null ? "" : value.Text, description }
+                            : new object[] { key, description };
+                        staged.Add(Activator.CreateInstance(tuple, parts));
+                    }
+                    else staged.Add(Activator.CreateInstance(tuple, new object[] { value == null ? null : value.Data, key, description }));
                 }
-                else staged.Add(Activator.CreateInstance(tuple, new object[] { value == null ? null : value.Data, key, description }));
+                // A publication failure leaves the last complete UI list intact.
+                Write(owner, field, staged);
+                publishedValues[tab] = values;
+                Model.Publish(new LogSnapshot(contextId, tab, modelRows));
+                failedPublications.Remove(tab);
             }
-            // A publication failure leaves the last complete UI list intact.
-            Write(owner, field, staged);
+            catch
+            {
+                Model.MarkPublicationFailure(tab);
+                throw;
+            }
+        }
+
+        // All activations, including mouse/keyboard, return through this boundary.
+        // Publication identity and live membership are both required; no Lua,
+        // display evaluation or execution method is called to validate a target.
+        public static bool TryReserve(long expectedContext, string tab, string id, object target)
+        {
+            bool reserved = false;
+            RunBoundary("reserve", () => {
+                if (expectedContext != contextId || !lifecycle.IsReady || !Enabled() || owner == null || target == null ||
+                    failedPublications.Contains(tab) || !(bool)Read(owner, "showLogWindow") || (string)Read(owner, "currentTab") != tab) return;
+                Type unityObject = TypeFor("UnityEngine.Object");
+                if (unityObject.IsInstanceOfType(target) && (bool)Call(unityObject, "op_Equality", target, null)) return;
+                LogItem selected = Model.Tab(tab).Selected;
+                if (selected == null || selected.Id != id || !selected.CanReserve || !ReferenceEquals(selected.Target, target)) return;
+                Dictionary<string, Value> values; Value value;
+                if (!publishedValues.TryGetValue(tab, out values) || !values.TryGetValue(id, out value) || !ReferenceEquals(value.Data, target)) return;
+                if (tab == "이벤트")
+                {
+                    IList definitions = (IList)Read(Read(RequireManager("Mortal.Story.CheckPointManager"), "_position"), "List");
+                    bool present = false;
+                    foreach (object position in definitions)
+                        if (position != null && (string)Read(position, "name") == value.Position)
+                            foreach (object candidate in (IList)Read(position, "List"))
+                                if (ReferenceEquals(candidate, target)) present = true;
+                    if (!present) return;
+                    Write(Patch(), "TargetEvent", target);
+                    reserved = true;
+                }
+                else if (tab == "미션")
+                {
+                    object manager = RequireManager("Mortal.Core.MissionManagerData");
+                    bool present = false;
+                    foreach (object mission in (IList)Read(Read(manager, "_subMissions"), "List"))
+                        if (ReferenceEquals(mission, value.Source)) present = true;
+                    if (!present || (string)Read(value.Source, "CurrentKey") != (string)Read(target, "Key")) return;
+                    present = false;
+                    foreach (object candidate in (IList)Read(value.Source, "_missions"))
+                        if (ReferenceEquals(candidate, target)) present = true;
+                    if (!present) return;
+                    IDictionary active = Read(manager, "ActiveSubMissions") as IDictionary;
+                    if (active != null) active[value.Key] = target;
+                    Write(Patch(), "TargetMission", target);
+                    reserved = true;
+                }
+            });
+            return reserved;
+        }
+
+        public static bool IsReserved(string tab, object target)
+        {
+            if (target == null || (tab != "이벤트" && tab != "미션")) return false;
+            try { return ReferenceEquals(Read(Patch(), tab == "이벤트" ? "TargetEvent" : "TargetMission"), target); }
+            catch (Exception) { return false; }
         }
     }
 }

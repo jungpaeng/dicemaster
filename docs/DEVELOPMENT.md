@@ -4,6 +4,8 @@
 
 ## 개발 범위
 
+PRD #4의 현재 로컬 작업은 [로그 GUI·입력 구현 기록](ISSUE-4-IMPLEMENTATION.md)을 따릅니다. 선행 PRD #2 완료 후 `102cafe`에서 시작했으며 `LogBridge.Model`→`LogUI.LogRenderer`→동일 게시 대상 예약 검증과 공유 XInput의 로그 우선 소유권을 전체 소스로 빌드합니다. `LogUiModelTests`와 `LogUiWiringTests` 및 기존 실제 DLL 통합 검사를 후보 생성 경로에 연결합니다. 새 후보의 사용자 Windows 확인은 [별도 검증표](ISSUE-4-WINDOWS-VALIDATION.md)에 남기며 과거 배포/검증 이력과 구분합니다.
+
 현재 기본 개발·배포 경로는 `src/DiceMaster/DiceMaster.csproj`의 전체 소스 빌드입니다. [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 전체 모드 C#·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 기존 `DiceMaster.dll`을 컴파일 입력으로 읽거나 패치하지 않습니다. 루트 솔루션·검증·Release 패키징을 이 경로에 맞춰 사용하며 [정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다. 소스 태그 커밋은 `ced38df9f0560a212559e34fd281fddbd2581ff4`이며 이슈 #3은 00:11:02 KST에 완료로 닫았습니다. 기본 정책과 사용자 확인 근거는 `build/release-policy.json`에서 관리합니다.
 
 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 구성·재생성·빌드·검사·실패 처리는 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 패치 공정은 비교·복구용으로 보존하며 입력은 고정 Git 커밋에서 해시를 검증해 재생성하고 출력은 `artifacts/legacy-candidate/`에 분리합니다.
@@ -172,7 +174,7 @@ LB를 먼저 놓아도 조정에 사용한 B·방향키는 해당 버튼을 놓�
 | Lua 스크립트 분석 시작 | `OptionInfoPatch.LuaEnvironment_LoadLuaFunction_Prefix` |
 | 선택지 결과 추출 | `LuaParser.ExtractOptionActionsFromLua`, `LuaParse.Action` |
 | 선택지 옆 요약 표시 | `OptionInfoPatch.LeanLocalizationResolver_GetStoryText_Postfix` |
-| 로그 창 선택지 표시 | `DicePlugin.AddOptionEntry`, `DicePlugin.DrawOptionEntries` |
+| 로그 창 선택지 표시 | `LogBridge.Publish` → `LogBridge.Model` → `LogUI.LogRenderer` (기존 `DicePlugin.AddOptionEntry` 튜플 경계 보존) |
 
 선택지 요약은 번역·서식 처리를 거친 뒤 50자로 줄여 붙입니다. 로그 창에는 잘리기 전 설명을 별도로 저장합니다.
 조건별 전체 설명의 줄바꿈은 요약에서 ` / `로 바꾸며, 태그는 제거합니다. 미해석 부분이 있으면 `추가 영향 가능`을 앞에 두어 잘린 요약에서도 안내가 남습니다. 실제 같은 `if/elseif/else`의 인접 효과만 경우 경로별로 묶고 중립색을 붙입니다. 조건문이 하나면 `[경우 A]`, 여러 개이거나 중첩되면 `[경우 1-A]` / `[경우 1-A → 2-B]`처럼 구분합니다. 독립 조건문·중첩 경로·선행 미지원 호출·단락 평가를 구분하며 Lua 조건을 실행하거나 갈래 색상을 현재 충족 판정으로 사용하지 않습니다. 불확실한 현재 효과는 `가능한 변화`, 후속 효과는 `이후 가능한 변화` 아래에 묶으며, `조건부`를 효과마다 반복하지 않습니다. 표시 순서를 유지하고 이후 확실한 현재 효과가 있으면 `현재 선택` 제목으로 묶음 경계를 끝냅니다. 부호와 중복되는 `가산`을 제거하고 설정·초기화·center/mental 의미 설명은 유지합니다. 스크립트 이름으로 중복 제거한 연결에 진입 분기 경로를 임의로 승계하지 않습니다.

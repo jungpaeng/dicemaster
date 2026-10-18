@@ -53,7 +53,7 @@ static partial class RealGameApiTests
                 VerifyMetadataContract(candidate, root);
                 metadataAssertions += assertions - before;
             }
-            new PayloadCopier(candidate.MainModule, destination.MainModule, type => type.Namespace == "DiceMaster.LiveLog");
+            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             if (destination.MainModule.GetType("DiceMaster.LiveLog.SafeDisplayEvaluation") == null)
                 throw new InvalidDataException("Candidate does not contain SafeDisplayEvaluation.");
         }

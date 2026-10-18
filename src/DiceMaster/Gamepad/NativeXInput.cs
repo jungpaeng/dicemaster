@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Diagnostics;
+using System.Threading;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -28,7 +30,7 @@ namespace DiceMaster.Gamepad
                 uint error = Original(user, out state);
                 if (error == 0 && NativeXInput.RawDepth == 0 && NativeXInput.CallbackDepth == 1)
                 {
-                    Owner.GamePollingObserved = true;
+                    Owner.ObserveGamePoll();
                     state = Owner.Filter.Filter(user, state, Owner.WindowActive);
                 }
                 else if (error != 0 && NativeXInput.RawDepth == 0 && NativeXInput.CallbackDepth == 1)
@@ -50,7 +52,22 @@ namespace DiceMaster.Gamepad
         [ThreadStatic] internal static int RawDepth;
         [ThreadStatic] internal static int CallbackDepth;
         public volatile bool WindowActive;
-        public volatile bool GamePollingObserved;
+        private long lastPoll;
+        // A path observed in a previous scene is insufficient. Navigation stops
+        // after one second without a real game caller reaching the hook.
+        public bool GamePollingObserved { get { return PollingFresh; } }
+        public bool PollingFresh
+        {
+            get
+            {
+                long last = Interlocked.Read(ref lastPoll);
+                return last != 0 && Stopwatch.GetTimestamp() - last < Stopwatch.Frequency;
+            }
+        }
+        internal void ObserveGamePoll() { Interlocked.Exchange(ref lastPoll, Stopwatch.GetTimestamp()); }
+        public bool LogActive { set { Filter.SetLogCapture(value); } }
+        public void RequireNeutral() { Filter.RequireNeutral(); }
+        public bool CanUseRaw(uint user) { return Filter.CanUseRaw(user); }
         internal readonly PadInputFilter Filter = new PadInputFilter();
         private readonly XInputHook[] hooks = new XInputHook[12];
         private int count;
@@ -160,7 +177,10 @@ namespace DiceMaster.Gamepad
             {
                 // The XInput versions address the same four physical slots.
                 // Do not repeatedly poll disconnected slots through every DLL.
-                return count != 0 && hooks[0].Original(user, out state) == 0;
+                bool connected = count != 0 && hooks[0].Original(user, out state) == 0;
+                if (connected) Filter.ObserveRaw(user, state);
+                else Filter.Disconnected(user);
+                return connected;
             }
             finally { RawDepth--; }
         }

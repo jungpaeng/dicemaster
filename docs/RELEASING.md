@@ -1,5 +1,9 @@
 # 소스 기반 Release와 게시 이력
 
+PRD #4는 [로컬 구현·후보 검사](ISSUE-4-IMPLEMENTATION.md)를 마치고 [사용자 Windows 검증](ISSUE-4-WINDOWS-VALIDATION.md)을 기다립니다. 사용자가 후속으로 commit·push·prerelease 게시를 지시해 **v1.0.5-alpha.1**을 준비합니다. [릴리스 설명](ISSUE-4-ALPHA1-RELEASE.md)은 새 화면·입력/한글 검색·창 설정·예약 의미·입력 경로 제약, Windows 미실행과 이전 DLL/설정 복구를 포함합니다. 정식 Latest v1.0.4와 기존 Release·태그·자산을 보존하고 이슈 #4는 open으로 유지합니다. 실제 게시 결과는 별도 기록합니다.
+
+고정 소스 커밋은 `verify-preview-release.py --scope prd4`로 새로 빌드합니다. 기본 PRD #2 검증 계약은 유지하며 PRD #4는 명시적으로 선택해야 합니다. 11개 검사 증거와 Windows 미검증 상태·완료 미주장을 요구하고 검토 DLL SHA-256 `3ea62dd5c8fbee368438dd6e3ec8a58c023fcab5d01608321fe7e97ce80a6553`, 설정 SHA-256 `8d4ce1a8ee7ef173c821cb5c332127fa23b9dab4860bb76786b8a97f2ae5d815`와 비교합니다. prerelease는 `prerelease=true`·`make_latest=false`로 게시하고 공개 다운로드의 CRC·두 파일·커밋·해시를 확인합니다.
+
 **현재 상태 — 2026-10-19 03:24:40 KST:** 사용자가 `v1.0.4-alpha.5` 맥락의 Windows 테스트 완료를 확인해 [이슈 #2](https://github.com/jungpaeng/dicemaster/issues/2)를 `closed` / `completed`로 종료했습니다. [완료 근거와 확인 범위](ISSUE-2-COMPLETION.md)를 따르며 아래 미확인/open 기록은 당시 이력으로 보존합니다.
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)

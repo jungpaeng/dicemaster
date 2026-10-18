@@ -9,6 +9,7 @@ using DiceMaster.Config;
 using DiceMaster.EmbeddedTranslations;
 using DiceMaster.Gamepad;
 using DiceMaster.LiveLog;
+using DiceMaster.LogUI;
 using HarmonyLib;
 using Mortal.Core;
 using Mortal.Story;
@@ -40,35 +41,12 @@ public class DicePlugin : BaseUnityPlugin
 
 	private List<(MissionCheckData MissionData, string Key, string Description)> missionEntries = new List<(MissionCheckData, string, string)>();
 
-	private Vector2 logScrollPosition;
-
-	private Rect logWindowRect = new Rect(20f, 20f, 750f, 750f);
-
-	private bool showLogWindow = false;
-
-	private float baseFontSize = 14f;
-
-	private float scaleFactor = 1f;
-
-	private GUIStyle headerStyle;
-
-	private GUIStyle logEntryStyle;
-
-	private GUIStyle descriptionStyle;
-
-	private GUIStyle buttonStyle;
-
-	private GUIStyle darkBackgroundStyle;
-
-	private GUIStyle lightBackgroundStyle;
-
-	private bool isInitialized;
-
+	// Tuple fields above remain the compatibility publication surface. The
+	// renderer consumes LogBridge.Model, including stable identity and status.
+	private bool showLogWindow;
 	private string currentTab = "선택지";
-
-	private string[] tabs = new string[4] { "선택지", "조건", "이벤트", "미션" };
-
-	private Vector2Int lastScreenSize;
+	private LogRenderer logRenderer;
+	private long lastLogContext = -1;
 
 	internal float nextLiveLogRefresh;
 
@@ -82,6 +60,7 @@ public class DicePlugin : BaseUnityPlugin
 		ConfigManager.Init();
 		try
 		{
+			GameActionGate.Initialize(_harmony);
 			if (ConfigManager.EnableDiceController.Value)
 			{
 				_harmony.PatchAll(typeof(DicePatch));
@@ -104,79 +83,71 @@ public class DicePlugin : BaseUnityPlugin
 		{
 			LogError("Failed to load asset: DiceInputField");
 		}
-		lastScreenSize = new Vector2Int(Screen.width, Screen.height);
-		OnScreenSizeChanged(Screen.width, Screen.height);
+		EnsureLogRenderer();
 	}
 
-	private void SetGUI()
+	private void EnsureLogRenderer()
 	{
-		headerStyle = new GUIStyle(GUI.skin.label)
-		{
-			fontSize = (int)(baseFontSize * scaleFactor),
-			fontStyle = FontStyle.Bold,
-			alignment = TextAnchor.MiddleCenter,
-			richText = true
-		};
-		logEntryStyle = new GUIStyle(GUI.skin.label)
-		{
-			fontSize = (int)(16f * scaleFactor),
-			richText = true,
-			wordWrap = true
-		};
-		descriptionStyle = new GUIStyle(GUI.skin.label)
-		{
-			fontSize = (int)(baseFontSize * scaleFactor),
-			richText = true,
-			wordWrap = true
-		};
-		buttonStyle = new GUIStyle(GUI.skin.button)
-		{
-			fontSize = (int)(baseFontSize * scaleFactor)
-		};
-		GUIStyle gUIStyle = new GUIStyle(GUI.skin.box);
-		gUIStyle.normal.background = MakeTex(1, 1, new Color(0.12f, 0.12f, 0.15f, 0.9f));
-		darkBackgroundStyle = gUIStyle;
-		GUIStyle gUIStyle2 = new GUIStyle(GUI.skin.box);
-		gUIStyle2.normal.background = MakeTex(1, 1, new Color(0.22f, 0.22f, 0.25f, 0.8f));
-		lightBackgroundStyle = gUIStyle2;
+		if (logRenderer != null) return;
+		logRenderer = new LogRenderer(LogBridge.Model, RefreshGameData, () => SetLogOpen(false));
+		logRenderer.TabChanged = tab => { currentTab = tab; RefreshLiveLogDisplay(); };
+		logRenderer.ReselectController = GamepadBridge.ReselectLogController;
+	}
+
+	private void SetLogOpen(bool open)
+	{
+		showLogWindow = open;
+		GameActionGate.SetLogState(open, Application.isFocused);
+		EnsureLogRenderer();
+		logRenderer.ResetInputFocus();
+		GamepadBridge.CancelLogInput();
 	}
 
 	private void Update()
 	{
-		if (Screen.width != lastScreenSize.x || Screen.height != lastScreenSize.y)
-		{
-			OnScreenSizeChanged(Screen.width, Screen.height);
-		}
+		EnsureLogRenderer();
+		GameActionGate.SetLogState(showLogWindow, Application.isFocused);
 		if (Input.GetKeyDown(ConfigManager.LogMenuToggleKey.Value))
 		{
-			showLogWindow = !showLogWindow;
+			SetLogOpen(!showLogWindow);
 		}
+		currentTab = logRenderer.CurrentTab;
 		RefreshLiveLogDisplay();
+		if (lastLogContext != LogBridge.Model.ContextId)
+		{
+			lastLogContext = LogBridge.Model.ContextId;
+			logRenderer.ResetInputFocus();
+			GamepadBridge.CancelLogInput();
+		}
+		// This runs even with dice adjustment disabled or the log closed: the
+		// shared owner must finish consuming held input before returning it.
+		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow, Application.isFocused,
+			GameInputModeResolver.Resolve(), Time.unscaledTime, Paths.CachePath);
+		if (frame.ResetFocus) logRenderer.ResetInputFocus();
+		if (showLogWindow && Application.isFocused)
+		{
+			logRenderer.Handle(frame.Command);
+			logRenderer.Scroll(frame.Scroll);
+			logRenderer.InputHint = GamepadBridge.LogHint();
+		}
 		DicePatch.UpdateGamepad();
+		string gateWarning = GameActionGate.ConsumeWarning();
+		if (!string.IsNullOrEmpty(gateWarning)) LogWarning(gateWarning);
 	}
 
 	private void OnDestroy()
 	{
+		GameActionGate.SetLogState(false, false);
 		_harmony?.UnpatchSelf();
 		GamepadBridge.Shutdown();
 	}
 
 	private void OnGUI()
 	{
-		if (!isInitialized || darkBackgroundStyle == null || darkBackgroundStyle.normal.background == null)
-		{
-			LogInfo("GUI 스타일을 다시 초기화합니다. isInitialized: " + isInitialized);
-			SetGUI();
-			isInitialized = true;
-		}
-		GUISkin skin = GUI.skin;
-		if (((skin != null) ? skin.label : null) != null)
-		{
-			GUI.skin.label.fontSize = (int)(baseFontSize * scaleFactor);
-		}
 		if (showLogWindow)
 		{
-			logWindowRect = GUILayout.Window(1, logWindowRect, DrawLogWindow, "다이스마스터 로그창(한글화: 당문졸개)");
+			EnsureLogRenderer();
+			logRenderer.Draw();
 		}
 		DicePatch.DrawGamepadHint();
 	}
@@ -206,148 +177,6 @@ public class DicePlugin : BaseUnityPlugin
 	public void AddMissionEntry(MissionCheckData missionData, string key, string description)
 	{
 		missionEntries.Add((missionData, key, description));
-	}
-
-	private void DrawLogWindow(int windowID)
-	{
-		GUILayout.BeginHorizontal();
-		string[] array = tabs;
-		foreach (string text in array)
-		{
-			if (GUILayout.Toggle(currentTab == text, text, buttonStyle ?? GUI.skin.button, GUILayout.ExpandWidth(expand: true)))
-			{
-				currentTab = text;
-			}
-		}
-		GUILayout.EndHorizontal();
-		RefreshLiveLogDisplay();
-		if (GUILayout.Button("게임 데이터 새로고침", buttonStyle ?? GUI.skin.button, GUILayout.ExpandWidth(expand: true)))
-		{
-			RefreshGameData();
-		}
-		logScrollPosition = GUILayout.BeginScrollView(logScrollPosition);
-		switch (currentTab)
-		{
-		case "미션":
-			DrawMissionEntries(missionEntries);
-			break;
-		case "이벤트":
-			DrawEventEntries(eventEntries);
-			break;
-		case "조건":
-			DrawEntries(switchEntries, applyUiMapping: true);
-			break;
-		case "선택지":
-			DrawOptionEntries(optionEntries);
-			break;
-		}
-		GUILayout.EndScrollView();
-		GUI.DragWindow();
-	}
-
-	private void DrawEntries(IEnumerable<(string, string)> entries, bool applyUiMapping = false)
-	{
-		bool flag = true;
-		foreach (var entry in entries)
-		{
-			string item = entry.Item1;
-			string item2 = entry.Item2;
-			string text = (applyUiMapping ? UiTextMapper.ApplyTranslations(item2) : item2);
-			GUIStyle style = (flag ? darkBackgroundStyle : lightBackgroundStyle);
-			flag = !flag;
-			GUILayout.BeginVertical(style);
-			DiceMaster.EmbeddedTranslations.Display.Label(item, logEntryStyle, Array.Empty<GUILayoutOption>());
-			DiceMaster.EmbeddedTranslations.Display.Label(text, descriptionStyle, Array.Empty<GUILayoutOption>());
-			GUILayout.EndVertical();
-		}
-	}
-
-	private void DrawOptionEntries(IEnumerable<(string Key, string OptionText, string Description)> entries)
-	{
-		bool flag = true;
-		foreach (var entry in entries)
-		{
-			string item = entry.Key;
-			string item2 = entry.OptionText;
-			string text = UiTextMapper.ApplyTranslations(entry.Description);
-			GUIStyle style = (flag ? darkBackgroundStyle : lightBackgroundStyle);
-			flag = !flag;
-			GUILayout.BeginVertical(style);
-			DiceMaster.EmbeddedTranslations.Display.Label(item, logEntryStyle, Array.Empty<GUILayoutOption>());
-			if (!string.IsNullOrWhiteSpace(item2))
-			{
-				DiceMaster.EmbeddedTranslations.Display.Label("<color=#9A9A9A>" + item2 + "</color>", descriptionStyle, Array.Empty<GUILayoutOption>());
-			}
-			DiceMaster.EmbeddedTranslations.Display.Label(text, descriptionStyle, Array.Empty<GUILayoutOption>());
-			GUILayout.EndVertical();
-		}
-	}
-
-	private void DrawEventEntries(IEnumerable<(PositionEventData EventData, string Key, string Description)> entries)
-	{
-		bool flag = true;
-		foreach (var entry in entries)
-		{
-			PositionEventData item = entry.EventData;
-			string item2 = entry.Key;
-			string text = UiTextMapper.ApplyTranslations(entry.Description);
-			GUIStyle style = (flag ? darkBackgroundStyle : lightBackgroundStyle);
-			flag = !flag;
-			GUILayout.BeginVertical(style);
-			DiceMaster.EmbeddedTranslations.Display.Label(item2, logEntryStyle, Array.Empty<GUILayoutOption>());
-			DiceMaster.EmbeddedTranslations.Display.Label(text, descriptionStyle, Array.Empty<GUILayoutOption>());
-			if ((object)item != null && GUILayout.Button("이벤트 실행", buttonStyle ?? GUI.skin.button))
-			{
-				OptionInfoPatch.TargetEvent = item;
-			}
-			GUILayout.EndVertical();
-		}
-	}
-
-	private void DrawMissionEntries(IEnumerable<(MissionCheckData, string, string)> entries)
-	{
-		bool flag = true;
-		foreach (var entry in entries)
-		{
-			MissionCheckData item = entry.Item1;
-			string item2 = entry.Item2;
-			string text = UiTextMapper.ApplyTranslations(entry.Item3);
-			GUIStyle style = (flag ? darkBackgroundStyle : lightBackgroundStyle);
-			flag = !flag;
-			GUILayout.BeginVertical(style);
-			DiceMaster.EmbeddedTranslations.Display.Label(item2, logEntryStyle, Array.Empty<GUILayoutOption>());
-			DiceMaster.EmbeddedTranslations.Display.Label(text, descriptionStyle, Array.Empty<GUILayoutOption>());
-			if ((object)item != null && GUILayout.Button("미션 실행", buttonStyle ?? GUI.skin.button))
-			{
-				OptionInfoPatch.TargetMission = item;
-				MissionManagerData instance = MissionManagerData.Instance;
-				if (((instance != null) ? instance.ActiveSubMissions : null) != null)
-				{
-					if (!MissionManagerData.Instance.ActiveSubMissions.ContainsKey(item2))
-					{
-						MissionManagerData.Instance.ActiveSubMissions.Add(item2, item);
-					}
-					else
-					{
-						MissionManagerData.Instance.ActiveSubMissions[item2] = item;
-					}
-				}
-			}
-			GUILayout.EndVertical();
-		}
-	}
-
-	private Texture2D MakeTex(int width, int height, Color col)
-	{
-		Color[] array = new Color[width * height];
-		for (int i = 0; i < array.Length; i++)
-		{
-			array[i] = col;
-		}
-		Texture2D texture2D = new Texture2D(width, height);
-		texture2D.SetPixels(array);
-		texture2D.Apply();
-		return texture2D;
 	}
 
 	private static string NormalizeCheckpointKey(string rawKey)
@@ -431,15 +260,6 @@ public class DicePlugin : BaseUnityPlugin
 		{
 			_logger.LogWarning(data);
 		}
-	}
-
-	private void OnScreenSizeChanged(float width, float height)
-	{
-		lastScreenSize.x = (int)width;
-		lastScreenSize.y = (int)height;
-		scaleFactor = Mathf.Min(width / 1920f, height / 1080f);
-		logWindowRect = new Rect(20f * scaleFactor, 20f * scaleFactor, 800f * scaleFactor, 1000f * scaleFactor);
-		isInitialized = false;
 	}
 
 	private void RefreshGameData()

@@ -119,6 +119,7 @@ namespace DiceMaster
     {
         public static class Display
         {
+            public static string Translate(string value) => value;
             public static string PreTranslate(string value) => value;
             public static string PostTranslate(string value) => value;
         }

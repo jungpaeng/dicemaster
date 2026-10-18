@@ -18,7 +18,7 @@ static class Program
         using var source = AssemblyDefinition.ReadAssembly(args[0]);
         using var target = AssemblyDefinition.ReadAssembly(args[1]);
         var copier = new PayloadCopier(source.MainModule, target.MainModule,
-            type => type.Namespace == "DiceMaster.LuaParse" || (!baseline && type.Namespace == "DiceMaster.LiveLog"));
+            type => type.Namespace == "DiceMaster.LuaParse" || (!baseline && (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI")));
         PreviewFixtureBoundary.Install(target.MainModule);
         if (!baseline)
         {

@@ -12,8 +12,15 @@ namespace UnityEngine
     public class Object
     {
         public string name { get; set; }
-        public static bool operator ==(Object a, Object b) => ReferenceEquals(a, b);
-        public static bool operator !=(Object a, Object b) => !ReferenceEquals(a, b);
+        public bool Destroyed;
+        public static bool operator ==(Object a, Object b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (ReferenceEquals(a, null)) return b.Destroyed;
+            if (ReferenceEquals(b, null)) return a.Destroyed;
+            return false;
+        }
+        public static bool operator !=(Object a, Object b) => !(a == b);
         public override bool Equals(object value) => ReferenceEquals(this, value);
         public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
     }
@@ -204,6 +211,7 @@ namespace Mortal.Story
         public ConditionResultConfig _condition = new ConditionResultConfig();
     }
     public class PositionCollection { public IList List = new List<object>(); }
+    public class PositionDefinition : UnityEngine.Object { public IList List = new List<object>(); }
 }
 namespace DiceMaster.Config
 {
@@ -212,6 +220,15 @@ namespace DiceMaster.Config
 }
 namespace DiceMaster
 {
+    namespace EmbeddedTranslations
+    {
+        public static class Display
+        {
+            public static bool Throw;
+            public static string Translate(string value)
+            { if (Throw) throw new InvalidOperationException("fixture translation failure"); return value; }
+        }
+    }
     public static class Probe { public static int ParserEntries; }
     public enum StoryReadState { NoStory, Unread, Read }
     public class DicePlugin : UnityEngine.Object
@@ -300,6 +317,7 @@ namespace DiceMaster
         public static int StaticReads;
         public static bool ThrowDescription;
         public Dictionary<Mortal.Story.PositionEventData, string> eventDescCache = new Dictionary<Mortal.Story.PositionEventData, string>();
+        public Dictionary<Mortal.Story.PositionEventData, string> scriptPrefixCache = new Dictionary<Mortal.Story.PositionEventData, string>();
         public List<Mortal.Story.PositionEventData> GetPositionEvents(string position) { ListReads++; return new List<Mortal.Story.PositionEventData> { Scenario.Event }; }
         public string GetPositionEventName(Mortal.Story.PositionEventData value) => "fixture event";
         public string GetPositionEventDesc(Mortal.Story.PositionEventData value)
@@ -308,7 +326,7 @@ namespace DiceMaster
             if (ThrowDescription) throw new InvalidOperationException("fixture event failure");
             return "rate=" + DataHelper.CurrentValue;
         }
-        string GenerateStaticDesc(Mortal.Story.PositionEventData value) { StaticReads++; return Scenario.ExtractEventDescription(); }
+        string GenerateStaticDesc(Mortal.Story.PositionEventData value) { StaticReads++; scriptPrefixCache[value] = "fixture"; return Scenario.ExtractEventDescription(); }
         string GenerateDynamicDesc(Mortal.Story.PositionEventData value) => throw new InvalidOperationException("Actual event formatter IL not installed");
         public void ClearDisplayCaches() { eventDescCache.Clear(); }
         public void RetryDefinitionReads(Mortal.Story.PositionEventData value) { }
@@ -356,6 +374,19 @@ namespace DiceMaster
             return value;
         }
         static void Tick(DicePlugin plugin, bool manual = false) => Invoke("DiceMaster.LiveLog.LogBridge", "Tick", plugin, manual);
+        static object Member(object value, string name)
+        {
+            var type = value.GetType();
+            return type.GetProperty(name)?.GetValue(value) ?? type.GetField(name)?.GetValue(value);
+        }
+        static object InstanceCall(object value, string method, params object[] arguments)
+        {
+            try { return value.GetType().GetMethod(method).Invoke(value, arguments); }
+            catch (TargetInvocationException error) { throw error.InnerException ?? error; }
+        }
+        static object LogModel => Self.GetType("DiceMaster.LiveLog.LogBridge", true).GetField("Model").GetValue(null);
+        static object LogTab(string tab) => InstanceCall(LogModel, "Tab", tab);
+        static IList ModelRows(string tab) => (IList)Member(Member(LogTab(tab), "Snapshot"), "Rows");
         static void NewLua(string lua, string name) => Invoke("DiceMaster.LiveLog.LogBridge", "NewLua", lua, name);
         static long TransitionPrefix(string name)
         {
@@ -381,6 +412,72 @@ namespace DiceMaster
             object parser = EventParser;
             object actions = parser.GetType().GetMethod("ExtractActionsFromLua").Invoke(parser, new object[] { "fixture_event" });
             return (string)parser.GetType().GetMethod("Description").Invoke(null, new[] { actions });
+        }
+
+        // Production DLL parser -> RefreshEngine -> LogBridge -> structured
+        // model -> guarded action boundary. Only Unity/game containers are fake.
+        public static int RunLogModel()
+        {
+            int before = assertions;
+            var plugin = new DicePlugin { showLogWindow = true }; DicePlugin.Instance = plugin;
+            Config.ConfigManager.EnableOptionInfo.Value = true;
+            DataHelper.Ready = true; DataHelper.FailingCheckpoint = null;
+            PositionEventCache.ThrowDescription = false;
+            var position = new Mortal.Story.PositionDefinition { name = "fixture_position" };
+            position.List.Add(Event);
+            var positions = new Mortal.Story.PositionCollection(); positions.List.Add(position);
+            Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager { _position = positions };
+            var mission = new Mortal.Core.MissionData { name = "raw_mission", Stage = Mission, CurrentKey = Mission.Key };
+            var missions = new Mortal.Core.MissionCollection(); missions.List.Clear(); missions.List.Add(mission);
+            Mortal.Core.MissionManagerData.Instance = new Mortal.Core.MissionManagerData { _subMissions = missions };
+            UnityEngine.Time.unscaledTime = 100;
+            NewLua(Lua("O_model"), "model"); Tick(plugin);
+            long context = (long)Member(LogModel, "ContextId");
+            object row = ModelRows("선택지")[0];
+            Check((string)Member(row, "Id") == "O_model" && (string)Member(row, "RawId") == "O_model", "Actual bridge discarded stable/raw option IDs");
+            Check(((string)Member(row, "Description")).Contains("G3000"), "Actual bridge did not publish analyzed description");
+            Check(((IList)Member(row, "AnalysisStates")).Count > 0, "Actual structured analysis states never reached model");
+            Check((string)Member(row, "RefreshStatus") == "" && Member(row, "RefreshState").ToString() == "Healthy", "Healthy query status was conflated with analysis");
+            plugin.currentTab = "이벤트"; UnityEngine.Time.unscaledTime = 101; Tick(plugin);
+            row = ModelRows("이벤트")[0]; string id = (string)Member(row, "Id");
+            Check((string)Member(row, "RawId") == Event.name && ReferenceEquals(Member(row, "Target"), Event), "Actual event identity/target was lost at publication");
+            Check(((IList)Member(row, "AnalysisStates")).Count > 0, "Fixed event analysis did not reach structured model");
+            object state = LogTab("이벤트"); InstanceCall(state, "Select", id);
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Valid event did not reach real reservation field");
+            Check(ReferenceEquals(OptionInfoPatch.TargetEvent, Event) && (bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Reservation UI source diverged from real field");
+            OptionInfoPatch.TargetEvent = null;
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Consumed actual reservation remained in UI state");
+            EmbeddedTranslations.Display.Throw = true; UnityEngine.Time.unscaledTime = 101.5f; Tick(plugin);
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Failed actual publication left previous healthy target executable");
+            Check((bool)Member(LogTab("이벤트"), "PublicationFailed") && !(bool)Member(LogTab("이벤트"), "ExecutionFocus"), "Actual publication failure did not reach UI state/cancel execution focus");
+            EmbeddedTranslations.Display.Throw = false; Tick(plugin, true);
+            Check(!(bool)Member(LogTab("이벤트"), "PublicationFailed"), "Complete actual publication did not clear UI publication failure");
+            position.List.Clear();
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Removed event in retained row was still reservable");
+            position.List.Add(Event);
+            Event.Destroyed = true;
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Destroyed Unity target remained reservable through retained CLR reference");
+            Event.Destroyed = false;
+            PositionEventCache.ThrowDescription = true; UnityEngine.Time.unscaledTime = 102; Tick(plugin);
+            row = ModelRows("이벤트")[0];
+            Check(Member(row, "RefreshState").ToString() == "RetainedFailure" && (bool)Member(row, "HasLastGood") && !(bool)Member(row, "CanReserve"), "Actual refresh failure did not disable last-good action");
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Failed latest event query permitted reservation");
+            PositionEventCache.ThrowDescription = false; Tick(plugin, true);
+            Check((string)Member(Member(LogTab("이벤트"), "Selected"), "Id") == id, "Same-target manual recovery lost selection");
+            plugin.currentTab = "미션"; UnityEngine.Time.unscaledTime = 103; Tick(plugin);
+            row = ModelRows("미션")[0]; id = (string)Member(row, "Id");
+            InstanceCall(LogTab("미션"), "Select", id);
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", id, Mission), "Valid mission reservation failed live membership");
+            Check(ReferenceEquals(OptionInfoPatch.TargetMission, Mission) && Mortal.Core.MissionManagerData.Instance.ActiveSubMissions.Values.Contains(Mission), "Mission reservation semantics changed");
+            mission.CurrentKey = "different_stage";
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", id, Mission), "Stale mission stage was reservable");
+            mission.CurrentKey = Mission.Key; missions.List.Clear();
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", id, Mission), "Removed mission was reservable");
+            plugin.showLogWindow = false;
+            NewLua(Lua("O_next_model"), "model-next");
+            Check((long)Member(LogModel, "ContextId") != context && Member(LogTab("미션"), "Selected") == null && ModelRows("미션").Count == 0, "Closed-window context boundary did not invalidate UI state");
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", id, Mission), "Prior-context target survived actual Lua publication boundary");
+            return assertions - before;
         }
 
         public static int Run()

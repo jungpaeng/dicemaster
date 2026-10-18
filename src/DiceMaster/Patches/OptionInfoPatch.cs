@@ -500,10 +500,6 @@ internal static class OptionInfoPatch
 		}
 		string input = Regex.Replace(text, "<.*?>", string.Empty).Replace("\r", " ").Replace("\n", " ");
 		input = Regex.Replace(input, "\\s+", " ").Trim();
-		if (input.Length > 96)
-		{
-			input = input.Substring(0, 96) + "...";
-		}
 		return input;
 	}
 

@@ -179,8 +179,10 @@ static partial class LogRefreshInjector
 
     static void InstallBridge(ModuleDefinition payload)
     {
-        foreach (var type in module.Types.Where(t => t.Namespace == "DiceMaster.LiveLog").ToArray()) module.Types.Remove(type);
-        new PayloadCopier(payload, module, t => t.Namespace == "DiceMaster.LiveLog");
+        foreach (var type in module.Types.Where(t => t.Namespace == "DiceMaster.LiveLog" ||
+            t.Namespace == "DiceMaster.LogUI" && new[] { "LogReadState", "LogRefreshState", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(t.Name)).ToArray()) module.Types.Remove(type);
+        new PayloadCopier(payload, module, t => t.Namespace == "DiceMaster.LiveLog" ||
+            t.Namespace == "DiceMaster.LogUI" && new[] { "LogReadState", "LogRefreshState", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(t.Name));
         if (payload.GetType("DiceMaster.LuaParse.LuaParser") == null)
             throw new InvalidDataException("PRD 2 requires the full source-built payload including LuaParse.");
         // Merge the parser metadata so older callers keep the same field and

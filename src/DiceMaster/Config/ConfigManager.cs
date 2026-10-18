@@ -21,6 +21,12 @@ public static class ConfigManager
 
 	public static ConfigElement<bool> EnableGamepadAdjustment;
 
+	public static ConfigElement<float> LogWindowX;
+	public static ConfigElement<float> LogWindowY;
+	public static ConfigElement<float> LogWindowWidth;
+	public static ConfigElement<float> LogWindowHeight;
+	public static ConfigElement<int> LogFontSize;
+
 	private static ConfigFile Config => DicePlugin.Instance.Config;
 
 	public static void Init()
@@ -90,5 +96,10 @@ public static class ConfigManager
 		LogMenuToggleKey = new ConfigElement<KeyCode>("LogMenuToggleKey", "Log menu toggle key", KeyCode.Tab);
 		SpeedUpKey = new ConfigElement<KeyCode>("SpeedUpKey", "Speed up key", KeyCode.LeftControl);
 		EnableGamepadAdjustment = new ConfigElement<bool>("EnableGamepadAdjustment", "Xbox 패드로 주사위를 조정합니다. LB+십자키/왼쪽 스틱: 수치 조정, LB+B: 자동.", defaultValue: true);
+		LogWindowX = new ConfigElement<float>("LogWindowX", "로그 창 왼쪽 위치(화면 픽셀). 화면 밖/비정상 값은 화면 안으로 복구합니다.", 20f);
+		LogWindowY = new ConfigElement<float>("LogWindowY", "로그 창 위쪽 위치(화면 픽셀). 화면 밖/비정상 값은 화면 안으로 복구합니다.", 20f);
+		LogWindowWidth = new ConfigElement<float>("LogWindowWidth", "로그 창 너비(화면 픽셀). 540 이상, 현재 화면 너비 이하로 복구합니다(작은 화면에서는 화면 너비).", 750f);
+		LogWindowHeight = new ConfigElement<float>("LogWindowHeight", "로그 창 높이(화면 픽셀). 440 이상, 현재 화면 높이 이하로 복구합니다(작은 화면에서는 화면 높이).", 750f);
+		LogFontSize = new ConfigElement<int>("LogFontSize", "로그 창 글자 크기. 12~28, 기본 14. 작은 화면·창에서는 조작 영역 확보를 위해 표시 크기를 줄입니다.", 14);
 	}
 }

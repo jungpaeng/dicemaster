@@ -179,6 +179,8 @@ static class GamepadTests
         Check(LeftX(shown) == 32767, "Closing dice window restores stick immediately");
         Check(Packet(hidden) != Packet(shown), "Packet updates when a stick is restored without physical input change");
 
+        assertions += LogOwnershipTests.Run(assembly);
+
         if (!OperatingSystem.IsWindows())
         {
             var bridge = assembly.GetType("DiceMaster.Gamepad.GamepadBridge", true);

@@ -152,7 +152,8 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
                  'LifecycleTests', 'LiveLogIntegrationFixtures', 'LiveLogIntegrationTests',
                  'RealGameApiFixtures', 'RealGameApiTests', 'GamepadTests',
                  'SourceBehaviorFixtures', 'SourceBehaviorTests',
-                 'PreviewIntegrationFixtures', 'PreviewIntegrationTests'):
+                 'PreviewIntegrationFixtures', 'PreviewIntegrationTests',
+                 'LogUiModelTests', 'LogUiWiringTests', 'LogUiKeyboardTests'):
         outputs[name] = build(dotnet, 'tests/' + name + '/' + name + '.csproj',
                               work, name, log)
     results = {}
@@ -173,6 +174,9 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
          Path(work) / 'source-behavior')
     test('PreviewIntegrationTests', candidate,
          outputs['PreviewIntegrationFixtures'] / 'PreviewIntegrationFixtures.dll')
+    test('LogUiModelTests')
+    test('LogUiWiringTests', candidate)
+    test('LogUiKeyboardTests')
     return results
 
 
