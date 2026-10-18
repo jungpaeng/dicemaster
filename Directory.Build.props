@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/obj/**;**/bin/**;$(MSBuildThisFileDirectory)artifacts/**</DefaultItemExcludes>
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <UseArtifactsOutput Condition="'$(UseArtifactsOutput)' == ''">true</UseArtifactsOutput>
+    <ArtifactsPath Condition="'$(UseArtifactsOutput)' == 'true' And '$(ArtifactsPath)' == ''">$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+  </PropertyGroup>
+</Project>

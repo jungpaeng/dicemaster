@@ -139,7 +139,7 @@ LINQ용 정적 delegate 초기화 캐시 쓰기도 확인되지만, 이것은 �
 
 ## 개발 소스 반영과 회귀 검사 기준
 
-`development/src/DiceMaster.LiveLog/SafeDisplayEvaluation.cs`는 원본 `GetRate`·`GetResult`·`Check`를 직접 실행하지 않고 확인된 필드·읽기 전용 getter를 사용합니다. 조건 설정 분기는 `_count`를 건드리지 않고 조건 목록을 직접 OR 평가합니다. alpha.1은 난수를 `RandomDisplayValueException`으로 거부해 행 실패로 표시했습니다. alpha.2는 `RandomPreview`·`PreviewFormatting`의 범위·판정 미정·전용 미지원 결과와 제한된 단일 비교의 이론 N/D를 사용했습니다. 이 정책은 해당 버전 이력으로 보존합니다.
+`src/DiceMaster/LiveLog/SafeDisplayEvaluation.cs`는 원본 `GetRate`·`GetResult`·`Check`를 직접 실행하지 않고 확인된 필드·읽기 전용 getter를 사용합니다. 조건 설정 분기는 `_count`를 건드리지 않고 조건 목록을 직접 OR 평가합니다. alpha.1은 난수를 `RandomDisplayValueException`으로 거부해 행 실패로 표시했습니다. alpha.2는 `RandomPreview`·`PreviewFormatting`의 범위·판정 미정·전용 미지원 결과와 제한된 단일 비교의 이론 N/D를 사용했습니다. 이 정책은 해당 버전 이력으로 보존합니다.
 
 alpha.3 설명 경로는 잠금으로 보호한 모드 전용 단일 `System.Random`으로 숫자를 생성하며 게임 RNG를 호출하지 않습니다. 평가 세션은 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명(헤더·활성 조건·모든 확률 항목 조건)을 경계로 하며 동일 객체의 값·그룹·비교·조건 결과를 재사용해 숫자·색상·헤더와 하위 설명을 일치시킵니다. 다른 난수 참조는 각각 추첨하고 다음 갱신은 새 세션입니다. 미션·스위치 전체 행의 서로 다른 조건 항목은 각각 별도 세션이므로 공유 참조도 다시 추첨할 수 있습니다. 독립 조건 설명은 `ConditionResultItem` 하나를 뜻합니다. Sum/Max/Min/Multiply와 중첩/여러 난수·조건 설정·숫자 이벤트 확률을 다루며 `_count`는 보존합니다. 양끝을 포함하는 전체 int 구간과 역순 구간 정규화는 모드 화면의 규칙으로, Unity의 `max + 1` overflow·역순 인수 의미를 그대로 모사하지 않습니다. UI 부가 문구는 붙이지 않으며 실제 게임의 반복 추첨 횟수·미래 판정·분포를 예측하지 않습니다. [후속 구현·검사 기록](RANDOM-PREVIEW-FOLLOWUP.md)에 새 계약과 검사 결과를 명시합니다.
 
@@ -147,7 +147,7 @@ alpha.3 설명 경로는 잠금으로 보호한 모드 전용 단일 `System.Ran
 
 `GameStat.FinalValue`를 호출하기 전 stat 객체, 변환 컬렉션, 변환 객체를 확인한 타입에 한정하고 재귀적인 GameStat 참조를 검사합니다. `StatConvertCollectionData`의 미지원 하위 타입도 reflection getter를 호출하기 전에 거부합니다. 이로써 미지원 변환·순환 그래프가 원본의 재귀 getter에 진입하는 것을 막습니다. 검증한 관리 코드 getter가 이용하는 `Mathf`·`AnimationCurve.Evaluate`의 native 동작, 다른 모드의 Harmony 패치와 runtime 교체 자료는 실제 게임에서 실행 검증하지 않았습니다.
 
-`development/tools/LogRefreshInjector/SafeEvaluationHooks.cs`는 알려진 모드 설명 계산 호출 위치를 위 평가로 연결합니다. 게임 관리 DLL 입력은 수정하지 않습니다. 실제 반영된 후보 DLL과 자동 검사 결과는 [검증 기록](ISSUE-1-VALIDATION.md)의 해당 빌드 식별값과 함께 확인해야 합니다.
+`tools/LegacyPatch/LogRefreshInjector/SafeEvaluationHooks.cs`는 알려진 모드 설명 계산 호출 위치를 위 평가로 연결합니다. 게임 관리 DLL 입력은 수정하지 않습니다. 실제 반영된 후보 DLL과 자동 검사 결과는 [검증 기록](ISSUE-1-VALIDATION.md)의 해당 빌드 식별값과 함께 확인해야 합니다.
 
 검사에서 확인할 의미 있는 경계는 다음과 같습니다.
 

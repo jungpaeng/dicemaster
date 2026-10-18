@@ -3,12 +3,16 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
-## 미게시 — 이슈 #3 전체 소스 빌드 후보
+## v1.0.3-alpha.4 — 게시 준비 (prerelease)
 
+사용자가 구조 변경의 commit·push와 전체 소스 빌드 DLL의 prerelease 게시를 승인했습니다. 게시·익명 다운로드 확인 결과는 [이슈 #3 배포 기록](docs/ISSUE-3-RELEASE.md)에 기록합니다. 아래는 게시할 범위이며 이 문단은 게시 완료 기록이 아닙니다.
+
+- 루트 `DiceMaster.sln`·`global.json`과 `src/`·`tests/`·`build/`·`tools/`·`packaging/` 구조로 정리합니다. Gamepad·LiveLog를 주 프로젝트에 통합하고 생성 파일은 `artifacts/`에 모읍니다. 기존 배포 DLL과 루트 설치 파일은 전환 조건을 충족할 때까지 보존합니다.
 - `v1.0.3-alpha.3`의 고정 커밋·DLL에서 전체 C# 모드 소스·어셈블리 속성·내장 리소스를 복원하고 기존 Gamepad·LiveLog 관리 소스를 통합합니다. 이슈 #2 기능은 추가하지 않습니다.
 - 기존 `DiceMaster.dll`을 빌드 입력으로 읽지 않는 .NET Framework 4.8 전체 소스 빌드와 별도 후보 생성·검사 경로를 추가합니다. 게임/Unity/로더 참조는 로컬에서 읽기 전용으로 사용하며 게임 DLL·게임 소스를 저장소나 설치 ZIP에 포함하지 않습니다.
 - 기준과의 동작·메타데이터·후킹·native ABI·리소스 계약 비교, 기존 자동 검사의 새 DLL 연결과 실제 명령·결과는 [전체 소스 빌드 안내](docs/SOURCE-BUILD.md)에 기록합니다. 재컴파일한 DLL 전체의 바이트 일치는 요구하지 않습니다.
-- 기존 기본 빌드·배포 DLL과 아래 게시 이력은 보존합니다. 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 전환·이슈 완료로 처리하지 않습니다. Windows 설치·게임 실행과 새 배포 게시 승인은 포함하지 않습니다.
+- 태그의 소스 프로젝트로 새 DLL을 빌드하고 같은 커밋의 `packaging/config/DiceMaster.cfg`와 두 파일 ZIP으로 게시합니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 alpha.3 기준으로 보존하여 자산 DLL과 다릅니다. 어셈블리/플러그인 내부 버전은 기준 계약인 `1.0.0.0`/`1.0.0`을 유지하며 배포 태그로 새 결과를 구분합니다.
+- 기존 기본 빌드·배포 DLL과 아래 게시 이력, Latest 정식 `v1.0.2`를 보존합니다. 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 전환·이슈 완료로 처리하지 않습니다. Windows 설치·게임 실행·이슈 종료는 이번 승인에 포함하지 않습니다.
 
 ## [v1.0.3-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3) — 2026-10-18 (prerelease)
 

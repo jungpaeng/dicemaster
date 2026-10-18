@@ -12,73 +12,81 @@
 
 전환 전 **기존 기본 빌드**는 `plugins/DiceMaster/DiceMaster.dll`에 패드 확장·로그 갱신 패치를 적용합니다. 아래 기존 패치 도구 안내는 비교·복구 경로로 보존합니다. 별도 소스 빌드는 선택지 파서·번역·UI를 포함한 전체 모드를 관리 소스에서 컴파일하며 기존 모드 DLL을 읽거나 패치하지 않습니다.
 
-자동 검사와 사용자 Windows 확인을 모두 통과하기 전에는 기본 빌드를 바꾸지 않습니다. 이슈 #2 확장, 이슈 #1 미완료 조건 해결, Windows 설치·게임 실행, 태그·Release 게시·이슈 종료는 이번 작업에 포함하지 않습니다. 소스 변경의 commit·push는 후속 사용자 지시로 별도 승인받았습니다.
+자동 검사와 사용자 Windows 확인을 모두 통과하기 전에는 기본 빌드를 바꾸지 않습니다. 사용자가 현재 폴더 구조 변경의 commit·push와 이 프로젝트의 빌드 DLL을 사용한 `v1.0.3-alpha.4` prerelease 게시를 승인했습니다. 태그 커밋의 소스 프로젝트에서 새 DLL을 만들며 루트 `plugins/`의 alpha.3 기준 DLL은 보존합니다. 게시 결과·자산 식별과 재현 절차는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록합니다. 이슈 #2 확장, 이슈 #1 미완료 조건 해결, Windows 설치·게임 실행·이슈 종료·정식 Release는 이번 작업에 포함하지 않습니다.
 
 ## 파일 구성
 
 ```text
+DiceMaster.sln                         # 전체 모드와 검사 프로젝트
+Directory.Build.props                  # 공통 설정·artifacts 출력
+global.json                           # .NET SDK 8.0.426, latestPatch
 README.md                              # 설치·조작·설정 요약
 CHANGELOG.md                           # 배포 버전별 변경 이력
-docs/
-├── DEVELOPMENT.md                     # 개발·빌드·검증
-├── RELEASING.md                       # Release 등록 절차와 공개 조건
-├── SOURCE-BUILD.md                    # 이슈 #3 복원·별도 후보 빌드·검증·전환 조건
-├── ISSUE-1-VALIDATION.md               # 요구사항·자동 검사·Windows 확인 기록
-├── ISSUE-1-RELEASE-DRAFT.md            # alpha.3 상태와 alpha.2·alpha.1 게시 이력
-├── GAME-API-AUDIT.md                   # 모드·실제 API·검증 범위의 분석 개요
-├── REAL-GAME-API-FINDINGS.md           # 수신 게임 DLL의 표시 API 정적 분석
-└── GAME-LIFECYCLE-ANALYSIS.md           # 실제 새 게임·로드·Lua 경계 분석
-development/
-├── src/DiceMaster/                    # alpha.3에서 복원한 전체 모드 프로젝트·리소스
-├── src/DiceMaster.Gamepad/
-│   ├── PadController.cs                # 조정·반복·입력 필터·안내 문구
-│   ├── NativeXInput.cs                 # Windows XInput·MinHook 연결
-│   └── native/                        # 내장할 x86/x64 라이브러리와 라이선스
-├── src/DiceMaster.LiveLog/
-│   ├── RefreshEngine.cs                # 현재 탭·행별 상태·재시도 스케줄
-│   ├── LifecycleState.cs               # 전환·Lua 컴파일 토큰과 조회 차단
-│   ├── SafeDisplayEvaluation.cs        # 알려진 자료의 읽기 전용 조건·확률 평가
-│   ├── RandomPreview.cs                # 모드 전용 난수·조건 항목/이벤트의 평가 결과 재사용
-│   ├── PreviewFormatting.cs            # 결과 모델의 조건·이벤트 설명 연결
-│   └── LogBridge.cs                    # 실제 파서·모드·게임 경계 어댑터
-├── tests/GamepadTests/                 # 입력 동작 검증
-├── tests/LiveLogEngineTests/           # 표시 엔진 경계 검사
-├── tests/LiveLogIntegrationFixtures/   # 게임·Unity 경계 대역
-├── tests/LiveLogIntegrationTests/      # 실제 파서·패치 DLL 연결 검사
-├── tests/LifecycleTests/              # 순수 전환 상태 검사
-├── tests/RealGameApiFixtures/          # 실제 IL의 native/게임 경계 대역
-├── tests/RealGameApiTests/             # 수신 DLL의 IL·메타데이터 계약 검사
-├── tests/LiveLogArtifactTests/         # 메서드·리소스·중복 연결 구조 비교
-├── tests/LogRefreshFixtures/           # v1.0.2 기존 검사 대역
-├── tests/LogRefreshTests/              # v1.0.2 기존 래퍼 검사 (한계는 아래 참고)
-├── tools/GamepadInjector/              # DLL 통합 도구
-├── tools/LogRefreshInjector/           # 로그 갱신 IL 패치 도구
-│   ├── SafeEvaluationHooks.cs         # 모드 설명 호출을 순수 평가에 연결
-│   └── LifecycleHooks.cs              # 실제 SaveSystem·씬·Lua 경계 연결
-├── tools/Shared/                      # DLL payload 복사 도구
-├── tools/build-source.py               # 별도 전체 소스 빌드 후보 생성
-├── tools/verify-source.py              # 기준과 후보의 메타데이터·동작 비교
-├── tools/verify-clean-source.py        # 기존 모드 DLL 없는 격리 빌드
-├── tools/verify-source-failures.py     # 실패 진단·기존 산출물 보존 검사
-├── tools/recover-source.py            # 고정 DLL에서 최초 복원 재현
-├── tools/build-gamepad.py              # 기존 패치 빌드·통합·검증 실행
-├── tools/build-log-refresh.py          # 로그 패치·검증 실행
-└── releases/                          # 생성한 배포 파일, Git 제외
+src/DiceMaster/
+├── DiceMaster.csproj                  # .NET Framework 4.8 전체 모드
+├── DicePlugin.cs
+├── Config/                           # 설정 관리
+├── Patches/                          # 주사위·선택지·진단 후킹
+├── LuaParse/                         # 선택지 분석
+├── EmbeddedTranslations/             # 번역 구현
+├── Gamepad/                          # 패드 입력·XInput 연결
+├── LiveLog/                          # 현재 탭·난수·수명주기·게임 경계
+├── Properties/                       # 어셈블리 속성
+└── Resources/                        # 번역·UI와 native/MinHook·라이선스
+tests/                                # 동작·통합·후킹·ABI·리소스 검사와 대역
+build/
+├── build-source.py                   # 자동 검사 후 별도 후보 생성
+├── source_build.py                   # 공통 빌드·참조·출력 관리
+├── verify-source.py                  # 고정 기준과 후보 비교
+├── verify-clean-source.py            # 기존 모드 DLL 없는 격리 빌드
+├── verify-source-failures.py          # 실패 진단·산출물 보존 검사
+└── reference-contract.json           # 읽기 전용 외부 참조의 고정 해시
+tools/
+├── SourceRecovery/                   # 기준 DLL에서 최초 복원 재현·템플릿
+├── LegacyPatch/                      # 보존한 기존 패치 도구·payload 프로젝트
+└── Shared/                           # 기존 DLL payload 복사 도구
+packaging/config/DiceMaster.cfg         # 새 후보 ZIP에 포함할 설정 원본
+docs/                                  # 개발·복원·배포·검증 기록
+artifacts/                             # 생성 파일, Git 제외
+├── bin/                              # 일반 dotnet build 산출물
+├── obj/                              # 공통 중간 산출물
+└── source-candidate/                 # 검증한 DLL·ZIP·검사 보고서
+config/                                # 전환 전 기존 배포 설정 보존
+plugins/                               # 전환 전 기존 배포 DLL 보존
 ```
 
-소스·테스트·도구는 Git으로 관리합니다. `bin/`, `obj/`, `development/releases/`는 생성 파일이므로 제외합니다.
+`DiceMaster.csproj`는 Gamepad·LiveLog를 실제 하위 폴더의 C# 소스로 한 번 컴파일합니다. `tools/LegacyPatch/`의 payload 프로젝트는 이 같은 소스를 링크하여 기존 비교·복구 공정을 유지하며 루트 솔루션에는 포함하지 않습니다. 게임 DLL·게임 소스는 외부 참조 경로에서 읽기만 합니다.
+
+소스·테스트·도구·패키지 설정은 Git으로 관리합니다. `artifacts/`, `bin/`, `obj/`는 생성 파일이므로 제외합니다. 예전 `development/releases/`의 출력과 게시 영수증은 이동하거나 정리하지 않고 그대로 보존하며 새 결과의 기준으로 사용하지 않습니다. 기존 `development/tools/`의 패드·로그 패치와 복원 명령 세 개는 새 `tools/` 명령을 호출하는 호환 진입점입니다.
 저장소에 있는 DebugMenu 설정과 DLL은 별도 모드이며 DiceMaster Release ZIP에는 포함하지 않습니다.
 
 ## 빌드 환경
 
 - Python 3: 빌드 스크립트 실행
-- .NET 8 SDK: 패드 코드, DLL 통합 도구, 테스트 빌드
+- .NET 8 SDK `8.0.426`: 전체 모드, DLL 통합 도구, 테스트 빌드. 루트 `global.json`은 같은 SDK 기능 대역의 최신 패치만 허용합니다.
 - 최초 빌드 시 NuGet 패키지를 복원할 수 있는 환경
 
-패드와 로그 표시 payload 코드는 .NET Framework 4.8을 대상으로 합니다. 참조 어셈블리는 `Microsoft.NETFramework.ReferenceAssemblies.net48` 패키지로 가져옵니다.
+전체 모드와 보존한 패드·로그 payload 코드는 .NET Framework 4.8을 대상으로 합니다. 참조 어셈블리는 `Microsoft.NETFramework.ReferenceAssemblies.net48` 패키지로 가져옵니다.
 DLL 통합 도구와 테스트는 .NET 8을 대상으로 하며, 통합 도구는 Mono.Cecil 0.11.6을 사용합니다.
 
 모드의 실제 패드 실행 대상은 Windows/XInput입니다. 다른 OS에서 입력 로직을 빌드·검증하는 것과 Windows 게임에서 실행하는 것은 별도의 확인 항목입니다.
+
+## 전체 소스 빌드
+
+루트 솔루션으로 프로젝트를 열거나 다음 명령으로 컴파일합니다.
+
+```sh
+dotnet build DiceMaster.sln -c Release \
+  -p:GameReferences='<읽기 전용 참조 루트>'
+```
+
+주 DLL은 `artifacts/bin/DiceMaster/release/DiceMaster.dll`에 생성됩니다. 기존 자동 검사와 두 파일 ZIP 생성을 포함한 별도 후보 빌드는 다음 명령입니다.
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>'
+```
+
+이 결과는 `artifacts/source-candidate/`에 DLL·ZIP·영수증을 함께 생성합니다. 산출물을 한 후보 폴더에서 교체해야 검사 실패나 중단 시 서로 다른 실행의 DLL과 ZIP이 섞이지 않으므로, 검증 후보는 일반 컴파일 결과와 별도 위치를 사용합니다. 참조 해시·기존 모드 DLL 없는 빌드·기준 비교·재생성은 [SOURCE-BUILD.md](SOURCE-BUILD.md)를 따릅니다. 이 구조 정리는 기존 배포 DLL의 전환이나 Windows 검증 완료를 뜻하지 않습니다.
 
 ## 기존 기본 패치 빌드 방법
 
@@ -91,26 +99,25 @@ DLL 통합 도구와 테스트는 .NET 8을 대상으로 하며, 통합 도구�
 먼저 별도 파일로 생성하여 변경 내용을 확인할 수 있습니다.
 
 ```sh
-mkdir -p development/releases/local
-python3 development/tools/build-gamepad.py \
-  --output development/releases/local/DiceMaster.dll
+python3 tools/LegacyPatch/build-gamepad.py \
+  --output artifacts/legacy-local/DiceMaster.dll
 ```
 
 저장소의 실행용 DLL을 갱신하려면 다음을 실행합니다.
 
 ```sh
-python3 development/tools/build-gamepad.py
+python3 tools/LegacyPatch/build-gamepad.py
 ```
 
 입력 DLL을 따로 지정할 수도 있습니다.
 
 ```sh
-python3 development/tools/build-gamepad.py \
+python3 tools/LegacyPatch/build-gamepad.py \
   --input plugins/DiceMaster/DiceMaster.dll \
-  --output development/releases/local/DiceMaster.dll
+  --output artifacts/legacy-local/DiceMaster.dll
 ```
 
-`development/Directory.Build.props`는 임시 중간 출력 경로를 지정한 빌드에서도 소스 트리의 기존 `obj/`·`bin/` 생성 C# 파일을 다시 포함하지 않게 합니다.
+루트 `Directory.Build.props`는 `artifacts/`에 일반 출력과 중간 파일을 모으며, 임시 중간 출력 경로를 지정해도 소스 트리의 기존 `obj/`·`bin/` 생성 C# 파일을 다시 포함하지 않게 합니다.
 
 도구는 임시 디렉토리에서 빌드·통합하고 테스트를 실행한 뒤 출력 파일을 씁니다.
 빌드·테스트가 실패하면 실행용 DLL을 교체하지 않습니다. 기본 입력과 출력이 같은 경우에는 빌드 중 입력 DLL이 바뀌지 않았는지도 확인합니다.
@@ -127,7 +134,7 @@ python3 development/tools/build-gamepad.py \
 A·X와 오른쪽 스틱·트리거는 기존 입력을 유지합니다. A·X 전용 처리나 키 입력 에뮬레이션은 없습니다.
 LB를 먼저 놓아도 조정에 사용한 B·방향키는 해당 버튼을 놓을 때까지, 왼쪽 스틱은 중앙으로 돌아올 때까지 제외합니다.
 
-입력 경로, 임곗값, 네이티브 라이브러리 수명 관리는 [패드 구현 상세](../development/src/DiceMaster.Gamepad/README.md)를 참고하세요.
+입력 경로, 임곗값, 네이티브 라이브러리 수명 관리는 [패드 구현 상세](GAMEPAD.md)를 참고하세요.
 
 ### 수치의 의미
 
@@ -142,7 +149,7 @@ LB를 먼저 놓아도 조정에 사용한 B·방향키는 해당 버튼을 놓�
 
 ## 기존 기능의 구현 위치
 
-다음 기능은 전체 소스 후보에서 `development/src/DiceMaster/`로 복원합니다. 아래 이름은 기준 DLL과 복원 소스를 대조할 때의 탐색 기준입니다. 기존 기본 패치 빌드는 같은 기능이 들어 있는 DLL을 계속 입력으로 사용합니다.
+다음 기능은 전체 소스 후보에서 `src/DiceMaster/`로 복원합니다. 아래 이름은 기준 DLL과 복원 소스를 대조할 때의 탐색 기준입니다. 기존 기본 패치 빌드는 같은 기능이 들어 있는 DLL을 계속 입력으로 사용합니다.
 
 | 기능 | 주요 클래스·메서드 |
 |---|---|
@@ -169,7 +176,7 @@ v1.0.2는 자동 갱신에서 네 탭의 표시를 한꺼번에 재구성합니�
 
 공유 선택지 분석은 `LuaParser.Instance`를 사용하는 실제 Lua 경계가 소유합니다. 이벤트 고정 설명은 `LogBridge.GetEventParser` → `PositionEventCache.GetDefinitionParser`로 얻는 별도 파서 인스턴스에 맡겨, 콜드·지연 준비 이벤트 스크립트 분석도 공유 선택지 캐시를 덮어쓰지 않게 합니다.
 
-`RefreshEngine`은 현재 탭과 항목별 값·오류·재시도 시각을 관리합니다. `LogBridge`는 기존 모드의 파서·캐시·표시 경계에 연결하며, 통합 도구가 이 소스를 기존 DLL에 넣습니다. 이벤트의 고정 설명은 고정 분석 경계에서 준비하고, 늦게 준비되거나 실패한 정의는 준비 시 한 번 분석할 수 있습니다. 정상 웜 캐시 주기에는 이를 다시 분석하지 않습니다.
+`RefreshEngine`은 현재 탭과 항목별 값·오류·재시도 시각을 관리합니다. `LogBridge`는 기존 모드의 파서·캐시·표시 경계에 연결하며, 전체 소스 후보는 이를 같은 어셈블리에서 컴파일합니다. 보존한 기존 패치 공정은 통합 도구가 같은 소스를 기존 DLL에 넣습니다. 이벤트의 고정 설명은 고정 분석 경계에서 준비하고, 늦게 준비되거나 실패한 정의는 준비 시 한 번 분석할 수 있습니다. 정상 웜 캐시 주기에는 이를 다시 분석하지 않습니다.
 
 전달받은 실제 게임 DLL에서 확인한 `SaveSystem`의 새 게임·공개 로드·공통 로드 6개 메서드와 private `SceneController.StartLoadScene`의 Prefix에서 문맥을 무효화합니다. Prefix/Postfix/Finalizer는 `LifecycleState`의 호출 토큰으로 중첩·중복·오래된 콜백을 구분합니다. void 로드 반환과 씬 코루틴 생성은 준비 완료로 처리하지 않습니다.
 
@@ -224,9 +231,9 @@ UI에는 난수 숫자와 계산된 판정 색상을 그대로 표시하고 `표
 로그 패치만 재생성하려면 다음 명령을 실행합니다. 패드 빌드 도구와 같은 `--input`, `--output` 옵션을 지원합니다.
 
 ```sh
-python3 development/tools/build-log-refresh.py \
+python3 tools/LegacyPatch/build-log-refresh.py \
   --game-managed '<읽기 전용 참조>/Mortal_Data/Managed' \
-  --output development/releases/local/DiceMaster.dll
+  --output artifacts/legacy-local/DiceMaster.dll
 ```
 
 `--game-managed`는 읽기 전용 게임 DLL에서 실제 IL과 후킹 계약을 검사합니다. macOS의 .NET 검사로 native·Unity 경계를 대역에 옮겨 실행하며 게임을 실행하지 않습니다.
@@ -304,6 +311,6 @@ v1.0.1 DLL에는 별도 비교로 다음을 확인했습니다.
 | MinHook | Windows XInput 후킹 | [1.3.4](https://github.com/TsudaKageyu/minhook/releases/tag/v1.3.4) |
 | Mono.Cecil | DLL 통합 도구 | [0.11.6](https://github.com/jbevain/cecil) |
 
-MinHook의 x86/x64 DLL과 전체 라이선스는 `development/src/DiceMaster.Gamepad/native/`에 보관합니다.
+MinHook의 x86/x64 DLL과 전체 라이선스는 `src/DiceMaster/Resources/native/`에 보관합니다.
 실행용 DiceMaster DLL에도 라이브러리와 `DiceMaster.Gamepad.Native.LICENSE.txt` 리소스를 내장합니다.
 원본 출처를 확인하면 이 절과 사용자 README의 출처 안내를 함께 갱신하세요.

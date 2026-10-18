@@ -1,4 +1,9 @@
-# Keep source recovery portable and native embedded resources byte-exact.
-development/**/*.cs text eol=lf
-development/tools/SourceRecovery/*.template text eol=lf
-development/src/DiceMaster.Gamepad/native/* -text
+# Source text is portable; embedded resources retain their original bytes.
+src/**/*.cs text eol=lf
+tests/**/*.cs text eol=lf
+tools/**/*.cs text eol=lf
+tools/SourceRecovery/*.template text eol=lf
+src/DiceMaster/Resources/** -text
+*.sln text eol=lf
+global.json text eol=lf
+Directory.Build.props text eol=lf

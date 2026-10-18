@@ -1,5 +1,0 @@
-*.cs text eol=lf
-*.csproj text eol=lf
-recovery-manifest.json text eol=lf
-.gitattributes text eol=lf
-Resources/* -text

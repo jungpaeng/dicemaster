@@ -1,8 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <!-- The patch scripts redirect intermediate outputs to a temporary folder.
-         Keep previous local builds out of SDK source globs in that case too. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);**/obj/**;**/bin/**</DefaultItemExcludes>
-    <UseSharedCompilation>false</UseSharedCompilation>
-  </PropertyGroup>
-</Project>

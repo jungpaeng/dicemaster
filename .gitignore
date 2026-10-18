@@ -11,3 +11,7 @@
 
 # Generated release packages
 /development/releases/
+
+# Conventional build and verification outputs
+/artifacts/
+**/__pycache__/

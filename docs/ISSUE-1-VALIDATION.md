@@ -192,7 +192,7 @@ alpha.2 검사는 난수 미정·미지원과 실제 조회 실패를 구분하�
 개발 환경에서 엔진만 재현하는 측정 명령은 다음과 같습니다.
 
 ```sh
-dotnet run --project development/tests/LiveLogArtifactTests/LiveLogArtifactTests.csproj -- --benchmark
+dotnet run --project tests/LiveLogArtifactTests/LiveLogArtifactTests.csproj -- --benchmark
 ```
 
 이 측정은 100개의 미리 만든 정상 쿼리를 사용합니다. 콜드 1회는 엔진 생성부터 첫 표시까지 측정하고, 20회 워밍업 후 GC를 정리한 뒤 0.25초씩 진행시킨 모의 시각으로 1,000회 평가합니다. `Stopwatch`로 경과 시간, `GC.GetAllocatedBytesForCurrentThread`로 같은 스레드의 할당량, `GC.CollectionCount`로 세대별 수집 횟수를 기록합니다. 모의 시각의 250초와 실제 측정 경과 시간은 다릅니다. 정상 행 조회/발행은 각각 100,000회인지 확인합니다.
