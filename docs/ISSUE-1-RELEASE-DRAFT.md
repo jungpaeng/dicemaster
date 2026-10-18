@@ -1,6 +1,6 @@
-# DiceMaster v1.0.3-alpha.2 — prerelease 준비
+# DiceMaster v1.0.3-alpha.2 — prerelease 게시 기록
 
-**문제 수정 소스를 반영하고 승인된 새 prerelease 게시를 준비 중입니다.** alpha.2 전체 관리 코드·표시 통합 파이프라인은 통과했습니다. 최종 패드→로그 왕복·반복 패치·직접 패드 검사와 로컬 ZIP 검증까지 통과했습니다. 커밋 기준 ZIP 증명·게시·공개 다운로드는 준비 중입니다. alpha.1의 검사 수·해시는 아래 역사로 보존하며 alpha.2의 검증 결과로 승계하지 않습니다.
+**[v1.0.3-alpha.2 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)를 2026-10-18 21:52:10 KST에 게시하고 익명 공개 다운로드 검증을 마쳤습니다.** alpha.2 전체 관리 코드·표시 통합 파이프라인은 통과했습니다. 최종 패드→로그 왕복·반복 패치·직접 패드 검사와 로컬 ZIP 검증까지 통과했습니다. 태그·ZIP의 배포 기준 커밋은 `015c80c2fd9f905aaece574b3b11da52e501d432`이며 커밋 바이트·공개 다운로드 일치를 검증했습니다. alpha.1의 검사 수·해시는 아래 역사로 보존하며 alpha.2의 검증 결과로 승계하지 않습니다.
 
 Windows 설치·게임 실행은 새로 승인되지 않았고 실행하거나 요청하지 않습니다. 기능·이슈 완료와 정식 Release는 계속 보류합니다.
 
@@ -17,7 +17,8 @@ Windows 설치·게임 실행은 새로 승인되지 않았고 실행하거나 �
 
 | alpha.2 식별·검사 | 현재 상태 |
 |---|---|
-| 버전·태그 | `v1.0.3-alpha.2` 예정 |
+| 버전·태그 | [v1.0.3-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2) prerelease |
+| GitHub 상태·시각 | ID `416448453`, `draft=false`, `prerelease=true`, 2026-10-18 12:52:10 UTC / 21:52:10 KST |
 | 캐시/보호·엔진·수명주기 | 19개·16개 시나리오/70개·4,023개 통과 |
 | 통합·실제 관리 동작·메타데이터 | 최초·반복 각각 111개·3,543개·949개 통과 |
 | 구조·리소스 | 최초·반복 각각 958개, 본문 356개 불변·정규화 0개·리소스 8개 일치 |
@@ -28,9 +29,10 @@ Windows 설치·게임 실행은 새로 승인되지 않았고 실행하거나 �
 | 최종 파일 | `development/releases/v1.0.3-alpha.2/DiceMaster.final.dll`, 저장소 plugins/DiceMaster/DiceMaster.dll과 바이트 일치 |
 | alpha.2 로컬 ZIP | `DiceMaster-v1.0.3-alpha.2.zip`, 192,018바이트 |
 | alpha.2 ZIP SHA-256 | `fcd3111b101efba6ef62b0f79cb918f23e016ccf8e1637a821edb9e2ae0589f1` |
-| 로컬 ZIP 검증 | 정확히 두 파일·CRC 정상·작업 트리 바이트 일치. 게시 커밋 기준 증명은 준비 중 |
-| 게시 커밋 | 게시 작업에서 확정, 태그·ZIP과 같은 커밋 사용 |
-| 공개 다운로드 검증 | 미수행 |
+| ZIP 검증 | 익명 공개 다운로드·정확히 두 파일·CRC 정상·게시 커밋 바이트 일치 |
+| 배포 태그 커밋 | `015c80c2fd9f905aaece574b3b11da52e501d432` — 문서 후속 커밋과 별개로 고정 |
+| 공개 다운로드 검증 | 익명 API·다운로드 SHA-256·커밋 바이트 일치 완료 |
+| Latest·로컬 영수증 | `v1.0.2` (ID `416349430`) 유지; `development/releases/v1.0.3-alpha.2/github-publication.json` |
 | Windows·native·실제 게임 리소스·게임 성능 | 미실행·미검증 |
 
 아래 alpha.1 기록의 배포 기준 커밋·해시·게시 상태는 변경하지 않습니다.

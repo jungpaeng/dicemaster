@@ -4,15 +4,15 @@
 
 기록일: 2026-10-18 (Asia/Seoul). 기준 회귀: v1.0.2 / `e7d6dfeade5da9bba12825668f4948f56aea9e26`.
 
-**현재 상태: `v1.0.3-alpha.2` 난수 미리보기 소스 반영·prerelease 준비 중입니다.** 사용자가 문제 수정과 새 prerelease 발행을 승인했습니다. alpha.2 최종 패드→로그 왕복·반복 패치와 직접 패드 검사를 통과했습니다. 로컬 ZIP의 두 파일·CRC·바이트도 검증했으며 게시 커밋 기준 증명·공개 다운로드는 게시 단계에서 확인합니다. Windows 실행 승인은 추가되지 않았고 기능·이슈 완료와 정식 Release는 계속 보류합니다. [후속 구현 범위](RANDOM-PREVIEW-FOLLOWUP.md)를 따릅니다.
+**현재 상태: `v1.0.3-alpha.2` 난수 미리보기를 반영한 [prerelease 게시](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)와 익명 공개 다운로드 검증을 마쳤습니다.** 사용자가 문제 수정과 새 prerelease 발행을 승인했습니다. alpha.2 최종 패드→로그 왕복·반복 패치와 직접 패드 검사를 통과했습니다. 게시 시각은 2026-10-18 21:52:10 KST, 배포 태그 커밋은 `015c80c2fd9f905aaece574b3b11da52e501d432`입니다. ZIP·두 파일·CRC·공개 다운로드와 게시 커밋 바이트 일치를 검증했습니다. Windows 실행 승인은 추가되지 않았고 기능·이슈 완료와 정식 Release는 계속 보류합니다. [후속 구현 범위](RANDOM-PREVIEW-FOLLOWUP.md)를 따릅니다.
 
 **이전 게시 기록:** [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) 게시와 공개 다운로드 검증을 마쳤습니다. 게시 시각은 2026-10-18 21:08:36 KST, 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`입니다. 실제 게임 DLL의 관련 API 분석과 사용자 Windows 검증을 모두 충족하기 전에는 기능·이슈 완료 또는 정식 Release로 처리하지 않습니다. Windows 설치·게임 실행 검증은 승인되지 않았습니다.
 
-## alpha.2 구현·검사 준비 기록
+## alpha.2 구현·검사·게시 기록
 
 | 항목 | 현재 상태 |
 |---|---|
-| 대상 버전 | `v1.0.3-alpha.2` prerelease 준비, 미게시 |
+| 대상 버전 | [v1.0.3-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2) prerelease 게시 완료 |
 | 수정 범위 | 범위·실행 시 판정·전용 미지원 표시, 안전하게 지원한 단일 비교의 균등 정수 기준 이론 확률 |
 | 구현·formatter 연결 | 소스 반영·전체 파이프라인 통과. `RandomPreview`·`PreviewFormatting`과 설명 경계 연결 |
 | 자동 검사·반복 패치 | 캐시/보호 19개, 엔진 16개 시나리오·70개, 수명주기 4,023개, 통합 최초·반복 각각 111개 통과 |
@@ -26,7 +26,10 @@
 | alpha.1 백업 | `development/releases/v1.0.3-alpha.2/prior-alpha.1.dll`, `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7` 보존 |
 | alpha.2 로컬 ZIP | `DiceMaster-v1.0.3-alpha.2.zip`, 192,018바이트, SHA-256 `fcd3111b101efba6ef62b0f79cb918f23e016ccf8e1637a821edb9e2ae0589f1` |
 | 로컬 ZIP 검증 | 정확히 config/DiceMaster.cfg·plugins/DiceMaster/DiceMaster.dll 두 파일, CRC 정상·작업 트리 파일 바이트 일치 |
-| 배포 커밋·공개 다운로드 | 게시 전 준비 중. 커밋 후 같은 커밋 blobs 기준 재생성·증명 및 공개 다운로드 검증 예정 |
+| 배포 태그 커밋 | `015c80c2fd9f905aaece574b3b11da52e501d432` — 문서 후속 커밋과 별개로 고정 |
+| GitHub 게시 상태·시각 | ID `416448453`, `draft=false`, `prerelease=true`, 2026-10-18 12:52:10 UTC / 21:52:10 KST |
+| 공개 검증 | 익명 API·다운로드·CRC·정확히 두 파일·게시 커밋 바이트 일치 완료 |
+| 기존 Latest·영수증 | `v1.0.2` (ID `416349430`) 유지; `development/releases/v1.0.3-alpha.2/github-publication.json` |
 | 승인 범위 | 수정·새 prerelease 게시와 필요한 commit/push/태그. Windows 실행·기능 완료·정식 Release는 포함하지 않음 |
 
 난수 미정·미지원과 실제 조회 실패를 구분하며 샘플링·임의 bool/int·일반 실패 색상으로 대신하지 않는 것이 이번 검사의 핵심입니다. 새 결과와 자료 문맥이 바뀌면 이전 확정값을 난수의 현재값처럼 보관하지 않아야 합니다. 검사 기준과 허용 경계는 [난수 미리보기 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)에 기록합니다.
@@ -61,7 +64,7 @@
 
 ## 수용 기준
 
-난수 범위·판정 미정·전용 미지원 표시와 제한적인 단일 비교 이론 확률은 [alpha.2 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)의 현재 작업입니다. 게시된 alpha.1에는 없으며 alpha.2의 최종 관리 코드·표시·반복 패치·패드 검사를 통과했습니다. 게시 커밋 기준 증명·공개 다운로드 검증은 게시 단계에서 확인합니다.
+난수 범위·판정 미정·전용 미지원 표시와 제한적인 단일 비교 이론 확률은 [alpha.2 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)의 현재 작업입니다. 게시된 alpha.1에는 없으며 alpha.2의 최종 관리 코드·표시·반복 패치·패드 검사를 통과했습니다. 게시 커밋 기준 증명과 익명 공개 다운로드 검증도 마쳤습니다.
 
 체크 표시는 자동 검사, 실제 API 분석, 해당 Windows 사용자 확인을 모두 충족한 경우에만 추가합니다. 코드가 존재하거나 일부 모의 검사가 통과한 것만으로 체크하지 않습니다.
 

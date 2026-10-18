@@ -5,7 +5,7 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md)
 
-현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. **현재 후속 작업은 `v1.0.3-alpha.2` prerelease 준비**입니다. 사용자가 난수 표시 문제 수정과 새 prerelease 게시를 승인하여 [난수 미리보기](docs/RANDOM-PREVIEW-FOLLOWUP.md) 소스를 반영하고 검사했습니다. 범위·실행 시 판정·전용 미지원 표시와 제한된 단일 비교의 이론 확률을 포함하며 최종 관리 코드·표시·반복 패치·직접 패드 검사를 통과했고 새 DLL을 확정했습니다. 로컬 ZIP 검증도 마쳤으며 게시 커밋·공개 다운로드는 준비 중입니다. **기능 완료·정식 Release 공개는 보류**하며, [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 **2026-10-18 21:08:36 KST에 게시했습니다**. 익명 공개 다운로드의 ZIP·DLL과 배포 기준 커밋 일치를 확인했으며 기존 Latest `v1.0.2`는 유지했습니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다. 확인 결과와 남은 제한은 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
+현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. **[`v1.0.3-alpha.2` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)를 2026-10-18 21:52:10 KST에 게시했습니다.** 사용자가 난수 표시 문제 수정과 새 prerelease 게시를 승인하여 [난수 미리보기](docs/RANDOM-PREVIEW-FOLLOWUP.md) 소스를 반영하고 검사했습니다. 범위·실행 시 판정·전용 미지원 표시와 제한된 단일 비교의 이론 확률을 포함하며 최종 관리 코드·표시·반복 패치·직접 패드 검사를 통과했고 새 DLL을 확정했습니다. 게시 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432` 기준 ZIP·DLL 바이트와 익명 공개 다운로드를 검증했습니다. **기능 완료·정식 Release 공개는 보류**하며, [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 **2026-10-18 21:08:36 KST에 게시했습니다**. 익명 공개 다운로드의 ZIP·DLL과 배포 기준 커밋 일치를 확인했으며 기존 Latest `v1.0.2`는 유지했습니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다. 확인 결과와 남은 제한은 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
 
 ## 공개 버전 설치 안내
 
@@ -81,7 +81,7 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 | `읽기 실패` | 첫 조회가 실패해 표시할 정상 값이 없습니다. 자동 재시도 또는 준비된 문맥의 수동 새로고침 대상입니다. |
 | `갱신 실패 · 이전 값` | 마지막 정상 값을 유지하고 있습니다. 현재 게임 상태와 다를 수 있으며, 복구하면 새 값으로 바뀌고 문구가 사라집니다. |
 
-확률·조건의 원래 게임 API는 난수 소비와 조건 실행 카운터 변경을 일으킬 수 있어, 알려진 모드 설명 경로에는 별도의 읽기 전용 평가를 적용합니다. 게시된 alpha.1은 난수를 행의 읽기 실패 또는 이전 값으로 표시했습니다. alpha.2는 게임 RNG를 호출하지 않고 범위·실행 시 판정·미지원 상태를 실제 조회 오류와 구분하고, 안전하게 지원한 단일 비교에만 `균등 정수 기준 이론 확률`을 표시하는 소스를 반영했습니다. 최종 파일 검증을 통과했으며 게시는 준비 중입니다. alpha.1의 검사 결과를 이 변경의 검증 완료로 사용하지 않습니다. 지원하지 않는 자료·순환 참조도 행 실패로 구분합니다. 정상적으로 항목이 없는 경우에는 기존 빈 목록 표시를 유지합니다. 색상과 별개로 한국어 문구로 상태를 구분합니다. 새 설정은 추가하지 않으며 `EnableOptionInfo=false`로 설정하고 재시작하면 정보 표시와 자동 갱신을 끕니다.
+확률·조건의 원래 게임 API는 난수 소비와 조건 실행 카운터 변경을 일으킬 수 있어, 알려진 모드 설명 경로에는 별도의 읽기 전용 평가를 적용합니다. 게시된 alpha.1은 난수를 행의 읽기 실패 또는 이전 값으로 표시했습니다. alpha.2는 게임 RNG를 호출하지 않고 범위·실행 시 판정·미지원 상태를 실제 조회 오류와 구분하고, 안전하게 지원한 단일 비교에만 `균등 정수 기준 이론 확률`을 표시하는 소스를 반영했습니다. 최종 파일과 공개 다운로드 검증을 통과했습니다. alpha.1의 검사 결과를 이 변경의 검증 완료로 사용하지 않습니다. 지원하지 않는 자료·순환 참조도 행 실패로 구분합니다. 정상적으로 항목이 없는 경우에는 기존 빈 목록 표시를 유지합니다. 색상과 별개로 한국어 문구로 상태를 구분합니다. 새 설정은 추가하지 않으며 `EnableOptionInfo=false`로 설정하고 재시작하면 정보 표시와 자동 갱신을 끕니다.
 
 진단은 기존 BepInEx 로그를 사용합니다. 같은 게임 세션·항목·원인의 연속 실패는 최초 1회, 복구는 1회 기록하는 것이 목표입니다. 제보에는 관련 탭·항목, 재현 순서와 해당 오류·복구 로그를 포함하고 전체 Lua 원문이나 세이브 내용은 첨부하지 않아도 됩니다. 실제 적용 범위와 미확인 API는 [개발 안내](docs/DEVELOPMENT.md)와 [실제 게임 API 분석](docs/REAL-GAME-API-FINDINGS.md)·[문맥 전환 분석](docs/GAME-LIFECYCLE-ANALYSIS.md)을 확인하세요.
 
@@ -109,7 +109,7 @@ python3 development/tools/build-log-refresh.py \
 
 ## Release 등록
 
-`v1.0.3-alpha.2`의 수정·새 prerelease 게시가 승인되었으며 현재 최종 파일·로컬 ZIP 검증을 마치고 게시를 준비 중입니다. 아직 alpha.2가 게시되었다고 기록하지 않습니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
+`v1.0.3-alpha.2`를 배포 태그 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트 일치를 검증했습니다. 기존 Latest `v1.0.2`는 유지했습니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
 
 태그는 `vX.Y.Z`, ZIP 이름은 `DiceMaster-vX.Y.Z.zip` 형식입니다. 다음 두 파일만 폴더 구조를 유지해 포함합니다.
 

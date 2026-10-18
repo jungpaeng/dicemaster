@@ -1,7 +1,7 @@
 # 로그 갱신 게임 API 분석 기록
 
 [개발 안내](DEVELOPMENT.md) · [실제 조회 API 근거](REAL-GAME-API-FINDINGS.md) · [게임 수명주기 근거](GAME-LIFECYCLE-ANALYSIS.md) · [검증 결과](ISSUE-1-VALIDATION.md) · [요구사항 #1](https://github.com/jungpaeng/dicemaster/issues/1)
-게시된 `v1.0.3-alpha.1`과 사용자가 승인한 `v1.0.3-alpha.2` prerelease 재발행은 기능·이슈 완료/정식 Release 판정과 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
+게시된 `v1.0.3-alpha.1`·`v1.0.3-alpha.2` prerelease는 기능·이슈 완료/정식 Release 판정과 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
 
 
 기록일: 2026-10-18. **실제 관리 DLL의 조회 API와 새 게임·로드 경계 정적 분석을 수행했습니다. 실제 게임 런타임·사용자 Windows 검증·게임 성능 측정은 미실행입니다.** 자동 검사와 정적 분석으로 이슈 완료나 정식 Release 공개 조건을 충족했다고 처리하지 않습니다. Windows는 파일·정보 읽기만 승인되었으며 게임 실행을 수행하거나 요청하지 않았습니다.

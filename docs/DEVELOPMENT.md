@@ -4,7 +4,7 @@
 
 ## 개발 범위
 
-현재 작업은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 미리보기 후속 구현입니다. 사용자가 문제 수정과 `v1.0.3-alpha.2` prerelease 재발행을 승인했으며 최종 관리 코드·표시·반복 패치·직접 패드와 로컬 ZIP 검증을 통과했습니다. 게시 커밋·공개 다운로드는 준비 중이며 alpha.1의 통과 수치를 승계하지 않습니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능 완료로 표시하거나 정식 Release를 공개하지 않습니다. [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 2026-10-18 21:08:36 KST에 게시되었습니다. 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`이며 공개 다운로드의 ZIP·DLL 바이트 일치까지 확인했습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했습니다. runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다. 자동 검사는 그중 하나의 검증 단계입니다. 구현 목표와 확인 결과는 [검증 기록](ISSUE-1-VALIDATION.md)에서 구분합니다.
+현재 작업은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 미리보기 후속 구현입니다. 사용자가 문제 수정과 `v1.0.3-alpha.2` prerelease 재발행을 승인했으며 최종 관리 코드·표시·반복 패치·직접 패드와 로컬 ZIP 검증을 통과했습니다. [`v1.0.3-alpha.2` 게시](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2) (release commit `015c80c2fd9f905aaece574b3b11da52e501d432`)와 익명 공개 다운로드 검증도 2026-10-18 21:52:10 KST에 마쳤으며 alpha.1의 통과 수치를 승계하지 않습니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능 완료로 표시하거나 정식 Release를 공개하지 않습니다. [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 2026-10-18 21:08:36 KST에 게시되었습니다. 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`이며 공개 다운로드의 ZIP·DLL 바이트 일치까지 확인했습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했습니다. runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다. 자동 검사는 그중 하나의 검증 단계입니다. 구현 목표와 확인 결과는 [검증 기록](ISSUE-1-VALIDATION.md)에서 구분합니다.
 
 이 저장소는 기존 DiceMaster DLL을 기반으로 유지보수합니다.
 `development/`에는 패드 지원 소스, 로그 표시 엔진·게임 경계 어댑터, DLL 패치 도구와 동작 검사가 있습니다.
@@ -21,7 +21,7 @@ docs/
 ├── DEVELOPMENT.md                     # 개발·빌드·검증
 ├── RELEASING.md                       # Release 등록 절차와 공개 조건
 ├── ISSUE-1-VALIDATION.md               # 요구사항·자동 검사·Windows 확인 기록
-├── ISSUE-1-RELEASE-DRAFT.md            # alpha.2 준비·alpha.1 게시 이력
+├── ISSUE-1-RELEASE-DRAFT.md            # alpha.2·alpha.1 prerelease 게시 이력
 ├── GAME-API-AUDIT.md                   # 모드·실제 API·검증 범위의 분석 개요
 ├── REAL-GAME-API-FINDINGS.md           # 수신 게임 DLL의 표시 API 정적 분석
 └── GAME-LIFECYCLE-ANALYSIS.md           # 실제 새 게임·로드·Lua 경계 분석

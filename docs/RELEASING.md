@@ -2,15 +2,15 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [prerelease 설명](ISSUE-1-RELEASE-DRAFT.md)
 
-**현재는 난수 표시 수정과 `v1.0.3-alpha.2` prerelease 재발행이 승인된 준비 단계입니다.** 필요한 commit·push·태그·게시 권한이 있으며 alpha.2 최종 패드→로그·반복 패치·직접 패드와 로컬 ZIP 검증은 통과했으며 게시 커밋 기준 증명·공개 다운로드는 준비 중입니다. 이전 버전 수치를 새 버전 결과로 승계하지 않습니다.
+**[`v1.0.3-alpha.2` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)를 2026-10-18 21:52:10 KST에 게시하고 익명 공개 다운로드 검증을 마쳤습니다.** Release ID는 `416448453`, 상태는 `draft=false`, `prerelease=true`입니다. 이전 버전 수치를 새 버전 결과로 승계하지 않습니다.
 
 **[`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 2026-10-18 21:08:36 KST에 게시하고 공개 다운로드 검증을 마쳤습니다.** GitHub 상태는 `draft=false`, `prerelease=true`입니다. 이 게시로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
 
 현재 Windows PC는 기존 파일·정보 읽기만 허용되어 있으며 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. prerelease 게시 승인은 이 PC에서의 게임 실행 승인이 아닙니다. 실행을 요청하거나 수행하지 않습니다.
 
-## alpha.2 게시 전 확인할 기록
+## alpha.2 게시 기록
 
-최종 소스의 자동 검사·반복 패치·패드·구조 결과와 DLL SHA-256을 확정했습니다. DLL은 `b6f7ae790cde736dcf1a282e9242c46b8ab0204602c7c462d59c571f321740ec` / 462,848바이트이고 로컬 ZIP은 `fcd3111b101efba6ef62b0f79cb918f23e016ccf8e1637a821edb9e2ae0589f1` / 192,018바이트이며 정확히 두 파일·CRC·작업 트리 바이트 일치를 검증했습니다. 게시 단계에서는 같은 게시 커밋에서 `v1.0.3-alpha.2` 태그와 `DiceMaster-v1.0.3-alpha.2.zip`을 만듭니다. ZIP은 기존 두 파일 계약을 유지하며 공개 다운로드·CRC·커밋 바이트·SHA-256을 별도로 검증합니다. alpha.1의 태그·파일·해시는 덮어쓰지 않고 Latest 정식 `v1.0.2`를 유지합니다. 현재 문서는 alpha.2 게시 완료를 뜻하지 않습니다.
+최종 소스의 자동 검사·반복 패치·패드·구조 결과와 DLL SHA-256을 확정했습니다. DLL은 `b6f7ae790cde736dcf1a282e9242c46b8ab0204602c7c462d59c571f321740ec` / 462,848바이트이고 로컬 ZIP은 `fcd3111b101efba6ef62b0f79cb918f23e016ccf8e1637a821edb9e2ae0589f1` / 192,018바이트이며 정확히 두 파일·CRC·작업 트리 바이트 일치를 검증했습니다. 배포 태그 커밋은 `015c80c2fd9f905aaece574b3b11da52e501d432`이며 `DiceMaster-v1.0.3-alpha.2.zip`과 같은 고정 기준입니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·게시 커밋 바이트·SHA-256 일치를 확인했습니다. alpha.1의 태그·파일·해시는 덮어쓰지 않고 Latest 정식 `v1.0.2`를 유지합니다. 게시 시각은 2026-10-18 12:52:10 UTC / 21:52:10 KST이며 로컬 영수증은 `development/releases/v1.0.3-alpha.2/github-publication.json`입니다. 문서 후속 커밋은 배포 태그·커밋·ZIP을 변경하지 않습니다.
 
 난수 미리보기의 실제 허용 범위·이론 확률 의미·미지원 표시와 미검증 native·Windows 경로를 게시 설명에 기록합니다. Windows 실행·설치 검증 승인은 추가되지 않았습니다.
 
