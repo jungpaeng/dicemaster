@@ -89,7 +89,7 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 
 ## v1.0.4-alpha.2 prerelease — 선택지 미리보기
 
-[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.2/DiceMaster-v1.0.4-alpha.2.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 정식 Latest는 v1.0.3으로 유지합니다.
+[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.2/DiceMaster-v1.0.4-alpha.2.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 2026-10-19 01:02:27 KST에 게시하고 공개 다운로드를 검증했습니다. 정식 Latest는 v1.0.3으로 유지합니다.
 
 [v1.0.4-alpha.2 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.2)는 alpha.1의 선택지 미리보기를 읽기 쉽게 다듬습니다. 일부 결과를 해석하지 못하면 `추가 영향 가능`, 확인된 효과 없이 미해석 부분만 있으면 `결과는 진행 후 확인`으로 안내합니다. 실제 같은 조건문의 인접 효과를 분기 번호·중립색으로 묶고 Tab 로그에서 갈래별로 줄을 나눕니다. 선택지 옆에는 기존 50자 요약을 유지합니다. 설치 파일과 검사 범위는 [alpha.2 게시 설명](docs/ISSUE-2-ALPHA2-RELEASE.md)에 있습니다.
 

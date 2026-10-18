@@ -8,6 +8,8 @@
 
 선택한 커밋을 아래 `verify-preview-release.py`로 새로 빌드하고 검토한 DLL SHA-256 `121f09973f8c37353e78afd341c735c84ca3f49f8ca20319c54b62bfc091b5b2`와 설정 SHA-256 `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e`를 요구합니다. 버전은 `v1.0.4-alpha.2`, 출력은 `artifacts/releases/v1.0.4-alpha.2`로 지정합니다. 실제 Lua·Windows/native·최종 추적 한도 검증은 여전히 미완료이며 실제 게시·공개 다운로드 결과는 후속 기록으로 구분합니다.
 
+**2026-10-19 01:02:27 KST에 [v1.0.4-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.2)를 게시하고 익명 공개 다운로드 검증을 완료했습니다.** 태그 커밋은 `06f10d81f1e3c0b0fa8f06c974027ab6fcb487c9`, Release ID는 `416550477`, asset ID는 `653865628`입니다. 커밋에서 새로 빌드한 DLL/설정과 공개 ZIP의 해시·CRC·정확히 두 파일 일치를 확인했습니다. 기존 9개 Release·자산과 Latest 정식 v1.0.3, 이슈 #2 open을 유지했습니다. 검증 영수증은 `artifacts/releases/v1.0.4-alpha.2/`에 있으며 후속 문서 커밋은 소스 태그와 공개 파일을 변경하지 않습니다.
+
 ## PRD 2 alpha.1 prerelease의 별도 범위
 
 사용자가 2026-10-19 KST에 PRD 2 구현의 commit·push와 새 prerelease 게시를 승인했습니다. 대상은 `v1.0.4-alpha.1`, 설치 자산은 `DiceMaster-v1.0.4-alpha.1.zip`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 정식 Latest `v1.0.3`과 이전 Release·태그·자산을 보존합니다. [게시 설명](ISSUE-2-RELEASE.md)과 [구현·검증 기록](ISSUE-2-IMPLEMENTATION.md)에 범위와 식별값을 구분합니다.

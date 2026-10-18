@@ -2,11 +2,13 @@
 
 [PRD 2](https://github.com/jungpaeng/dicemaster/issues/2) · [개발 안내](DEVELOPMENT.md) · [기술 인계](ISSUE-2-TECHNICAL-HANDOFF.md)
 
-2026-10-19 KST. PRD 2 로컬 소스·검사·별도 후보의 구현 기록이다. 이후 사용자 승인으로 commit·push하고 `v1.0.4-alpha.1` prerelease를 게시했다. 실제 Lua와 사용자 Windows 검증, 실제 자료를 사용한 추적 제한 검증은 미완료이며 기능·이슈 완료로 처리하지 않는다. 과거 alpha.4 사용자 Windows 확인을 이 후보에 승계하지 않으며 이슈 #2는 open으로 유지한다. 게시 설명은 [prerelease 안내](ISSUE-2-RELEASE.md)에 있다.
+2026-10-19 KST. PRD 2 로컬 소스·검사·별도 후보의 구현 기록이다. 이후 사용자 승인으로 commit·push하고 `v1.0.4-alpha.1`, 가독성 후속 `v1.0.4-alpha.2` prerelease를 게시했다. 실제 Lua와 사용자 Windows 검증, 실제 자료를 사용한 추적 제한 검증은 미완료이며 기능·이슈 완료로 처리하지 않는다. 과거 alpha.4 사용자 Windows 확인을 이 후보에 승계하지 않으며 이슈 #2는 open으로 유지한다. 게시 설명은 [alpha.2 안내](ISSUE-2-ALPHA2-RELEASE.md)와 [alpha.1 안내](ISSUE-2-RELEASE.md)에 있다.
 
 ## v1.0.4-alpha.2 가독성 후속 변경
 
 2026-10-19 사용자 피드백을 반영한 변경이며 사용자가 후속 commit·push와 prerelease 게시를 승인했다. 대상은 `v1.0.4-alpha.2`이고 [게시 설명](ISSUE-2-ALPHA2-RELEASE.md)에 파일 식별값과 확인 범위를 기록한다. 공개 alpha.1의 태그·자산·게시 설명은 바꾸지 않는다. 실제 게시 식별값과 공개 다운로드 검증은 게시 후 별도로 기록한다.
+
+**2026-10-19 01:02:27 KST**에 [v1.0.4-alpha.2 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.2)를 게시했다. 태그 소스 커밋은 `06f10d81f1e3c0b0fa8f06c974027ab6fcb487c9`, Release ID는 `416550477`, 자산 ID는 `653865628`이다. 115개 입력의 커밋 스냅샷에서 기존 모드 DLL·Git 데이터·이전 출력 없이 다시 빌드하고 8개 검사 프로그램을 통과했다. 결과 DLL·ZIP은 아래 검토 후보와 같은 해시다. 인증 없는 공개 API·설치 ZIP 다운로드에서 태그 커밋·CRC·두 파일·DLL/설정 바이트·해시를 확인했다. 이전 9개 Release·자산과 정식 Latest v1.0.3, 이슈 #2 open을 보존했다. 영수증은 `artifacts/releases/v1.0.4-alpha.2/release-verification.json`, `github-publication.json`, `anonymous-verification.json`과 빌드 로그에 있다. 게시 기록의 후속 문서 커밋은 태그·자산·DLL을 바꾸지 않는다.
 
 부분 미해석 안내는 `추가 영향 가능`, 확인된 효과가 없는 미해석 안내는 `결과는 진행 후 확인`으로 표시한다. 실제 읽기 실패·게임 데이터 대기는 기존 오류 상태로 유지한다. `+α`만 표시하면 추가 보상으로 오해할 수 있어 이익·손해 방향을 포함하지 않는 문구를 사용한다. 50자 요약에서도 안내를 앞에 유지한다.
 
