@@ -3,6 +3,13 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
+## [v1.0.4-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.3) — 2026-10-19 (prerelease)
+
+- 개별 효과의 `조건부`와 `이어서 진행 시`를 `가능한 변화` / `이후 가능한 변화` 묶음 제목으로 바꿉니다. 같은 의미의 안내를 반복하지 않고 명령 순서와 효과의 불확실성은 유지합니다.
+- 실제 조건문의 갈래는 `[경우 A]` / `[경우 B · 그 외]`로 표시합니다. 조건문이 여러 개이거나 중첩되면 번호를 유지하며, 기존 중립색은 현재 충족 여부를 뜻하지 않습니다.
+- 부호와 중복되는 `가산`을 없애 `+5` / `-3`으로 표시합니다. 직접 지정은 `10으로 설정`처럼 구분하고 기능 초기화 가능성·center/mental의 의미와 제한은 유지합니다.
+- 요약 50자·로그 전체 설명·다음 선택 경계·캐시·재시도 계약을 유지합니다. 검사와 파일 식별값은 [alpha.3 게시 설명](docs/ISSUE-2-ALPHA3-RELEASE.md)에 기록합니다. 실제 Lua·Windows/native 확인과 PRD #2 완료는 여전히 별도입니다.
+
 ## [v1.0.4-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.2) — 2026-10-19 (prerelease)
 
 - 일부 결과를 해석하지 못했을 때 `추가 영향 가능`, 모두 해석하지 못했을 때 `결과는 진행 후 확인`으로 안내합니다. 추가 보상·손해의 방향이나 크기를 추측하지 않습니다.

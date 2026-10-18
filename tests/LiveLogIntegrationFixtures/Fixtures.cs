@@ -500,6 +500,8 @@ namespace DiceMaster
             Check(!summary.Contains('\n') && !summary.Contains('\r') && !summary.Contains("<color=") && !summary.Contains("secret_predicate"),
                 "Grouped actual summary leaked detail layout, markup or Lua condition text");
             Check(summary.Contains(" / ") && summary.Length <= 53, "Grouped summary lost separators or exceeded the existing 50-character plus ellipsis boundary");
+            Check(summary.Contains("가능한 변화") && summary.Contains("경우 A") && !summary.Contains("조건부"),
+                "Actual choice summary lost concise possibility/alternative wording");
             NewLua("--index:O_unpreviewable_summary\nunknown_effect()", "unpreviewable_summary");
             story = "choice";
             OptionInfoPatch.LeanLocalizationResolver_GetStoryText_Postfix("O_unpreviewable_summary", ref story);

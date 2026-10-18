@@ -87,13 +87,13 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 
 진단은 기존 BepInEx 로그를 사용합니다. 같은 게임 세션·항목·원인의 연속 실패는 최초 1회, 복구는 1회 기록하는 것이 목표입니다. 제보에는 관련 탭·항목, 재현 순서와 해당 오류·복구 로그를 포함하고 전체 Lua 원문이나 세이브 내용은 첨부하지 않아도 됩니다. 실제 적용 범위와 미확인 API는 [개발 안내](docs/DEVELOPMENT.md)와 [실제 게임 API 분석](docs/REAL-GAME-API-FINDINGS.md)·[문맥 전환 분석](docs/GAME-LIFECYCLE-ANALYSIS.md)을 확인하세요.
 
-## v1.0.4-alpha.2 prerelease — 선택지 미리보기
+## v1.0.4-alpha.3 prerelease — 선택지 미리보기
 
-[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.2/DiceMaster-v1.0.4-alpha.2.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 2026-10-19 01:02:27 KST에 게시하고 공개 다운로드를 검증했습니다. 정식 Latest는 v1.0.3으로 유지합니다.
+[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.3/DiceMaster-v1.0.4-alpha.3.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 정식 Latest는 v1.0.3으로 유지합니다.
 
-[v1.0.4-alpha.2 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.2)는 alpha.1의 선택지 미리보기를 읽기 쉽게 다듬습니다. 일부 결과를 해석하지 못하면 `추가 영향 가능`, 확인된 효과 없이 미해석 부분만 있으면 `결과는 진행 후 확인`으로 안내합니다. 실제 같은 조건문의 인접 효과를 분기 번호·중립색으로 묶고 Tab 로그에서 갈래별로 줄을 나눕니다. 선택지 옆에는 기존 50자 요약을 유지합니다. 설치 파일과 검사 범위는 [alpha.2 게시 설명](docs/ISSUE-2-ALPHA2-RELEASE.md)에 있습니다.
+[v1.0.4-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.3)는 불확실한 현재 효과를 `가능한 변화`, 후속 효과를 `이후 가능한 변화` 아래에 묶습니다. `조건부`를 효과마다 반복하지 않으며, `+5 가산`은 `+5`로 줄입니다. 직접 지정하는 효과의 `10으로 설정`과 초기화 같은 별도 의미는 유지합니다. 실제 같은 조건문의 인접 효과는 `[경우 A]` / `[경우 B · 그 외]`로 묶고 조건문이 여러 개이거나 중첩되면 번호를 함께 표시합니다. Tab 로그에는 전체 설명, 선택지 옆에는 기존 50자 요약을 표시합니다. 설치 파일과 검사 범위는 [alpha.3 게시 설명](docs/ISSUE-2-ALPHA3-RELEASE.md)에 있습니다.
 
-alpha.1에서 추가한 16개 StatModifyManager 함수와 12개 LuaManager 함수, 상수 사칙연산과 조건부·후속 효과 분석을 유지합니다. center·mental은 안전하게 현재값을 읽을 수 있을 때 예상량을 표시하고, 선행 변경·분기·후속 실행이 불확실하면 의미와 조건을 설명합니다. `SetNextScript`는 다음 이야기 지정이며 즉시 실행을 뜻하지 않습니다. 로컬 리터럴 연결은 다음 사용자 선택까지만 분석하고, 연결 효과를 `이어서 진행 시` 아래에 표시합니다. 변수·동적 호출·루프 실행과 변수 대입 추론은 지원하지 않습니다.
+alpha.1에서 추가한 16개 StatModifyManager 함수와 12개 LuaManager 함수, 상수 사칙연산과 조건부·후속 효과 분석을 유지합니다. 일부 결과를 해석하지 못하면 `추가 영향 가능`, 확인된 효과 없이 미해석 부분만 있으면 `결과는 진행 후 확인`으로 안내합니다. center·mental은 안전하게 현재값을 읽을 수 있을 때 예상량을 표시하고, 선행 변경·분기·후속 실행이 불확실하면 의미와 조건을 설명합니다. `SetNextScript`는 다음 이야기 지정이며 즉시 실행을 뜻하지 않습니다. 로컬 리터럴 연결은 다음 사용자 선택까지만 분석합니다. 변수·동적 호출·루프 실행과 변수 대입 추론은 지원하지 않습니다.
 
 분기 색상은 갈래를 구분하며 현재 조건의 충족 여부를 뜻하지 않습니다. 후속 연결 자체가 능력치 조건이라는 뜻도 아닙니다. 능력치·플래그·미션·이야기 경로 등 어떤 조건인지를 임의로 추론하지 않습니다. 개발 안전 한도와 검사·후보 해시는 [PRD 2 구현 기록](docs/ISSUE-2-IMPLEMENTATION.md)에 적습니다. 실제 Lua 대조·최종 추적 제한·이번 DLL의 Windows 확인은 남아 있으며 정식 v1.0.3에는 이 기능이 포함되지 않습니다.
 

@@ -122,7 +122,7 @@ namespace DiceMaster
             var effects = Items(flow, "Effects");
             Check(effects.Count == 3 && (string)Member(effects[0], "Name") == "SetFlag" && (string)Member(effects[1], "Name") == "ChangeScene" && (string)Member(effects[2], "Name") == "SetFlag", "Effect collection loses source order");
             text = AnalysisText(Analyze("if condition then\nstatmodifymanager.SetPlayer(\"money\",3)\nelse\nstatmodifymanager.SetPlayer(\"money\",4)\nend"));
-            Contains(text, "[분기 1-A]", "First alternative explicitly grouped"); Contains(text, "[분기 1-B", "Else alternative explicitly grouped"); Contains(text, "3", "First branch preserved"); Contains(text, "4", "Else branch preserved");
+            Contains(text, "가능한 변화", "Uncertain current effects have one section heading"); Contains(text, "[경우 A]", "Single condition omits redundant group number"); Contains(text, "[경우 B", "Else alternative explicitly grouped"); Contains(text, "3", "First branch preserved"); Contains(text, "4", "Else branch preserved");
             var loop = Analyze("statmodifymanager.SetFlag(\"safe\",1)\nfor i=1,3 do\nstatmodifymanager.SetPlayer(\"money\",10)\nend");
             Check(Items(loop, "Issues").Count != 0, "Unsupported loop boundary lost"); Contains(AnalysisText(loop), "safe", "Known effect before loop preserved");
             var ret = Analyze("statmodifymanager.SetFlag(\"before\",1)\nreturn\nstatmodifymanager.SetFlag(\"unreachable\",2)");
@@ -227,17 +227,17 @@ namespace DiceMaster
             Check(effects.Skip(1).Take(6).All(effect => (bool)Member(effect, "Conditional")), "Branch grouping must not claim a guaranteed result");
             string text = AnalysisText(analysis), plain = Plain(text);
             string a = LineWith(plain, "route_a_first"), b = LineWith(plain, "route_b_first");
-            Contains(a, "[분기 1-A]", "First path label"); Contains(a, " | ", "Effects within one path are visually grouped");
+            Contains(a, "[경우 1-A]", "First path label"); Contains(a, " | ", "Effects within one path are visually grouped");
             Contains(a, "route_a_second", "Consecutive same-path effects belong to one line");
-            Contains(b, "[분기 1-B]", "Second path label"); Contains(b, "route_b_second", "Second path remains internally grouped");
+            Contains(b, "[경우 1-B]", "Second path label"); Contains(b, "route_b_second", "Second path remains internally grouped");
             Check(!a.Contains("route_b_") && !b.Contains("route_a_"), "Mutually exclusive paths were combined into one reward set");
-            string otherwise = LineWith(plain, "route_else"); Contains(otherwise, "분기 1-C", "Else keeps the same group"); Contains(otherwise, "그 외", "Else is labeled without inventing a predicate");
-            Contains(LineWith(plain, "independent_effect"), "[분기 2-A]", "Independent if uses a new group");
-            Excludes(LineWith(plain, "after_groups"), "분기", "Effects after end do not inherit a branch badge");
+            string otherwise = LineWith(plain, "route_else"); Contains(otherwise, "경우 1-C", "Else keeps the same group"); Contains(otherwise, "그 외", "Else is labeled without inventing a predicate");
+            Contains(LineWith(plain, "independent_effect"), "[경우 2-A]", "Independent if uses a new group");
+            Excludes(LineWith(plain, "after_groups"), "경우", "Effects after end do not inherit a branch badge");
             foreach (string privateCondition in new[] { "private_mental", "private_relationship", "independent_condition", ">=", "능력치", "성공", "실패" })
                 Excludes(plain, privateCondition, "Preview must not fabricate or expose unvalidated branch predicates");
-            Check(Regex.Matches(plain, Regex.Escape("[분기 1-A]")).Count == 1, "Same-branch label repeated once per effect");
-            var labels = Regex.Matches(text, @"<color=(#[0-9a-fA-F]{6,8})>\[분기 [^\]]+\]</color>");
+            Check(Regex.Matches(plain, Regex.Escape("[경우 1-A]")).Count == 1, "Same-branch label repeated once per effect");
+            var labels = Regex.Matches(text, @"<color=(#[0-9a-fA-F]{6,8})>\[경우 [^\]]+\]</color>");
             Check(labels.Count >= 4, "Each branch alternative needs a bounded color label");
             Check(labels[0].Groups[1].Value != labels[1].Groups[1].Value, "Alternative branch labels need distinct colors");
             foreach (Match label in labels)
@@ -258,24 +258,56 @@ namespace DiceMaster
                 (int)Member(nestedA[1], "Group") == (int)Member(nestedB[1], "Group") &&
                 (int)Member(nestedA[1], "Alternative") != (int)Member(nestedB[1], "Alternative"), "Nested siblings lost their shared outer path or distinct inner alternatives");
             string nestedText = Plain(AnalysisText(nested));
-            Contains(LineWith(nestedText, "nested_a"), "[분기 1-A → 2-A]", "Nested first path readable");
-            Contains(LineWith(nestedText, "nested_b"), "분기 1-A → 2-B", "Nested else path readable");
+            Contains(LineWith(nestedText, "nested_a"), "[경우 1-A → 2-A]", "Nested first path readable");
+            Contains(LineWith(nestedText, "nested_b"), "경우 1-A → 2-B", "Nested else path readable");
             Excludes(nestedText, "outer_private", "Nested condition source remains private");
             Excludes(nestedText, "inner_private", "Nested condition source remains private");
 
             foreach (string uncertain in new[] { "local x = private_flag and statmodifymanager.SetFlag(\"uncertain_effect\",1)", "unknown()\nstatmodifymanager.SetFlag(\"uncertain_effect\",1)" })
             {
                 string uncertainText = AnalysisText(Analyze(uncertain));
-                Contains(uncertainText, "조건부", "Unclassified conditional execution keeps its separate badge");
-                Excludes(uncertainText, "[분기", "Unknown flow must not fabricate an if alternative");
+                Contains(uncertainText, "가능한 변화", "Unclassified conditional execution remains possible");
+                Excludes(uncertainText, "조건부", "Possibility is stated once at section level");
+                Excludes(uncertainText, "[경우", "Unknown flow must not fabricate an if alternative");
             }
             var uncertainBranch = Analyze("unknown()\nif outer_predicate then if inner_predicate then statmodifymanager.SetFlag(\"uncertain_nested\",1) end end");
             object uncertainNested = Items(uncertainBranch, "Effects")[0];
             Check((bool)Member(uncertainNested, "ExecutionUncertain") && Items(uncertainNested, "Branches").Count == 2,
                 "Unknown earlier execution must retain uncertainty independently from nested if membership");
-            string uncertainBranchLine = LineWith(Plain(AnalysisText(uncertainBranch)), "uncertain_nested");
-            Contains(uncertainBranchLine, "[분기 1-A → 2-A]", "Uncertain nested result retains its real branch path");
-            Contains(uncertainBranchLine, "조건부", "Branch grouping must not erase inherited execution uncertainty");
+            string uncertainBranchText = Plain(AnalysisText(uncertainBranch));
+            string uncertainBranchLine = LineWith(uncertainBranchText, "uncertain_nested");
+            Contains(uncertainBranchLine, "[경우 1-A → 2-A]", "Uncertain nested result retains its real branch path");
+            Contains(uncertainBranchText, "가능한 변화", "Branch grouping must not erase inherited execution uncertainty");
+            Excludes(uncertainBranchText, "조건부", "Nested uncertainty must not repeat per-effect badges");
+
+            var mixed = Analyze("statmodifymanager.Player(\"first\",1,\"\",1)\nif condition then statmodifymanager.Player(\"possible\",2,\"\",1) end\nstatmodifymanager.Player(\"last\",3,\"\",1)");
+            string mixedText = Plain(AnalysisText(mixed));
+            Check(mixedText.IndexOf("first", StringComparison.Ordinal) < mixedText.IndexOf("가능한 변화", StringComparison.Ordinal) &&
+                mixedText.IndexOf("가능한 변화", StringComparison.Ordinal) < mixedText.IndexOf("possible", StringComparison.Ordinal) &&
+                mixedText.IndexOf("possible", StringComparison.Ordinal) < mixedText.IndexOf("현재 선택", StringComparison.Ordinal) &&
+                mixedText.IndexOf("현재 선택", StringComparison.Ordinal) < mixedText.IndexOf("last", StringComparison.Ordinal),
+                "Current/possible headings must preserve sequence and end uncertainty before the later straight-line effect");
+            Excludes(Text("statmodifymanager.Player(\"plain\",5,\"\",1)"), "가능한 변화", "Straight-line known result needs no uncertainty heading");
+
+            foreach (int amount in new[] { 5, -3, 0 })
+            {
+                string signed = amount > 0 ? "+" + amount : amount.ToString();
+                foreach (string call in new[] { "statmodifymanager.AddFlag(\"signed_flag\"," + amount + ")", "statmodifymanager.ModifyEnemyLevel(\"signed_enemy\"," + amount + ",1)" })
+                {
+                    string value = Plain(Text(call));
+                    Contains(value, signed, "Signed amount stays visible without redundant wording");
+                    Excludes(value, "가산", "Signed changes must not repeat the addition verb");
+                }
+            }
+            string talent = Plain(Text("statmodifymanager.AddTalent(\"skill\",5)"));
+            Contains(talent, "+5", "Talent change retains signed level"); Contains(talent, "하위 기능 초기화 가능", "Talent reset caveat must survive shorter copy"); Excludes(talent, "가산", "Talent signed level needs no addition wording");
+            string mental = Plain(AnalysisText(Analyze("if condition then statmodifymanager.Player(\"mental\",5,\"mental\",0) end")));
+            Contains(mental, "+5", "Mental base input remains signed"); Contains(mental, "20 이하", "Mental adjustment condition remains visible"); Excludes(mental, "가산", "Mental fallback avoids repeated addition wording");
+            string center = Plain(AnalysisText(Analyze("if condition then statmodifymanager.Player(\"disposition\",5,\"center\",0) end")));
+            Contains(center, "50 방향으로 변화", "Center fallback preserves directional meaning"); Excludes(center, "가산", "Center semantic copy uses ordinary change wording");
+            Contains(Plain(Text("statmodifymanager.SetCharacter(\"hero\",10)")), "10으로 설정", "Absolute assignment must remain distinct from a signed increase");
+            Contains(Plain(Text("statmodifymanager.SetPlayer(\"money\",1)")), "1로 설정", "Setting particle after one");
+            Contains(Plain(Text("luamanager.SetBattleSkillLevel(\"skill\",3)")), "3으로 설정", "Setting particle after three");
         }
         static void Trace()
         {
@@ -287,13 +319,14 @@ namespace DiceMaster
             Func<string, object> reader = name => { reads++; return scripts.TryGetValue(name, out var code) ? Read("Success", code) : Read("Missing"); };
             var analysis = Analyze("statmodifymanager.SetFlag(\"root\",0)\nluamanager.SetNextScript(\"one\")", reader);
             string text = AnalysisText(analysis);
-            Contains(text, "이어서 진행 시", "Followup provenance visible"); Excludes(text, "후속 스크립트", "Internal script terminology is absent");
+            Contains(text, "이후 가능한 변화", "Followup timing and possibility share one heading"); Excludes(text, "후속 스크립트", "Internal script terminology is absent");
             Contains(text, "follow_one", "First followup"); Contains(text, "follow_two", "Second followup"); Excludes(text, "after_choice", "Stop before next user choice");
-            Contains(text, "이어서 진행 시 · 구간 1", "First serial followup is a story segment");
-            Contains(text, "이어서 진행 시 · 구간 2", "Second serial followup is a later story segment");
+            Check(Regex.Matches(text, "이후 가능한 변화").Count == 1, "Serial followups must share one possibility heading");
+            Excludes(text, "이어서 진행 시", "Old ambiguous timing wording is absent");
+            Excludes(text, "조건부", "Followups must not repeat an extra uncertainty badge");
             Excludes(text, "경로", "Serial followup scripts must not be presented as exclusive alternative routes");
-            Check(text.IndexOf("root", StringComparison.Ordinal) < text.IndexOf("이어서 진행 시", StringComparison.Ordinal) &&
-                text.IndexOf("이어서 진행 시", StringComparison.Ordinal) < text.IndexOf("follow_one", StringComparison.Ordinal), "Followup header must separate current effects from future effects");
+            Check(text.IndexOf("root", StringComparison.Ordinal) < text.IndexOf("이후 가능한 변화", StringComparison.Ordinal) &&
+                text.IndexOf("이후 가능한 변화", StringComparison.Ordinal) < text.IndexOf("follow_one", StringComparison.Ordinal), "Followup header must separate current effects from future effects");
             Excludes(text, "다음 스크립트", "Internal route registration is not a player-visible reward");
             Excludes(text, "SetNextScript", "Route API name is hidden while trace remains active");
             Check(reads == 2, "Multi-step trace must read each target exactly once");

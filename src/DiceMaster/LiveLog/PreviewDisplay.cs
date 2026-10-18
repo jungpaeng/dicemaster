@@ -112,6 +112,11 @@ namespace DiceMaster.LiveLog
 
         private static string Signed(int value) { return (value > 0 ? "+" : "") + value.ToString(CultureInfo.InvariantCulture); }
         private static string Number(int value) { return value.ToString(CultureInfo.InvariantCulture); }
+        private static string Setting(int value)
+        {
+            int last = Math.Abs(value % 10);
+            return Number(value) + (last == 0 || last == 3 || last == 6 ? "으로 설정" : "로 설정");
+        }
         private static string S(PreviewEffect effect, int index) { return (string)effect.Constants[index]; }
         private static int N(PreviewEffect effect, int index) { return (int)effect.Constants[index]; }
         private static string Helper(string type, string name, params object[] arguments)
@@ -144,8 +149,8 @@ namespace DiceMaster.LiveLog
             string name = Stat(S(effect, 0)), mode = S(effect, 2);
             int amount = N(effect, 1);
             if (mode != "center" && mode != "mental") return Color(name + " " + Signed(amount));
-            string meaning = mode == "center" ? name + " 50 방향 가산(입력 " + Number(amount) + ")" :
-                name + " " + Signed(amount) + " 가산(심리위생 20 이하이면 입력에서 1 감소)";
+            string meaning = mode == "center" ? name + " 50 방향으로 변화(입력 " + Number(amount) + ")" :
+                name + " " + Signed(amount) + " (심리위생 20 이하이면 입력에서 1 감소)";
             // Followup registration, branching and prior writes break the
             // relationship between the current snapshot and execution state.
             if (priorStateChange || effect.Conditional || effect.Followup)
@@ -176,22 +181,22 @@ namespace DiceMaster.LiveLog
                 switch (e.Name)
                 {
                     case "Player": return Player(e, priorStateChange);
-                    case "SetPlayer": return Stat(S(e, 0)) + " " + Number(N(e, 1)) + "로 설정(능력치 제한 적용)";
+                    case "SetPlayer": return Stat(S(e, 0)) + " " + Setting(N(e, 1)) + "(능력치 제한 적용)";
                     case "Character": return Color(Character(S(e, 0)) + Local("System/Relation/FavorSuffix", " 호감도 ") + Signed(N(e, 1)));
-                    case "SetCharacter": return Character(S(e, 0)) + " 호감도 " + Number(N(e, 1)) + "로 설정";
+                    case "SetCharacter": return Character(S(e, 0)) + " 호감도 " + Setting(N(e, 1));
                     case "AddBook": return Item(1, S(e, 0)) + " x" + Number(N(e, 1));
                     case "AddMisc": return Item(2, S(e, 0)) + " x" + Number(N(e, 1));
                     case "AddSpecial": return Item(3, S(e, 0)) + " x" + Number(N(e, 1));
                     case "RemoveBook": return Local("System/Action/DiscardPrefix", "버림:") + Item(1, S(e, 0)) + " x1";
                     case "RemoveMisc": return Local("System/Action/DiscardPrefix", "버림:") + Item(2, S(e, 0)) + " x1";
                     case "RemoveSpecial": return Local("System/Action/DiscardPrefix", "버림:") + Item(3, S(e, 0)) + " x1";
-                    case "AddFlag": return Flag(S(e, 0), N(e, 1)) + " " + Signed(N(e, 1)) + " 가산";
+                    case "AddFlag": return Flag(S(e, 0), N(e, 1)) + " " + Signed(N(e, 1));
                     case "SetFlag": return Local("System/Flag/ActivatedPrefix", "") + Flag(S(e, 0), N(e, 1)) + "(" + Number(N(e, 1)) + ") 설정";
-                    case "AddTalent": return string.Format(Local("PlayerTalent/Format/LevelUp", "기능 {0} Lv{1}"), PreviewState.TalentName(S(e, 0)), Signed(N(e, 1))) + "(레벨 가산·하위 기능 초기화 가능)";
+                    case "AddTalent": return string.Format(Local("PlayerTalent/Format/LevelUp", "기능 {0} Lv{1}"), PreviewState.TalentName(S(e, 0)), Signed(N(e, 1))) + "(하위 기능 초기화 가능)";
                     case "ModifyEnemyId": return "적 부대 선택: " + Team(S(e, 0));
                     case "ModifyEnemyPeople": return Color(Team(S(e, 0)) + " 병력 " + Signed(N(e, 1)));
                     case "ModifyEnemyTeam": return Color(Team(S(e, 0)) + Local("System/Team/CohesionSuffix", "단결력 ") + Signed(N(e, 1)));
-                    case "ModifyEnemyLevel": return Team(S(e, 0)) + " 레벨 " + Signed(N(e, 1)) + " 가산";
+                    case "ModifyEnemyLevel": return Team(S(e, 0)) + " 레벨 " + Signed(N(e, 1));
                     case "Mission": return "미션 " + S(e, 0) + " 단계 " + S(e, 1) + "로 설정";
                     case "IsTriggerSubMission": return "서브 미션 " + S(e, 0) + (N(e, 1) == 1 ? " 발동 허용" : " 발동 해제");
                     case "AddDeadLib": return "사망 도감 기록 +1: " + S(e, 0);
@@ -210,7 +215,7 @@ namespace DiceMaster.LiveLog
                     case "ResetBattleSkill": return "전투 기술 슬롯·활성 상태 초기화 및 조건 재평가";
                     case "SetPlayerBattleSkill": return "전투 기술 " + S(e, 0) + " 활성화 · 첫 빈 슬롯에 배치(index 인자 미사용)";
                     case "SetBattleSkillActive": return "전투 기술 " + S(e, 0) + (N(e, 1) == 1 ? " 활성화" : " 비활성화");
-                    case "SetBattleSkillLevel": return "전투 기술 " + S(e, 0) + " 레벨 " + Number(N(e, 1)) + "로 설정";
+                    case "SetBattleSkillLevel": return "전투 기술 " + S(e, 0) + " 레벨 " + Setting(N(e, 1));
                     case "SwapUpgradeItem": return "장비 교체: " + S(e, 0) + (N(e, 1) < 0 ? "(교체 대상의 기존 레벨 유지)" : "(레벨 " + Number(N(e, 1)) + " · 유효 범위 제한)") + " · 종류별 원래 장비 백업";
                     case "RestoreUpgradeItem": return "장비 " + S(e, 0) + "에 해당하는 종류의 백업 복원(백업이 있을 때)";
                     case "RestoreAllUpgradeItems": return "모든 장비 종류별 백업 복원(백업이 있을 때)";
@@ -243,40 +248,51 @@ namespace DiceMaster.LiveLog
             return true;
         }
 
-        private static string BranchLabel(PreviewEffect effect)
+        private static string BranchLabel(PreviewEffect effect, bool numbered)
         {
             if (effect.Branches.Count == 0) return "";
             var path = new List<string>();
             foreach (PreviewBranchContext branch in effect.Branches)
             {
                 string alternative = branch.Alternative < 26 ? ((char)('A' + branch.Alternative)).ToString() : Number(branch.Alternative + 1);
-                path.Add(Number(branch.Group) + "-" + alternative + (branch.IsElse ? " · 그 외" : ""));
+                path.Add((numbered ? Number(branch.Group) + "-" : "") + alternative + (branch.IsElse ? " · 그 외" : ""));
             }
             // Neutral branch colors distinguish alternatives, never pass/fail.
             string[] colors = { "#7FC8D6", "#C5A2E0", "#E1BF79" };
             int color = effect.Branches[effect.Branches.Count - 1].Alternative % colors.Length;
-            return "<color=" + colors[color] + ">[분기 " + string.Join(" → ", path) + "]</color> ";
+            return "<color=" + colors[color] + ">[경우 " + string.Join(" → ", path) + "]</color> ";
+        }
+
+        private static int Section(PreviewEffect effect)
+        {
+            if (effect.Followup) return 2;
+            return effect.Conditional || effect.ExecutionUncertain || effect.Branches.Count > 0 ? 1 : 0;
         }
 
         private static string DescribeRows(List<DisplayRow> rows)
         {
             var lines = new List<string>();
-            bool hasFollowup = rows.Exists(row => row.Effect.Followup);
-            int route = 0;
+            var groups = new HashSet<int>();
+            foreach (DisplayRow row in rows)
+                foreach (PreviewBranchContext branch in row.Effect.Branches) groups.Add(branch.Group);
+            int previousSection = -1;
+            bool heading = false;
             for (int i = 0; i < rows.Count;)
             {
                 PreviewEffect effect = rows[i].Effect;
-                bool newSection = i == 0 || rows[i - 1].Effect.Source != effect.Source || rows[i - 1].Effect.Followup != effect.Followup;
-                if (hasFollowup && newSection)
-                    lines.Add(effect.Followup ? "이어서 진행 시 · 구간 " + Number(++route) : "현재 선택");
+                int section = Section(effect);
+                if (section != previousSection)
+                {
+                    heading = section != 0 || previousSection != -1;
+                    if (heading) lines.Add(section == 2 ? "이후 가능한 변화" : section == 1 ? "가능한 변화" : "현재 선택");
+                    previousSection = section;
+                }
                 var values = new List<string> { rows[i++].Text };
-                while (i < rows.Count && rows[i].Effect.Source == effect.Source && rows[i].Effect.Followup == effect.Followup &&
-                    rows[i].Effect.ExecutionUncertain == effect.ExecutionUncertain && SameBranches(effect, rows[i].Effect))
+                while (i < rows.Count && rows[i].Effect.Source == effect.Source && Section(rows[i].Effect) == section && SameBranches(effect, rows[i].Effect))
                     values.Add(rows[i++].Text);
-                string label = BranchLabel(effect);
-                if (effect.ExecutionUncertain || effect.Conditional && !effect.Followup && effect.Branches.Count == 0)
-                    label += "조건부 · ";
-                lines.Add((hasFollowup ? "  " : "") + label + string.Join(" | ", values));
+                // Possibility is stated once by the section heading. Preserve
+                // source order and the real branch path without repeated badges.
+                lines.Add((heading ? "  " : "") + BranchLabel(effect, groups.Count > 1) + string.Join(" | ", values));
             }
             return string.Join("\n", lines);
         }
