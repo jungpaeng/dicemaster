@@ -80,10 +80,6 @@ namespace DiceMaster
         public static int DisplayRefreshDepth;
         public static Mortal.Story.PositionEventData TargetEvent;
         public static Mortal.Core.MissionCheckData TargetMission;
-        public static Action Rebuild;
-        public static int AutomaticCalls, ManualCalls;
-        public static void RebuildLiveLogEntries() { AutomaticCalls++; Rebuild(); }
-        public static void ReprocessLastLuaFunction() { ManualCalls++; Rebuild(); }
         public static void PositionEventData_GetRate_Postfix(Mortal.Story.PositionEventData value, ref int result) => throw new Exception("IL not installed");
         public static void MissionCheckData_Postfix(Mortal.Core.MissionCheckData value, ref bool result) => throw new Exception("IL not installed");
     }
@@ -192,78 +188,6 @@ namespace DiceMaster
             UiTextMapper.CacheTranslation("plain text", "translated");
             Check(UiTextMapper.TryGetCachedTranslation("plain text", out string plain) && plain == "translated", "Pure translation cache disabled");
 
-            var plugin = new DicePlugin();
-            OptionInfoPatch.Rebuild = () => {
-                Check(OptionInfoPatch.DisplayRefreshDepth > 0, "Refresh not marked as preview");
-                plugin.ClearLogEntries();
-                plugin.eventEntries.Add((value, "event", cache.GetPositionEventDesc(value)));
-                plugin.missionEntries.Add((mission, "mission", "current=" + value.State));
-                plugin.switchEntries.Add(("condition", "current=" + value.State));
-                plugin.optionEntries.Add(("option", "story", "future SetFlag=1"));
-                // Even a reentrant update must not start another refresh.
-                plugin.RefreshLiveLogDisplay();
-            };
-            value.State = 0; UnityEngine.Time.unscaledTime = 0;
-            plugin.RefreshLiveLogDisplay(); Check(OptionInfoPatch.AutomaticCalls == 0, "Hidden log refreshed");
-            plugin.showLogWindow = true; plugin.RefreshLiveLogDisplay();
-            Check(OptionInfoPatch.AutomaticCalls == 1 && plugin.eventEntries[0].Item3.Contains("G3000(0) red"), "Initial visible refresh");
-            value.State = 2; UnityEngine.Time.unscaledTime = 0.1f; plugin.RefreshLiveLogDisplay();
-            Check(OptionInfoPatch.AutomaticCalls == 1, "Refresh not throttled");
-            UnityEngine.Time.unscaledTime = 0.25f; OptionInfoPatch.TargetEvent = value; plugin.RefreshLiveLogDisplay();
-            Check(OptionInfoPatch.AutomaticCalls == 2 && plugin.eventEntries[0].Item3.Contains("G3000(2) green"), "Visible event did not refresh");
-            Check(plugin.missionEntries[0].Item3 == "current=2" && plugin.switchEntries[0].Item2 == "current=2", "Other condition tabs stale");
-            Check(plugin.optionEntries[0].Item3 == "future SetFlag=1", "Planned flag change was replaced by current state");
-            Check(ReferenceEquals(OptionInfoPatch.TargetEvent, value), "Periodic refresh consumed event request");
-            Check(OptionInfoPatch.DisplayRefreshDepth == 0, "Periodic preview depth leaked");
-            Config.ConfigManager.EnableOptionInfo.Value = false; UnityEngine.Time.unscaledTime = 1; plugin.RefreshLiveLogDisplay();
-            Check(OptionInfoPatch.AutomaticCalls == 2, "Disabled option info still refreshed");
-            Config.ConfigManager.EnableOptionInfo.Value = true;
-
-            var oldEvents = plugin.eventEntries; var oldMissions = plugin.missionEntries;
-            var oldSwitches = plugin.switchEntries; var oldOptions = plugin.optionEntries;
-            OptionInfoPatch.Rebuild = () => { plugin.ClearLogEntries(); throw new Exception("simulated refresh failure"); };
-            plugin.RefreshLiveLogDisplay();
-            Check(ReferenceEquals(plugin.eventEntries, oldEvents) && ReferenceEquals(plugin.missionEntries, oldMissions) &&
-                ReferenceEquals(plugin.switchEntries, oldSwitches) && ReferenceEquals(plugin.optionEntries, oldOptions), "Refresh failure exposed partial rows");
-            Check(OptionInfoPatch.DisplayRefreshDepth == 0 && DicePlugin.Errors == 1, "Refresh failure not isolated");
-            Check(plugin.nextLiveLogRefresh == 6f, "Failed refresh did not back off");
-            int before = OptionInfoPatch.AutomaticCalls; UnityEngine.Time.unscaledTime = 2; plugin.RefreshLiveLogDisplay();
-            Check(OptionInfoPatch.AutomaticCalls == before, "Failed refresh retries too quickly");
-            PositionEventCache.ThrowDynamic = true;
-            try { cache.GetPositionEventDesc(value); throw new Exception("Expected dynamic failure"); }
-            catch (InvalidOperationException) { }
-            Check(OptionInfoPatch.DisplayRefreshDepth == 0, "Dynamic preview exception leaked depth");
-            PositionEventCache.ThrowDynamic = false;
-
-            OptionInfoPatch.Rebuild = () => {
-                Check(OptionInfoPatch.DisplayRefreshDepth > 0, "Manual refresh not previewed");
-                Check(cache.positionEventDataCache.Count == 0 && cache.eventKeyCache.Count == 0 &&
-                    cache.eventDescCache.Count == 0 && cache.scriptPrefixCache.Count == 0, "Manual refresh did not clear all event caches");
-                plugin.eventEntries.Add((value, "event", cache.GetPositionEventDesc(value)));
-            };
-            plugin.RefreshGameData();
-            Check(OptionInfoPatch.ManualCalls == 1 && plugin.eventEntries[0].Item3.Contains("G3000(2) green"), "Manual refresh did not rebuild current rows");
-            Check(ReferenceEquals(OptionInfoPatch.TargetEvent, value) && OptionInfoPatch.DisplayRefreshDepth == 0, "Manual refresh damaged execution state");
-
-            oldEvents = plugin.eventEntries;
-            OptionInfoPatch.Rebuild = () => { plugin.ClearLogEntries(); throw new Exception("simulated manual refresh failure"); };
-            plugin.RefreshGameData();
-            Check(ReferenceEquals(plugin.eventEntries, oldEvents) && OptionInfoPatch.DisplayRefreshDepth == 0 && DicePlugin.Errors == 2, "Manual refresh failure lost rows or leaked preview state");
-
-            OptionInfoPatch.Rebuild = () => {
-                plugin.ClearLogEntries(); plugin.eventEntries.Add((value, "event", cache.GetPositionEventDesc(value)));
-            };
-            UnityEngine.Time.unscaledTime = 10; plugin.nextLiveLogRefresh = 0; plugin.showLogWindow = false;
-            plugin.Update();
-            Check(DicePatch.Ticks == 1 && !plugin.showLogWindow, "Closed-window Update skipped or duplicated gamepad tick");
-            UnityEngine.Input.NextKeyDown = true; plugin.Update();
-            Check(DicePatch.Ticks == 2 && plugin.showLogWindow && plugin.eventEntries[0].Item3.Contains("G3000(2)"), "Tab opening did not refresh before gamepad tick");
-            value.State = 3; UnityEngine.Time.unscaledTime = 10.25f; plugin.Update();
-            Check(DicePatch.Ticks == 3 && plugin.eventEntries[0].Item3.Contains("G3000(3)"), "Ordinary Update branch skipped live refresh");
-            UnityEngine.Input.NextKeyDown = true; plugin.Update();
-            Check(DicePatch.Ticks == 4 && !plugin.showLogWindow, "Tab closing changed gamepad update");
-            UnityEngine.Screen.width = 2560; plugin.Update();
-            Check(DicePatch.Ticks == 5 && plugin.lastScreenSize.x == 2560, "Screen resize update changed");
             return assertions;
         }
     }

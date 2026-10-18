@@ -73,14 +73,17 @@ static class LogRefreshTests
     {
         if (args.Length != 2) throw new ArgumentException("Usage: LogRefreshTests DiceMaster.dll Fixtures.dll");
         using var source = AssemblyDefinition.ReadAssembly(args[0]); var module = source.MainModule;
-        var rebuild = Find(module, "DiceMaster.OptionInfoPatch", "RebuildLiveLogEntries");
-        Check(!Calls(rebuild, "DiceMaster.LuaParse.LuaParser", "ClearCaches"), "Periodic refresh reparses all Lua");
-        Check(!Calls(rebuild, "DiceMaster.DicePlugin", "LogInfo"), "Periodic refresh spams info logs");
-        Check(Calls(rebuild, "DiceMaster.DataHelper", "GetMissions"), "Mission list is not rebuilt");
-        Check(Calls(rebuild, "DiceMaster.DataHelper", "ParseSwitchCheckpoint"), "Branch conditions are not reevaluated");
-        Check(Calls(rebuild, "DiceMaster.PositionEventCache", "GetPositionEventDesc"), "Event values are not reevaluated");
-        foreach (var name in new[] { "RebuildLiveLogEntries", "ReprocessLastLuaFunction" })
-            Check(!Find(module, "DiceMaster.OptionInfoPatch", name).Body.Instructions.Any(i => i.OpCode == OpCodes.Stsfld && i.Operand is FieldReference f && f.Name == "TargetEvent"), "Display rebuild resets pending event");
+        foreach (var entry in new[] { ("DiceMaster.DicePlugin", "RefreshLiveLogDisplay"),
+            ("DiceMaster.DicePlugin", "RefreshGameData"), ("DiceMaster.OptionInfoPatch", "RebuildLiveLogEntries") })
+        {
+            var method = Find(module, entry.Item1, entry.Item2);
+            Check(Calls(method, "DiceMaster.LiveLog.LogBridge", "Tick"), "Refresh must use the per-item bridge");
+            Check(!Calls(method, "DiceMaster.LuaParse.LuaParser", "ClearCaches"), "Display wrapper mutates parser caches");
+        }
+        Check(Calls(Find(module, "DiceMaster.OptionInfoPatch", "LiveLog_LuaStage_Prefix"),
+            "DiceMaster.LiveLog.LogBridge", "StageLua"), "Lua staging boundary missing");
+        Check(Calls(Find(module, "DiceMaster.OptionInfoPatch", "LiveLog_LuaComplete_Postfix"),
+            "DiceMaster.LiveLog.LogBridge", "CompleteLua"), "Successful Lua boundary missing");
         foreach (var name in new[] { "LuaEnvironment_LoadLuaFunction_Prefix", "PrefixExecuteConditionResult", "PrefixExecuteSwitchResult", "PrefixCheckMission", "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" })
         {
             var body = Find(module, "DiceMaster.OptionInfoPatch", name).Body.Instructions;
@@ -99,7 +102,7 @@ static class LogRefreshTests
             var groups = new Dictionary<string, string[]> {
                 ["DiceMaster.PositionEventCache"] = new[] { "GetPositionEventDesc", "GeneratePreviewDynamicDesc", "ClearDisplayCaches", "GetPositionEvents" },
                 ["DiceMaster.OptionInfoPatch"] = new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" },
-                ["DiceMaster.DicePlugin"] = new[] { "RefreshLiveLogDisplay", "RefreshGameData", "ClearLogEntries", "Update" },
+                ["DiceMaster.DicePlugin"] = new[] { "ClearLogEntries" },
                 ["DiceMaster.UiTextMapper"] = new[] { "TryGetCachedTranslation", "CacheTranslation", "ApplyTranslations", "ConvertGetFlagExpression" }
             };
             foreach (var group in groups)

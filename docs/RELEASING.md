@@ -1,202 +1,55 @@
-# Release 등록 안내
+# prerelease 게시와 정식 Release 조건
 
-[사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [변경 이력](../CHANGELOG.md)
+[사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [prerelease 설명](ISSUE-1-RELEASE-DRAFT.md)
 
-## 배포 규칙
+**사용자가 `v1.0.3-alpha.1` prerelease 게시와 필요한 커밋·push·태그를 승인했습니다. 현재는 게시 전 준비 중입니다.** [예정 게시 주소](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 아직 게시 완료를 뜻하지 않습니다. 이 승인으로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
 
-| 항목 | 규칙 |
+현재 Windows PC는 기존 파일·정보 읽기만 허용되어 있으며 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. prerelease 게시 승인은 이 PC에서의 게임 실행 승인이 아닙니다. 실행을 요청하거나 수행하지 않습니다.
+
+## 이번 prerelease의 게시 계약
+
+| 항목 | 계약 |
 |---|---|
 | 저장소 | `jungpaeng/dicemaster` |
-| 태그 | `vX.Y.Z` |
-| ZIP 이름 | `DiceMaster-vX.Y.Z.zip` |
-| 기준 | 원격에 푸시한 커밋 하나를 ZIP과 태그에 동일하게 사용 |
-| 공개 순서 | 초안 생성 → ZIP 업로드 → 다운로드 검증 → 공개 |
+| 태그 | `v1.0.3-alpha.1` |
+| ZIP | `DiceMaster-v1.0.3-alpha.1.zip` |
+| 기준 | 같은 푸시 커밋을 태그와 ZIP에 동일하게 사용 |
+| GitHub 상태 | prerelease로 게시하며 기존 Latest `v1.0.2` 유지 |
+| 절차 | 커밋·push → 같은 커밋의 태그·ZIP → 초안 업로드 → 다운로드 검증 → prerelease 게시 |
 
-ZIP에는 아래 **두 파일만** 폴더 구조를 유지하여 포함합니다.
+설치 ZIP에는 아래 두 파일만 포함합니다. DebugMenu·개발 파일·문서·로그·수신 게임 DLL·`.DS_Store`·`__MACOSX` 등은 포함하지 않습니다.
 
 ```text
 config/DiceMaster.cfg
 plugins/DiceMaster/DiceMaster.dll
 ```
 
-`config/`나 `plugins/` 전체를 압축하지 않습니다. DebugMenu, 개발 파일, 문서, 로그, `.DS_Store`, `__MACOSX` 등은 포함하지 않습니다.
-태그와 ZIP 이름의 버전은 일치해야 하며, 이미 게시한 버전은 유지하고 새 버전으로 등록합니다.
-GitHub가 자동 제공하는 `Source code` 압축 파일은 이 설치용 ZIP과 별개입니다.
+최종 DLL은 SHA-256 `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 455,680바이트입니다. ZIP의 두 파일이 배포 커밋과 일치하고 손상이 없으며 업로드 후 내려받은 ZIP과 바이트·SHA-256이 일치해야 합니다. 게시 커밋·ZIP SHA-256·GitHub 게시 상태는 게시 작업에서 확정할 기록입니다.
 
-## 준비 사항
+기존 태그·Release를 덮어쓰지 않습니다. GitHub의 자동 `Source code` 압축 파일은 설치용 ZIP과 별개입니다. 새 설정·원격 기능 플래그·단계별 배포는 도입하지 않습니다. 읽기 전용 원본 게임 참조는 게시 파일에 넣지 않습니다.
 
-- Git, Python 3, 최신 GitHub CLI
-- 저장소에 릴리스를 등록할 수 있는 계정
-- 배포할 DLL과 설정의 검증 완료
-- 변경 이력과 릴리스 설명에 기록할 확인 결과
+## prerelease에 함께 공개할 검증 범위
 
-명령은 저장소 루트의 Bash/zsh에서 실행하는 예시입니다. 환경에 따라 `python3`는 `python`으로 바꿉니다.
-각 단계가 성공했는지 확인한 뒤 다음 단계로 진행하세요.
+[게시 설명](ISSUE-1-RELEASE-DRAFT.md)에는 자동 검사와 미검증 경로를 함께 기록합니다. 실제 관리 DLL의 정적 API·수명주기 분석, 실제 IL을 native 경계 대역으로 옮긴 macOS 검사, 실제 게임 실행은 서로 다른 증거입니다.
 
-```sh
-gh auth login --hostname github.com
-gh auth status --hostname github.com
-```
+최종 후보는 캐시/보호 19개, 엔진 16개 시나리오·70개 단언, 수명주기 4,023개, 통합 최초·반복 각 94개, 실제 IL 각 152개·메타데이터 각 910개, 최종 구조 각 934개, 실제 설치 기준 구조 961개, 패드 525,430개를 통과했습니다. 코드 오류는 0이나 네트워크 차단에 따른 NuGet 보안 권고 조회 `NU1900` 경고가 있습니다. 상세 식별값과 측정 방법은 [검증 기록](ISSUE-1-VALIDATION.md)에 기록합니다.
 
-## 1. 변경 사항 검증 및 푸시
+난수 조건을 샘플링하지 않는 정책, 미지원 자료의 실패 표시, 제자리 복원 뒤 다음 성공 Lua까지 대기할 수 있는 동작을 알려야 합니다. native Unity·실제 리소스·Harmony·다른 모드·UI·Windows·실제 게임 성능은 미검증입니다. 모의 엔진의 벤치마크를 실제 게임 성능으로 기재하지 않습니다.
 
-소스·테스트·문서와 갱신된 DLL·설정을 함께 검토하고 커밋한 뒤 `main`에 푸시합니다.
-문서와 테스트가 실제 배포 DLL의 동작을 설명하는지 확인합니다.
+## 기능 완료·정식 Release 전에 필요한 증거
 
-```sh
-git fetch origin main
-git status --short
-git branch --show-current
-git rev-parse HEAD
-git rev-parse origin/main
-```
+[검증 기록](ISSUE-1-VALIDATION.md)의 모든 수용 기준을 실제 증거에 연결해야 합니다. 미확인·실패가 남아 있으면 기능 완료·이슈 완료·정식 Release로 처리하지 않습니다. 이 조건은 이번에 승인된 prerelease 게시를 막는 조건과 구분합니다.
 
-작업 디렉토리에 미커밋 변경이 없고, 현재 브랜치가 `main`이며, `HEAD`와 `origin/main`이 같은 커밋인지 확인합니다.
+- 실제 파서·공유 캐시·표시·선택지 요약의 연속 갱신과 기존 기능 보존
+- 현재 탭·세 상태·5초 재시도·수동 복구·진단 로그 동작
+- 실제 IL과 순수 평가의 값 의미·RNG 비소비·카운터 보존·미지원 자료의 명시적 실패
+- 실제 로드·새 게임·씬·Lua 경계, null·예외·오래된 완료·제자리 복원 처리
+- 향후 별도 승인된 환경에서의 Unity/native·실제 리소스·Harmony·다른 모드·UI·진행 확인
+- 별도 승인 후 사용자가 기록한 Windows 검증과 실제 게임 시간·할당량 측정
+- 최종 DLL·소스·도구·문서·ZIP 일치, 반복 패치·패드 재빌드·리소스 보존
 
-## 2. 버전과 기준 커밋 지정
+## 향후 롤백 검증
 
-아래 버전은 예시입니다. 사용하지 않은 버전으로 변경합니다.
+기존 설정과 세이브 형식은 변경하지 않습니다. 이전 Release 또는 보관 DLL 복원과 설정 유지 여부는 향후 별도 승인된 Windows 검증 대상입니다. 현재 Windows에 후보를 설치하거나 복원하도록 요청하지 않습니다.
 
-```sh
-release_tag="v1.0.3"
-release_commit="$(git rev-parse HEAD)"
-release_dir="development/releases/${release_tag}"
-release_asset="DiceMaster-${release_tag}.zip"
-release_zip="${release_dir}/${release_asset}"
-
-gh release list --repo jungpaeng/dicemaster
-git ls-remote --tags origin "refs/tags/${release_tag}"
-```
-
-같은 태그의 릴리스나 원격 태그가 이미 있다면 새 버전을 선택합니다.
-`development/releases/`는 Git에서 제외되어 있으므로 ZIP과 임시 검증 파일을 이곳에 보관합니다.
-
-## 3. 커밋 기준 ZIP 생성
-
-```sh
-mkdir -p "$release_dir"
-
-git archive --format=zip --output="$release_zip" \
-  "$release_commit" -- \
-  config/DiceMaster.cfg \
-  plugins/DiceMaster/DiceMaster.dll
-```
-
-[`git archive`](https://git-scm.com/docs/git-archive)를 사용해 작업 중인 파일이 아닌 지정한 커밋의 두 파일을 압축합니다.
-
-## 4. ZIP 내용과 커밋 일치 검증
-
-다음 코드는 파일 수·경로·압축 손상 여부와 각 파일이 기준 커밋의 내용과 동일한지 확인하고 ZIP의 SHA-256을 출력합니다.
-Git이 추가한 디렉토리 항목은 파일 수에서 제외합니다.
-
-```sh
-python3 - "$release_zip" "$release_commit" <<'PY'
-from pathlib import Path
-import hashlib
-import subprocess
-import sys
-import zipfile
-
-zip_path = Path(sys.argv[1])
-commit = sys.argv[2]
-expected = ["config/DiceMaster.cfg", "plugins/DiceMaster/DiceMaster.dll"]
-
-with zipfile.ZipFile(zip_path) as archive:
-    files = [entry.filename for entry in archive.infolist() if not entry.is_dir()]
-    assert sorted(files) == sorted(expected), f"Unexpected ZIP files: {files}"
-    assert archive.testzip() is None, "ZIP integrity check failed"
-    for name in expected:
-        committed = subprocess.check_output(["git", "show", f"{commit}:{name}"])
-        assert archive.read(name) == committed, f"Commit mismatch: {name}"
-
-print("ZIP files and commit contents verified.")
-print("SHA-256:", hashlib.sha256(zip_path.read_bytes()).hexdigest())
-PY
-```
-
-검증에 실패하면 업로드를 진행하지 않고 대상 커밋과 ZIP을 확인합니다.
-
-## 5. 릴리스 설명 작성
-
-`${release_dir}/notes.md`에 변경 사항, 설치·업데이트 방법, 기준 커밋, 검증 결과를 작성합니다.
-자동 검사 결과와 실제 게임에서 확인한 범위를 구분하고, 설정 변경이 필요한 경우 명시합니다.
-
-다음은 파일에 복사하여 채워 넣을 수 있는 템플릿입니다.
-
-```markdown
-## 변경 사항
-
-- 이번 버전의 변경 내용
-
-## 설치 및 업데이트
-
-Assets의 DiceMaster-vX.Y.Z.zip을 기존 BepInEx 폴더에 압축 해제합니다.
-기존 설정을 유지하려면 DLL만 교체합니다.
-설정 변경이 필요한 경우 해당 내용을 안내합니다.
-
-## 기준 및 검증
-
-- 기준 커밋: 전체 커밋 SHA
-- 자동 검사: 수행한 검사와 결과
-- 실제 게임 확인: 게임·모드 베이스 버전, 패드 환경, 확인한 동작
-- ZIP SHA-256: 검증 단계에서 출력된 값
-```
-
-## 6. 초안 릴리스 생성 및 업로드
-
-[`gh release create`](https://cli.github.com/manual/gh_release_create)로 ZIP을 첨부한 초안 릴리스를 만듭니다.
-
-```sh
-gh release create "$release_tag" "$release_zip" \
-  --repo jungpaeng/dicemaster \
-  --target "$release_commit" \
-  --title "DiceMaster ${release_tag}" \
-  --notes-file "${release_dir}/notes.md" \
-  --draft
-```
-
-아직 존재하지 않는 태그를 지정하면 `--target`의 커밋을 기준으로 태그가 생성됩니다.
-업로드가 중단되면 기존 초안 상태부터 확인하고, 다른 내용의 릴리스를 같은 태그로 덮어쓰지 않습니다.
-
-## 7. 업로드 파일 다운로드 및 비교
-
-[`gh release download`](https://cli.github.com/manual/gh_release_download)로 초안의 ZIP을 다시 내려받습니다.
-
-```sh
-gh release download "$release_tag" \
-  --repo jungpaeng/dicemaster \
-  --pattern "$release_asset" \
-  --dir "${release_dir}/verify"
-
-cmp "$release_zip" "${release_dir}/verify/${release_asset}"
-```
-
-다운로드 명령과 `cmp`가 모두 성공해야 합니다. `cmp`는 파일이 같으면 출력 없이 종료 코드 0을 반환합니다.
-이는 업로드한 ZIP이 앞에서 검사한 ZIP과 바이트 단위로 동일한지 확인하는 단계입니다.
-
-## 8. 공개 및 최종 확인
-
-검증한 초안을 [`gh release edit`](https://cli.github.com/manual/gh_release_edit)으로 공개하고 최신 릴리스로 지정합니다.
-
-```sh
-gh release edit "$release_tag" \
-  --repo jungpaeng/dicemaster \
-  --draft=false \
-  --latest
-
-gh release view "$release_tag" \
-  --repo jungpaeng/dicemaster \
-  --json tagName,isDraft,isPrerelease,targetCommitish,assets,url
-
-git ls-remote --tags origin "refs/tags/${release_tag}"
-```
-
-다음 항목을 확인하고 Release 등록을 마칩니다.
-
-- 공개 상태이며 정식 배포라면 `isPrerelease`가 `false`인지
-- 릴리스 버전과 ZIP 이름이 일치하는지
-- 기준 커밋과 자동 생성된 원격 태그의 SHA가 일치하는지
-- 첨부 ZIP이 하나이며 배포 규칙의 두 파일만 포함하는지
-- 릴리스 페이지의 다운로드 링크가 올바른지
-
-태그를 로컬에도 가져오려면 공개 후 `git fetch origin --tags`를 실행합니다.
+v1.0.2로 돌아가면 선택지 결과 소실 문제가 다시 나타날 수 있습니다. v1.0.1에는 자동 로그 갱신이 없습니다. 실제 업데이트·롤백은 아직 검증하지 않았습니다.

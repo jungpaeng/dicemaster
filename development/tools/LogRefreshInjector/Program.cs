@@ -6,16 +6,23 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 // Keep the existing mod and its resources; change only log-display evaluation.
-static class LogRefreshInjector
+static partial class LogRefreshInjector
 {
     static ModuleDefinition module;
     static TypeDefinition plugin, patch, cache, mapper;
-    static FieldDefinition depth, nextRefresh;
+    static FieldDefinition depth;
     static MethodDefinition previewDynamic, rebuild;
+    static readonly HashSet<MethodDefinition> changed = new();
+    static IEnumerable<TypeDefinition> AllTypes(IEnumerable<TypeDefinition> roots)
+    {
+        foreach (var type in roots)
+        {
+            yield return type;
+            foreach (var nested in AllTypes(type.NestedTypes)) yield return nested;
+        }
+    }
     static MethodDefinition Method(TypeDefinition type, string name) => type.Methods.Single(m => m.Name == name);
     static FieldDefinition Field(TypeDefinition type, string name) => type.Fields.Single(f => f.Name == name);
-    static MethodReference Call(MethodDefinition method, string owner, string name) => method.Body.Instructions
-        .Select(i => i.Operand).OfType<MethodReference>().First(m => m.DeclaringType.FullName == owner && m.Name == name);
     static MethodReference Ref(TypeReference owner, string name, TypeReference result, bool instance, params TypeReference[] args)
     {
         var method = new MethodReference(name, result, owner) { HasThis = instance };
@@ -42,12 +49,14 @@ static class LogRefreshInjector
     }
     static ILProcessor Body(MethodDefinition method)
     {
+        changed.Add(method);
         method.Body = new MethodBody(method) { InitLocals = true, MaxStackSize = 16 };
         return method.Body.GetILProcessor();
     }
     static void GuardPreview(MethodDefinition method)
     {
         if (method.Body.Instructions.First().Operand == depth) return;
+        changed.Add(method);
         var il = method.Body.GetILProcessor();
         var original = method.Body.Instructions.First();
         il.InsertBefore(original, Instruction.Create(OpCodes.Ldsfld, depth));
@@ -62,7 +71,6 @@ static class LogRefreshInjector
     {
         il.Emit(OpCodes.Ldsfld, depth); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Sub); il.Emit(OpCodes.Stsfld, depth);
     }
-    static TypeReference ExceptionType() => module.GetTypeReferences().First(t => t.FullName == "System.Exception");
 
     static void PatchEventDescriptions()
     {
@@ -144,6 +152,7 @@ static class LogRefreshInjector
         {
             var method = Method(mapper, name);
             if (method.Body.Instructions.Take(12).Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == "GetFlag")) continue;
+            changed.Add(method);
             var il = method.Body.GetILProcessor(); var first = method.Body.Instructions.First();
             var prefix = new List<Instruction> {
                 Instruction.Create(OpCodes.Ldarg_0), Instruction.Create(OpCodes.Brfalse, first),
@@ -158,115 +167,60 @@ static class LogRefreshInjector
         }
     }
 
-    static void CopyBody(MethodDefinition from, MethodDefinition to)
+    static void InstallBridge(ModuleDefinition payload)
     {
-        var il = Body(to); to.Body.MaxStackSize = from.Body.MaxStackSize;
-        var locals = new Dictionary<VariableDefinition, VariableDefinition>();
-        foreach (var item in from.Body.Variables) { var copy = new VariableDefinition(item.VariableType); locals[item] = copy; to.Body.Variables.Add(copy); }
-        var instructions = from.Body.Instructions.ToDictionary(i => i, i => Instruction.Create(OpCodes.Nop));
-        foreach (var item in from.Body.Instructions)
+        foreach (var type in module.Types.Where(t => t.Namespace == "DiceMaster.LiveLog").ToArray()) module.Types.Remove(type);
+        new PayloadCopier(payload, module, t => t.Namespace == "DiceMaster.LiveLog");
+        // Existing strict-reflection hooks must bind to the replacement payload
+        // definitions when applying the patch to an already patched assembly.
+        foreach (var type in module.Types.Where(t => t.Namespace != "DiceMaster.LiveLog"))
+            foreach (var method in type.Methods.Where(m => m.HasBody))
+                foreach (var instruction in method.Body.Instructions)
+                    if (instruction.Operand is MethodReference reference && reference.DeclaringType.Namespace == "DiceMaster.LiveLog")
+                        instruction.Operand = module.GetType(reference.DeclaringType.FullName).Methods.Single(m => m.FullName == reference.FullName);
+        var bridge = module.GetType("DiceMaster.LiveLog.LogBridge");
+        var tick = Method(bridge, "Tick");
+        // Event scripts discovered after initial data readiness belong to a
+        // separate parser. Display preparation must not write the shared Lua
+        // parser's modification/options caches, even on a cold source.
+        var parserType = module.GetType("DiceMaster.LuaParse.LuaParser");
+        var eventParser = NewMethod(cache, "GetDefinitionParser", parserType, false);
+        var parserBody = Body(eventParser);
+        parserBody.Emit(OpCodes.Call, Method(bridge, "GetEventParser"));
+        parserBody.Emit(OpCodes.Castclass, parserType); parserBody.Emit(OpCodes.Ret);
+        var staticDescription = Method(cache, "GenerateStaticDesc");
+        foreach (var instruction in staticDescription.Body.Instructions)
+            if (instruction.Operand is MethodReference reference && reference.DeclaringType.FullName == parserType.FullName && reference.Name == "get_Instance")
+            {
+                instruction.Operand = eventParser;
+                changed.Add(staticDescription);
+            }
+        void TickBody(MethodDefinition method, bool instance, bool manual)
         {
-            var copy = instructions[item]; copy.OpCode = item.OpCode; object operand = item.Operand;
-            if (operand is Instruction branch) operand = instructions[branch];
-            else if (operand is Instruction[] branches) operand = branches.Select(b => instructions[b]).ToArray();
-            else if (operand is VariableDefinition variable) operand = locals[variable];
-            else if (operand is ParameterDefinition parameter) operand = to.Parameters[parameter.Index];
-            copy.Operand = operand; il.Append(copy);
+            var il = Body(method);
+            if (instance) il.Emit(OpCodes.Ldarg_0); else il.Emit(OpCodes.Call, Method(plugin, "get_Instance"));
+            il.Emit(manual ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Call, tick); il.Emit(OpCodes.Ret);
         }
-        Instruction Map(Instruction i) => i == null ? null : instructions[i];
-        foreach (var handler in from.Body.ExceptionHandlers) to.Body.ExceptionHandlers.Add(new ExceptionHandler(handler.HandlerType) {
-            TryStart = Map(handler.TryStart), TryEnd = Map(handler.TryEnd), HandlerStart = Map(handler.HandlerStart), HandlerEnd = Map(handler.HandlerEnd),
-            FilterStart = Map(handler.FilterStart), CatchType = handler.CatchType
-        });
-    }
-
-    static void MakeLiveRebuild()
-    {
-        var original = Method(patch, "ReprocessLastLuaFunction");
-        // A display refresh must preserve pending event execution. Actual Lua
-        // loading still resets TargetEvent through its existing prefix.
-        foreach (var instruction in original.Body.Instructions.Where(i => i.OpCode == OpCodes.Stsfld && i.Operand == Field(patch, "TargetEvent")))
-        { instruction.OpCode = OpCodes.Pop; instruction.Operand = null; }
         rebuild = NewMethod(patch, "RebuildLiveLogEntries", module.TypeSystem.Void, false);
-        CopyBody(original, rebuild);
-        foreach (var instruction in rebuild.Body.Instructions)
-        {
-            if (instruction.Operand is MethodReference called &&
-                ((called.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser" && called.Name == "ClearCaches") ||
-                 (called.DeclaringType.FullName == "DiceMaster.DicePlugin" && called.Name == "LogInfo")))
-            { instruction.OpCode = OpCodes.Pop; instruction.Operand = null; }
-        }
-    }
-
-    static void WrapRefresh(MethodDefinition method, Action<ILProcessor> emitWork, bool timed)
-    {
-        var il = Body(method);
-        var done = Instruction.Create(OpCodes.Ret);
-        if (timed)
-        {
-            var enabled = Field(module.GetType("DiceMaster.Config.ConfigManager"), "EnableOptionInfo");
-            var value = Call(Method(patch, "PositionController_OnPositionEnter_Prefix"), "DiceMaster.Config.ConfigElement`1<System.Boolean>", "get_Value");
-            var timeType = module.GetTypeReferences().First(t => t.FullName == "UnityEngine.Time");
-            var time = Ref(timeType, "get_unscaledTime", module.TypeSystem.Single, false);
-            il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldfld, Field(plugin, "showLogWindow")); il.Emit(OpCodes.Brfalse, done);
-            il.Emit(OpCodes.Ldsfld, enabled); il.Emit(OpCodes.Brfalse, done);
-            il.Emit(OpCodes.Ldsfld, enabled); il.Emit(OpCodes.Callvirt, value); il.Emit(OpCodes.Brfalse, done);
-            il.Emit(OpCodes.Ldsfld, depth); il.Emit(OpCodes.Brtrue, done);
-            il.Emit(OpCodes.Call, time); il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldfld, nextRefresh); il.Emit(OpCodes.Blt, done);
-            il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Call, time); il.Emit(OpCodes.Ldc_R4, 0.25f); il.Emit(OpCodes.Add); il.Emit(OpCodes.Stfld, nextRefresh);
-        }
-        else
-        {
-            il.Emit(OpCodes.Ldsfld, depth); il.Emit(OpCodes.Brtrue, done);
-        }
-        // Evaluate into new lists. On failure keep all previous rows, rather
-        // than exposing a partially cleared or partially rebuilt log window.
-        var backups = new List<(FieldDefinition field, VariableDefinition old)>();
-        foreach (var name in new[] { "optionEntries", "switchEntries", "eventEntries", "missionEntries" })
-        {
-            var field = Field(plugin, name); var old = new VariableDefinition(field.FieldType); method.Body.Variables.Add(old); backups.Add((field, old));
-            il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldfld, field); il.Emit(OpCodes.Stloc, old);
-            il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Newobj, Ref(field.FieldType, ".ctor", module.TypeSystem.Void, true)); il.Emit(OpCodes.Stfld, field);
-        }
-        Enter(il);
-        var start = Instruction.Create(OpCodes.Nop); il.Append(start); emitWork(il); il.Emit(OpCodes.Leave, done);
-        var catchStart = Instruction.Create(OpCodes.Nop); il.Append(catchStart);
-        var error = new VariableDefinition(ExceptionType()); method.Body.Variables.Add(error); il.Emit(OpCodes.Stloc, error);
-        foreach (var backup in backups) { il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldloc, backup.old); il.Emit(OpCodes.Stfld, backup.field); }
-        if (timed)
-        {
-            var timeType = module.GetTypeReferences().First(t => t.FullName == "UnityEngine.Time");
-            il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Call, Ref(timeType, "get_unscaledTime", module.TypeSystem.Single, false));
-            il.Emit(OpCodes.Ldc_R4, 5f); il.Emit(OpCodes.Add); il.Emit(OpCodes.Stfld, nextRefresh);
-        }
-        il.Emit(OpCodes.Ldloc, error); il.Emit(OpCodes.Call, Method(plugin, "LogError")); il.Emit(OpCodes.Leave, done);
-        var finallyStart = Instruction.Create(OpCodes.Nop); il.Append(finallyStart); Exit(il); il.Emit(OpCodes.Endfinally); il.Append(done);
-        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch) {
-            TryStart = start, TryEnd = catchStart, HandlerStart = catchStart, HandlerEnd = finallyStart, CatchType = ExceptionType()
-        });
-        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
-            TryStart = start, TryEnd = finallyStart, HandlerStart = finallyStart, HandlerEnd = done
-        });
-    }
-
-    static void AddRefreshPaths()
-    {
+        TickBody(rebuild, false, false);
+        TickBody(Method(patch, "ReprocessLastLuaFunction"), false, true);
         var auto = NewMethod(plugin, "RefreshLiveLogDisplay", module.TypeSystem.Void, true);
-        WrapRefresh(auto, il => il.Emit(OpCodes.Call, rebuild), true);
-        var manual = Method(plugin, "RefreshGameData");
-        WrapRefresh(manual, il => {
-            il.Emit(OpCodes.Call, Method(cache, "get_Instance")); il.Emit(OpCodes.Callvirt, Method(cache, "ClearDisplayCaches"));
-            il.Emit(OpCodes.Call, Method(patch, "ReprocessLastLuaFunction"));
-        }, false);
+        TickBody(auto, true, false);
+        TickBody(Method(plugin, "RefreshGameData"), true, true);
+        var prefix = Method(patch, "LuaEnvironment_LoadLuaFunction_Prefix");
+        var body = Body(prefix);
+        body.Emit(OpCodes.Ldarg_0); body.Emit(OpCodes.Ldarg_1);
+        body.Emit(OpCodes.Call, Method(bridge, "NewLua")); body.Emit(OpCodes.Ret);
+
         var update = Method(plugin, "Update");
         if (!update.Body.Instructions.Any(i => i.Operand == auto))
         {
+            changed.Add(update);
             var il = update.Body.GetILProcessor();
-            // Run after visibility changes, before the existing gamepad tick.
             var target = update.Body.Instructions.FirstOrDefault(i => i.Operand is MethodReference r && r.Name == "UpdateGamepad")
                 ?? update.Body.Instructions.Last(i => i.OpCode == OpCodes.Ret);
             var call = Instruction.Create(OpCodes.Ldarg_0);
-            // Existing branches targeting the extension point must refresh too.
             foreach (var i in update.Body.Instructions)
             {
                 if (i.Operand == target) i.Operand = call;
@@ -275,23 +229,126 @@ static class LogRefreshInjector
             }
             il.InsertBefore(target, call); il.InsertBefore(target, Instruction.Create(OpCodes.Call, auto));
         }
+        // OnGUI draws the newly selected tab in the same frame as the toggle.
+        var draw = Method(plugin, "DrawLogWindow");
+        if (!draw.Body.Instructions.Any(i => i.Operand == auto))
+        {
+            changed.Add(draw);
+            var end = draw.Body.Instructions.First(i => i.Operand is MethodReference r && r.Name == "EndHorizontal");
+            var il = draw.Body.GetILProcessor();
+            var load = Instruction.Create(OpCodes.Ldarg_0);
+            il.InsertAfter(end, load); il.InsertAfter(load, Instruction.Create(OpCodes.Call, auto));
+        }
+        PatchMissionIsolation();
+        foreach (var name in new[] { "DrawEventEntries", "DrawMissionEntries" })
+        {
+            var method = Method(plugin, name);
+            var button = method.Body.Instructions.First(i => i.OpCode == OpCodes.Ldstr &&
+                ((string)i.Operand == "이벤트 실행" || (string)i.Operand == "미션 실행"));
+            if (button.Previous.OpCode == OpCodes.Brfalse) continue;
+            changed.Add(method);
+            var skip = method.Body.Instructions.SkipWhile(i => i != button).First(i =>
+                i.OpCode.Code == Code.Brfalse || i.OpCode.Code == Code.Brfalse_S).Operand as Instruction;
+            var item = method.Body.Variables.First(v => v.VariableType.FullName ==
+                (name == "DrawEventEntries" ? "Mortal.Story.PositionEventData" : "Mortal.Core.MissionCheckData"));
+            var il = method.Body.GetILProcessor();
+            il.InsertBefore(button, Instruction.Create(OpCodes.Ldloc, item));
+            il.InsertBefore(button, Instruction.Create(OpCodes.Brfalse, skip));
+        }
+        // Old helpers log and return empty/default values after errors. During a
+        // preview these failures must reach the individual row's retry boundary.
+        foreach (var typeName in new[] { "DiceMaster.DataHelper", "DiceMaster.OptionInfoPatch", "DiceMaster.UiTextMapper" })
+            foreach (var method in module.GetType(typeName).Methods.Where(m => m.HasBody))
+                foreach (var handler in method.Body.ExceptionHandlers.Where(h => h.HandlerType == ExceptionHandlerType.Catch))
+                {
+                    var first = handler.HandlerStart;
+                    if (first.OpCode.Code != Code.Stloc && first.OpCode.Code != Code.Stloc_S &&
+                        first.OpCode.Code != Code.Stloc_0 && first.OpCode.Code != Code.Stloc_1 &&
+                        first.OpCode.Code != Code.Stloc_2 && first.OpCode.Code != Code.Stloc_3 && first.OpCode.Code != Code.Pop)
+                        throw new InvalidDataException("Unsupported catch entry: " + method.FullName);
+                    if (first.Next.Operand == depth) continue;
+                    changed.Add(method);
+                    var next = first.Next; var il = method.Body.GetILProcessor();
+                    il.InsertBefore(next, Instruction.Create(OpCodes.Ldsfld, depth));
+                    il.InsertBefore(next, Instruction.Create(OpCodes.Brfalse, next));
+                    il.InsertBefore(next, Instruction.Create(OpCodes.Rethrow));
+                }
+        var reflection = module.GetType("DiceMaster.ReflectionExtensions").Methods.Single(m => m.Name == "GetFieldValue");
+        if (!reflection.Body.Instructions.Any(i => i.Operand is MethodReference r && r.Name == "ReadFieldStrict"))
+        {
+            changed.Add(reflection);
+            var first = reflection.Body.Instructions[0]; var il = reflection.Body.GetILProcessor();
+            foreach (var instruction in new[] {
+                Instruction.Create(OpCodes.Ldsfld, depth), Instruction.Create(OpCodes.Brfalse, first),
+                Instruction.Create(OpCodes.Ldarg_0), Instruction.Create(OpCodes.Ldarg_1),
+                Instruction.Create(OpCodes.Call, Method(bridge, "ReadFieldStrict")),
+                Instruction.Create(OpCodes.Unbox_Any, reflection.GenericParameters[0]), Instruction.Create(OpCodes.Ret)
+            }) il.InsertBefore(first, instruction);
+        }
+    }
+
+    static void PatchMissionIsolation()
+    {
+        var helper = module.GetType("DiceMaster.DataHelper");
+        var filter = NewField(helper, "LiveMissionFilter", module.TypeSystem.Object, true);
+        var method = Method(helper, "GetMissions");
+        if (method.Body.Instructions.Any(i => i.Operand == filter)) return;
+        changed.Add(method);
+        var current = method.Body.Instructions.First(i => i.Operand is MethodReference r && r.Name == "get_Current" && r.ReturnType.FullName == "!0");
+        // Resolve the foreach local independently of compiler-selected local slot.
+        var store = current.Next;
+        int index = store.OpCode.Code switch { Code.Stloc_0 => 0, Code.Stloc_1 => 1, Code.Stloc_2 => 2, Code.Stloc_3 => 3,
+            Code.Stloc or Code.Stloc_S => ((VariableDefinition)store.Operand).Index,
+            _ => throw new InvalidDataException("Unsupported mission loop") };
+        var variable = method.Body.Variables[index];
+        if (variable.VariableType.FullName != "Mortal.Core.MissionData") throw new InvalidDataException("Unexpected mission loop type");
+        var original = store.Next;
+        var skip = method.Body.Instructions.SkipWhile(i => i != original).First(i => i.OpCode.FlowControl == FlowControl.Cond_Branch).Operand as Instruction;
+        if (skip == null) throw new InvalidDataException("Missing mission null skip");
+        var il = method.Body.GetILProcessor();
+        foreach (var instruction in new[] {
+            Instruction.Create(OpCodes.Ldsfld, filter), Instruction.Create(OpCodes.Brfalse, original),
+            Instruction.Create(OpCodes.Ldloc, variable), Instruction.Create(OpCodes.Ldsfld, filter),
+            Instruction.Create(OpCodes.Ceq), Instruction.Create(OpCodes.Brfalse, skip)
+        }) il.InsertBefore(original, instruction);
     }
 
     static int Main(string[] args)
     {
-        if (args.Length != 2) { Console.Error.WriteLine("Usage: LogRefreshInjector input.dll output.dll"); return 2; }
+        if (args.Length != 3) { Console.Error.WriteLine("Usage: LogRefreshInjector input.dll payload.dll output.dll"); return 2; }
         using var assembly = AssemblyDefinition.ReadAssembly(args[0]); module = assembly.MainModule;
         if (assembly.Name.Name != "DiceMaster") throw new InvalidDataException("Expected DiceMaster assembly.");
+        // Cecil loads bodies lazily. Resolve references to the old payload
+        // before removing its definitions, then rebind them in InstallBridge.
+        foreach (var type in AllTypes(module.Types))
+            foreach (var method in type.Methods.Where(m => m.HasBody))
+                _ = method.Body.Instructions.Count;
         plugin = module.GetType("DiceMaster.DicePlugin"); patch = module.GetType("DiceMaster.OptionInfoPatch");
         cache = module.GetType("DiceMaster.PositionEventCache"); mapper = module.GetType("DiceMaster.UiTextMapper");
         depth = NewField(patch, "DisplayRefreshDepth", module.TypeSystem.Int32, true);
-        nextRefresh = NewField(plugin, "nextLiveLogRefresh", module.TypeSystem.Single, false);
-        PatchEventDescriptions(); RetryEmptyEventLists(); BypassStateDependentTranslations(); MakeLiveRebuild();
+        PatchEventDescriptions(); RetryEmptyEventLists(); BypassStateDependentTranslations();
+        using var payload = ModuleDefinition.ReadModule(args[1]);
+        InstallBridge(payload);
+        InstallSafeEvaluationHooks();
+        InstallLifecycleHooks(module.GetType("DiceMaster.LiveLog.LogBridge"));
         foreach (var name in new[] { "LuaEnvironment_LoadLuaFunction_Prefix", "PrefixExecuteConditionResult", "PrefixExecuteSwitchResult", "PrefixCheckMission", "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" })
             GuardPreview(Method(patch, name));
-        AddRefreshPaths();
+        // Cecil preserves instruction encodings. Inserted guards can make an
+        // original short branch exceed its signed-byte range.
+        var longBranches = new Dictionary<Code, OpCode> { [Code.Br_S] = OpCodes.Br, [Code.Brfalse_S] = OpCodes.Brfalse,
+            [Code.Brtrue_S] = OpCodes.Brtrue, [Code.Beq_S] = OpCodes.Beq, [Code.Bge_S] = OpCodes.Bge,
+            [Code.Bgt_S] = OpCodes.Bgt, [Code.Ble_S] = OpCodes.Ble, [Code.Blt_S] = OpCodes.Blt,
+            [Code.Bne_Un_S] = OpCodes.Bne_Un, [Code.Bge_Un_S] = OpCodes.Bge_Un, [Code.Bgt_Un_S] = OpCodes.Bgt_Un,
+            [Code.Ble_Un_S] = OpCodes.Ble_Un, [Code.Blt_Un_S] = OpCodes.Blt_Un, [Code.Leave_S] = OpCodes.Leave };
+        foreach (var method in changed)
+            foreach (var instruction in method.Body.Instructions)
+                if (longBranches.TryGetValue(instruction.OpCode.Code, out var opcode)) instruction.OpCode = opcode;
+        foreach (var type in AllTypes(module.Types))
+            foreach (var method in type.Methods.Where(m => m.HasBody))
+                if (method.Body.Instructions.Any(i => i.OpCode.FlowControl == FlowControl.Call && i.Operand == null))
+                    throw new InvalidDataException("Unresolved call after payload replacement: " + method.FullName);
         module.Mvid = Guid.NewGuid();
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(args[1]))!); assembly.Write(args[1]);
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(args[2]))!); assembly.Write(args[2]);
         Console.WriteLine("Updated live log display; gamepad code and embedded resources retained."); return 0;
     }
 }
