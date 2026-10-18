@@ -8,6 +8,14 @@
 
 사전 공개 API 확인에서 기존 Release는 15개, Latest 정식은 v1.0.4, 이슈 #2는 closed, #4는 open이고 alpha.2 태그/Release는 없습니다. 새 prerelease는 `prerelease=true`·`make_latest=false`로 게시하며 기존 태그·Release·자산을 보존합니다. 실제 게시와 인증 없는 다운로드 결과는 아래 후속 기록으로 구분합니다. 게임 설치·실행과 이슈 종료는 수행하지 않습니다.
 
+**2026-10-19 04:13:07 KST에 [v1.0.5-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.2) prerelease를 게시했습니다.** 태그 소스 커밋은 `389292a85469c046032d498561a3470387429f61`, Release ID는 `416646044`, asset ID는 `654259429`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 고정 커밋의 깨끗한 재빌드·11개 검사·검토 DLL/설정/ZIP 해시 비교와 검증기 회귀 8개를 통과했습니다. 설치 파일은 [DiceMaster-v1.0.5-alpha.2.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.2/DiceMaster-v1.0.5-alpha.2.zip)입니다.
+
+익명 API 조회 한도 때문에 Release·태그·기존 자산·Latest·이슈 메타데이터는 인증된 GitHub API로 확인했습니다. 공개 페이지와 ZIP은 인증 없이 접근·다운로드했고 ZIP CRC·정확히 두 파일·DLL/설정 바이트·SHA-256이 검증한 결과와 일치했습니다. 기존 15개 Release·태그 커밋·자산을 보존했고 Latest는 정식 v1.0.4, 이슈 #2는 closed, #4는 open을 유지합니다. 영수증은 `artifacts/releases/v1.0.5-alpha.2/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드/검증 로그입니다. 이 게시 기록을 반영하는 후속 문서 커밋은 태그와 공개 설치 자산을 바꾸지 않습니다.
+
+Windows 게임 설치·실행·UI/native 입력 성공이나 PRD #4 완료를 주장하지 않습니다. 실제 패드 탐색·스크롤·버튼·창 이동과 회귀는 사용자가 재검증해야 합니다.
+
+## PRD #4 alpha.1 최초 로그 GUI·Xbox/XInput 탐색
+
 PRD #4는 [로컬 구현·후보 검사](ISSUE-4-IMPLEMENTATION.md)를 마치고 [사용자 Windows 검증](ISSUE-4-WINDOWS-VALIDATION.md)을 기다립니다. 사용자 후속 지시에 따라 **[v1.0.5-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.1)을 2026-10-19 03:47:14 KST에 prerelease로 게시했습니다.** 고정 커밋 `f9f3b596db03372d219a4244c5c6a6fe90f9cc83`의 깨끗한 재빌드·11개 검사·공개 다운로드의 CRC·두 파일·바이트·해시·태그 확인이 통과했습니다. Release ID `416633648`, asset ID `654210019`입니다. [릴리스 설명·게시 결과](ISSUE-4-ALPHA1-RELEASE.md)는 새 화면·입력/한글 검색·창 설정·예약 의미·입력 경로 제약, Windows 미실행과 이전 DLL/설정 복구를 포함합니다. 정식 Latest v1.0.4와 기존 14개 Release·태그·자산을 보존했고 이슈 #4는 open으로 유지합니다. 영수증은 `artifacts/releases/v1.0.5-alpha.1/`에 보존합니다.
 
 고정 소스 커밋은 `verify-preview-release.py --scope prd4`로 새로 빌드합니다. 기본 PRD #2 검증 계약은 유지하며 PRD #4는 명시적으로 선택해야 합니다. 11개 검사 증거와 Windows 미검증 상태·완료 미주장을 요구하고 검토 DLL SHA-256 `3ea62dd5c8fbee368438dd6e3ec8a58c023fcab5d01608321fe7e97ce80a6553`, 설정 SHA-256 `8d4ce1a8ee7ef173c821cb5c332127fa23b9dab4860bb76786b8a97f2ae5d815`와 비교합니다. prerelease는 `prerelease=true`·`make_latest=false`로 게시하고 공개 다운로드의 CRC·두 파일·커밋·해시를 확인합니다.

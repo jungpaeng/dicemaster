@@ -65,3 +65,11 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 ```
 
 결과에는 DLL 해시·해상도/배율/창 모드·게임/로더/패드/Steam Input 환경·재현 순서·탭/항목 ID와 관련 BepInEx 최초 실패/복구 로그를 남겨 주세요. 자동 검사 통과와 prerelease 게시는 Windows 기능 완료의 근거로 대신하지 않습니다.
+
+## 게시 결과
+
+**2026-10-19 04:13:07 KST에 [v1.0.5-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.2) prerelease를 게시했습니다.** 태그 소스 커밋은 `389292a85469c046032d498561a3470387429f61`, Release ID는 `416646044`, asset ID는 `654259429`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 고정 커밋의 깨끗한 재빌드·11개 검사·검토 DLL/설정/ZIP 해시 비교와 검증기 회귀 8개를 통과했습니다. 설치 파일은 [DiceMaster-v1.0.5-alpha.2.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.2/DiceMaster-v1.0.5-alpha.2.zip)입니다.
+
+익명 API 조회 한도 때문에 Release·태그·기존 자산·Latest·이슈 메타데이터는 인증된 GitHub API로 확인했습니다. 공개 페이지와 ZIP은 인증 없이 접근·다운로드했고 ZIP CRC·정확히 두 파일·DLL/설정 바이트·SHA-256이 검증한 결과와 일치했습니다. 기존 15개 Release·태그 커밋·자산을 보존했고 Latest는 정식 v1.0.4, 이슈 #2는 closed, #4는 open을 유지합니다. 영수증은 `artifacts/releases/v1.0.5-alpha.2/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 빌드/검증 로그입니다. 이 게시 기록을 반영하는 후속 문서 커밋은 태그와 공개 설치 자산을 바꾸지 않습니다.
+
+Windows 게임 설치·실행·UI/native 입력 성공이나 PRD #4 완료를 주장하지 않습니다. 실제 패드 탐색·스크롤·버튼·창 이동과 회귀는 사용자가 재검증해야 합니다.

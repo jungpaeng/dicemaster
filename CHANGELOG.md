@@ -1,6 +1,6 @@
 # 변경 이력
 
-## [v1.0.5-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.2) — 2026-10-19 (prerelease 게시 준비)
+## [v1.0.5-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.2) — 2026-10-19 (prerelease)
 
 - 조활 시스템의 화면 높이 배율을 참고한 큰 기본 창·본문 글자와 기존 alpha.1 기본 배치의 자동 이행을 추가합니다. 사용자 지정값은 보존하고 본문 글자의 숨은 창 크기 제한을 제거합니다.
 - 목록·카드·상세·도구·검색 자판이 고정 상단/하단을 제외한 남은 높이를 채웁니다. 큰 글자·작은 창에서는 안내를 스크롤 안으로 옮겨 복구 도구를 계속 볼 수 있습니다.

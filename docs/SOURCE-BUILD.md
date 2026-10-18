@@ -6,13 +6,13 @@
 
 2026-10-19 사용자가 공개 [v1.0.3-alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상은 아래 alpha.4 해시이며 현재 주석 정리 DLL을 새로 실행한 결과로 간주하지 않습니다. [사용자 확인과 기본 전환](#사용자-windows-확인과-기본-전환)에 근거 범위를 구분하고 [배포 기록](ISSUE-3-RELEASE.md)에 정식 게시·공개 다운로드·이슈 완료 결과를 기록했습니다. 이슈 #1·#2의 기능이나 상태는 추가 변경하지 않습니다.
 
-## PRD #4 로컬 후보
+## PRD #4 후보와 prerelease
 
-사용자 지시에 따라 [alpha.2 UI 후속](ISSUE-4-ALPHA2-RELEASE.md)을 커밋하고 `verify-preview-release.py --scope prd4`로 고정 소스를 재빌드한 뒤 새 prerelease로 게시합니다. 검토 DLL·설정과 일치해야 하며 실제 게시·공개 다운로드 결과는 [배포 기록](RELEASING.md)에 남깁니다.
+사용자 지시에 따라 [alpha.2 UI 후속](ISSUE-4-ALPHA2-RELEASE.md)을 `389292a85469c046032d498561a3470387429f61`로 커밋했습니다. `verify-preview-release.py --scope prd4`로 해당 커밋만 재빌드한 DLL·설정·ZIP이 검토 후보와 일치했고 11개 검사 프로그램을 통과했습니다. 2026-10-19 04:13:07 KST prerelease 게시와 인증 없는 공개 페이지·ZIP 다운로드 검증을 마쳤습니다. [배포 기록](RELEASING.md)을 따르며 실제 Windows 확인은 별도입니다.
 
 alpha.1 UI 크기·스크롤 후보는 `--output-dir artifacts/issue-4/ui-followup`에 보존하고, 창 전체 드래그 복원을 포함한 후속은 `--output-dir artifacts/issue-4/window-drag`에 생성합니다. 기존 후보·공개 파일을 보존합니다. [UI 후속 기록](ISSUE-4-UI-FOLLOWUP.md)의 새 해시·레이아웃/선택 스크롤 검사를 확인합니다. 전체 소스 프로젝트와 기존11개 검사 프로그램을 사용하며 실제 Windows UI 검증은 별도입니다.
 
-PRD #2 완료 뒤 `102cafe` 기준의 미커밋 소스에서 `build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/candidate`를 사용합니다. 전체 모드 C# 컴파일·기존 검사에 새 GUI 모델/입력/게시 연결 검사를 포함하고 설정+새 DLL 두 파일 ZIP과 영수증을 생성합니다. [구현·최종 검사·후보 해시](ISSUE-4-IMPLEMENTATION.md)와 [사용자 Windows 검증표](ISSUE-4-WINDOWS-VALIDATION.md)를 따릅니다. 이 후보는 이전 Windows 확인과 동등한 런타임 결과를 주장하지 않으며 공개 배포를 수행하지 않습니다. 아래 고정 alpha.3 기준은 기존 복원/비교용 이력입니다.
+**최초 alpha.1 게시 전 로컬 후보의 재현 기록:** PRD #2 완료 뒤 `102cafe` 기준의 미커밋 소스에서 `build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-4/candidate`를 사용합니다. 전체 모드 C# 컴파일·기존 검사에 새 GUI 모델/입력/게시 연결 검사를 포함하고 설정+새 DLL 두 파일 ZIP과 영수증을 생성합니다. [구현·최종 검사·후보 해시](ISSUE-4-IMPLEMENTATION.md)와 [사용자 Windows 검증표](ISSUE-4-WINDOWS-VALIDATION.md)를 따릅니다. 이 후보는 이전 Windows 확인과 동등한 런타임 결과를 주장하지 않으며 공개 배포를 수행하지 않습니다. 아래 고정 alpha.3 기준은 기존 복원/비교용 이력입니다.
 
 ## 고정 기준과 최초 복원 시작 상태
 
