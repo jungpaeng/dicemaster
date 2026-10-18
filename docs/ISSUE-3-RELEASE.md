@@ -4,9 +4,9 @@
 
 ## 승인과 현재 상태
 
-사용자가 현재 C# 프로젝트 구조 변경의 commit·push와 이 프로젝트에서 빌드한 DLL의 prerelease 게시를 승인했습니다. 배포 태그는 `v1.0.3-alpha.4`, 설치 자산은 `DiceMaster-v1.0.3-alpha.4.zip`입니다. 현재 이 문서는 게시 준비 기록이며 게시 완료·익명 다운로드 검증 완료를 뜻하지 않습니다. 최종 소스 커밋에서 새 빌드·자동 검사 후 게시하고 확인된 결과를 추가합니다.
+사용자 승인에 따라 C# 프로젝트 구조 변경을 commit·push하고 **[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 고정 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`에서 프로젝트를 다시 빌드·자동 검사했습니다. 설치 자산은 `DiceMaster-v1.0.3-alpha.4.zip`이며 익명 공개 API와 실제 자산 다운로드 검증을 마쳤습니다. 이 문서는 확인된 게시 결과를 기록하는 후속 문서 변경이며 소스 태그·자산을 바꾸지 않습니다.
 
-기존 태그·Release·자산을 덮어쓰지 않으며 Latest 정식 `v1.0.2`를 유지합니다. alpha.4는 `draft=false`, `prerelease=true`, `make_latest=false`로 게시합니다. Windows 설치·게임 실행은 수행하거나 요청하지 않습니다. 기본 빌드 전환·PRD #3 전체 완료·이슈 종료·정식 Release는 보류합니다. 이슈 #2의 기능 확장은 포함하지 않습니다.
+기존 여섯 태그·Release·자산을 덮어쓰지 않았으며 Latest 정식 `v1.0.2` (Release ID `416349430`)를 유지했습니다. alpha.4는 `draft=false`, `prerelease=true`, `make_latest=false`로 게시했습니다. Windows 설치·게임 실행은 수행하거나 요청하지 않습니다. 기본 빌드 전환·PRD #3 전체 완료·이슈 종료·정식 Release는 보류합니다. 이슈 #2의 기능 확장은 포함하지 않습니다.
 
 ## 태그와 설치 자산의 대응
 
@@ -41,11 +41,39 @@ python3 build/verify-source.py \
 
 빌드가 생성하는 `DiceMaster-source-candidate.zip`을 바이트 변경 없이 배포 자산명 `DiceMaster-v1.0.3-alpha.4.zip`으로 복사합니다. 일반 빌드는 기존 모드 DLL을 읽지 않으며 `verify-source.py`만 고정 기준과의 계약 비교에 이를 사용합니다. 다른 출력 디렉터리와 보고서 경로 등 전체 명령은 [소스 빌드 안내](SOURCE-BUILD.md)를 따릅니다.
 
-최종 DLL에는 일곱 검사 묶음, alpha.3 대비 동작·메타데이터·Harmony 후킹·native ABI·리소스 비교와 변조 후보 10종 거부를 적용합니다. 기존 모드 DLL이 없는 격리 빌드와 실패 경로 11종도 확인합니다. 재컴파일한 DLL 전체의 기준 바이트 일치는 요구하지 않습니다. 구조 정리 직후 확보한 실행 수치와 후보 해시는 [당시 검증 기록](SOURCE-BUILD.md#구조-정리-후-로컬-검증-기록--2026-10-18)이며 최종 게시 결과를 대신하지 않습니다.
+최종 소스 커밋을 `git archive`로 추출하고 소스·리소스·빌드/검사·패키지 설정의 허용 목록만 새 스냅샷에 복사했습니다. 기존 모드 DLL·루트 `plugins/`·기존 산출물이 없는 상태에서 시작 시 `DiceMaster.dll` 0개를 확인했습니다. 새 빌드의 입력 해시가 커밋과 같고 실행 중 바뀌지 않음을 검증했습니다. SDK는 `8.0.426`입니다. 구조 정리 단계의 기존 모드 DLL 없는 격리 빌드·실패 경로 11종 기록은 [당시 검증 기록](SOURCE-BUILD.md#구조-정리-후-로컬-검증-기록--2026-10-18)에 보존하며 아래는 최종 커밋에서 다시 실행한 결과입니다.
 
-## 게시 후 기록할 증거
+| 최종 소스 커밋의 새 DLL 검사 | 결과 |
+|---|---|
+| `LogRefreshTests` | 19개 통과 |
+| `LiveLogEngineTests` | 16개 시나리오·70개 단언 통과 |
+| `LifecycleTests` | 4,023개 통과 |
+| `LiveLogIntegrationTests` | 실제 파서·캐시·표시·요약·후킹 연결 134개 통과 |
+| `RealGameApiTests` | 관리 동작 3,914개·메타데이터 1,011개 통과 |
+| `GamepadTests` | 전체 입력 조합·signed int 경계·ABI 262,715개 통과 |
+| `SourceBehaviorTests` | 실제 번역/주사위 2,170개 통과 |
+| alpha.3 기준/후보 계약 | 메타데이터·Harmony 후킹·native ABI·내장 리소스 2,748개 통과 |
+| 비교 검사 변조 후보 | 10종을 각각 기대한 계약 오류로 거부 |
+| 기준/후보 번역·주사위 관찰값 비교 | 4,341개 통과 |
 
-최종 소스 커밋·태그 대상, DLL·ZIP 크기와 SHA-256, 빌드 입력 해시, 자동 검사 결과, GitHub Release·asset ID와 게시 시각, 익명 공개 API·다운로드의 CRC·두 파일·DLL/설정 바이트 일치 결과를 기록합니다. 게시 기록 문서 후속 커밋은 소스 태그와 자산을 바꾸지 않습니다.
+재컴파일한 DLL 전체의 기준 바이트 일치는 요구하지 않습니다. 소스 표현에 따른 메타데이터 차이 12건은 [소스 빌드 계약](SOURCE-BUILD.md#검사-계약과-한계)에 기록한 범위로 유지합니다. Unity·로더·입력 경계 대역을 사용하는 관리 검사는 Windows 게임 런타임 확인과 구분합니다.
+
+## 게시 결과와 공개 다운로드 검증
+
+| 항목 | 확인한 값 |
+|---|---|
+| 소스 태그 | `v1.0.3-alpha.4` |
+| 소스 커밋 | `46bbf7486ab424696f1f5ba7d4126f6c12d11184` |
+| GitHub 상태 | Release ID `416503505`, `draft=false`, `prerelease=true`; `make_latest=false`로 게시 |
+| 게시 시각 | 2026-10-18 14:42:14 UTC / 23:42:14 KST |
+| 자산 | `DiceMaster-v1.0.3-alpha.4.zip`, asset ID `653700999` |
+| ZIP 크기·SHA-256 | 191,482바이트 / `ddd32abbaa886cea4e0975bd522addbb1339e71a59223137fbbe23114d9556b8` |
+| DLL 크기·SHA-256 | 461,312바이트 / `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1` |
+| 패키지 설정 SHA-256 | `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e` |
+| 보존한 루트 배포 DLL SHA-256 | `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633` |
+| Latest 정식 | `v1.0.2`, Release ID `416349430` 유지 |
+
+익명 공개 API로 게시 상태·자산 ID·크기·digest를 확인했습니다. [공개 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3-alpha.4/DiceMaster-v1.0.3-alpha.4.zip)을 인증 없이 내려받아 정확히 두 파일과 경로·CRC 정상, 로컬 게시 ZIP SHA-256, 새 빌드 DLL 바이트, 태그 소스 커밋의 `packaging/config/DiceMaster.cfg` 바이트 일치를 확인했습니다. 이전 `v1.0.3-alpha.3`, `alpha.2`, `alpha.1`, `v1.0.2`, `v1.0.1`, `v1.0.0`의 Release·자산 ID와 digest는 유지됐습니다. 게시 기록 문서 후속 커밋은 위 소스 태그·자산을 바꾸지 않습니다.
 
 로컬 영수증 위치는 `artifacts/releases/v1.0.3-alpha.4/`입니다. `source-provenance.json`으로 고정 소스 커밋에서 만든 새 소스 스냅샷과 일반 빌드 시작 시 기존 모드 DLL 0개를 기록합니다. `build-manifest.json`, `compatibility.json`/`.log`, `commit-build.log`는 빌드·검사를, `release-manifest.json`, `github-publication.json`, `anonymous-verification.json`은 자산·게시·공개 다운로드를 추적합니다. 이 생성 파일은 Git에서 제외하며 이 문서에 핵심 결과를 남깁니다.
 

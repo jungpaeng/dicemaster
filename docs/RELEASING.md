@@ -2,7 +2,7 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)
 
-사용자가 현재 C# 프로젝트 구조 변경의 commit·push와 프로젝트에서 빌드한 DLL의 새 prerelease 게시를 승인했습니다. 새 배포 태그는 `v1.0.3-alpha.4`, 파일은 `DiceMaster-v1.0.3-alpha.4.zip`입니다. 최종 커밋에서 다시 빌드·검사한 뒤 `draft=false`, `prerelease=true`, `make_latest=false`로 게시하고 익명 공개 다운로드를 검증합니다. 준비와 확인된 게시 결과를 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 구분합니다. 이 승인은 Windows 설치·실행, 기본 빌드 전환, 정식 Release나 이슈 종료를 포함하지 않습니다.
+사용자 승인에 따라 현재 C# 프로젝트 구조 변경을 commit·push하고 **[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 태그의 소스 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`을 새로 빌드·검사한 `DiceMaster-v1.0.3-alpha.4.zip`이며 `draft=false`, `prerelease=true`, `make_latest=false`로 게시했습니다. Release ID `416503505`, asset ID `653700999`입니다. 익명 공개 API·다운로드 검증을 마쳤고 식별값과 검사 증거는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 기존 여섯 Release·자산과 Latest 정식 `v1.0.2`를 유지했습니다. 이 승인은 Windows 설치·실행, 기본 빌드 전환, 정식 Release나 이슈 종료를 포함하지 않습니다.
 
 사용자가 모드 전용 독립 난수의 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. 실제 게임 판정의 예측값이 아니라는 의미는 문서·게시 설명에 기록합니다. 최종 자동 검사·파일·로컬 ZIP 검증과 새 prerelease 게시·익명 공개 다운로드 검증을 마쳤습니다. 기존 수치를 승계하지 않습니다.
 
@@ -14,7 +14,7 @@
 
 ## 이슈 #3 전체 소스 후보의 전환 조건
 
-전체 소스 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`이며 기준 DLL SHA-256은 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. [전체 소스 빌드](SOURCE-BUILD.md)는 별도 후보 DLL과 두 파일 ZIP을 만듭니다. 현재 승인된 alpha.4 prerelease는 최종 태그 커밋의 `src/DiceMaster/DiceMaster.csproj`를 빌드한 DLL과 같은 커밋의 `packaging/config/DiceMaster.cfg`를 묶습니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 기존 alpha.3 비교·복구 기준이므로 게시 자산 DLL과 다릅니다. 태그에 기존 DLL을 교체하지 않고 빌드 영수증·해시·공개 다운로드로 소스 커밋과 자산을 연결합니다.
+전체 소스 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`이며 기준 DLL SHA-256은 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. [전체 소스 빌드](SOURCE-BUILD.md)는 별도 후보 DLL과 두 파일 ZIP을 만듭니다. 게시한 alpha.4 prerelease는 고정 태그 커밋의 `src/DiceMaster/DiceMaster.csproj`를 빌드한 DLL과 같은 커밋의 `packaging/config/DiceMaster.cfg`를 묶습니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 기존 alpha.3 비교·복구 기준이므로 게시 자산 DLL과 다릅니다. 태그에 기존 DLL을 교체하지 않고 빌드 영수증·해시·공개 다운로드로 소스 커밋과 자산을 연결합니다.
 
 저장소 구성은 루트 솔루션과 `src/`·`tests/`·`build/`·`tools/`·`packaging/`으로 정리했습니다. 일반 컴파일 DLL은 `artifacts/bin/DiceMaster/release/`, 자동 검사한 후보 DLL·ZIP·영수증은 `artifacts/source-candidate/`에 생성합니다. 새 후보 ZIP의 설정은 `packaging/config/DiceMaster.cfg`이며 ZIP 내부의 설치 경로는 계속 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`입니다. 루트 `config/`·`plugins/`와 기존 패치 명령의 기본 출력은 전환 전 상태를 보존합니다. 폴더 구조 변경과 prerelease 게시만으로 기본 배포 DLL을 교체하지 않습니다.
 

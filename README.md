@@ -7,7 +7,7 @@
 
 현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 C# 소스·리소스 복원과 별도 소스 빌드 후보 검증입니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 아래 게시 DLL로 고정합니다. 일반 소스 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 기존 기본 패치 빌드·배포 DLL은 보존하며, 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 빌드를 전환하거나 이슈 #3을 완료로 처리하지 않습니다. 이슈 #2의 기능 확장은 포함하지 않습니다. 명령·검사 범위·후보 식별은 [전체 소스 빌드 안내](docs/SOURCE-BUILD.md)에 기록합니다.
 
-사용자가 현재 구조 변경의 commit·push와 이 프로젝트에서 빌드한 DLL의 새 prerelease 게시를 승인했습니다. 배포 버전은 `v1.0.3-alpha.4`, 설치 파일은 `DiceMaster-v1.0.3-alpha.4.zip`으로 준비합니다. 새 자산은 태그 커밋의 `src/DiceMaster/DiceMaster.csproj`에서 컴파일한 DLL과 `packaging/config/DiceMaster.cfg`로 구성합니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 비교·복구 기준인 alpha.3 DLL로 보존하므로 새 설치 ZIP의 DLL과 다릅니다. 게시 결과와 공개 다운로드 검증은 [이슈 #3 배포 기록](docs/ISSUE-3-RELEASE.md)에 구분해 기록합니다.
+**[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 사용자 승인에 따라 구조 변경을 commit·push하고 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 `src/DiceMaster/DiceMaster.csproj`를 새로 빌드했습니다. 설치 파일은 `DiceMaster-v1.0.3-alpha.4.zip`이며 익명 공개 다운로드의 CRC·두 파일·소스 빌드 DLL/패키지 설정 바이트·SHA-256 일치를 확인했습니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 비교·복구 기준인 alpha.3 DLL로 보존하므로 새 설치 ZIP의 DLL과 다릅니다. 최종 검사·해시·게시 ID는 [이슈 #3 배포 기록](docs/ISSUE-3-RELEASE.md)에 기록했습니다. Latest 정식 `v1.0.2`, 기본 빌드와 Windows 확인 보류 조건은 유지합니다.
 
 다음은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. 사용자가 게임 RNG와 분리된 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 화면에 부가 표기를 붙이지 않고, 모드 전용 `System.Random`으로 난수를 생성해 숫자와 조건 색상을 같은 평가 결과에서 만듭니다. 실제 게임 판정의 예측값은 아닙니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·두 파일 로컬 ZIP 검증을 마쳤습니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록과 남은 검증 범위는 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 구분해 기록합니다.
 
@@ -130,6 +130,8 @@ python3 tools/LegacyPatch/build-log-refresh.py \
 기존 패치 명령의 기본 출력은 계속 `plugins/DiceMaster/DiceMaster.dll`이므로 개발 후보에는 `--output`을 지정합니다. 소스 구성과 검증 범위는 [개발 안내](docs/DEVELOPMENT.md)를 참고하세요.
 
 ## Release 등록
+
+alpha.4는 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 전체 소스 프로젝트 빌드로 게시한 prerelease입니다. DLL은 461,312바이트 / SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`, 설치 ZIP은 191,482바이트 / SHA-256 `ddd32abbaa886cea4e0975bd522addbb1339e71a59223137fbbe23114d9556b8`입니다. Release ID `416503505`, asset ID `653700999`이며 공개 API·익명 다운로드 검증을 마쳤습니다. 후속 문서 커밋은 태그·자산을 바꾸지 않습니다. [상세 게시 기록](docs/ISSUE-3-RELEASE.md)을 참고하세요.
 
 `v1.0.3-alpha.3`의 최종 DLL(462,336바이트, SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`)과 두 파일 로컬 ZIP(191,369바이트, SHA-256 `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9`)을 검증했습니다. 2026-10-18 22:43:45 KST에 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 prerelease로 게시하고 익명 공개 다운로드의 CRC·두 파일·태그/커밋 바이트·해시 일치를 검증했습니다. 게시 기록의 문서 후속 커밋은 태그·ZIP 기준을 바꾸지 않습니다. 이전 alpha.2는 배포 태그 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트 일치를 검증했습니다. 이전 prerelease를 덮어쓰지 않고 기존 Latest `v1.0.2`를 유지합니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
 
