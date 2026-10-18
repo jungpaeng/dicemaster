@@ -9,6 +9,7 @@
 - StatModifyManager 16개·LuaManager 12개, 안전한 상수 사칙연산과 center·mental의 조건부 예상량, 여러 단계의 리터럴 후속 연결을 추가합니다. Lua·게임 진행 코드를 표시 목적으로 실행하지 않습니다.
 - 기존 요약 50자·로그 전체 설명·미지원 최초 진단·실제 실패 5초 재시도·문맥 캐시·로그/난수/주사위/패드 계약을 유지합니다.
 - 최신 전체 소스 빌드를 사용하며 기존 패치 공정에도 같은 분석 소스를 연결합니다. 새 후보·자동 검사·미완료 실제 Lua/Windows 확인과 임시 추적 한도는 [구현 기록](docs/ISSUE-2-IMPLEMENTATION.md)에 구분합니다. 사용자가 2026-10-19 commit·push와 이 prerelease 게시를 승인했습니다. 정식 Latest v1.0.3과 이슈 #2 open 상태는 유지합니다.
+- 2026-10-19 00:39:24 KST에 소스 커밋 `14ff82914d5d990362fdeebcf1dbd6eaa09bb6ef`에서 새로 빌드·검사한 ZIP을 게시했습니다. Release ID `416534622`, asset ID `653814237`이며 공개 다운로드의 CRC·두 파일·태그 커밋·DLL/설정 해시 일치를 확인했습니다. DLL은 `f02b3511760b0054b35319766ae5704bd76282cb48f90ae525231ca1a7ae6da3`, ZIP은 `1f619d9a5c6a757425d6172fdbba18127690135926c623ad7e43377f493fc86d`입니다. 이전 8개 Release와 정식 Latest를 보존했습니다.
 
 ## [v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3) — 2026-10-19
 

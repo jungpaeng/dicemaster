@@ -89,6 +89,8 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 
 ## v1.0.4-alpha.1 prerelease — 선택지 미리보기
 
+[설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.4-alpha.1/DiceMaster-v1.0.4-alpha.1.zip) · [검사·게시 기록](docs/ISSUE-2-IMPLEMENTATION.md). 2026-10-19 00:39:24 KST에 게시했으며 정식 Latest는 v1.0.3으로 유지합니다.
+
 [v1.0.4-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.1)는 최신 전체 소스에서 선택지 미리보기 분석을 확대합니다. 16개 StatModifyManager 함수와 12개 LuaManager 함수, 상수 사칙연산, 조건부·후속 효과를 다룹니다. `일부 결과 미리보기 미지원` / `결과 미리보기 미지원` / `확인된 효과 없음`을 구분하고 미지원 안내를 50자 요약 앞에 남깁니다. Tab 로그에는 전체 설명이 표시됩니다. center·mental은 안전하게 현재값을 읽을 수 있을 때 예상량을 표시하고, 선행 변경·분기·후속 실행이 불확실하면 의미와 조건을 설명합니다.
 
 `SetNextScript`는 다음 스크립트 지정이며 즉시 실행을 뜻하지 않습니다. 로컬 리터럴 연결은 다음 사용자 선택까지만 분석하고, 연결 효과에는 `후속 스크립트`·`조건부`를 붙입니다. 변수·동적 호출·루프 실행과 변수 대입 추론은 지원하지 않습니다. 개발 안전 한도와 검사·후보 해시는 [PRD 2 구현 기록](docs/ISSUE-2-IMPLEMENTATION.md)에 적습니다. 실제 Lua 대조·최종 추적 제한·이 후보의 Windows 확인은 남아 있으며 현재 공개 v1.0.3에 이 기능이 포함됐다는 뜻은 아닙니다.

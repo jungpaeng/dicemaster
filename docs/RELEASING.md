@@ -6,6 +6,8 @@
 
 사용자가 2026-10-19 KST에 PRD 2 구현의 commit·push와 새 prerelease 게시를 승인했습니다. 대상은 `v1.0.4-alpha.1`, 설치 자산은 `DiceMaster-v1.0.4-alpha.1.zip`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 정식 Latest `v1.0.3`과 이전 Release·태그·자산을 보존합니다. [게시 설명](ISSUE-2-RELEASE.md)과 [구현·검증 기록](ISSUE-2-IMPLEMENTATION.md)에 범위와 식별값을 구분합니다.
 
+**2026-10-19 00:39:24 KST에 [v1.0.4-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.1)을 게시하고 인증 없는 공개 다운로드를 검증했습니다.** 태그 커밋 `14ff82914d5d990362fdeebcf1dbd6eaa09bb6ef`, Release ID `416534622`, asset ID `653814237`이며 이전 8개 Release·자산, Latest 정식 v1.0.3과 이슈 #2 open을 보존했습니다. 게시 기록의 후속 문서 커밋은 태그·설치 자산을 변경하지 않습니다.
+
 실제 Lua 대조·실제 자료와 비용에 근거한 최종 추적 제한·이 후보의 사용자 Windows 확인은 남아 있으므로 PRD 2 전체나 기능을 완료로 처리하지 않고 이슈 #2를 open으로 유지합니다. 과거 alpha.4/PRD 3 Windows 확인은 승계하지 않습니다. 이번 승인은 게임 설치·실행·오류 주입을 포함하지 않습니다.
 
 게시할 소스 커밋을 확정한 뒤 prerelease 전용 사전 검증을 실행합니다. 해당 커밋의 소스만 허용 목록으로 추출하여 기존 모드 DLL·Git 데이터·이전 출력 없이 새로 빌드하고 8개 검사 프로그램을 실행합니다. 검토한 DLL/설정 해시·선택 커밋의 빌드 입력·ZIP CRC·정확히 두 파일·각 파일 바이트 일치를 요구합니다.
