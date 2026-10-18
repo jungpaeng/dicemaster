@@ -8,6 +8,10 @@
 
 사전 GitHub 확인에서 기존 Release·태그는 각각 17개, Latest 정식은 v1.0.4, 이슈 #2 closed·#4 open이고 alpha.4는 없습니다. 원격 main은 작업 기준 `9aebf796ca7bbf4da7b35899ad7ce107676dd578`과 일치합니다. 새 prerelease는 `prerelease=true`·`make_latest=false`로 게시하고 기존 태그·Release·자산을 보존합니다. 실제 게시와 공개 다운로드 결과는 후속 기록으로 구분합니다.
 
+**2026-10-19 04:46:13 KST에 [v1.0.5-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.4) prerelease를 게시했습니다.** 태그 소스 커밋은 `2bb45aa75b3c863f91d70bf1d78fd413c9a6a45d`, Release ID는 `416665943`, asset ID는 `654324328`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 고정 커밋 재빌드와 전체 11개 검사, UI 11,996/연결 23 단언을 통과했고 검토 후보와 DLL·설정·ZIP 바이트가 일치했습니다. 설치 파일은 [DiceMaster-v1.0.5-alpha.4.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.4/DiceMaster-v1.0.5-alpha.4.zip)입니다.
+
+인증 없는 공개 페이지·ZIP 다운로드에서 CRC·정확히 두 파일·DLL/설정 바이트·SHA-256을 확인했습니다. 기존 17개 Release·태그 커밋·자산, Latest 정식 v1.0.4, 이슈 #2 closed와 #4 open을 보존했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.4/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 로그에 있습니다. 게시 본문은 태그 문서의 게시 준비 문장 두 곳만 중립적인 제공·검증 안내로 바꿨고 `release-body.md`로 보존합니다. 게시 기록 문서의 후속 커밋은 태그·설치 자산을 바꾸지 않습니다. **실제 Windows 게임 확인은 대기이며 이슈 #4를 완료 처리하지 않았습니다.**
+
 ## PRD #4 alpha.3 작은 빈 창 후속
 
 alpha.2에서 좌측 상단의 작은 빈 창만 보인다는 실제 Windows 실패를 확인하고 자동 크기 창을 고정 사각형 창으로 교체합니다. 기존 prerelease 지시의 후속인 `v1.0.5-alpha.3`은 [원인·검사 보강](ISSUE-4-WINDOW-SIZE-REGRESSION.md)과 [설치·복구·해시](ISSUE-4-ALPHA3-RELEASE.md)를 따릅니다. 에이전트는 게임을 실행하지 않았으며 실제 수정 성공과 이슈 #4 완료는 주장하지 않습니다.

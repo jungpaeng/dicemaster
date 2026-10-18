@@ -2,7 +2,7 @@
 
 선택지·조건 카드 탐색, 기본 창 크기, 미션 목록 잘림과 상태 안내를 수정한 **prerelease 후보**입니다. 사용자 후속 요청 네 가지를 반영했으며 **이 후보의 실제 Windows 게임 검증은 아직 진행하지 않았습니다. [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)는 미완료로 유지합니다.**
 
-사용자 지시에 따라 새 태그와 설치 ZIP으로 게시를 준비 중입니다. 기존 Release·자산과 Latest 정식 [v1.0.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4)를 보존하는 범위이며, 아래 자동 검사는 게시 성공 기록이 아닙니다. 에이전트는 게임을 설치하거나 실행하지 않았습니다.
+사용자 지시에 따라 새 태그와 설치 ZIP으로 [v1.0.5-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.4)를 제공합니다. 기존 Release·자산과 Latest 정식 [v1.0.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4)를 보존했습니다. 아래 자동 검사와 공개 파일 검증은 실제 Windows 게임 검증과 구분합니다. 에이전트는 게임을 설치하거나 실행하지 않았습니다.
 
 ## 이번 수정
 
@@ -38,7 +38,7 @@
 
 ## 설치와 복구
 
-설치 파일은 **`DiceMaster-v1.0.5-alpha.4.zip`**입니다. GitHub의 자동 `Source code` 압축 파일과 구분해 주세요. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함합니다.
+설치 파일은 **[DiceMaster-v1.0.5-alpha.4.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.4/DiceMaster-v1.0.5-alpha.4.zip)**입니다. GitHub의 자동 `Source code` 압축 파일과 구분해 주세요. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함합니다.
 
 1. 게임을 종료하고 현재 DLL과 `BepInEx/config/DiceMaster.cfg`를 게임 폴더 밖에 백업합니다.
 2. ZIP을 임시 폴더에 풀고 해시를 확인한 뒤 **DLL만** `BepInEx/plugins/DiceMaster/DiceMaster.dll`에 교체합니다. 기존 설정을 유지하며 설정 파일을 임의로 삭제하거나 패키지 기본 설정으로 덮어쓰지 않습니다.
@@ -59,3 +59,11 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 ```
 
 결과에는 DLL 해시·해상도/배율/창 모드·게임/로더/패드/Steam Input 환경·재현 순서·탭/항목 ID와 관련 BepInEx 최초 실패/복구 로그를 남겨 주세요.
+
+## 게시 결과
+
+**2026-10-19 04:46:13 KST에 [v1.0.5-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.4) prerelease를 게시했습니다.** 소스·태그 커밋은 `2bb45aa75b3c863f91d70bf1d78fd413c9a6a45d`, Release ID는 `416665943`, asset ID는 `654324328`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다.
+
+고정 커밋의 깨끗한 재빌드에서 11개 검사 프로그램·UI 11,996개·실제 DLL 연결 23개 단언을 통과했고, 검토한 DLL·설정·ZIP과 바이트가 일치했습니다. 공개 페이지와 ZIP은 인증 없이 접근·다운로드했으며 ZIP CRC·정확히 두 파일·DLL/설정 바이트·모든 SHA-256을 확인했습니다. 기존 17개 Release·태그·자산, Latest 정식 v1.0.4, 이슈 #2 closed와 #4 open을 보존했습니다.
+
+영수증은 `artifacts/releases/v1.0.5-alpha.4/`의 `release-verification.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`에 보존합니다. 게시 결과를 기록하는 후속 문서 커밋은 태그와 공개 자산을 바꾸지 않습니다. **Windows 게임 실행·패드 탐색·스크롤·버튼·드래그의 성공이나 PRD #4 완료를 주장하지 않습니다. 사용자 실게임 확인은 대기 중입니다.**

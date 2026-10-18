@@ -1,11 +1,11 @@
 # 변경 이력
 
-## v1.0.5-alpha.4 — 2026-10-19 (prerelease 준비)
+## [v1.0.5-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.4) — 2026-10-19 (prerelease)
 
 - ←는 현재 카드만 접고, 펼친 카드에서도 ↑↓로 항목을 이동합니다. 다른 카드의 펼침 상태와 이벤트·미션 예약 탐색은 유지합니다.
 - 새 기본 창을 1080p 기준 1280×960으로 확대합니다. 이전 기본 배치만 이행하고 사용자 지정값은 보존합니다.
 - 스크롤바를 뺀 너비와 실제 줄바꿈 높이로 목록 행을 배치합니다. 이벤트·미션의 읽음 불명 배지를 생략하고 설명 조회 대기의 의미를 안내합니다. [후보·자동 검사·Windows 검증](docs/ISSUE-4-CARD-NAVIGATION.md)을 구분합니다.
-- 사용자 지시에 따라 커밋 후 고정 소스 재빌드·11개 검사를 거쳐 prerelease를 준비합니다. [설치·복구·해시·미확인 범위](docs/ISSUE-4-ALPHA4-RELEASE.md)를 따르며 실제 Windows 성공이나 이슈 #4 완료는 주장하지 않습니다.
+- 사용자 지시에 따라 소스 커밋 `2bb45aa75b3c863f91d70bf1d78fd413c9a6a45d`의 깨끗한 재빌드·11개 검사·공개 ZIP 바이트/해시 확인 뒤 04:46:13 KST에 게시했습니다. [설치·복구·해시·미확인 범위](docs/ISSUE-4-ALPHA4-RELEASE.md)를 따르며 실제 Windows 성공이나 이슈 #4 완료는 주장하지 않습니다.
 
 ## [v1.0.5-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.3) — 2026-10-19 (prerelease)
 

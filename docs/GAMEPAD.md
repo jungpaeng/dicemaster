@@ -4,7 +4,7 @@
 
 ## PRD #4 로그 탐색 prerelease
 
-현재 후속 후보는 선택지·조건에서 → 펼치기/← 현재 카드 접기, 펼친 상태의 ↑↓ 항목 이동을 지원합니다. A는 펼침을 전환하고 B는 상세→목록→닫기의 기존 복귀 순서를 유지합니다. 이벤트·미션 상세의 ↑↓ 본문/예약 버튼 이동은 유지합니다. [창 확대·미션 목록 잘림·상태 안내와 Windows 검증](ISSUE-4-CARD-NAVIGATION.md)을 따르며 사용자 지시로 [alpha.4 prerelease](ISSUE-4-ALPHA4-RELEASE.md)를 준비합니다. 실제 Windows 확인은 대기 중입니다.
+선택지·조건에서 → 펼치기/← 현재 카드 접기, 펼친 상태의 ↑↓ 항목 이동을 지원합니다. A는 펼침을 전환하고 B는 상세→목록→닫기의 기존 복귀 순서를 유지합니다. 이벤트·미션 상세의 ↑↓ 본문/예약 버튼 이동은 유지합니다. [창 확대·미션 목록 잘림·상태 안내와 Windows 검증](ISSUE-4-CARD-NAVIGATION.md)을 따르며 사용자 지시로 [alpha.4 prerelease](ISSUE-4-ALPHA4-RELEASE.md)를 2026-10-19 04:46:13 KST에 게시했습니다. 고정 커밋 재빌드·공개 다운로드를 검증했으며 실제 Windows 확인은 대기 중입니다.
 
 alpha.2의 작은 빈 창 실패를 고정 크기 창 호출로 수정한 [alpha.3](ISSUE-4-ALPHA3-RELEASE.md)을 게시했습니다. [원인·검사 보강·설정 복구·Windows 재검증](ISSUE-4-WINDOW-SIZE-REGRESSION.md)을 따르며 기존 패드 매핑과 입력 소유권은 유지합니다. 실제 Windows 표시·탐색 성공은 재검증 대기입니다.
 

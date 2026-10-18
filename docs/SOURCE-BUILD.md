@@ -8,7 +8,7 @@
 
 ## PRD #4 후보와 prerelease
 
-사용자 후속 지시로 카드 탐색·창 확대·목록 행 높이 수정의 `v1.0.5-alpha.4`를 준비합니다. 검토 DLL `06485af8929579f6f7d3744f183aa3359ec40545a6d155257c4bfebadc3b7d44`·설정 `b351703e2b0f1b5ea6b4a5894c1f5309a13dece5d6b06ed909330c0771801259`와 고정 커밋의 새 빌드를 `verify-preview-release.py --scope prd4`로 비교합니다. 출력은 `artifacts/releases/v1.0.5-alpha.4/`이며 [설치·복구·해시·미확인 범위](ISSUE-4-ALPHA4-RELEASE.md)를 따릅니다.
+사용자 후속 지시로 카드 탐색·창 확대·목록 행 높이 수정의 `v1.0.5-alpha.4`를 2026-10-19 04:46:13 KST에 게시했습니다. 소스 커밋 `2bb45aa75b3c863f91d70bf1d78fd413c9a6a45d`를 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 검토 DLL `06485af8929579f6f7d3744f183aa3359ec40545a6d155257c4bfebadc3b7d44`·설정 `b351703e2b0f1b5ea6b4a5894c1f5309a13dece5d6b06ed909330c0771801259`와 바이트 일치를 확인했습니다. 11개 검사 프로그램·UI 11,996/연결 23 단언과 공개 페이지·ZIP의 CRC/바이트/해시 검증을 통과했습니다. 출력·게시 영수증은 `artifacts/releases/v1.0.5-alpha.4/`이며 [설치·복구·해시·미확인 범위](ISSUE-4-ALPHA4-RELEASE.md)를 따릅니다. 기존 자산과 Latest 정식 v1.0.4, 이슈 #4 open을 유지하며 Windows 확인은 대기 중입니다.
 
 카드 방향키·기본 창 1280×960·목록 행 높이·상태 안내의 로컬 후속은 `--output-dir artifacts/issue-4/card-navigation`에 생성합니다. [변경·후보 해시·자동 검사와 Windows 검증](ISSUE-4-CARD-NAVIGATION.md)을 따릅니다. 전체 소스와 11개 검사 프로그램을 사용하며 기존 후보·공개 자산은 보존합니다.
 

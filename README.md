@@ -5,9 +5,9 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
-## PRD #4 — 카드 탐색·창 크기·미션 목록 alpha.4 준비
+## PRD #4 — v1.0.5-alpha.4 카드 탐색·창 크기·미션 목록
 
-선택지·조건에서 ←로 현재 카드를 접고, 펼친 상태에서도 ↑↓로 항목을 이동하도록 수정했습니다. 새 기본 창은 1080p 기준 1280×960이며 미션 목록은 줄바꿈에 필요한 행 높이를 계산합니다. 이벤트·미션의 불필요한 읽음 불명 배지를 생략하고 설명 조회 대기를 안내합니다. [변경·상태 의미·후보 해시·Windows 검증](docs/ISSUE-4-CARD-NAVIGATION.md)을 확인하세요. 사용자 지정 배치는 유지하므로 도구의 `창 위치·크기·글자 기본값 복구`로 새 크기를 적용할 수 있습니다. 사용자 후속 지시에 따라 커밋·고정 소스 재빌드 뒤 [alpha.4 prerelease](docs/ISSUE-4-ALPHA4-RELEASE.md)를 준비합니다. 실제 Windows 검증은 대기 중입니다.
+선택지·조건에서 ←로 현재 카드를 접고, 펼친 상태에서도 ↑↓로 항목을 이동하도록 수정했습니다. 새 기본 창은 1080p 기준 1280×960이며 미션 목록은 줄바꿈에 필요한 행 높이를 계산합니다. 이벤트·미션의 불필요한 읽음 불명 배지를 생략하고 설명 조회 대기를 안내합니다. [변경·상태 의미·후보 해시·Windows 검증](docs/ISSUE-4-CARD-NAVIGATION.md)을 확인하세요. 사용자 지정 배치는 유지하므로 도구의 `창 위치·크기·글자 기본값 복구`로 새 크기를 적용할 수 있습니다. **[alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.4)를 2026-10-19 04:46:13 KST에 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.4/DiceMaster-v1.0.5-alpha.4.zip) · [적용·복구·해시·게시 기록](docs/ISSUE-4-ALPHA4-RELEASE.md). 소스 커밋 `2bb45aa`의 깨끗한 재빌드·11개 검사와 공개 다운로드의 바이트·해시 검증을 통과했습니다. **실제 Windows 검증은 대기 중이며 이슈 #4는 미완료**입니다.
 
 ## 이전 PRD #4 — v1.0.5-alpha.3 빈 로그 창 수정
 
