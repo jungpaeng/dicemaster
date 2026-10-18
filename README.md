@@ -54,7 +54,7 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 |---|---|---|
 | `EnableDiceController` | `true` | 주사위 수치 조정 |
 | `EnableGamepadAdjustment` | `true` | 패드 조정. `EnableDiceController`도 켜져 있어야 합니다. |
-| `EnableOptionInfo` | `true` | 선택지 옆 결과 요약 |
+| `EnableOptionInfo` | `true` | 선택지 결과 요약 및 로그 정보 자동 갱신 |
 | `LogMenuToggleKey` | `Tab` | 로그 창 표시·숨김 키 |
 
 ## 기능 및 변경 사항
@@ -65,21 +65,24 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 - 한국어 번역 처리를 DiceMaster DLL에 통합
 - 십자키·왼쪽 스틱을 이용한 패드 조정과 음수 지정 지원
 - 게임 시작 시 로그 창 기본 숨김
+- 로그 창이 열려 있으면 0.25초 간격으로 현재 조건값과 판정 색상 갱신
 - 모드 베이스 중복 파일을 정리하고 실행용 파일만 Release로 배포
 
+로그 창을 닫으면 주기적 갱신을 중단하고, 다시 열면 현재 정보를 갱신합니다.
 선택지 옆 설명은 50자를 넘으면 말줄임표로 줄이며, 전체 설명은 Tab 로그 창의 선택지 탭에서 확인할 수 있습니다.
 결과 표시는 Lua 스크립트에서 인식한 명령의 요약입니다. 기존 형식의 새 선택지는 자동으로 읽지만, 새로운 효과나 스크립트 형식에는 분석 규칙 보완이 필요할 수 있습니다.
 
 ## 개발 및 빌드
 
-추가한 패드 지원 소스·테스트·DLL 통합 도구는 `development/`에서 관리합니다.
+추가한 패드 지원 소스와 로그 갱신 패치·테스트·DLL 통합 도구는 `development/`에서 관리합니다.
 Python 3와 .NET 8 SDK를 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```sh
 python3 development/tools/build-gamepad.py
+python3 development/tools/build-log-refresh.py
 ```
 
-기존 DiceMaster DLL에 패드 지원 코드를 통합하고, 검증을 통과하면 `plugins/DiceMaster/DiceMaster.dll`을 갱신합니다.
+각 도구는 기존 DiceMaster DLL에 변경을 적용하고, 검증을 통과하면 `plugins/DiceMaster/DiceMaster.dll`을 갱신합니다.
 소스 구성과 검증 범위는 [개발 안내](docs/DEVELOPMENT.md)를 참고하세요.
 
 ## Release 등록

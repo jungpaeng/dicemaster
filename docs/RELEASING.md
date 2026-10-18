@@ -58,7 +58,7 @@ git rev-parse origin/main
 아래 버전은 예시입니다. 사용하지 않은 버전으로 변경합니다.
 
 ```sh
-release_tag="v1.0.2"
+release_tag="v1.0.3"
 release_commit="$(git rev-parse HEAD)"
 release_dir="development/releases/${release_tag}"
 release_asset="DiceMaster-${release_tag}.zip"
