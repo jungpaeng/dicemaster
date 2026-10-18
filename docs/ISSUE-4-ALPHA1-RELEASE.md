@@ -72,3 +72,11 @@ plugins/DiceMaster/DiceMaster.dll
 | `DiceMaster-v1.0.5-alpha.1.zip` | `3b6c3684f23f53d8dde7360d690aff544365e4c65248431bee6c1c7e1caccd0c` |
 
 Windows PowerShell에서 `Get-FileHash .\DiceMaster-v1.0.5-alpha.1.zip -Algorithm SHA256`과 추출한 DLL의 `Get-FileHash` 결과를 대조할 수 있습니다. 문제를 보고할 때 DLL 해시, 게임/로더/패드/Steam Input/해상도, 재현 순서와 탭·항목 ID, 관련 BepInEx 최초 실패/복구 로그를 함께 남겨 주세요.
+
+## 게시 결과
+
+**2026-10-19 03:47:14 KST에 [v1.0.5-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.1)을 게시했습니다.** `draft=false`, `prerelease=true`, `make_latest=false`이며 소스 태그 커밋은 `f9f3b596db03372d219a4244c5c6a6fe90f9cc83`, Release ID는 `416633648`, asset ID는 `654210019`입니다.
+
+고정 커밋만 추출한 새 소스 스냅샷에서 기존 모드 DLL·Git 데이터·이전 출력 없이 컴파일했습니다. `verify-preview-release.py --scope prd4`의 11개 검사와 검토 DLL/설정·ZIP 바이트/해시 비교를 통과했습니다. prerelease 경계 검증기의 회귀 검사8개도 통과했습니다. 게시 후 인증 없는 공개 API·다운로드로 ZIP CRC·정확히 두 파일·DLL/설정 바이트·각 해시·태그 커밋을 확인했습니다. 설치 ZIP은 [DiceMaster-v1.0.5-alpha.1.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.1/DiceMaster-v1.0.5-alpha.1.zip)입니다.
+
+기존14개 Release와 자산의 ID/이름/크기/서버 digest·태그·설명을 보존했고 `/releases/latest`는 정식v1.0.4를 유지했습니다. 이슈 #4는 open이며 실제 Windows 확인·기능 완료·게임 실행을 주장하지 않습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.1/{release-verification,github-publication,anonymous-verification}.json`과 같은 폴더의 빌드/검증 로그에 있습니다. 이 게시 기록의 후속 문서 커밋은 소스 태그·공개 자산을 바꾸지 않습니다.

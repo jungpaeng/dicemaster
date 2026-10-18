@@ -1,11 +1,12 @@
 # 변경 이력
 
-## v1.0.5-alpha.1 — PRD #4 prerelease 준비
+## [v1.0.5-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.1) — 2026-10-19 (prerelease)
 
 - 기존 네 탭을 유지하고 선택지·조건은 복수 펼침 카드, 이벤트·미션은 검색 목록과 상세로 개편합니다. 한국어·읽음/분석/조회 상태를 구조화된 게시 경계로 전달합니다.
 - 기존 Tab/사용자 지정 열기 키와 패드 탐색·스크롤·검색 한글 화면 키보드·도구·예약·닫기를 연결합니다. 로그가 주사위보다 우선하며 모든 XInput 슬롯의 입력을 해제/중립까지 소비합니다.
 - 이벤트/미션 버튼은 즉시 실행으로 오인하지 않도록 예약의 의미를 표시하며 문맥·최신 조회·실제 대상과 입력 티켓을 검증합니다. 창 위치·크기·글자 크기만 기존 설정에 저장합니다.
 - [자동 검사·후보 식별](docs/ISSUE-4-IMPLEMENTATION.md)과 [Windows 검증 대기 항목](docs/ISSUE-4-WINDOWS-VALIDATION.md)을 구분합니다. 사용자 후속 지시로 [prerelease 게시](docs/ISSUE-4-ALPHA1-RELEASE.md)를 진행하며 사용자 실제 게임 확인 전에는 PRD #4를 완료 처리하지 않습니다.
+- 03:47:14 KST에 고정 소스 커밋 `f9f3b596db03372d219a4244c5c6a6fe90f9cc83`의 새 빌드·11개 검사를 통과한 ZIP을 게시했습니다. Release ID `416633648`, asset ID `654210019`이며 인증 없는 공개 다운로드의 CRC·두 파일·바이트·해시·태그 커밋을 확인했습니다. 기존 14개 Release·자산과 Latest 정식 v1.0.4, 이슈 #4 open을 유지합니다.
 
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.

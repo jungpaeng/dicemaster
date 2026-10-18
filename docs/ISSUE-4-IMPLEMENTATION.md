@@ -1,6 +1,6 @@
 # PRD #4 로그 GUI·XInput 탐색 로컬 구현
 
-2026-10-19 KST. [PRD #4 전체 요구사항](https://github.com/jungpaeng/dicemaster/issues/4)을 기준으로 구현한다. 최초 로컬 후보를 완성한 뒤 사용자가 commit·push·prerelease 게시를 지시했다. **v1.0.5-alpha.1 준비 / 사용자 Windows 확인 대기**이며 이슈 완료가 아니다. [게시 설명·결과](ISSUE-4-ALPHA1-RELEASE.md)와 [단계별 Windows 검증표](ISSUE-4-WINDOWS-VALIDATION.md)를 구분한다.
+2026-10-19 KST. [PRD #4 전체 요구사항](https://github.com/jungpaeng/dicemaster/issues/4)을 기준으로 구현한다. 최초 로컬 후보를 완성한 뒤 사용자 지시에 따라 commit·push하고 **v1.0.5-alpha.1 prerelease를 03:47:14 KST에 게시했다.** 사용자 Windows 확인 대기이며 이슈 완료가 아니다. 고정 소스 커밋은 `f9f3b596db03372d219a4244c5c6a6fe90f9cc83`이다. 커밋의 깨끗한 새 빌드와 아래 로컬 후보는 DLL·설정·ZIP 바이트/해시가 같으며 공개 다운로드 검증도 통과했다. [게시 설명·결과](ISSUE-4-ALPHA1-RELEASE.md)와 [단계별 Windows 검증표](ISSUE-4-WINDOWS-VALIDATION.md)를 구분한다.
 
 ## 시작 기준
 
