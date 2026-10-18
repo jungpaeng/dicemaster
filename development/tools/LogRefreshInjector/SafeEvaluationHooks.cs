@@ -34,8 +34,8 @@ static partial class LogRefreshInjector
                             changed.Add(method);
                         }
         }
-        // Replace complete description boundaries so a random range/pending
-        // result never passes through an int/bool wrapper or success coloring.
+        // Replace complete description boundaries so numeric random previews
+        // and their colors share one independent display evaluation session.
         var formatting = module.GetType("DiceMaster.LiveLog.PreviewFormatting");
         var conditions = module.GetType("DiceMaster.DataHelper").Methods.Single(m => m.Name == "ExtractConditions" &&
             m.Parameters[0].ParameterType.FullName == "Mortal.Core.ConditionResultItem");

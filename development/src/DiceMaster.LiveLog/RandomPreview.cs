@@ -17,6 +17,7 @@ namespace DiceMaster.LiveLog
         public int Maximum;
         public int RandomDraws;
         internal bool IsLiteralConstant;
+        internal HashSet<object> RandomSources;
     }
 
     public sealed class PreviewComparison
@@ -31,16 +32,15 @@ namespace DiceMaster.LiveLog
         public string Text;
         public long ProbabilityNumerator;
         public long ProbabilityDenominator;
+        internal HashSet<object> RandomSources;
     }
 
-    // A separate display model is essential: a random value has no stable int
-    // or bool result before gameplay performs its draw. This evaluator never
-    // calls GetValue/GetResult/Check/Execute or saves/restores RNG state.
+    // Display snapshots sample their own RNG. No game GetValue/GetResult/Check/
+    // Execute method, Unity RNG entry, or RNG-state getter/setter is called.
     public static class RandomPreview
     {
-        public const string PendingText = "실행 시 판정";
-        public const string UnsupportedText = "난수 조건 · 미리보기 미지원";
-        public const string ProbabilityLabel = "균등 정수 기준 이론 확률 ";
+        private static readonly object randomGate = new object();
+        private static System.Random random = new System.Random();
 
         private sealed class Identity : IEqualityComparer<object>
         {
@@ -50,15 +50,23 @@ namespace DiceMaster.LiveLog
 
         private sealed class ConditionPreview
         {
-            internal bool? Verdict;
-            internal bool HasRandom;
-            internal bool IsSupported = true;
-            internal int RandomDraws;
+            internal bool Verdict;
+            internal HashSet<object> RandomSources;
         }
 
-        private sealed class Evaluation
+        // Each standalone condition item or complete event description has one
+        // session. Values, colors and the event header reuse the same results.
+        // Shared reference instances draw once per session; separate instances
+        // draw independently, even with identical bounds.
+        internal sealed class Evaluation
         {
             private readonly HashSet<object> active = new HashSet<object>(new Identity());
+            private readonly Dictionary<object, PreviewValue> groups = new Dictionary<object, PreviewValue>(new Identity());
+            private readonly Dictionary<object, PreviewValue> references = new Dictionary<object, PreviewValue>(new Identity());
+            private readonly Dictionary<object, PreviewComparison> comparisons = new Dictionary<object, PreviewComparison>(new Identity());
+            private readonly Dictionary<object, ConditionPreview> conditions = new Dictionary<object, ConditionPreview>(new Identity());
+            private readonly Dictionary<object, ConditionPreview> conditionData = new Dictionary<object, ConditionPreview>(new Identity());
+            private readonly Dictionary<object, PreviewValue> rates = new Dictionary<object, PreviewValue>(new Identity());
 
             private static object Read(object value, string name) { return LogBridge.ReadFieldStrict(value, name); }
             private static int Number(object value, string name) { return Convert.ToInt32(Read(value, name)); }
@@ -77,45 +85,35 @@ namespace DiceMaster.LiveLog
 
             public PreviewValue Group(object value)
             {
+                PreviewValue cached;
+                if (value != null && groups.TryGetValue(value, out cached)) return cached;
                 Enter(value);
                 try
                 {
-                    IList references = List(value, "_value");
+                    IList items = List(value, "_value");
                     int type = Number(value, "_groupType");
                     if (type < 1 || type > 4) throw new InvalidOperationException("Unknown preview group type.");
-                    if ((type == 2 || type == 3) && references.Count == 0)
+                    if ((type == 2 || type == 3) && items.Count == 0)
                         throw new InvalidOperationException("Empty preview extrema.");
                     List<PreviewValue> values = new List<PreviewValue>();
-                    int draws = 0;
-                    // Do not stop at a random leaf: malformed later siblings
-                    // are real errors, rather than a random-pending state.
-                    foreach (object reference in references)
-                    {
-                        PreviewValue item = Reference(reference);
-                        values.Add(item);
-                        draws = checked(draws + item.RandomDraws);
-                    }
-                    if (draws != 0)
-                    {
-                        if (type == 1 && values.Count == 1 && values[0].HasRandom && values[0].IsSupported &&
-                            Number(references[0], "_checkType") == 7)
-                            return values[0];
-                        return Unsupported(draws);
-                    }
+                    foreach (object reference in items) values.Add(Reference(reference));
                     int result = type == 4 ? 1 : 0;
+                    HashSet<object> sources = null;
                     for (int index = 0; index < values.Count; index++)
                     {
-                        int number = values[index].Value;
+                        PreviewValue item = values[index];
+                        sources = Merge(sources, item.RandomSources);
                         switch (type)
                         {
-                            case 1: result = checked(result + number); break;
-                            case 2: result = index == 0 ? number : Math.Max(result, number); break;
-                            case 3: result = index == 0 ? number : Math.Min(result, number); break;
-                            case 4: result = unchecked(result * number); break;
+                            case 1: result = checked(result + item.Value); break;
+                            case 2: result = index == 0 ? item.Value : Math.Max(result, item.Value); break;
+                            case 3: result = index == 0 ? item.Value : Math.Min(result, item.Value); break;
+                            case 4: result = unchecked(result * item.Value); break;
                         }
                     }
-                    PreviewValue known = Known(result);
-                    known.IsLiteralConstant = type == 1 && references.Count == 1 && Number(references[0], "_checkType") == 0;
+                    PreviewValue known = Known(result, sources);
+                    known.IsLiteralConstant = type == 1 && items.Count == 1 && Number(items[0], "_checkType") == 0;
+                    groups.Add(value, known);
                     return known;
                 }
                 finally { active.Remove(value); }
@@ -123,81 +121,64 @@ namespace DiceMaster.LiveLog
 
             private PreviewValue Reference(object value)
             {
+                PreviewValue cached;
+                if (value != null && references.TryGetValue(value, out cached)) return cached;
                 Enter(value);
                 try
                 {
                     int type = Number(value, "_checkType");
                     if (type < 0 || type > 16) throw new InvalidOperationException("Unknown preview reference type.");
+                    PreviewValue result;
                     if (type == 7)
                     {
-                        int minimum = Number(value, "_randomMin");
-                        int maximum = Number(value, "_randomMax");
-                        // The audited random branch ignores _negative. The
-                        // native upper bound is unchecked(maximum + 1), so an
-                        // overflow/reversed interval cannot be repaired here.
-                        if (minimum > maximum || maximum == int.MaxValue) return Unsupported(1);
-                        return new PreviewValue {
-                            IsKnown = false, HasRandom = true, IsSupported = true,
-                            Minimum = minimum, Maximum = maximum, RandomDraws = 1,
-                            Text = "난수 " + minimum.ToString(CultureInfo.InvariantCulture) + "~" +
-                                maximum.ToString(CultureInfo.InvariantCulture) + " · " + PendingText
-                        };
+                        int first = Number(value, "_randomMin"), second = Number(value, "_randomMax");
+                        int minimum = Math.Min(first, second), maximum = Math.Max(first, second);
+                        // These are mod inclusive bounds, including Int32.MaxValue.
+                        // Reversed endpoints are normalized; the original game's
+                        // unchecked(maximum + 1) overflow/reversal is not reproduced.
+                        // Like the audited random branch, _negative is ignored.
+                        HashSet<object> sources = new HashSet<object>(new Identity());
+                        sources.Add(value);
+                        result = Known(Sample(minimum, maximum), sources);
+                        result.Minimum = minimum;
+                        result.Maximum = maximum;
                     }
-                    if (type == 8)
+                    else if (type == 8)
                     {
                         PreviewValue nested = Group(Read(value, "_statGroup"));
-                        return nested.HasRandom ? Unsupported(nested.RandomDraws) : nested;
+                        result = Known(nested.Value, nested.RandomSources);
                     }
-                    if (type == 16)
+                    else if (type == 16)
                     {
                         ConditionPreview condition = ConditionData(Read(value, "_condition"));
-                        return condition.HasRandom ? Unsupported(condition.RandomDraws) : Known(condition.Verdict.Value ? 1 : 0);
+                        result = Known(condition.Verdict ? 1 : 0, condition.RandomSources);
                     }
-                    return Known(SafeDisplayEvaluation.ReadReference(value));
+                    else result = Known(SafeDisplayEvaluation.ReadReference(value), null);
+                    references.Add(value, result);
+                    return result;
                 }
                 finally { active.Remove(value); }
             }
 
             public PreviewComparison Compare(object value)
             {
+                PreviewComparison cached;
+                if (value != null && comparisons.TryGetValue(value, out cached)) return cached;
                 Enter(value);
                 try
                 {
                     PreviewValue left = Group(Read(value, "_value1"));
                     PreviewValue right = Group(Read(value, "_value2"));
                     int operation = Number(value, "_compareOp");
-                    string symbol = Operator(operation);
+                    HashSet<object> sources = Merge(left.RandomSources, right.RandomSources);
                     PreviewComparison result = new PreviewComparison {
-                        Left = left, Right = right, Operator = symbol,
-                        HasRandom = left.HasRandom || right.HasRandom,
-                        IsSupported = true, ProbabilityText = string.Empty, Text = string.Empty
+                        Left = left, Right = right, Operator = Operator(operation),
+                        Verdict = KnownComparison(left.Value, right.Value, operation),
+                        HasRandom = sources != null && sources.Count != 0,
+                        IsSupported = true, ProbabilityText = string.Empty, Text = string.Empty,
+                        RandomSources = sources
                     };
-                    if (!result.HasRandom)
-                    {
-                        result.Verdict = KnownComparison(left.Value, right.Value, operation);
-                        return result;
-                    }
-                    result.IsSupported = left.IsSupported && right.IsSupported && left.HasRandom != right.HasRandom &&
-                        checked(left.RandomDraws + right.RandomDraws) == 1;
-                    result.Text = result.IsSupported ? PendingText : UnsupportedText;
-                    // Even a singleton interval, or a comparison whose integer
-                    // count is 0/D or D/D, remains an unexecuted random verdict.
-                    result.Verdict = null;
-                    if (result.IsSupported)
-                    {
-                        PreviewValue range = left.HasRandom ? left : right;
-                        PreviewValue constant = left.HasRandom ? right : left;
-                        if (constant.IsLiteralConstant)
-                        {
-                            int oriented = left.HasRandom ? operation : Reverse(operation);
-                            long denominator = (long)range.Maximum - range.Minimum + 1;
-                            long numerator = Favorable(range.Minimum, range.Maximum, constant.Value, oriented);
-                            result.ProbabilityNumerator = numerator;
-                            result.ProbabilityDenominator = denominator;
-                            result.ProbabilityText = ProbabilityLabel + numerator.ToString(CultureInfo.InvariantCulture) + "/" +
-                                denominator.ToString(CultureInfo.InvariantCulture);
-                        }
-                    }
+                    comparisons.Add(value, result);
                     return result;
                 }
                 finally { active.Remove(value); }
@@ -205,84 +186,84 @@ namespace DiceMaster.LiveLog
 
             private ConditionPreview Condition(object value)
             {
+                ConditionPreview cached;
+                if (value != null && conditions.TryGetValue(value, out cached)) return cached;
                 Enter(value);
                 try
                 {
-                    IList comparisons = List(value, "_items");
+                    IList items = List(value, "_items");
                     List<PreviewComparison> results = new List<PreviewComparison>();
-                    ConditionPreview result = new ConditionPreview();
-                    foreach (object comparison in comparisons)
+                    HashSet<object> sources = null;
+                    // The game's item evaluates every comparison before its AND/OR.
+                    foreach (object comparison in items)
                     {
-                        PreviewComparison item = Compare(comparison);
-                        results.Add(item);
-                        result.HasRandom |= item.HasRandom;
-                        result.IsSupported &= item.IsSupported;
-                        result.RandomDraws = checked(result.RandomDraws + item.Left.RandomDraws + item.Right.RandomDraws);
+                        PreviewComparison result = Compare(comparison);
+                        results.Add(result);
+                        sources = Merge(sources, result.RandomSources);
                     }
-                    if (results.Count == 0) { result.Verdict = false; return result; }
-                    int logic = Number(value, "_logicOp");
-                    if (logic != 0 && logic != 1) throw new InvalidOperationException("Unknown preview logic.");
-                    if (result.HasRandom)
+                    bool verdict = false;
+                    if (results.Count != 0)
                     {
-                        result.IsSupported &= results.Count == 1 && result.RandomDraws == 1;
-                        result.Verdict = null;
-                    }
-                    else
-                    {
-                        bool verdict = results[0].Verdict.Value;
+                        int logic = Number(value, "_logicOp");
+                        if (logic != 0 && logic != 1) throw new InvalidOperationException("Unknown preview logic.");
+                        verdict = results[0].Verdict.Value;
                         for (int index = 1; index < results.Count; index++)
                             verdict = logic == 0 ? verdict & results[index].Verdict.Value : verdict | results[index].Verdict.Value;
-                        result.Verdict = verdict;
                     }
-                    return result;
+                    ConditionPreview known = new ConditionPreview { Verdict = verdict, RandomSources = sources };
+                    conditions.Add(value, known);
+                    return known;
                 }
                 finally { active.Remove(value); }
             }
 
             private ConditionPreview ConditionData(object value)
             {
+                ConditionPreview cached;
+                if (value != null && conditionData.TryGetValue(value, out cached)) return cached;
                 Enter(value);
                 try
                 {
-                    ConditionPreview result = new ConditionPreview { Verdict = false };
-                    int count = 0;
+                    ConditionPreview result = new ConditionPreview();
+                    // Preserve Execute's short circuit without its _count write.
                     foreach (object item in List(value, "_items"))
                     {
                         ConditionPreview condition = Condition(item);
-                        count++;
-                        if (!result.HasRandom && !condition.HasRandom && condition.Verdict.Value) return condition;
-                        result.HasRandom |= condition.HasRandom;
-                        result.IsSupported &= condition.IsSupported;
-                        result.RandomDraws = checked(result.RandomDraws + condition.RandomDraws);
+                        result.RandomSources = Merge(result.RandomSources, condition.RandomSources);
+                        if (condition.Verdict) { result.Verdict = true; break; }
                     }
-                    if (result.HasRandom)
-                    {
-                        result.IsSupported &= count == 1 && result.RandomDraws == 1;
-                        result.Verdict = null;
-                    }
+                    conditionData.Add(value, result);
                     return result;
                 }
                 finally { active.Remove(value); }
             }
 
-            public bool ContainsRandomCondition(object value) { return Condition(value).HasRandom; }
+            public bool ContainsRandomCondition(object value)
+            {
+                HashSet<object> sources = Condition(value).RandomSources;
+                return sources != null && sources.Count != 0;
+            }
             public bool? ConditionVerdict(object value) { return Condition(value).Verdict; }
 
             public PreviewValue Rate(object value)
             {
+                PreviewValue cached;
+                if (value != null && rates.TryGetValue(value, out cached)) return cached;
                 Enter(value);
                 try
                 {
                     int rate = Number(value, "_defaultRate");
-                    bool hasRandom = false, supported = true;
-                    int draws = 0;
+                    HashSet<object> sources = null;
                     if ((bool)Read(value, "_toggleCondition"))
                     {
                         ConditionPreview condition = Condition(Read(value, "_activeCondition"));
-                        if (!condition.HasRandom && !condition.Verdict.Value) return Known(0);
-                        hasRandom = condition.HasRandom;
-                        supported = condition.IsSupported;
-                        draws = condition.RandomDraws;
+                        sources = Merge(sources, condition.RandomSources);
+                        if (!condition.Verdict)
+                        {
+                            PreviewValue inactive = Known(0, sources);
+                            rates.Add(value, inactive);
+                            return inactive;
+                        }
                     }
                     foreach (object item in List(value, "_eventRateItem"))
                     {
@@ -290,37 +271,51 @@ namespace DiceMaster.LiveLog
                         try
                         {
                             ConditionPreview condition = Condition(Read(item, "Condition"));
-                            hasRandom |= condition.HasRandom;
-                            supported &= condition.IsSupported;
-                            draws = checked(draws + condition.RandomDraws);
-                            // A known-false condition never reads its rate in
-                            // the original pure path. An unknown condition can
-                            // use it later, so validate that field without using
-                            // it to fabricate a determined event rate.
-                            if (condition.HasRandom) Number(item, "Rate");
-                            else if (condition.Verdict.Value) rate = unchecked(rate + Number(item, "Rate"));
+                            sources = Merge(sources, condition.RandomSources);
+                            if (condition.Verdict) rate = unchecked(rate + Number(item, "Rate"));
                         }
                         finally { active.Remove(item); }
                     }
-                    if (!hasRandom) return Known(Math.Max(rate, 0));
-                    if (!supported || draws != 1) return Unsupported(draws);
-                    return new PreviewValue { IsKnown = false, HasRandom = true, IsSupported = true,
-                        RandomDraws = draws, Text = PendingText };
+                    PreviewValue result = Known(Math.Max(rate, 0), sources);
+                    rates.Add(value, result);
+                    return result;
                 }
                 finally { active.Remove(value); }
             }
         }
 
-        private static PreviewValue Known(int value)
+        private static int Sample(int minimum, int maximum)
         {
-            return new PreviewValue { IsKnown = true, Value = value, IsSupported = true,
-                Minimum = value, Maximum = value, Text = value.ToString(CultureInfo.InvariantCulture) };
+            ulong span = (ulong)((long)maximum - minimum + 1L);
+            const ulong universe = 1UL << 32;
+            ulong limit = universe - universe % span;
+            byte[] bytes = new byte[4];
+            lock (randomGate)
+            {
+                ulong sample;
+                do
+                {
+                    random.NextBytes(bytes);
+                    sample = (uint)bytes[0] | ((uint)bytes[1] << 8) | ((uint)bytes[2] << 16) | ((uint)bytes[3] << 24);
+                } while (sample >= limit);
+                return (int)((long)minimum + (long)(sample % span));
+            }
         }
 
-        private static PreviewValue Unsupported(int draws)
+        private static HashSet<object> Merge(HashSet<object> first, HashSet<object> second)
         {
-            return new PreviewValue { IsKnown = false, HasRandom = true, IsSupported = false,
-                RandomDraws = draws, Text = UnsupportedText };
+            if ((first == null || first.Count == 0) && (second == null || second.Count == 0)) return null;
+            HashSet<object> result = first == null ? new HashSet<object>(new Identity()) : new HashSet<object>(first, new Identity());
+            if (second != null) result.UnionWith(second);
+            return result;
+        }
+
+        private static PreviewValue Known(int value, HashSet<object> sources)
+        {
+            return new PreviewValue { IsKnown = true, Value = value, IsSupported = true,
+                HasRandom = sources != null && sources.Count != 0, RandomSources = sources,
+                RandomDraws = sources == null ? 0 : sources.Count,
+                Minimum = value, Maximum = value, Text = value.ToString(CultureInfo.InvariantCulture) };
         }
 
         private static string Operator(int operation)
@@ -347,38 +342,6 @@ namespace DiceMaster.LiveLog
                 case 3: return left <= right;
                 case 4: return left > right;
                 case 5: return left >= right;
-                default: throw new InvalidOperationException("Unknown preview comparison.");
-            }
-        }
-
-        private static int Reverse(int operation)
-        {
-            switch (operation)
-            {
-                case 2: return 4;
-                case 3: return 5;
-                case 4: return 2;
-                case 5: return 3;
-                default: return operation;
-            }
-        }
-
-        private static long Clamp(long count, long total) { return Math.Max(0, Math.Min(count, total)); }
-
-        private static long Favorable(int minimum, int maximum, int threshold, int operation)
-        {
-            long total = (long)maximum - minimum + 1;
-            long below = Clamp((long)threshold - minimum, total);
-            long through = Clamp((long)threshold - minimum + 1, total);
-            long equal = threshold >= minimum && threshold <= maximum ? 1 : 0;
-            switch (operation)
-            {
-                case 0: return equal;
-                case 1: return total - equal;
-                case 2: return below;
-                case 3: return through;
-                case 4: return total - through;
-                case 5: return total - below;
                 default: throw new InvalidOperationException("Unknown preview comparison.");
             }
         }

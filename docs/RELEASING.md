@@ -2,13 +2,21 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [prerelease 설명](ISSUE-1-RELEASE-DRAFT.md)
 
+사용자가 모드 전용 독립 난수의 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. 실제 게임 판정의 예측값이 아니라는 의미는 문서·게시 설명에 기록합니다. 최종 자동 검사·파일·로컬 ZIP 검증은 새 버전 기준으로 마쳤으며 배포 커밋·게시·익명 공개 다운로드는 대기 중입니다. 기존 수치를 승계하지 않습니다.
+
 **[`v1.0.3-alpha.2` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)를 2026-10-18 21:52:10 KST에 게시하고 익명 공개 다운로드 검증을 마쳤습니다.** Release ID는 `416448453`, 상태는 `draft=false`, `prerelease=true`입니다. 이전 버전 수치를 새 버전 결과로 승계하지 않습니다.
 
 **[`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 2026-10-18 21:08:36 KST에 게시하고 공개 다운로드 검증을 마쳤습니다.** GitHub 상태는 `draft=false`, `prerelease=true`입니다. 이 게시로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
 
 현재 Windows PC는 기존 파일·정보 읽기만 허용되어 있으며 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. prerelease 게시 승인은 이 PC에서의 게임 실행 승인이 아닙니다. 실행을 요청하거나 수행하지 않습니다.
 
-## alpha.2 게시 기록
+## alpha.3 게시 준비
+
+새 태그는 `v1.0.3-alpha.3`, 파일은 `DiceMaster-v1.0.3-alpha.3.zip`이며 `draft=false`, `prerelease=true`, 최신 정식 버전 지정 없이 게시합니다. 최종 DLL은 462,336바이트 / SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`, 로컬 ZIP은 191,369바이트 / SHA-256 `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9`입니다. 두 파일·CRC·작업 트리 바이트 일치를 확인했습니다. 관리 동작 3,914개·메타데이터 1,011개·통합 134개·반복 구조 958개를 최초/반복에서, 설치 기준 구조 971개·최종 패드 525,430개도 통과했습니다. 최종 11개 프로젝트 MSBuild 경고·오류는 0이며 배포 커밋·게시·익명 다운로드는 대기 중입니다. alpha.1·alpha.2의 태그·Release·파일을 덮어쓰지 않고 Latest 정식 `v1.0.2`를 유지합니다.
+
+ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 넣고 태그 커밋과 바이트를 일치시킵니다. alpha.3은 게임 RNG와 분리된 `System.Random`으로 숫자·색상·난수에 의존하는 이벤트 확률을 계산합니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명(헤더·활성 조건·모든 확률 항목 조건) 안에서 결과를 재사용합니다. 미션·스위치의 서로 다른 조건 항목은 별도 평가하므로 같은 참조도 다시 추첨할 수 있으며, 실제 게임의 다음 판정이나 분포를 예측하지 않습니다. 전체 int 구간과 역순 구간 정규화는 모드 화면의 규칙으로 설명하고, 게임 RNG·조건 실행 카운터 보존과 Windows/native 미검증 범위를 게시 설명에 포함합니다.
+
+## alpha.2 게시 기록 — 불변 이력
 
 최종 소스의 자동 검사·반복 패치·패드·구조 결과와 DLL SHA-256을 확정했습니다. DLL은 `b6f7ae790cde736dcf1a282e9242c46b8ab0204602c7c462d59c571f321740ec` / 462,848바이트이고 로컬 ZIP은 `fcd3111b101efba6ef62b0f79cb918f23e016ccf8e1637a821edb9e2ae0589f1` / 192,018바이트이며 정확히 두 파일·CRC·작업 트리 바이트 일치를 검증했습니다. 배포 태그 커밋은 `015c80c2fd9f905aaece574b3b11da52e501d432`이며 `DiceMaster-v1.0.3-alpha.2.zip`과 같은 고정 기준입니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·게시 커밋 바이트·SHA-256 일치를 확인했습니다. alpha.1의 태그·파일·해시는 덮어쓰지 않고 Latest 정식 `v1.0.2`를 유지합니다. 게시 시각은 2026-10-18 12:52:10 UTC / 21:52:10 KST이며 로컬 영수증은 `development/releases/v1.0.3-alpha.2/github-publication.json`입니다. 문서 후속 커밋은 배포 태그·커밋·ZIP을 변경하지 않습니다.
 

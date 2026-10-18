@@ -190,5 +190,20 @@ static partial class RealGameApiTests
                 (call.DeclaringType.FullName == "Mortal.Core.ConditionResultData" && call.Name == "Execute") ||
                 (call.DeclaringType.FullName == "Mortal.Core.StatValueReference" && call.Name == "GetValue") ||
                 call.DeclaringType.FullName == "UnityEngine.Random"), "safe evaluator contains no original risky call " + method.FullName);
+        var randomPreview = candidate.MainModule.GetType("DiceMaster.LiveLog.RandomPreview");
+        var independentRandom = randomPreview.Fields.Where(field => field.FieldType.FullName == "System.Random").ToArray();
+        Eq(1, independentRandom.Length, "exactly one mod-owned independent RNG instance");
+        Check(independentRandom.Single().IsPrivate && independentRandom.Single().IsStatic,
+            "independent RNG is privately owned by display evaluator");
+        var randomInstructions = AllTypes(new[] { randomPreview }).SelectMany(type => type.Methods).Where(method => method.HasBody)
+            .SelectMany(method => method.Body.Instructions).ToArray();
+        Check(randomInstructions.Any(instruction => instruction.OpCode == OpCodes.Newobj && instruction.Operand is MethodReference constructor &&
+            constructor.DeclaringType.FullName == "System.Random"), "display evaluator constructs its own RNG");
+        Check(randomInstructions.Any(instruction => instruction.Operand is MethodReference method &&
+            method.DeclaringType.FullName == "System.Random" && method.Name == "NextBytes"), "display evaluator samples only its owned managed RNG");
+        foreach (var method in AllTypes(evaluators).SelectMany(type => type.Methods).Where(method => method.HasBody))
+            Check(!method.Body.Instructions.Any(instruction => (instruction.OpCode == OpCodes.Stfld || instruction.OpCode == OpCodes.Stsfld) &&
+                instruction.Operand is FieldReference field && field.DeclaringType.FullName == "Mortal.Core.ConditionResultData" && field.Name == "_count"),
+                "display evaluator never writes game condition execution count " + method.FullName);
     }
 }

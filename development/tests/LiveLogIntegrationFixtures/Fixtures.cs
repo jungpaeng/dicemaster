@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 // Only game, Unity, translation and existing plugin UI boundaries are modeled.
 // The runner installs the actual DLL parser, Action and LiveLog payload types.
@@ -17,6 +18,11 @@ namespace UnityEngine
         public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
     }
     public static class Time { public static float unscaledTime { get; set; } }
+    public static class Random
+    {
+        public static int Calls;
+        public static int Range(int minimum, int maximum) { Calls++; throw new InvalidOperationException("Display called Unity RNG boundary."); }
+    }
 }
 namespace BepInEx { public static class Utility { public static bool IsNullOrWhiteSpace(string value) => string.IsNullOrWhiteSpace(value); } }
 namespace HarmonyLib
@@ -248,9 +254,10 @@ namespace DiceMaster
     public static class RichText
     {
         public static int ConditionColors;
+        public static readonly List<(string Text, bool Passed)> ConditionVerdicts = new List<(string, bool)>();
         public static string ColorText(string value) => value;
-        public static string Green(string value) { ConditionColors++; return value; }
-        public static string Red(string value) { ConditionColors++; return value; }
+        public static string Green(string value) { ConditionColors++; ConditionVerdicts.Add((value, true)); return value; }
+        public static string Red(string value) { ConditionColors++; ConditionVerdicts.Add((value, false)); return value; }
         public static string Golden(string value) => value;
     }
     public static class FlagTranslations { public static string TranslateDevNote(string id, int value) => id; }
@@ -272,6 +279,18 @@ namespace DiceMaster
         static IDictionary ModificationCache(object parser) => (IDictionary)parser.GetType().GetField("luaModification", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(parser);
         static IDictionary Options => (IDictionary)Parser.GetType().GetField("OptionResult").GetValue(Parser);
         static void Check(bool condition, string message) { assertions++; if (!condition) throw new InvalidOperationException(message); }
+        static void SeedDisplayRandom(int seed) => Self.GetType("DiceMaster.LiveLog.RandomPreview", true)
+            .GetField("random", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, new System.Random(seed));
+        static int NumericRandom(string text, int minimum, int maximum)
+        {
+            Match match = Regex.Match(text, @"隨機\((-?\d+)\)");
+            Check(match.Success, "Actual rewritten helper did not render a numeric random operand: " + text);
+            int value = int.Parse(match.Groups[1].Value);
+            Check(value >= minimum && value <= maximum, "Actual rewritten helper random operand is outside configured inclusive bounds");
+            Check(!text.Contains("표시용") && !text.Contains("실행 시 판정") && !text.Contains("미지원") && !text.Contains("이론 확률") && !text.Contains("실패"),
+                "Supported random description retained an annotation or entered the generic failure path");
+            return value;
+        }
         static void Tick(DicePlugin plugin, bool manual = false) => Invoke("DiceMaster.LiveLog.LogBridge", "Tick", plugin, manual);
         static void NewLua(string lua, string name) => Invoke("DiceMaster.LiveLog.LogBridge", "NewLua", lua, name);
         static long TransitionPrefix(string name)
@@ -619,18 +638,29 @@ namespace DiceMaster
             var constant = new Mortal.Core.StatGroupVariable { name = "常數_50", _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 0, _constant = 50 } } };
             var randomCompare = new Mortal.Core.StatCompareItem { _value1 = randomGroup, _value2 = constant, _compareOp = Mortal.Core.StatCompareType.GreaterEqual };
             var randomCondition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { randomCompare } };
+            SeedDisplayRandom(1237);
             int colors = RichText.ConditionColors;
             bool included;
             string randomText = DataHelper.ExtractConditions(randomCondition, out included);
-            Check(randomText.Contains("난수 1~100") && randomText.Contains("실행 시 판정") && randomText.Contains("51/100"), "Actual condition formatter lost range/pending/theory probability");
-            Check(RichText.ConditionColors == colors && included, "Random preview was colored as pass/fail or hidden as false");
+            int sampled = NumericRandom(randomText, 1, 100);
+            Check(RichText.ConditionColors == colors + 1 && included, "Random numeric comparison did not receive one verdict color or was hidden");
+            Check(RichText.ConditionVerdicts.Last().Passed == (sampled >= 50), "Actual rewritten condition color disagrees with its printed sample");
             randomCondition._items.Add(good);
             randomText = DataHelper.ExtractConditions(randomCondition, out included);
-            Check(!randomText.Contains("이론 확률"), "Compound condition displayed an unproven aggregate probability");
+            NumericRandom(randomText, 1, 100);
+            Check(RichText.ConditionColors == colors + 3, "Compound numeric conditions did not color each evaluated comparison");
             randomCondition._items.Remove(good);
-            var previewEvent = new Mortal.Story.PositionEventData { _toggleCondition = true, _activeCondition = randomCondition };
+            var previewEvent = new Mortal.Story.PositionEventData { _toggleCondition = true, _activeCondition = randomCondition,
+                _eventRateItem = new[] { new Mortal.Story.PositionEventRateItem { Condition = randomCondition, Rate = 5 } } };
             string eventPreview = (string)typeof(PositionEventCache).GetMethod("GenerateDynamicDesc", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(PositionEventCache.Instance, new object[] { previewEvent });
-            Check(eventPreview.Contains("발동 확률：실행 시 판정") && eventPreview.Contains("난수 1~100"), "Actual event description coerced random condition to numeric event rate");
+            sampled = NumericRandom(eventPreview, 1, 100);
+            var eventNumbers = Regex.Matches(eventPreview, @"隨機\((-?\d+)\)");
+            Check(eventNumbers.Count == 2 && eventNumbers[0].Groups[1].Value == eventNumbers[1].Groups[1].Value,
+                "Actual event formatter did not share one sample across active and rate-item descriptions");
+            Check(eventPreview.Split('\n')[0].Contains("발동 확률：" + (sampled >= 50 ? "15" : "0") + "(10)"),
+                "Actual event rate header disagrees with its printed active and rate-item samples");
+            Check(RichText.ConditionVerdicts.Skip(RichText.ConditionVerdicts.Count - 2).All(result => result.Passed == (sampled >= 50)),
+                "Actual event active and rate-item colors disagree with the shared displayed sample");
             var inactiveCondition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> {
                 new Mortal.Core.StatCompareItem { _value1 = constant, _value2 = randomCompare._value2, _compareOp = Mortal.Core.StatCompareType.NotEqual }
             } };
@@ -669,14 +699,23 @@ namespace DiceMaster
             first.Stage._conditions = new[] { randomCondition };
             plugin.currentTab = "미션"; Tick(plugin, true);
             int warnings = DicePlugin.Warnings.Count;
-            Check(plugin.missionEntries[0].Description.Contains("실행 시 판정") && !plugin.missionEntries[0].Description.Contains("실패"), "Random mission still entered the generic row failure path");
+            int previous = NumericRandom(plugin.missionEntries[0].Description, 1, 100);
+            string previousDescription = plugin.missionEntries[0].Description;
+            random._randomMin = random._randomMax = previous + 100;
+            UnityEngine.Time.unscaledTime += 0.24f; Tick(plugin);
+            Check(plugin.missionEntries[0].Description == previousDescription, "Normal random row refreshed before the 0.25 second cadence");
+            UnityEngine.Time.unscaledTime += 0.02f; Tick(plugin);
+            Check(NumericRandom(plugin.missionEntries[0].Description, previous + 100, previous + 100) == previous + 100,
+                "Normal random row did not refresh after the 0.25 second cadence");
             random._randomMin = 5; random._randomMax = 3;
             UnityEngine.Time.unscaledTime += 0.3f; Tick(plugin);
-            Check(plugin.missionEntries[0].Description.Contains("난수 조건 · 미리보기 미지원") && !plugin.missionEntries[0].Description.Contains("실패"), "Unsupported random range was logged as a read failure");
+            NumericRandom(plugin.missionEntries[0].Description, 3, 5);
             random._randomMin = 1; random._randomMax = 10;
             UnityEngine.Time.unscaledTime += 0.3f; Tick(plugin);
-            Check(plugin.missionEntries[0].Description.Contains("난수 1~10") && !plugin.missionEntries[0].Description.Contains("미지원"), "Random preview incorrectly waited five seconds to refresh its range");
-            Check(DicePlugin.Warnings.Count == warnings, "Pending/unsupported random preview generated failure/recovery diagnostics");
+            NumericRandom(plugin.missionEntries[0].Description, 1, 10);
+            Check(DicePlugin.Warnings.Count == warnings, "Supported numeric random refresh generated failure/recovery diagnostics");
+            Check(UnityEngine.Random.Calls == 0 && Mortal.Core.StatGroupVariable.OriginalReads == 0 && Mortal.Core.StatCompareItem.OriginalReads == 0,
+                "Numeric helper/mission refresh reached Unity RNG or original game evaluation methods");
             NewLua(Lua("O_random_reset"), "random_reset");
             Check(plugin.missionEntries.Count == 0, "New Lua retained old random preview rows");
             return assertions;

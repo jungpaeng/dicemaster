@@ -5,7 +5,9 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md)
 
-현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. **[`v1.0.3-alpha.2` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)를 2026-10-18 21:52:10 KST에 게시했습니다.** 사용자가 난수 표시 문제 수정과 새 prerelease 게시를 승인하여 [난수 미리보기](docs/RANDOM-PREVIEW-FOLLOWUP.md) 소스를 반영하고 검사했습니다. 범위·실행 시 판정·전용 미지원 표시와 제한된 단일 비교의 이론 확률을 포함하며 최종 관리 코드·표시·반복 패치·직접 패드 검사를 통과했고 새 DLL을 확정했습니다. 게시 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432` 기준 ZIP·DLL 바이트와 익명 공개 다운로드를 검증했습니다. **기능 완료·정식 Release 공개는 보류**하며, [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 **2026-10-18 21:08:36 KST에 게시했습니다**. 익명 공개 다운로드의 ZIP·DLL과 배포 기준 커밋 일치를 확인했으며 기존 Latest `v1.0.2`는 유지했습니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다. 확인 결과와 남은 제한은 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
+현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. 사용자가 게임 RNG와 분리된 난수 숫자 갱신과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 화면에 부가 표기를 붙이지 않고, 모드 전용 `System.Random`으로 난수를 생성해 숫자와 조건 색상을 같은 평가 결과에서 만듭니다. 실제 게임 판정의 예측값은 아닙니다. alpha.3의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·두 파일 로컬 ZIP 검증을 마쳤습니다. 태그 커밋·prerelease 게시·익명 공개 다운로드 검증은 대기 중이며 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 구분해 기록합니다.
+
+**기능 완료·정식 Release 공개는 보류합니다.** [`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 prerelease로 게시하고 각각 익명 공개 다운로드·배포 커밋 바이트 일치를 검증했습니다. 기존 Latest `v1.0.2`는 유지합니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다.
 
 ## 공개 버전 설치 안내
 
@@ -81,7 +83,7 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 | `읽기 실패` | 첫 조회가 실패해 표시할 정상 값이 없습니다. 자동 재시도 또는 준비된 문맥의 수동 새로고침 대상입니다. |
 | `갱신 실패 · 이전 값` | 마지막 정상 값을 유지하고 있습니다. 현재 게임 상태와 다를 수 있으며, 복구하면 새 값으로 바뀌고 문구가 사라집니다. |
 
-확률·조건의 원래 게임 API는 난수 소비와 조건 실행 카운터 변경을 일으킬 수 있어, 알려진 모드 설명 경로에는 별도의 읽기 전용 평가를 적용합니다. 게시된 alpha.1은 난수를 행의 읽기 실패 또는 이전 값으로 표시했습니다. alpha.2는 게임 RNG를 호출하지 않고 범위·실행 시 판정·미지원 상태를 실제 조회 오류와 구분하고, 안전하게 지원한 단일 비교에만 `균등 정수 기준 이론 확률`을 표시하는 소스를 반영했습니다. 최종 파일과 공개 다운로드 검증을 통과했습니다. alpha.1의 검사 결과를 이 변경의 검증 완료로 사용하지 않습니다. 지원하지 않는 자료·순환 참조도 행 실패로 구분합니다. 정상적으로 항목이 없는 경우에는 기존 빈 목록 표시를 유지합니다. 색상과 별개로 한국어 문구로 상태를 구분합니다. 새 설정은 추가하지 않으며 `EnableOptionInfo=false`로 설정하고 재시작하면 정보 표시와 자동 갱신을 끕니다.
+확률·조건의 원래 게임 API는 난수 소비와 조건 실행 카운터 변경을 일으킬 수 있어, 알려진 모드 설명 경로에는 게임 상태를 쓰지 않는 별도 평가를 적용합니다. alpha.3은 모드 전용 `System.Random`으로 숫자를 생성하며 게임 RNG와 `_count`는 건드리지 않습니다. 개별 `ConditionResultItem` 설명에서는 숫자와 색상이 같은 평가 결과를 사용하고, 이벤트 설명에서는 헤더·활성 조건·모든 확률 항목이 한 평가 결과를 공유합니다. 미션·스위치의 서로 다른 조건 항목은 별도로 평가하므로 같은 참조도 다시 추첨할 수 있습니다. 화면의 난수 숫자·색상·난수에 의존하는 이벤트 확률은 해당 갱신에서 얻은 값이며 실제 게임 실행 결과를 보장하지 않습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. alpha.1의 난수 행 실패 정책과 alpha.2의 범위·판정 미정·미지원·제한적 이론 확률은 [변경 이력](CHANGELOG.md)에 보존합니다. 지원하지 않는 자료·순환 참조와 실제 조회 오류는 기존 오류 상태로 구분합니다. 정상적으로 항목이 없는 경우에는 기존 빈 목록 표시를 유지합니다. 새 설정은 추가하지 않으며 `EnableOptionInfo=false`로 설정하고 재시작하면 정보 표시와 자동 갱신을 끕니다.
 
 진단은 기존 BepInEx 로그를 사용합니다. 같은 게임 세션·항목·원인의 연속 실패는 최초 1회, 복구는 1회 기록하는 것이 목표입니다. 제보에는 관련 탭·항목, 재현 순서와 해당 오류·복구 로그를 포함하고 전체 Lua 원문이나 세이브 내용은 첨부하지 않아도 됩니다. 실제 적용 범위와 미확인 API는 [개발 안내](docs/DEVELOPMENT.md)와 [실제 게임 API 분석](docs/REAL-GAME-API-FINDINGS.md)·[문맥 전환 분석](docs/GAME-LIFECYCLE-ANALYSIS.md)을 확인하세요.
 
@@ -109,7 +111,7 @@ python3 development/tools/build-log-refresh.py \
 
 ## Release 등록
 
-`v1.0.3-alpha.2`를 배포 태그 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트 일치를 검증했습니다. 기존 Latest `v1.0.2`는 유지했습니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
+`v1.0.3-alpha.3`의 최종 DLL(462,336바이트, SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`)과 두 파일 로컬 ZIP(191,369바이트, SHA-256 `d4a5bb2276a1d1089e02284286456f4ec16f5e41f8a8481ad6c23db0fde7a6b9`)을 검증했습니다. 새 태그 커밋·게시·익명 공개 다운로드 검증은 대기 중입니다. 이전 alpha.2는 배포 태그 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서 게시하고 익명 공개 API·다운로드·CRC·두 파일·커밋 바이트 일치를 검증했습니다. 이전 prerelease를 덮어쓰지 않고 기존 Latest `v1.0.2`를 유지합니다. Windows 실행·기능 완료·정식 Release 승인은 추가되지 않았습니다.
 
 태그는 `vX.Y.Z`, ZIP 이름은 `DiceMaster-vX.Y.Z.zip` 형식입니다. 다음 두 파일만 폴더 구조를 유지해 포함합니다.
 

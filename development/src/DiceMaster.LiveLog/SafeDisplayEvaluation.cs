@@ -84,8 +84,8 @@ namespace DiceMaster.LiveLog
                         case 4: return Number(Read(value, "_book"), "CurrentCount");
                         case 5: return Number(Read(value, "_misc"), "CurrentCount");
                         case 6: return Number(Read(value, "_specialItem"), "CurrentCount");
-                        // There is no stable current random value to display.
-                        // Reject this row without sampling or touching RNG state.
+                        // Strict primitive callers have no random snapshot.
+                        // Description formatters use RandomPreview instead.
                         case 7: throw new RandomDisplayValueException();
                         case 8: return Group(Read(value, "_statGroup"));
                         case 9:

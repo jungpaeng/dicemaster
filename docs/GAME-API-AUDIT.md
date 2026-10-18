@@ -3,6 +3,7 @@
 [개발 안내](DEVELOPMENT.md) · [실제 조회 API 근거](REAL-GAME-API-FINDINGS.md) · [게임 수명주기 근거](GAME-LIFECYCLE-ANALYSIS.md) · [검증 결과](ISSUE-1-VALIDATION.md) · [요구사항 #1](https://github.com/jungpaeng/dicemaster/issues/1)
 게시된 `v1.0.3-alpha.1`·`v1.0.3-alpha.2` prerelease는 기능·이슈 완료/정식 Release 판정과 구분합니다. Windows 게임 실행·설치 검증은 계속 미승인·미실행입니다.
 
+사용자가 승인한 alpha.3은 모드 전용 `System.Random`으로 난수 숫자를 갱신하고 UI에 부가 난수 문구를 붙이지 않습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명의 숫자·색상·확률은 같은 세션의 결과를 재사용하지만 실제 게임의 판정을 예측하지 않습니다. alpha.3의 최종 macOS 관리 동작 3,914개·메타데이터 1,011개·통합 134개를 최초/반복에서 통과했고 패드→로그 왕복·반복 구조·직접 패드·로컬 ZIP도 검증했습니다. 원본 참조 159개의 크기·SHA-256은 유지됐습니다. 태그 커밋·게시·익명 다운로드는 대기 중이며 파일 해시·범위는 [검증 기록](ISSUE-1-VALIDATION.md)에 별도로 남깁니다.
 
 기록일: 2026-10-18. **실제 관리 DLL의 조회 API와 새 게임·로드 경계 정적 분석을 수행했습니다. 실제 게임 런타임·사용자 Windows 검증·게임 성능 측정은 미실행입니다.** 자동 검사와 정적 분석으로 이슈 완료나 정식 Release 공개 조건을 충족했다고 처리하지 않습니다. Windows는 파일·정보 읽기만 승인되었으며 게임 실행을 수행하거나 요청하지 않았습니다.
 
@@ -59,7 +60,7 @@ PositionEventData.GetRate
 
 - 그룹은 eager 평가 후 checked Sum, Max/Min, unchecked Multiply를 계산합니다. 빈 그룹·null·알 수 없는 enum을 구분합니다.
 - 비교·조건을 평가하고 조건 설정은 `_count`를 건드리지 않고 목록을 OR 평가합니다. 재귀 경로와 깊이를 검사합니다.
-- alpha.1의 설명 경로는 난수를 `RandomDisplayValueException`으로 실패시켰습니다. alpha.2도 primitive int/bool 평가 API의 난수 예외를 유지하지만, 설명은 `RandomPreview`·`PreviewFormatting`의 범위/판정 미정/미지원 결과를 사용합니다. 직접 Sum1 난수와 직접 Sum1 정수 상수의 단일 비교에만 이론 N/D를 표시하며 실제 난수는 뽑지 않습니다. [구현·최종 검사 범위](RANDOM-PREVIEW-FOLLOWUP.md)는 실제 게임 실행 검증과 구분합니다.
+- alpha.1의 설명 경로는 난수를 `RandomDisplayValueException`으로 실패시켰고 alpha.2는 범위/판정 미정/미지원·제한적인 단일 비교 이론 N/D를 표시했습니다. alpha.3은 잠금으로 보호한 모드 전용 단일 `System.Random`을 사용하며 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명(헤더·활성 조건·모든 확률 항목 조건)의 세션에서 동일 객체의 값·그룹·비교·조건 평가를 재사용합니다. 미션·스위치 전체 행의 서로 다른 조건 항목은 각각 별도 세션이므로 공유 참조도 다시 추첨할 수 있습니다. 중첩/다중 난수·Sum/Max/Min/Multiply·조건 설정·숫자 이벤트 확률을 다룹니다. 게임 RNG와 `_count`를 변경하지 않고 부가 UI 문구도 붙이지 않습니다. 전체 int 양끝 포함·역순 구간 정규화는 모드 화면의 규칙이며 Unity 경계 동작이나 실제 미래 판정을 재현하지 않습니다. [구현·최종 검사 범위](RANDOM-PREVIEW-FOLLOWUP.md)는 실제 게임 실행 검증과 구분합니다.
 - `GameStat`과 그 변환 그래프에서 확인한 타입·재귀를 검사한 뒤 감사한 읽기 getter를 사용합니다. native 곡선 계산은 남은 런타임 경계입니다.
 
 `development/tools/LogRefreshInjector/SafeEvaluationHooks.cs`는 **모드의 알려진 설명 계산 호출 위치**를 순수 평가로 바꾸는 경계입니다. 일반 게임 진행 중 체크포인트 내러티브 설명도 깊이 0에서 같은 helper를 사용하므로, 설명 호출은 보호 깊이와 관계없이 안전 평가를 사용해야 합니다. 게임 어셈블리의 원본 메서드나 의도적인 이벤트·미션 실행 자체를 대체하지 않습니다. 해당 연결·반복 패치·자동 검사 결과는 [검증 기록](ISSUE-1-VALIDATION.md)과 구분해 확인합니다.

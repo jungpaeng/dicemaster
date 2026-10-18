@@ -281,11 +281,11 @@ internal static class Program
         Check(conditionCode.Count == 4 && conditionCode[0].OpCode == OpCodes.Ldarg_0 && conditionCode[1].OpCode == OpCodes.Ldarg_1 &&
             conditionCode[2].OpCode == OpCodes.Call && conditionCode[2].Operand is MethodReference conditionCall &&
             conditionCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" && conditionCall.Name == "ExtractConditions" &&
-            conditionCode[3].OpCode == OpCodes.Ret, "Condition formatter must carry preview text without coercing random values.");
+            conditionCode[3].OpCode == OpCodes.Ret, "Condition formatter must preserve the shared numeric display snapshot boundary.");
         var eventCode = Method(output, "DiceMaster.PositionEventCache", "GenerateDynamicDesc").Body.Instructions;
         Check(eventCode.Count == 3 && eventCode[0].OpCode == OpCodes.Ldarg_1 && eventCode[1].OpCode == OpCodes.Call &&
             eventCode[1].Operand is MethodReference eventCall && eventCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" &&
-            eventCall.Name == "EventDescription" && eventCode[2].OpCode == OpCodes.Ret, "Event formatter must not invent a numeric random rate.");
+            eventCall.Name == "EventDescription" && eventCode[2].OpCode == OpCodes.Ret, "Event formatter must delegate header and conditions to one display snapshot.");
         var boundaryCode = Method(output, "DiceMaster.PositionEventCache", "GeneratePreviewDynamicDesc").Body.Instructions;
         Check(boundaryCode.Count == 4 && boundaryCode[0].OpCode == OpCodes.Ldarg_0 && boundaryCode[1].OpCode == OpCodes.Ldarg_1 &&
             boundaryCode[2].OpCode == OpCodes.Call && boundaryCode[2].Operand is MethodReference boundaryCall &&

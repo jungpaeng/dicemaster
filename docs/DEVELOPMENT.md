@@ -4,7 +4,9 @@
 
 ## 개발 범위
 
-현재 작업은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 미리보기 후속 구현입니다. 사용자가 문제 수정과 `v1.0.3-alpha.2` prerelease 재발행을 승인했으며 최종 관리 코드·표시·반복 패치·직접 패드와 로컬 ZIP 검증을 통과했습니다. [`v1.0.3-alpha.2` 게시](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2) (release commit `015c80c2fd9f905aaece574b3b11da52e501d432`)와 익명 공개 다운로드 검증도 2026-10-18 21:52:10 KST에 마쳤으며 alpha.1의 통과 수치를 승계하지 않습니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능 완료로 표시하거나 정식 Release를 공개하지 않습니다. [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 2026-10-18 21:08:36 KST에 게시되었습니다. 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`이며 공개 다운로드의 ZIP·DLL 바이트 일치까지 확인했습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했습니다. runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다. 자동 검사는 그중 하나의 검증 단계입니다. 구현 목표와 확인 결과는 [검증 기록](ISSUE-1-VALIDATION.md)에서 구분합니다.
+현재 작업은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 숫자 갱신 후속 구현입니다. 사용자가 모드 전용 `System.Random`으로 계산하고 UI 부가 문구를 붙이지 않는 변경과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명 안에서 결과를 재사용해 숫자·조건 색상·이벤트 확률 설명을 일치시키며, 게임 RNG와 조건 실행 카운터는 변경하지 않습니다. 실제 게임의 미래 판정을 예측하는 기능은 아닙니다. 새 소스의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 관리 동작 3,914개·메타데이터 1,011개·통합 134개를 최초/반복에서, 최종 패드 525,430개를 통과했고 11개 프로젝트의 MSBuild 경고·오류는 0입니다. 태그 커밋·게시·익명 공개 다운로드는 대기 중입니다. [검증 기록](ISSUE-1-VALIDATION.md)에 파일 해시·검사 범위를 남기고 이전 버전 결과를 승계하지 않습니다.
+
+[`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST에 배포 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 게시했습니다. 두 prerelease의 공개 다운로드·ZIP·DLL 바이트 일치를 검증했으며 각 이력을 보존합니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능·이슈 완료로 표시하거나 정식 Release를 공개하지 않습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했지만 runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다.
 
 이 저장소는 기존 DiceMaster DLL을 기반으로 유지보수합니다.
 `development/`에는 패드 지원 소스, 로그 표시 엔진·게임 경계 어댑터, DLL 패치 도구와 동작 검사가 있습니다.
@@ -21,7 +23,7 @@ docs/
 ├── DEVELOPMENT.md                     # 개발·빌드·검증
 ├── RELEASING.md                       # Release 등록 절차와 공개 조건
 ├── ISSUE-1-VALIDATION.md               # 요구사항·자동 검사·Windows 확인 기록
-├── ISSUE-1-RELEASE-DRAFT.md            # alpha.2·alpha.1 prerelease 게시 이력
+├── ISSUE-1-RELEASE-DRAFT.md            # alpha.3 상태와 alpha.2·alpha.1 게시 이력
 ├── GAME-API-AUDIT.md                   # 모드·실제 API·검증 범위의 분석 개요
 ├── REAL-GAME-API-FINDINGS.md           # 수신 게임 DLL의 표시 API 정적 분석
 └── GAME-LIFECYCLE-ANALYSIS.md           # 실제 새 게임·로드·Lua 경계 분석
@@ -34,7 +36,7 @@ development/
 │   ├── RefreshEngine.cs                # 현재 탭·행별 상태·재시도 스케줄
 │   ├── LifecycleState.cs               # 전환·Lua 컴파일 토큰과 조회 차단
 │   ├── SafeDisplayEvaluation.cs        # 알려진 자료의 읽기 전용 조건·확률 평가
-│   ├── RandomPreview.cs                # 확정값·범위·판정 미정·미지원 결과 모델
+│   ├── RandomPreview.cs                # 모드 전용 난수·조건 항목/이벤트의 평가 결과 재사용
 │   ├── PreviewFormatting.cs            # 결과 모델의 조건·이벤트 설명 연결
 │   └── LogBridge.cs                    # 실제 파서·모드·게임 경계 어댑터
 ├── tests/GamepadTests/                 # 입력 동작 검증
@@ -198,9 +200,11 @@ Lua Prefix는 원문을 임시 보관하고 이전 문맥을 지우며, `LoadLua
 
 전달받은 실제 게임 DLL에서 `StatValueReference.GetValue`의 전이 호출이 `UnityEngine.Random.Range`에 진입하고 `ConditionResultData.Execute`가 `_count`를 증가시킴을 확인했습니다. `DisplayRefreshDepth`만으로는 이 원본 게임 부작용을 막을 수 없습니다. [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md)에 정확한 서명·IL 근거·17개 값 종류·native 경계를 기록했습니다.
 
-alpha.1의 `SafeDisplayEvaluation`은 알려진 필드와 읽기 전용 getter로 확률·그룹·조건을 별도 계산하며 난수는 `RandomDisplayValueException`으로 거부해 행 실패/이전 값에 연결했습니다. alpha.2는 이 정책을 범위·판정 미정·전용 미지원 결과 모델과 formatter로 분리했습니다. 샘플링·임의 값 생성 없이 제한된 단일 비교에만 이론 확률을 제공하며 실제 조회 실패는 기존 오류 경로에 남깁니다. 알 수 없는 enum·미지원 변환 하위 타입·순환 자료도 거부합니다. `GameStat`은 확인된 변환 타입만 허용하며 native `AnimationCurve.Evaluate`와 실제 리소스는 정적 분석을 넘어 실행 검증하지 않았습니다.
+alpha.1의 `SafeDisplayEvaluation`은 알려진 필드와 읽기 전용 getter로 확률·그룹·조건을 별도 계산하며 난수는 `RandomDisplayValueException`으로 거부해 행 실패/이전 값에 연결했습니다. alpha.2는 범위·판정 미정·전용 미지원 결과 모델과 formatter, 제한적인 단일 비교 이론 확률을 사용했습니다. 이 정책은 각 게시 버전의 이력으로 보존합니다.
 
-범위·판정 미정·제한적인 확률의 구현 계약과 검사 기준은 [난수 미리보기 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)을 따릅니다. 최종 alpha.2 관리 코드·통합·반복 패치·직접 패드 결과와 해시는 [검증 기록](ISSUE-1-VALIDATION.md)에 기록했습니다. 실제 게임·Windows 검증과 전체 완료는 별개입니다.
+alpha.3은 모드 전용 단일 `System.Random`을 잠금으로 보호해 난수를 생성합니다. 평가 세션은 개별 `ConditionResultItem` 설명 하나 또는 전체 이벤트 설명(헤더·활성 조건·모든 확률 항목 조건) 하나를 경계로 합니다. 이 안에서 객체 동일성에 따라 값·그룹·비교·조건 결과를 재사용하므로 숫자·색상·이벤트 헤더와 하위 설명이 같은 계산에 근거합니다. 서로 다른 난수 참조는 각각 추첨하고 다음 갱신은 새 세션을 시작합니다. 미션·스위치의 전체 행은 여러 조건 항목을 별도로 평가하므로 항목 사이에 공유한 참조는 다시 추첨할 수 있습니다. 독립 조건 설명의 경계는 미션·스위치 설명 전체가 아닌 `ConditionResultItem` 하나입니다. 게임의 RNG 호출이나 `ConditionResultData.Execute()`는 복원하지 않습니다. Sum/Max/Min/Multiply, 중첩·여러 난수·조건 설정을 별도 계산하며 `_count`를 보존합니다. 양끝을 포함하는 전체 int 구간을 안전하게 다루고 역순 저장 구간은 정규화합니다. 게임 원본의 `max + 1` overflow나 역순 구간 의미를 그대로 모사하는 규칙은 아닙니다.
+
+UI에는 난수 숫자와 계산된 판정 색상을 그대로 표시하고 `표시용`·판정 미정·미지원·이론 확률 부가 문구를 붙이지 않습니다. 이 숫자·색상·이벤트 확률은 모드 난수에 따른 해당 갱신의 계산이며 실제 게임 실행 결과나 확률 분포를 보장하지 않습니다. 알 수 없는 enum·미지원 변환 하위 타입·순환 자료와 실제 조회 실패는 기존 오류 경로에 남깁니다. `GameStat`은 확인된 변환 타입만 허용하며 native `AnimationCurve.Evaluate`와 실제 리소스는 실행 검증하지 않았습니다. 세부 구현 계약과 새 검사 결과는 [난수 후속 구현](RANDOM-PREVIEW-FOLLOWUP.md)과 [검증 기록](ISSUE-1-VALIDATION.md)을 따릅니다.
 
 실제 `ConditionResultItem.Check`의 null 목록은 잘못된 자료로 실패하고, 유효한 빈 목록은 false입니다. 후보는 이 차이를 유지하며 기존의 경고·빈 결과로 실패가 숨겨지는 경로를 순수 평가로 바꿉니다. 알려진 모드 설명 호출은 내러티브 처리 중 보호 깊이 0인 경우에도 순수 평가에 연결합니다. 원본 게임 어셈블리와 실제 게임 진행·명시적 실행 코드는 교체하지 않습니다.
 
@@ -249,7 +253,8 @@ python3 development/tools/build-log-refresh.py \
 - 첫 행·중간 행·내부 함수 실패 격리, 정상 빈 목록과 데이터 미준비 구분
 - 마지막 정상 값·세 상태 문구·5초 재시도·전환 시 대기 유지·수동 즉시 재시도·복구
 - 실제 전환·컴파일 토큰으로 같은 manager·같은 Lua·로드 실패·null 결과·오래된 콜백에서도 이전 행·실패 상태 제거
-- 실제 게임 IL·순수 평가의 17개 값 종류·RNG 비소비·조건 카운터 보존·null/빈 목록·미지원 자료 구분
+- 실제 게임 IL·별도 평가의 17개 값 종류·게임 RNG 비소비·조건 카운터 보존·null/빈 목록·미지원 자료 구분
+- 모드 전용 난수의 int 경계·역순 구간·중첩/다중 집계, 개별 조건 항목 또는 전체 이벤트의 숫자/색상/확률 결과 재사용·조건 항목 사이와 다음 갱신의 별도 추첨, UI 부가 문구 부재
 - 이벤트·미션 예약과 대화 로그 보존, 예외 후 보호 깊이 복구
 - 오류 최초 1회·복구 1회 로그와 민감한 전체 원문 비기록
 - 숨김 조회·비활성 탭 주기 평가·정상 주기 Lua 재분석 각각 0회
