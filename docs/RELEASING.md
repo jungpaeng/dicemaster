@@ -6,7 +6,9 @@
 
 사용자가 2026-10-19 KST에 현재 구현의 commit·push·prerelease 게시를 지시했습니다. 대상은 `v1.0.4-alpha.4`, 설치 자산명은 `DiceMaster-v1.0.4-alpha.4.zip`이며 [alpha.4 게시 설명](ISSUE-2-ALPHA4-RELEASE.md)을 사용합니다. 실제 Lua 정적 대조·유한 추적·캐시·할당 개선과 남은 동기 분석 지연·실게임 미검증 범위를 구분합니다.
 
-게시할 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 DLL SHA-256 `c1b192fdd3932dcc2af35f8d5a526f3de0b52e33557f3de0c8a75258ccf99b91`과 설정 SHA-256 `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e`를 요구합니다. 출력은 `artifacts/releases/v1.0.4-alpha.4`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 11개 Release·태그·자산과 Latest 정식 v1.0.3, 이슈 #2 open 상태를 유지합니다. Windows 설치·게임 실행·런타임 검증을 수행하거나 요청하지 않습니다. 실제 게시 결과는 검증 후 별도로 기록합니다.
+게시할 소스 커밋을 `verify-preview-release.py`로 새로 빌드해 DLL SHA-256 `c1b192fdd3932dcc2af35f8d5a526f3de0b52e33557f3de0c8a75258ccf99b91`과 설정 SHA-256 `8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e`를 요구합니다. 출력은 `artifacts/releases/v1.0.4-alpha.4`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 11개 Release·태그·자산과 Latest 정식 v1.0.3, 이슈 #2 open 상태를 유지합니다. Windows 설치·게임 실행·런타임 검증을 수행하거나 요청하지 않습니다. 실제 게시 결과는 아래 기록과 구분합니다.
+
+**2026-10-19 02:44:05 KST에 [v1.0.4-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.4) prerelease를 게시하고 익명 공개 다운로드를 검증했습니다.** 소스 태그 커밋은 `3af4f862c09399b56ea7e127ef67d21290eaf174`, Release ID `416602030`, asset ID `654080605`입니다. 커밋의 깨끗한 새 빌드가 검토한 DLL·설정·ZIP과 같은 해시였고 공개 ZIP의 CRC·정확히 두 파일·DLL/설정 바이트·태그 커밋이 일치했습니다. 실제 Lua 정적 대조의 DLL SHA와도 같습니다. 기존 11개 Release·자산, Latest 정식 v1.0.3과 이슈 #2 open을 유지했습니다. 영수증은 `artifacts/releases/v1.0.4-alpha.4/`에 있으며 이 게시 기록의 후속 문서 커밋은 태그·공개 자산을 바꾸지 않습니다.
 
 ## PRD 2 alpha.3 문구 정리 prerelease
 

@@ -4,9 +4,11 @@
 
 2026-10-19 KST. PRD 2 로컬 소스·검사·별도 후보의 구현 기록이다. 이후 사용자 승인으로 commit·push하고 `v1.0.4-alpha.1`, 가독성 후속 `v1.0.4-alpha.2`, 문구 정리 `v1.0.4-alpha.3` prerelease를 게시했다. 실제 Lua 정적 대조·캐시/작업 큐와 오프라인 추적 정책은 아래 후속 기록으로 추가했다. 사용자 Windows 검증·실제 실행 상태와 Unity 프레임 비용 대조는 별도 미검증이다. 따라서 기능·이슈 완료로 처리하지 않는다. 과거 alpha.4 사용자 Windows 확인을 이 후보에 승계하지 않으며 이슈 #2는 open으로 유지한다. 게시 설명은 [alpha.3 안내](ISSUE-2-ALPHA3-RELEASE.md), [alpha.2 안내](ISSUE-2-ALPHA2-RELEASE.md)와 [alpha.1 안내](ISSUE-2-RELEASE.md)에 있다.
 
-## 실제 Lua 후속 작업 — alpha.4 게시 준비
+## v1.0.4-alpha.4 실제 Lua 후속 게시
 
-사용자의 작업 재개 지시로 공개 alpha.3 이후 소스를 수정했으며, 2026-10-19 현재 변경의 commit·push·`v1.0.4-alpha.4` prerelease 게시 지시를 받았다. [alpha.4 게시 설명](ISSUE-2-ALPHA4-RELEASE.md)에 검토한 파일과 지원 경계를 기록한다. TextAsset 2,685개와 정확한 번체 이야기 경로 2,198개를 확보했다. 선택지 누락·구문 경계·지역 바인딩·추출 시 조건 소실·긴 본문 접두 보존·이야기 등록 별칭·조작 게이트 표시를 보강한다. FIFO 큐는 가까운 후속을 먼저 처리하고 서로 다른 manager 바인딩 문맥을 분리한다. 선택지·이벤트 정의는 각 파서의 유한 본문 토큰 LRU를 재사용한다. 새 검사·유한 예산·후보 식별값·원본 보존과 실제 자료 대조의 범위는 [실제 Lua 검증 기록](ISSUE-2-REAL-LUA-VALIDATION.md)에 기록한다. 추가 이야기 본문 전달은 필요 없으며 실제 게임 UI·Windows/native 확인은 이번 작업에서 제외한다. 동적 실행 자체는 PRD 범위 밖이며 표시를 위해 Lua·RNG·상태 변경 사슬을 실행하지 않는다. 아래 alpha.1/2/3 절은 각각 게시 당시 기록이다.
+사용자의 작업 재개 지시로 공개 alpha.3 이후 소스를 수정했으며, 2026-10-19 현재 변경의 commit·push·`v1.0.4-alpha.4` prerelease 게시 지시를 받았다. [alpha.4 게시 설명](ISSUE-2-ALPHA4-RELEASE.md)에 검토한 파일과 지원 경계를 기록한다. TextAsset 2,685개와 정확한 번체 이야기 경로 2,198개를 확보했다. 선택지 누락·구문 경계·지역 바인딩·추출 시 조건 소실·긴 본문 접두 보존·이야기 등록 별칭·조작 게이트 표시를 보강한다. FIFO 큐는 가까운 후속을 먼저 처리하고 서로 다른 manager 바인딩 문맥을 분리한다. 선택지·이벤트 정의는 각 파서의 유한 본문 토큰 LRU를 재사용한다. 새 검사·유한 예산·후보 식별값·원본 보존과 실제 자료 대조의 범위는 [실제 Lua 검증 기록](ISSUE-2-REAL-LUA-VALIDATION.md)에 기록한다. 추가 이야기 본문 전달은 필요 없으며 실제 게임 UI·Windows/native 확인은 이번 작업에서 제외한다. 동적 실행 자체는 PRD 범위 밖이며 표시를 위해 Lua·RNG·상태 변경 사슬을 실행하지 않는다. 아래 alpha.1/2/3 절은 각각 게시 당시 기록이다. alpha.4의 실제 게시·다운로드 검증은 다음 문단에 구분한다.
+
+**2026-10-19 02:44:05 KST에 [v1.0.4-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.4) prerelease를 게시하고 익명 공개 다운로드를 검증했습니다.** 소스 태그 커밋은 `3af4f862c09399b56ea7e127ef67d21290eaf174`, Release ID `416602030`, asset ID `654080605`입니다. 커밋의 깨끗한 새 빌드가 검토한 DLL·설정·ZIP과 같은 해시였고 공개 ZIP의 CRC·정확히 두 파일·DLL/설정 바이트·태그 커밋이 일치했습니다. 실제 Lua 정적 대조의 DLL SHA와도 같습니다. 기존 11개 Release·자산, Latest 정식 v1.0.3과 이슈 #2 open을 유지했습니다. 영수증은 `artifacts/releases/v1.0.4-alpha.4/`에 있으며 이 게시 기록의 후속 문서 커밋은 태그·공개 자산을 바꾸지 않습니다.
 
 ## v1.0.4-alpha.3 문구 정리
 

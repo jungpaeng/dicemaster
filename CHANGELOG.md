@@ -3,7 +3,7 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
-## [v1.0.4-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.4) — 2026-10-19 (prerelease 게시 준비)
+## [v1.0.4-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.4) — 2026-10-19 (prerelease)
 
 - 실제 게임 TextAsset과 ResourceManager 경로를 대조해 번체 이야기·다른 언어·모듈을 구분합니다. 오프라인 추출과 실제 후보 IL 대조 도구를 추가합니다.
 - 큰 Lua에서 선택지가 빠지는 발견 예산과 안쪽 인덱스에 의한 분기 잘림을 수정합니다. 함수·지역변수·재대입 경계를 지키고 추출하며 제거된 조건의 불확실성을 보존합니다.
@@ -11,6 +11,8 @@
 - 토큰 연산자 판정의 임시 문자열 할당을 줄이고 실제 무거운 선택지 사례의 의미 보존·시간·할당량을 대조합니다.
 - 후속을 가까운 경로부터 처리하는 유한 큐로 바꾸고 재바인딩 문맥을 분리합니다. 선택지·이벤트의 공통 본문 토큰을 제한된 LRU로 재사용하며 문맥 초기화·읽기 재시도·표시 갱신 계약을 유지합니다.
 - 실제 자료 정적 대조와 자동 검사·로컬 후보는 [검증 기록](docs/ISSUE-2-REAL-LUA-VALIDATION.md)에 구분합니다. 실제 게임/Windows 확인과 PRD #2 완료는 별도입니다. 사용자가 이번 변경의 commit·push·prerelease 게시를 승인했으며 [alpha.4 게시 설명](docs/ISSUE-2-ALPHA4-RELEASE.md)에 범위를 기록합니다.
+
+- 2026-10-19 02:44:05 KST에 소스 커밋 `3af4f862c09399b56ea7e127ef67d21290eaf174`에서 새로 빌드·검사한 설치 ZIP을 게시했습니다. Release ID `416602030`·asset ID `654080605`이며 공개 다운로드·CRC·태그·DLL/설정 해시를 검증했습니다. 기존 11개 Release·Latest 정식 v1.0.3과 이슈 #2 open을 유지합니다.
 
 ## [v1.0.4-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.3) — 2026-10-19 (prerelease)
 
