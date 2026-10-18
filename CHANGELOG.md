@@ -3,9 +3,9 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
-## [v1.0.3-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) — prerelease 게시 준비 중
+## [v1.0.3-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) — 2026-10-18 (prerelease)
 
-**사용자가 prerelease 게시를 승인했습니다.** 링크는 예정 게시 주소이며 아직 게시 완료를 뜻하지 않습니다. 기능 완료·정식 Release·Windows 실행은 계속 보류합니다. 실제 검증 결과와 미확인 항목은 [이슈 #1 검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
+**2026-10-18 21:08:36 KST에 prerelease로 게시했습니다.** 공개 API와 익명 다운로드를 검증했고 기존 Latest `v1.0.2`는 유지했습니다. 기능 완료·정식 Release·Windows 실행은 계속 보류합니다. 실제 검증 결과와 미확인 항목은 [이슈 #1 검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
 
 ### 개발 후보 변경
 
@@ -21,7 +21,7 @@
 
 - 기존 설정과 설치 구조, 주사위·패드·번역·네 탭·선택지 요약 계약을 유지하는 것이 목표입니다.
 - 이전 Release의 DLL로 롤백할 수 있으나, v1.0.2의 선택지 소실 문제는 해당 버전으로 돌아가면 다시 발생할 수 있습니다.
-- `v1.0.3-alpha.1` prerelease용 커밋·push·태그·두 파일 ZIP 게시가 승인되었습니다. 정식 Release·기능 완료 판정은 보류하며, 현재 Windows PC의 게임 실행·후보 설치 검증은 승인되지 않았습니다.
+- `v1.0.3-alpha.1`을 배포 기준 커밋 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 게시했습니다. ZIP 188,793바이트의 SHA-256은 `95c753037a4cf5fe16db37735dbf4833c2ed76af71c7bd941c6f76d791932429`이며 두 파일·CRC·공개 다운로드와 커밋 바이트 일치를 확인했습니다. 정식 Release·기능 완료 판정은 보류하며, 현재 Windows PC의 게임 실행·후보 설치 검증은 승인되지 않았습니다.
 - 난수 조건은 값을 샘플링하지 않고 행 실패/이전 값으로 처리합니다. native Unity·실제 리소스·Harmony·다른 모드·UI·Windows·게임 성능은 미검증이며 제자리 복원은 다음 성공 Lua까지 대기할 수 있습니다.
 
 ## [v1.0.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.2) — 2026-10-18

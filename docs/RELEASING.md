@@ -2,20 +2,21 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [prerelease 설명](ISSUE-1-RELEASE-DRAFT.md)
 
-**사용자가 `v1.0.3-alpha.1` prerelease 게시와 필요한 커밋·push·태그를 승인했습니다. 현재는 게시 전 준비 중입니다.** [예정 게시 주소](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 아직 게시 완료를 뜻하지 않습니다. 이 승인으로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
+**[`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 2026-10-18 21:08:36 KST에 게시하고 공개 다운로드 검증을 마쳤습니다.** GitHub 상태는 `draft=false`, `prerelease=true`입니다. 이 게시로 기능·이슈 완료나 정식 Release로 처리하지 않습니다.
 
 현재 Windows PC는 기존 파일·정보 읽기만 허용되어 있으며 게임 실행·후보 설치·런타임 검증은 승인되지 않았습니다. prerelease 게시 승인은 이 PC에서의 게임 실행 승인이 아닙니다. 실행을 요청하거나 수행하지 않습니다.
 
-## 이번 prerelease의 게시 계약
+## 이번 prerelease의 게시 기록
 
 | 항목 | 계약 |
 |---|---|
 | 저장소 | `jungpaeng/dicemaster` |
 | 태그 | `v1.0.3-alpha.1` |
 | ZIP | `DiceMaster-v1.0.3-alpha.1.zip` |
-| 기준 | 같은 푸시 커밋을 태그와 ZIP에 동일하게 사용 |
-| GitHub 상태 | prerelease로 게시하며 기존 Latest `v1.0.2` 유지 |
-| 절차 | 커밋·push → 같은 커밋의 태그·ZIP → 초안 업로드 → 다운로드 검증 → prerelease 게시 |
+| 배포 기준 커밋 | `2d8936786845b534524b916537e7f1c3e5ab482d` — 태그·ZIP의 고정 기준 |
+| GitHub 상태 | Release ID `416428315`, `draft=false`, `prerelease=true`; 기존 Latest `v1.0.2` (ID `416349430`) 유지 |
+| 게시 시각 | 2026-10-18 12:08:36 UTC / 21:08:36 KST |
+| ZIP 크기·SHA-256 | 188,793바이트, `95c753037a4cf5fe16db37735dbf4833c2ed76af71c7bd941c6f76d791932429` |
 
 설치 ZIP에는 아래 두 파일만 포함합니다. DebugMenu·개발 파일·문서·로그·수신 게임 DLL·`.DS_Store`·`__MACOSX` 등은 포함하지 않습니다.
 
@@ -24,11 +25,11 @@ config/DiceMaster.cfg
 plugins/DiceMaster/DiceMaster.dll
 ```
 
-최종 DLL은 SHA-256 `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 455,680바이트입니다. ZIP의 두 파일이 배포 커밋과 일치하고 손상이 없으며 업로드 후 내려받은 ZIP과 바이트·SHA-256이 일치해야 합니다. 게시 커밋·ZIP SHA-256·GitHub 게시 상태는 게시 작업에서 확정할 기록입니다.
+최종 DLL은 SHA-256 `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 455,680바이트입니다. 익명 공개 API와 익명 다운로드에서 두 파일만 포함됨·CRC 정상·ZIP SHA-256·각 파일의 배포 커밋 바이트 일치를 확인했습니다. 로컬 영수증은 `development/releases/v1.0.3-alpha.1/github-publication.json`입니다. 게시 기록을 보완하는 문서 후속 커밋은 위 태그·배포 커밋을 바꾸지 않습니다.
 
 기존 태그·Release를 덮어쓰지 않습니다. GitHub의 자동 `Source code` 압축 파일은 설치용 ZIP과 별개입니다. 새 설정·원격 기능 플래그·단계별 배포는 도입하지 않습니다. 읽기 전용 원본 게임 참조는 게시 파일에 넣지 않습니다.
 
-## prerelease에 함께 공개할 검증 범위
+## prerelease에 공개한 검증 범위
 
 [게시 설명](ISSUE-1-RELEASE-DRAFT.md)에는 자동 검사와 미검증 경로를 함께 기록합니다. 실제 관리 DLL의 정적 API·수명주기 분석, 실제 IL을 native 경계 대역으로 옮긴 macOS 검사, 실제 게임 실행은 서로 다른 증거입니다.
 

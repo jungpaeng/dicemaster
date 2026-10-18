@@ -4,7 +4,7 @@
 
 기록일: 2026-10-18 (Asia/Seoul). 기준 회귀: v1.0.2 / `e7d6dfeade5da9bba12825668f4948f56aea9e26`.
 
-**현재 상태: 기능·이슈 완료와 정식 Release는 보류하며, 승인된 `v1.0.3-alpha.1` prerelease 게시를 준비 중입니다.** [예정 게시 주소](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 게시 완료를 뜻하지 않습니다. 사용자는 prerelease에 필요한 커밋·push·태그·두 파일 ZIP 게시를 승인했습니다. 실제 게임 DLL의 관련 API 분석과 사용자 Windows 검증을 모두 충족하기 전에는 기능·이슈 완료 또는 정식 Release로 처리하지 않습니다. Windows 설치·게임 실행 검증은 승인되지 않았습니다.
+**현재 상태: 기능·이슈 완료와 정식 Release는 보류하며, [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) 게시와 공개 다운로드 검증을 마쳤습니다.** 게시 시각은 2026-10-18 21:08:36 KST, 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`입니다. 실제 게임 DLL의 관련 API 분석과 사용자 Windows 검증을 모두 충족하기 전에는 기능·이슈 완료 또는 정식 Release로 처리하지 않습니다. Windows 설치·게임 실행 검증은 승인되지 않았습니다.
 
 ## 확인한 문제와 증거의 한계
 
@@ -20,7 +20,7 @@
 
 수신 검증은 159/159개 파일의 크기·해시 일치, ZIP CRC·경로 검사를 확인했습니다. ZIP SHA-256은 `42F946C26956B61FFE4ACA4C3391BDF0D9EF343FDA6B7B242AA617E9E46BC5CC`입니다. 기존 파일·로그는 Steam appid `1859910`, buildid `26021712`, Unity `2020.3.49f1`, BepInEx `6.0.0-be.692`를 식별합니다. 설치 모드의 메타데이터 버전은 DiceMaster `1.0.0`이지만 DLL SHA-256은 `62ade4b719381fb31bfa7a356ae004299d391f53f13a4f085dc1a39e62cf5179`로 저장소 `e7d6dfe` 기준 DLL과 같습니다. 메타데이터 버전만으로 후보를 구분하지 않습니다.
 
-이 자료는 기존 Windows 파일·정보의 읽기 전용 수집본입니다. 새 Windows 실행이나 호환성 확인 결과가 아니며, 현재 Windows PC의 게임 실행·후보 설치 검증은 승인되지 않았습니다. 이후 승인된 prerelease 파일 게시와 구분합니다.
+이 자료는 기존 Windows 파일·정보의 읽기 전용 수집본입니다. 새 Windows 실행이나 호환성 확인 결과가 아니며, 현재 Windows PC의 게임 실행·후보 설치 검증은 승인되지 않았습니다. 완료한 prerelease 파일 게시·다운로드 검증과 구분합니다.
 
 ### 실제 API에서 확인한 의미와 후보 변경
 
@@ -76,13 +76,14 @@
 | 이전 후보 보관 경로 | `development/releases/real-api/prior-candidate.dll` |
 | 이전 후보 SHA-256·크기 | `56d85cd000cf6bf065237bcf032a1c6e18d2e739a09ead59e9fac2860b24206f`, 444,416바이트 |
 | 실제 API 반영 최종 후보 경로 | `development/releases/real-api/DiceMaster.final.dll` |
-| 저장소 추적 DLL | `plugins/DiceMaster/DiceMaster.dll` — 최종 후보와 바이트 일치, Windows 배포 아님 |
+| 저장소 추적 DLL | `plugins/DiceMaster/DiceMaster.dll` — 최종 후보와 바이트 일치, Windows 실행 검증 아님 |
 | 최종 후보 SHA-256·크기 | `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 455,680바이트 |
-| 게시 준비 상태 | `v1.0.3-alpha.1` prerelease용 커밋·push·태그·두 파일 ZIP 게시 승인. 현재 문서 기록 시점은 게시 전 준비 중 |
+| 게시 상태 | `v1.0.3-alpha.1` prerelease 공개·익명 다운로드 검증 완료. 기능·정식 Release 완료와 구분 |
+| 배포 기준 커밋 | `2d8936786845b534524b916537e7f1c3e5ab482d` — 이후 문서 보완 커밋과 별개로 태그·ZIP 기준 고정 |
 
 이전 후보의 통과 기록은 캐시/보호 IL 19개, 엔진 16개 시나리오·70개 단언, 통합 64개, 패드 525,430개입니다. 기준 비교 구조 검사는 920개 단언(324개 본문 불변·13개 검증한 보호/파서 경로 정규화·리소스 8개 일치), 재적용 비교는 각 887개 단언(338개 본문 불변·정규화 차이 0개·리소스 8개 일치)이었습니다. 이 수치는 실제 API·수명주기 소스를 반영하기 전 후보의 이력이며 현재 최종 통과 주장에 사용하지 않습니다.
 
-최종 후보를 저장소 추적 DLL에 바이트 그대로 반영했습니다. 참조 원본 159/159개 파일과 이전 후보 백업은 보존되었으며 Windows 설치·게임 실행·배포는 하지 않았습니다.
+최종 후보를 저장소 추적 DLL에 바이트 그대로 반영했습니다. 참조 원본 159/159개 파일과 이전 후보 백업은 보존되었으며 현재 사용자 Windows PC에 설치하거나 게임을 실행하지 않았습니다.
 
 `build-log-refresh.py`는 임시 후보에서 검사한 뒤 출력을 기록합니다. 출력 전 반복 패치 후보의 실제 파서 통합·구조 검사도 실행합니다. `--game-managed`는 읽기 전용 실제 관리 DLL의 IL·메타데이터 계약 검사를 처음 후보와 반복 후보에 추가하며 원본 참조를 수정하지 않습니다.
 
@@ -169,10 +170,23 @@ Unity·게임 API·실제 파서·리플렉션 어댑터·Windows 게임 런타�
 
 향후 승인된 검증의 기록 대상은 재현 순서·탭·항목·관찰 시간과 관련 BepInEx 오류/복구 로그입니다. 전체 Lua·세이브 내용은 기록 대상에서 제외합니다.
 
-## 승인된 prerelease 게시와 보류한 정식 Release
+## 게시한 prerelease와 보류한 정식 Release
 
-사용자는 `v1.0.3-alpha.1` prerelease 게시와 필요한 커밋·push·태그를 승인했습니다. 현재 게시 전 준비 중이며 [예정 게시 주소](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)가 실제 공개되었음을 아직 기록하지 않습니다.
+[`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 아래 식별값으로 게시되었습니다. 공개 API와 익명 공개 다운로드 검증을 모두 마쳤습니다.
 
-같은 푸시 커밋을 태그와 `DiceMaster-v1.0.3-alpha.1.zip`의 기준으로 사용하고 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함합니다. 초안 업로드 후 다운로드 파일의 바이트·SHA-256 일치를 확인한 뒤 prerelease로 게시하는 절차입니다. 기존 태그·Release는 덮어쓰지 않고 최신 정식 버전으로 지정하지 않습니다. 게시 결과·배포 커밋·ZIP 식별값은 게시 작업에서 확정할 기록입니다.
+| 기록 | 확정값 |
+|---|---|
+| GitHub Release | ID `416428315`, `draft=false`, `prerelease=true` |
+| 게시 시각 | 2026-10-18 12:08:36 UTC / 21:08:36 KST |
+| 태그·배포 기준 커밋 | `v1.0.3-alpha.1` / `2d8936786845b534524b916537e7f1c3e5ab482d` |
+| 설치 ZIP | `DiceMaster-v1.0.3-alpha.1.zip`, 188,793바이트 |
+| ZIP SHA-256 | `95c753037a4cf5fe16db37735dbf4833c2ed76af71c7bd941c6f76d791932429` |
+| 내용 검증 | 정확히 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일, CRC 정상 |
+| 공개 다운로드 검증 | ZIP SHA-256 일치, ZIP 안 두 파일과 DLL이 배포 기준 커밋 바이트와 일치 |
+| 기존 Latest | 익명 `/releases/latest`도 `v1.0.2`, ID `416349430` 유지 |
+| PRD 이슈 #1 | open 유지, 완료로 닫지 않음 |
+| 로컬 영수증 | `development/releases/v1.0.3-alpha.1/github-publication.json` |
 
-이 승인은 Windows 실행·설치 검증, 기능·이슈 완료, 정식 Release 공개를 포함하지 않습니다. native·실제 리소스·런타임·Windows·실제 게임 성능 검증은 계속 미완료입니다. 롤백 대상 v1.0.2에는 선택지 소실 회귀가 남아 있습니다.
+게시 기록의 문서 후속 커밋은 배포 태그·커밋·ZIP을 변경하지 않습니다. DLL SHA-256은 위 최종 후보 기록의 `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 크기는 455,680바이트로 유지됩니다.
+
+이번 게시와 검증은 Windows 실행·설치 검증, 기능·이슈 완료, 정식 Release 공개를 포함하지 않습니다. native·실제 리소스·런타임·Windows·실제 게임 성능 검증은 계속 미완료입니다. 롤백 대상 v1.0.2에는 선택지 소실 회귀가 남아 있습니다.

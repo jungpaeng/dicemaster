@@ -1,6 +1,6 @@
-# DiceMaster v1.0.3-alpha.1 — prerelease 게시 준비
+# DiceMaster v1.0.3-alpha.1 — prerelease 게시 기록
 
-**게시 전 준비 중인 개발 prerelease입니다.** 사용자가 `v1.0.3-alpha.1` prerelease 게시와 필요한 커밋·push·태그를 승인했습니다. [예정 게시 주소](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 아직 게시 완료를 뜻하지 않습니다. 기능·이슈 완료 또는 정식 Release 검증 완료로 처리하지 않습니다.
+**[`v1.0.3-alpha.1` 개발 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 2026-10-18 21:08:36 KST에 게시하고 공개 다운로드 검증을 마쳤습니다.** 배포 기준 커밋은 `2d8936786845b534524b916537e7f1c3e5ab482d`입니다. 기능·이슈 완료 또는 정식 Release 검증 완료로 처리하지 않습니다.
 
 실제 게임 자료의 정적 분석과 macOS 자동 검사는 수행했지만 Windows 게임 실행·설치·런타임 검증은 미승인·미실행입니다. prerelease 게시 승인은 Windows 실행 승인이 아니며 실행을 요청하거나 수행하지 않습니다.
 
@@ -35,7 +35,7 @@ v1.0.2에서 공유 Lua 분석 결과를 비우면서 파싱 완료 표시를 �
 | 실제 설치 기준과 최종 파일 구조 | 961개 단언 통과, 본문 322개 불변·15개 검증한 경로 정규화·리소스 8개 일치 |
 | 최종 파일의 패드 검사 | 525,430개 단언 통과 |
 
-코드 오류는 0이나 네트워크 차단에 따른 NuGet 보안 권고 조회 `NU1900` 경고가 있습니다. 최종 DLL·검사 범위는 [검증 기록](ISSUE-1-VALIDATION.md)에 식별하며 이전 후보 결과를 새 후보에 승계하지 않습니다. 최종 후보는 저장소 추적 DLL에 바이트 그대로 반영했고 원본 참조·이전 후보 백업은 보존했습니다. Windows 배포는 하지 않았습니다.
+코드 오류는 0이나 네트워크 차단에 따른 NuGet 보안 권고 조회 `NU1900` 경고가 있습니다. 최종 DLL·검사 범위는 [검증 기록](ISSUE-1-VALIDATION.md)에 식별하며 이전 후보 결과를 새 후보에 승계하지 않습니다. 최종 후보는 저장소 추적 DLL에 바이트 그대로 반영했고 원본 참조·이전 후보 백업은 보존했습니다. 현재 사용자 Windows PC에 설치하거나 게임을 실행하지 않았습니다.
 
 다음은 계속 미실행이며 기능 완료·정식 Release 공개의 차단 조건입니다. 이번 승인된 prerelease에는 이 제한을 명시합니다.
 
@@ -47,7 +47,7 @@ macOS 독립 표시 엔진 벤치마크는 실제 파서·리플렉션·새 순�
 
 ## prerelease 파일과 알려진 롤백 제한
 
-게시 파일 이름은 `DiceMaster-v1.0.3-alpha.1.zip`이며 기존 BepInEx 모드 베이스가 필요한 두 파일 구조를 유지합니다. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll`만 포함하고 설정·세이브 형식은 바꾸지 않습니다. 배포 커밋·태그·ZIP 내용과 업로드 다운로드 일치를 확인한 뒤 prerelease로 게시합니다. 최신 정식 버전으로 지정하지 않습니다.
+게시 파일 이름은 `DiceMaster-v1.0.3-alpha.1.zip`이며 기존 BepInEx 모드 베이스가 필요한 두 파일 구조를 유지합니다. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll`만 포함하고 설정·세이브 형식은 바꾸지 않습니다. 태그·ZIP은 같은 배포 기준 커밋에서 만들었고 익명 공개 다운로드의 바이트·SHA-256 일치를 확인했습니다. GitHub는 `draft=false`, `prerelease=true`이며 기존 Latest `v1.0.2`를 유지했습니다.
 
 이 파일 게시 안내는 현재 Windows PC에 후보를 적용하거나 게임을 실행하라는 요청이 아닙니다.
 
@@ -56,15 +56,20 @@ v1.0.2로 롤백하면 선택지 결과 소실 문제가 다시 나타날 수 �
 | 항목 | 현재 상태 |
 |---|---|
 | 버전·태그 | `v1.0.3-alpha.1` prerelease |
-| 게시 상태 | 게시 전 준비 중. 실제 게시 시각·배포 커밋·ZIP SHA-256은 게시 작업에서 확정 |
-| 예정 게시 주소 | [v1.0.3-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) |
-| 게시 커밋 | 승인된 게시 작업에서 확정하며 태그·ZIP과 같은 커밋 사용 |
+| 게시 상태 | Release ID `416428315`, `draft=false`, `prerelease=true` |
+| 게시 시각 | 2026-10-18 12:08:36 UTC / 21:08:36 KST |
+| 게시 주소 | [v1.0.3-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1) |
+| 태그·배포 기준 커밋 | `v1.0.3-alpha.1` / `2d8936786845b534524b916537e7f1c3e5ab482d` |
 | 최종 로컬 후보 | `development/releases/real-api/DiceMaster.final.dll` |
 | 저장소 추적 DLL | `plugins/DiceMaster/DiceMaster.dll`, 최종 후보와 바이트 일치 |
 | 최종 DLL SHA-256·크기 | `ca9061a39bc514b8996b6f6dce154908bad741aa4815ce0951e5ade37dcc97f7`, 455,680바이트 |
 | 이전 후보 | `development/releases/real-api/prior-candidate.dll`, `56d85cd000cf6bf065237bcf032a1c6e18d2e739a09ead59e9fac2860b24206f` |
 | 실제 Windows·native·게임 리소스 검증 | 미승인·미실행 |
 | 실제 게임 성능 | 미측정 |
-| 배포 ZIP 검증 | 게시 전 준비 중, 업로드 다운로드 검증 예정 |
+| 배포 ZIP | `DiceMaster-v1.0.3-alpha.1.zip`, 188,793바이트 |
+| ZIP SHA-256 | `95c753037a4cf5fe16db37735dbf4833c2ed76af71c7bd941c6f76d791932429` |
+| 배포 ZIP 검증 | 익명 공개 다운로드 완료, 정확히 두 파일·CRC 정상·배포 커밋 바이트 일치 |
+| 기존 Latest | `v1.0.2` (ID `416349430`) 유지 |
+| 로컬 영수증 | `development/releases/v1.0.3-alpha.1/github-publication.json` |
 
-승인된 prerelease 게시를 준비하며 정식 Release·기능 완료 판정은 계속 보류합니다. 게시 조건과 승인 범위는 [Release 안내](RELEASING.md)에 기록합니다.
+prerelease 게시와 공개 다운로드 검증은 마쳤으며 정식 Release·기능 완료 판정은 계속 보류합니다. 이 게시 기록의 문서 후속 커밋은 배포 태그·기준 커밋·ZIP을 바꾸지 않습니다. 게시 조건과 승인 범위는 [Release 안내](RELEASING.md)에 기록합니다.

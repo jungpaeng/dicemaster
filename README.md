@@ -5,7 +5,7 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md)
 
-현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. **기능 완료·정식 Release 공개는 보류**하며, 사용자가 승인한 `v1.0.3-alpha.1` **prerelease 게시를 준비 중**입니다. [예정 게시 주소](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)는 게시 완료 전의 주소입니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다. 확인 결과와 남은 제한은 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
+현재 작업 트리는 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 재설계 후보입니다. **기능 완료·정식 Release 공개는 보류**하며, [`v1.0.3-alpha.1` prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)를 **2026-10-18 21:08:36 KST에 게시했습니다**. 익명 공개 다운로드의 ZIP·DLL과 배포 기준 커밋 일치를 확인했으며 기존 Latest `v1.0.2`는 유지했습니다. 실제 게임 DLL의 API·로드 경계 정적 분석과 macOS 자동 검사는 수행했지만 런타임·native Unity·실제 게임 리소스·사용자 Windows 검증은 미실행입니다. prerelease 게시 승인은 Windows 게임 실행·설치 검증 승인이 아닙니다. 현재 Windows PC는 기존 파일·정보 읽기만 허용되며 실행을 요청하지 않습니다. v1.0.2에는 선택지 결과 소실 문제가 있습니다. 확인 결과와 남은 제한은 [검증 기록](docs/ISSUE-1-VALIDATION.md)에 기록합니다.
 
 ## 공개 버전 설치 안내
 
@@ -87,7 +87,7 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 
 ## 공개 버전 업데이트와 향후 롤백 계획
 
-prerelease 파일 게시가 승인되었어도 현재 Windows PC의 후보 설치·실행 검증은 승인되지 않았습니다. 다음은 공개 버전에 관한 안내이며 현재 후보의 적용 요청이 아닙니다.
+prerelease 파일이 게시되었어도 현재 Windows PC의 후보 설치·실행 검증은 승인되지 않았습니다. 다음은 공개 버전에 관한 안내이며 현재 후보의 적용 요청이 아닙니다.
 
 기존 설정을 유지하려면 게임 종료 후 DLL만 교체합니다. 이번 재설계는 설정 및 세이브 형식을 바꾸지 않습니다. 문제가 생기면 게임을 종료하고 이전 Release ZIP의 `plugins/DiceMaster/DiceMaster.dll`로 되돌립니다. 설치 전 DLL을 별도로 보관하면 같은 파일로 복원할 수 있습니다.
 
@@ -117,7 +117,7 @@ plugins/DiceMaster/DiceMaster.dll
 ```
 
 개발 파일과 DebugMenu 등 다른 모드는 포함하지 않습니다. ZIP과 릴리스 태그는 동일한 커밋을 기준으로 만듭니다.
-**현재 승인된 prerelease 절차는 커밋·푸시 → 같은 커밋의 태그·두 파일 ZIP → 초안 업로드 → 다운로드 검증 → prerelease 게시**입니다. 정식 Release는 실제 게임·사용자 Windows 검증까지 충족하기 전에는 공개하지 않습니다. prerelease는 기능 완료나 Windows 확인 완료로 처리하지 않으며 최신 정식 버전으로 지정하지 않습니다.
+**`v1.0.3-alpha.1`은 배포 기준 커밋 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 태그·두 파일 ZIP을 만들고 공개 다운로드 검증까지 마친 prerelease**입니다. 정식 Release는 실제 게임·사용자 Windows 검증까지 충족하기 전에는 공개하지 않습니다. prerelease는 기능 완료나 Windows 확인 완료로 처리하지 않으며 최신 정식 버전으로 지정하지 않습니다.
 향후 공개 조건은 [Release 등록 안내](docs/RELEASING.md)를 참고하세요.
 
 ## 오류 제보
