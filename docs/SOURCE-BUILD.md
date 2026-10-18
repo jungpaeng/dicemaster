@@ -8,7 +8,11 @@
 
 ## PRD #4 후보와 prerelease
 
-### 현재 로컬 후속: 한국어 표시 경로 통일
+### v1.0.5-alpha.7 게시·고정 커밋 재빌드 검증
+
+**2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7)를 게시했습니다.** 소스·태그 커밋 `3746dbf0153fe131226bb149d68ba18e43e9fdd9`을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 12개 검사·입력 153개·생산 소스 63개와 검토 후보의 DLL/cfg/ZIP 바이트 일치를 확인했습니다. 공개 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip)의 SHA-256은 `922e6601c2c5d929c3458e9ad3d46e1ac690e7e8419ea981ee8f085e448b9d2b`이고 DLL은 `17044b1c90ce1e65ef1b253b6ebd131a202a787e3eb59e776ed1ac68e8bc18e4`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. 공개 페이지·ZIP은 인증 없이 접근해 CRC·정확히 두 파일·내부 바이트/해시를 확인했습니다. 영수증은 `artifacts/releases/v1.0.5-alpha.7/`에 있으며 [설치·복구·Windows 확인표](ISSUE-4-ALPHA7-RELEASE.md)를 따릅니다. 기존 자산·Latest 정식 v1.0.4와 이슈 #4 open을 유지하고 실제 Windows 확인은 대기입니다.
+
+### alpha.7에 포함한 로컬 후보: 한국어 표시 경로 통일
 
 `--output-dir artifacts/issue-4/translation-coverage`로 목록·상세·선택지 제목, 이벤트 표시 캐시, 게임 서술 로그와 효과 요약의 표시 번역을 통일한 전체 소스 후보를 생성합니다. 이스케이프 등호와 전체 번역 키 매칭을 보완하며 내장 리소스 바이트와 원본 ID·예약 식별은 보존합니다. 2026-10-19 06:44:14 KST 후보의 전체 12개 검사 프로그램·실제 DLL 번역/서술 로그 3,511개·UI/입력 3,073개·DLL 연결 55개 검사가 통과했습니다. 입력 153개·소스 63개와 ZIP CRC·두 파일·내부 바이트·해시를 대조했습니다. [동작·후보·SHA-256·적용·Windows 확인](ISSUE-4-TRANSLATION-COVERAGE.md)을 따르며 DLL만 교체해 cfg를 보존합니다. 앞선 정상 문구 생략·패드 겹침 열기를 포함하고 이전 후보·공개 자산은 보존합니다. 실제 Windows 확인은 대기이며 커밋·게시를 수행하지 않았습니다.
 

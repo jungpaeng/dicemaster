@@ -1,5 +1,7 @@
 # PRD #4 후속: 한국어 표시 경로 통일
 
+이 문서는 로컬 후보 생성 당시 기록입니다. 이후 사용자 지시에 따라 **2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7)로 커밋·게시**했으며 [최신 설치·해시·복구·Windows 확인](ISSUE-4-ALPHA7-RELEASE.md)을 따릅니다. 아래 개별 후보 경로·수치와 당시 미게시 설명은 이력으로 보존합니다.
+
 2026-10-19 KST. 사용자가 [앞선 번역 감사](../artifacts/issue-4/translation-audit/audit.json)에서 발견한 누락 가능 경로 전체에 표시 번역 적용을 요청했다. 이전 감사는 원인 확인 당시 기록으로 보존한다. 이번 후보는 [정상 조회 문구 생략](ISSUE-4-STATUS-LABELS.md)과 [시간 제한 없는 L3/R3 겹침 열기](ISSUE-4-PAD-OVERLAP.md)를 포함한다.
 
 ## 적용 범위와 보존 경계

@@ -5,7 +5,13 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
-## 현재 로컬 후속 — 한국어 표시 경로 통일
+## PRD #4 — v1.0.5-alpha.7 prerelease
+
+**2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip). alpha.6 이후 한국어 표시 경로 통일·정상 조회 문구 생략·시간 제한 없는 L3/R3 겹침 열기를 포함합니다. 소스 커밋 `3746dbf0153fe131226bb149d68ba18e43e9fdd9`의 깨끗한 재빌드·12개 검사와 공개 다운로드의 바이트·CRC·해시를 확인했습니다. [설치·SHA-256·복구·Windows 확인표](docs/ISSUE-4-ALPHA7-RELEASE.md)를 따르며 기존 cfg는 유지하고 DLL만 교체합니다. 실제 Windows 게임 확인은 대기이고 이슈 #4는 open입니다.
+
+아래 로컬 후보의 미게시 설명·경로·수치는 각 후보를 만든 당시 기록입니다.
+
+## alpha.7에 포함한 로컬 후보 이력 — 한국어 표시 경로 통일
 
 조건·이벤트·미션의 목록과 상세 제목에 같은 한국어 표시 번역을 적용합니다. 게임 기본 서술 로그의 이벤트명·본문과 선택지 효과 요약도 같은 표시 변환을 사용하며 번역 파일의 이스케이프 등호 처리와 전체 문장 매칭을 보완합니다. 원본 ID·내부 식별자·예약 대상은 보존합니다. 전체 소스 빌드·12개 검사 프로그램과 실제 DLL 번역/서술 로그 3,511개·UI/입력 3,073개·DLL 연결 55개 검사가 통과했습니다. [적용 범위·후보·SHA-256·Windows 확인](docs/ISSUE-4-TRANSLATION-COVERAGE.md)을 따르며 `artifacts/issue-4/translation-coverage/`의 DLL만 교체해 cfg를 보존합니다. 앞선 정상 문구 생략과 시간 제한 없는 L3/R3 열기를 포함하고 기존 후보·공개 자산은 보존합니다. 실제 Windows 확인은 대기이며 커밋·공개 게시를 수행하지 않았습니다.
 

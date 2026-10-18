@@ -1,5 +1,15 @@
 # 소스 기반 Release와 게시 이력
 
+## PRD #4 alpha.7 한국어 표시·상태·패드 겹침 열기 게시
+
+사용자의 커밋·prerelease 명시적 지시에 따라 **2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7)를 게시했습니다.** [설치 자산](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip)은 한국어 표시 경로 통일·이스케이프 등호/전체 문장 매칭, 정상 조회 문구 생략, 시간 제한 없는 동일 패드 L3/R3 겹침 열기를 포함합니다. 원본 ID·예약 대상과 반복/해제·중립 보호를 유지하며 [설치·복구·Windows 단계표](ISSUE-4-ALPHA7-RELEASE.md)를 따릅니다.
+
+소스·태그 커밋은 `3746dbf0153fe131226bb149d68ba18e43e9fdd9`, Release ID는 `416732905`, asset ID는 `654566578`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 커밋에는 이번에 검토한 24개 파일만 포함했고 기존 `.agents/`·`skills-lock.json`은 제외했습니다. 고정 커밋을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 12개 검사·입력 153개·생산 소스 63개와 검토 DLL/cfg/ZIP 바이트 일치를 확인했습니다. 번역·서술 로그 3,511개·UI/입력 3,073개·실제 DLL 연결 55개와 기존 패드·분석·갱신 회귀를 포함합니다.
+
+DLL은 583,168바이트·`17044b1c90ce1e65ef1b253b6ebd131a202a787e3eb59e776ed1ac68e8bc18e4`, cfg는 11,175바이트·`bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`, ZIP은 245,281바이트·`922e6601c2c5d929c3458e9ad3d46e1ac690e7e8419ea981ee8f085e448b9d2b`입니다. ZIP에는 DLL/cfg 두 파일뿐이며 게임 소스·DLL은 포함하지 않습니다. 공개 페이지와 ZIP을 인증 없이 접근·다운로드해 CRC·두 파일·내부 바이트·해시를 확인했습니다. 기존 20개 Release·20개 태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다.
+
+`artifacts/releases/v1.0.5-alpha.7/`에 `release-verification.json`, `reviewed-candidate-comparison.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md`와 로그를 보존합니다. 게시 결과를 기록하는 후속 문서 커밋은 태그·공개 설치 자산을 바꾸지 않습니다. **실제 Windows 게임을 설치하거나 실행하지 않았으며 사용자 확인과 이슈 #4 완료는 대기입니다.**
+
 ## PRD #4 alpha.6 읽기 화면·조건 분기·패드 열기 게시
 
 2026-10-19 KST에 사용자가 현재 수정의 커밋·prerelease 작성을 명시적으로 지시했습니다. [v1.0.5-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.6)의 설치 자산은 [DiceMaster-v1.0.5-alpha.6.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip)이며 [변경·SHA-256·설치·복구·Windows 확인표](ISSUE-4-ALPHA6-RELEASE.md)를 사용합니다. alpha.5 이후의 1920×1200 기준 872×960·20px 기본 배치, 선택지 읽기 전용 화면, 조건 분기 블록, 미션 정상 문구 생략·자동 스크롤바와 양쪽 스틱 클릭 열기를 포함합니다.

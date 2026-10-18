@@ -2,11 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## 현재 로컬 후속 — 시간 제한 없는 L3+R3 겹침
+## alpha.7 — 시간 제한 없는 L3+R3 겹침
+
+**2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip)은 소스 `3746dbf0153fe131226bb149d68ba18e43e9fdd9`의 깨끗한 재빌드·전체 12개 검사와 공개 다운로드 검증을 통과했습니다. [설정·해시·DLL만 적용·복구·Windows 확인](ISSUE-4-ALPHA7-RELEASE.md)을 따릅니다. 아래 동작을 alpha.7에서 제공하며 실제 Windows 패드 확인은 사용자 대기입니다.
 
 사용자 후속 지시로 300ms 제한을 제거합니다. **같은 패드의 어느 쪽 클릭이든 먼저 누른 채 유지하다 반대 클릭을 추가해 겹치면** 열며, 긴 홀드·반대 순서·동시 클릭을 허용합니다. 전체 해제·중립 뒤 새 입력과 한 번 열기, 동반 버튼·스틱·트리거의 취소, 초점·연결·준비·오래된 폴링 상태의 재설정은 유지합니다. 기존 1초 폴링 신선도는 입력 경로의 연속성을 확인하는 보호이며 두 클릭 사이의 시간 제한이 아닙니다.
 
-단독 L3/R3의 게임 전달 제한, 기본 `EnableGamepadLogOpen=true`·`false` 해제 복구, 주사위 옵션 독립·Tab·B 닫기와 Tab 진입의 기존 첫 입력 문제는 그대로입니다. [현재 계약·후보 SHA-256·DLL만 적용·복구·Windows 확인](ISSUE-4-PAD-OVERLAP.md)을 따릅니다. 2026-10-19 06:29:49 KST의 새 후보는 전체 12개 검사 프로그램과 패드 열기 1,408개 단언·35개 시나리오, 실제 DLL 연결 48개 검사를 통과했습니다. 각 순서 1.28초의 실제 홀드 검사는 Windows 게임 실행 결과가 아니며 실제 패드 확인은 대기입니다. 이번 로컬 후속의 커밋·공개 게시와 게임 실행은 수행하지 않습니다. 아래 alpha.6의 300ms 계약과 수치는 공개 당시 이력입니다.
+단독 L3/R3의 게임 전달 제한, 기본 `EnableGamepadLogOpen=true`·`false` 해제 복구, 주사위 옵션 독립·Tab·B 닫기와 Tab 진입의 기존 첫 입력 문제는 그대로입니다. [현재 계약·후보 SHA-256·DLL만 적용·복구·Windows 확인](ISSUE-4-PAD-OVERLAP.md)을 따릅니다. 2026-10-19 06:29:49 KST의 새 후보는 전체 12개 검사 프로그램과 패드 열기 1,408개 단언·35개 시나리오, 실제 DLL 연결 48개 검사를 통과했습니다. 각 순서 1.28초의 실제 홀드 검사는 Windows 게임 실행 결과가 아니며 실제 패드 확인은 대기입니다. 이는 로컬 후보 생성 당시 기록이며 이후 위 alpha.7로 커밋·게시했습니다. 실제 Windows 게임은 실행하지 않았습니다. 아래 alpha.6의 300ms 계약과 수치는 공개 당시 이력입니다.
 
 **2026-10-19 06:21:15 KST에 [v1.0.5-alpha.6 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.6)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.6/DiceMaster-v1.0.5-alpha.6.zip)은 고정 소스 커밋 `de0d511e60c99a6b84be33c9e3d7676746986c76`의 깨끗한 재빌드·12개 검사와 인증 없는 다운로드의 CRC·바이트·해시 검증을 통과했습니다. [변경·SHA-256·DLL만 적용·복구와 Windows 확인](ISSUE-4-ALPHA6-RELEASE.md)을 따릅니다. 실제 Windows 게임 확인은 대기이며 이슈 #4는 open입니다. 아래 로컬 후보 설명과 이전 공개 이력은 당시 상태로 보존합니다.
 

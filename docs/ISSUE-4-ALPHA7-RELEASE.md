@@ -1,6 +1,6 @@
 # DiceMaster v1.0.5-alpha.7 — 패드 겹침 열기·상태 문구·한국어 표시
 
-2026-10-19 KST. alpha.6 이후 요청한 세 후속 변경을 모은 **prerelease 게시 준비 기록**이다. 사용자가 이번 커밋·prerelease 게시를 승인했다. 이 문서 작성 시점에는 고정 커밋 재빌드와 실제 공개 게시를 확정하지 않았으며, 아래 해시는 검토한 로컬 후보의 값이다. 고정 커밋 재빌드·후보 일치·게시·공개 다운로드 검증 결과는 확인한 뒤 별도로 기록한다.
+**2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip)은 소스·태그 커밋 `3746dbf0153fe131226bb149d68ba18e43e9fdd9`을 깨끗하게 재빌드한 파일입니다. 전체 12개 검사와 검토 후보 DLL/cfg/ZIP 바이트 일치, 공개 페이지·설치 파일 다운로드의 SHA-256·CRC·내부 바이트 검증을 통과했습니다. 아래 후보 생성 당시 검사·해시는 게시 파일과 동일합니다.
 
 실제 Windows 게임은 에이전트가 설치하거나 실행하지 않았다. 패드 탐색·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기이며 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)를 완료 처리하지 않는다. 이전 Windows 확인 기록을 이번 후보에 승계하지 않는다.
 
@@ -34,7 +34,7 @@ L3/R3는 왼쪽·오른쪽 스틱을 아래로 누르는 클릭이다. 스틱 �
 
 번역 파일 `ModTranslation.txt` 164행의 `\=`를 원문/번역 구분자로 잘못 자르지 않도록 첫 번째 이스케이프하지 않은 등호를 사용한다. 기존 literal escape 형태와 복원 형태를 함께 등록하고 해당 항목의 중간 사전 변환 별칭도 보완해 실제 호출에서 문장 전체가 번역되도록 한다. 기존 사전 우선순위와 먼저 등록한 값 우선 정책을 유지한다.
 
-표시 이름만 번역한다. `LogItem.Id`·`RawId`, 게임 데이터 이름·스크립트 키·원본 객체·예약 target/context/tab/id, `원본 ID:`와 이름 없는 항목의 ID fallback은 보존한다. 공통 표시 번역 경계에 기존 중복 억제 미번역 진단을 연결한다. 사전에 없는 신규 문구까지 번역됐다고 보장하지 않으며 원문 보존·진단 정책을 따른다. 내장 리소스 8개와 외부 게임 참조는 수정하지 않는다.
+표시 문자열만 번역한다. `LogItem.Id`·`RawId`, 게임 데이터 이름·스크립트 키·원본 객체·예약 target/context/tab/id, `원본 ID:`와 이름 없는 항목의 ID fallback은 보존한다. 공통 표시 번역 경계에 기존 중복 억제 미번역 진단을 연결한다. 사전에 없는 신규 문구까지 번역됐다고 보장하지 않으며 원문 보존·진단 정책을 따른다. 내장 리소스 8개와 외부 게임 참조는 수정하지 않는다.
 
 ## 검토 후보와 자동 검사
 
@@ -43,7 +43,7 @@ L3/R3는 왼쪽·오른쪽 스틱을 아래로 누르는 클릭이다. 스틱 �
 | 파일 | 크기 | 검토 후보 SHA-256 |
 | --- | ---: | --- |
 | `DiceMaster.dll` | 583,168바이트 | `17044b1c90ce1e65ef1b253b6ebd131a202a787e3eb59e776ed1ac68e8bc18e4` |
-| `DiceMaster-source-candidate.zip` → 게시 예정 `DiceMaster-v1.0.5-alpha.7.zip` | 245,281바이트 | `922e6601c2c5d929c3458e9ad3d46e1ac690e7e8419ea981ee8f085e448b9d2b` |
+| `DiceMaster-v1.0.5-alpha.7.zip` | 245,281바이트 | `922e6601c2c5d929c3458e9ad3d46e1ac690e7e8419ea981ee8f085e448b9d2b` |
 | ZIP 내부 `config/DiceMaster.cfg` | 11,175바이트 | `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0` |
 
 검토 후보의 전체 소스 빌드와 **12개 검사 프로그램 모두 통과**했다. 입력 153개·생산 소스 63개 해시 일치, ZIP CRC·정확히 두 파일·내부 DLL/cfg 바이트·해시를 확인했다. ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg`만 있다.
@@ -115,3 +115,11 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 게시 전에는 고정 소스 커밋의 깨끗한 전체 빌드·12개 검사와 검토 후보의 DLL·cfg·ZIP 바이트 일치를 확인한다. 게시 후에는 prerelease 여부·태그 커밋·익명 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인한다. 검증 영수증은 `artifacts/releases/v1.0.5-alpha.7/`에 보존한다. 실제 게시 일시·커밋·Release/asset ID·검증 결과는 확인 후 기록한다.
 
 기존 Release·태그·자산과 Latest 정식 v1.0.4를 보존한다. 이슈 #2 closed·#4 open을 유지하며 자동 검사나 공개 게시만으로 이슈 #4를 완료하지 않는다.
+
+## 실제 게시·공개 다운로드 검증
+
+2026-10-19 06:50:38 KST 게시. 소스·태그 커밋 `3746dbf0153fe131226bb149d68ba18e43e9fdd9`, Release `416732905`·asset `654566578`, `draft=false`·`prerelease=true`·`make_latest=false`입니다. 고정 커밋 재빌드의 입력 153개·생산 소스 63개와 DLL/cfg/ZIP은 검토 후보와 일치합니다. 전체 12개 검사 프로그램이 통과했습니다.
+
+[공개 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip)을 인증 없이 다운로드해 ZIP SHA-256 `922e6601c2c5d929c3458e9ad3d46e1ac690e7e8419ea981ee8f085e448b9d2b`, DLL `17044b1c90ce1e65ef1b253b6ebd131a202a787e3eb59e776ed1ac68e8bc18e4`, cfg `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`와 정확히 두 파일·CRC·내부 바이트를 확인했습니다. 기존 20개 Release·태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 유지합니다.
+
+영수증은 `artifacts/releases/v1.0.5-alpha.7/`의 `release-verification.json`, `reviewed-candidate-comparison.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`과 로그에 있습니다. 공개 본문은 같은 폴더의 `release-body.md`로 보존합니다. 게시 기록의 후속 문서 커밋은 소스 태그나 설치 자산을 바꾸지 않습니다. **실제 Windows 패드 탐색·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기입니다.**
