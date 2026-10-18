@@ -3,6 +3,13 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
+## [v1.0.4-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.2) — 2026-10-19 (prerelease)
+
+- 일부 결과를 해석하지 못했을 때 `추가 영향 가능`, 모두 해석하지 못했을 때 `결과는 진행 후 확인`으로 안내합니다. 추가 보상·손해의 방향이나 크기를 추측하지 않습니다.
+- 실제 같은 조건문의 효과를 갈래별 한 줄로 묶고 중립색·분기 번호로 구분합니다. 중첩·서로 독립적인 조건문을 구분하며 현재 충족 여부를 색으로 판단하지 않습니다.
+- 후속 효과는 `이어서 진행 시` 아래에 표시하고 내부 스크립트 등록 문구를 숨깁니다. 전체 설명의 줄바꿈은 선택지 옆 50자 요약에서 구분자로 줄입니다.
+- 미리보기 467단언·실제 요약/파서/로그 통합 138단언과 기존 관리 코드 회귀 검사를 통과했습니다. 실제 Lua·Windows/native·실제 화면 확인은 미완료이며 이슈 #2는 open으로 유지합니다. [게시 설명과 파일 식별값](docs/ISSUE-2-ALPHA2-RELEASE.md)에 범위를 구분합니다.
+
 ## [v1.0.4-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.1) — 2026-10-19 (prerelease)
 
 - 선택지 효과를 구문 경계·명령 순서·조건·출처와 함께 분석하고 일부/전체 미지원·효과 미발견·읽기 실패를 구분합니다.

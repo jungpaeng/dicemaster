@@ -489,6 +489,22 @@ namespace DiceMaster
             UnityEngine.Time.unscaledTime = 46; Tick(plugin);
             Check(Probe.ParserEntries == parserEntries && ModificationCache(Parser).Count == 0,
                 "Recovered warm event refresh reentered parsing or wrote shared caches");
+            // The actual game-choice postfix must retain uncertainty and fit
+            // grouped detail into its existing single-line 50-character space.
+            NewLua("--index:O_readable_summary\nif secret_predicate then statmodifymanager.SetPlayer(\"money\",100) else statmodifymanager.SetPlayer(\"money\",200) end\nunknown_effect()", "readable_summary");
+            story = "choice";
+            OptionInfoPatch.LeanLocalizationResolver_GetStoryText_Postfix("O_readable_summary", ref story);
+            string summary = story.Substring(story.IndexOf("<size=18>(", StringComparison.Ordinal) + "<size=18>(".Length);
+            summary = summary.Substring(0, summary.IndexOf(")</size>", StringComparison.Ordinal));
+            Check(summary.StartsWith("추가 영향 가능"), "Truncation hid uncertainty or retained developer unsupported wording");
+            Check(!summary.Contains('\n') && !summary.Contains('\r') && !summary.Contains("<color=") && !summary.Contains("secret_predicate"),
+                "Grouped actual summary leaked detail layout, markup or Lua condition text");
+            Check(summary.Contains(" / ") && summary.Length <= 53, "Grouped summary lost separators or exceeded the existing 50-character plus ellipsis boundary");
+            NewLua("--index:O_unpreviewable_summary\nunknown_effect()", "unpreviewable_summary");
+            story = "choice";
+            OptionInfoPatch.LeanLocalizationResolver_GetStoryText_Postfix("O_unpreviewable_summary", ref story);
+            Check(story.Contains("결과는 진행 후 확인") && !story.Contains("미지원") && !story.Contains("???"),
+                "Entirely unpreviewable actual summary looks like a mod error");
             return assertions;
         }
 

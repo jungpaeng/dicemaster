@@ -5,6 +5,15 @@ namespace DiceMaster.LiveLog
 {
     public enum PreviewAnalysisState { Supported, Partial, Unsupported, NoEffects, Waiting, ReadFailure }
 
+    // Syntactic alternatives only. These labels never imply a condition verdict.
+    // Groups are unique within an analysis, including separately followed scripts.
+    public sealed class PreviewBranchContext
+    {
+        public int Group;
+        public int Alternative;
+        public bool IsElse;
+    }
+
     public sealed class PreviewEffect
     {
         public string Owner = "";
@@ -12,6 +21,8 @@ namespace DiceMaster.LiveLog
         public List<string> Arguments = new List<string>();
         public bool Conditional;
         public bool Followup;
+        public bool ExecutionUncertain;
+        public List<PreviewBranchContext> Branches = new List<PreviewBranchContext>();
         public string Condition = "";
         public string Source = "";
         public int Sequence;
@@ -59,7 +70,7 @@ namespace DiceMaster.LiveLog
                 if (failed) return PreviewAnalysisState.ReadFailure;
                 int known = 0;
                 foreach (PreviewEffect effect in Effects)
-                    if (!PreviewDisplay.IsDisplayOnly(effect) && effect.ValidationError == null) known++;
+                    if (!PreviewDisplay.IsDisplayOnly(effect) && !PreviewDisplay.IsRoutingOnly(effect) && effect.ValidationError == null) known++;
                 if (unsupported) return known > 0 ? PreviewAnalysisState.Partial : PreviewAnalysisState.Unsupported;
                 return known > 0 ? PreviewAnalysisState.Supported : PreviewAnalysisState.NoEffects;
             }

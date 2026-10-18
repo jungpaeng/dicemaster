@@ -22,6 +22,7 @@ namespace DiceMaster.LiveLog
             public Dictionary<string, ScriptReadResult> Reads = new Dictionary<string, ScriptReadResult>(StringComparer.OrdinalIgnoreCase);
             public HashSet<string> InvalidOwners = new HashSet<string>(StringComparer.Ordinal);
             public bool Exhausted;
+            public int BranchCount;
         }
 
         private static readonly HashSet<string> DisplayCalls = new HashSet<string>(StringComparer.Ordinal)
@@ -40,7 +41,7 @@ namespace DiceMaster.LiveLog
             bool earlierInvalid = false;
             foreach (PreviewEffect effect in result.Effects)
             {
-                if (earlierInvalid) { effect.Conditional = true; effect.Condition = "선행 미지원 호출의 정상 종료 여부에 따름"; }
+                if (earlierInvalid) { effect.Conditional = true; effect.ExecutionUncertain = true; effect.Condition = "선행 미지원 호출의 정상 종료 여부에 따름"; }
                 if (effect.ValidationError != null) earlierInvalid = true;
             }
             return result;
@@ -97,7 +98,7 @@ namespace DiceMaster.LiveLog
             context.Analysis.TokenCount += tokens.Count;
             var targets = new List<Target>();
             bool stopped = false;
-            ParseRange(context, source, script, tokens, 0, tokens.Count, conditional, followup, targets, ref stopped, 0);
+            ParseRange(context, source, script, tokens, 0, tokens.Count, conditional, followup, targets, ref stopped, 0, new List<PreviewBranchContext>(), false);
             {
                 foreach (Target target in targets)
                 {
@@ -124,7 +125,7 @@ namespace DiceMaster.LiveLog
             context.Path.Remove(source);
         }
 
-        private static bool ParseRange(Context context, string source, string script, List<PreviewToken> tokens, int start, int end, bool conditional, bool followup, List<Target> targets, ref bool stopped, int parseDepth)
+        private static bool ParseRange(Context context, string source, string script, List<PreviewToken> tokens, int start, int end, bool conditional, bool followup, List<Target> targets, ref bool stopped, int parseDepth, List<PreviewBranchContext> branchPath, bool inheritedExecutionUncertainty)
         {
             if (parseDepth > 64) { context.Analysis.AddIssue(source, "if", "parse-nesting-limit"); return false; }
             bool afterPossibleReturn = false;
@@ -152,6 +153,8 @@ namespace DiceMaster.LiveLog
                     bool unknownCondition = false;
                     bool anyChoice = false; bool everyChoice = branches.Count > 0;
                     var branchTargets = new List<Target>();
+                    int branchGroup = ++context.BranchCount;
+                    int alternative = 0;
                     foreach (var branch in branches)
                     {
                         if (!Step(context, source)) return false;
@@ -178,7 +181,9 @@ namespace DiceMaster.LiveLog
                         var localTargets = new List<Target>();
                         foreach (Target target in targets) localTargets.Add(new Target { Name = target.Name, Conditional = true, Exited = target.Exited });
                         bool branchStopped = false;
-                        bool returns = ParseRange(context, source, script, tokens, branch.Start, branch.End, true, followup, localTargets, ref branchStopped, parseDepth + 1);
+                        var path = new List<PreviewBranchContext>(branchPath);
+                        path.Add(new PreviewBranchContext { Group = branchGroup, Alternative = alternative++, IsElse = branch.IsElse });
+                        bool returns = ParseRange(context, source, script, tokens, branch.Start, branch.End, true, followup, localTargets, ref branchStopped, parseDepth + 1, path, inheritedExecutionUncertainty || afterPossibleReturn || conditionalExpression);
                         anyReturn |= returns; everyReturn &= returns; hasElse |= branch.IsElse;
                         anyChoice |= branchStopped; everyChoice &= branchStopped;
                         everyExit &= returns || branchStopped; processedBranches++;
@@ -278,7 +283,8 @@ namespace DiceMaster.LiveLog
                 bool knownPure = IsKnownPure(owner, name);
                 if (owner == "statmodifymanager" && !knownPure || owner == "luamanager" && !knownPure)
                 {
-                    var effect = new PreviewEffect { Owner = owner, Name = name, Arguments = args, Conditional = conditional || afterPossibleReturn || conditionalExpression, Followup = followup, Condition = conditional || afterPossibleReturn || conditionalExpression ? "분기 조건 또는 후속 실행 여부에 따름" : "", Source = source, Sequence = context.Analysis.Effects.Count };
+                    var effect = new PreviewEffect { Owner = owner, Name = name, Arguments = args, Conditional = conditional || afterPossibleReturn || conditionalExpression, Followup = followup, ExecutionUncertain = inheritedExecutionUncertainty || afterPossibleReturn || conditionalExpression, Condition = conditional || afterPossibleReturn || conditionalExpression ? "분기 조건 또는 후속 실행 여부에 따름" : "", Source = source, Sequence = context.Analysis.Effects.Count };
+                    effect.Branches.AddRange(branchPath);
                     context.Analysis.Effects.Add(effect);
                     if (!PreviewDisplay.IsKnownEffect(owner, name)) afterPossibleReturn = true;
                     if (owner == "luamanager" && name == "SetNextScript")

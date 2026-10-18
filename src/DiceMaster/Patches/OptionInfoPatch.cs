@@ -52,7 +52,7 @@ internal static class OptionInfoPatch
 		if (!LuaParser.Instance.OptionResult.TryGetValue(key, out List<DiceMaster.LuaParse.Action> list) || list == null)
 		{
 			if (!LuaParser.Instance.IncompleteOptionDiscovery || !key.StartsWith("O_", StringComparison.Ordinal)) return;
-			text = "결과 미리보기 미지원";
+			text = PreviewDisplay.UnsupportedStatus;
 		}
 		else
 		{
@@ -71,6 +71,7 @@ internal static class OptionInfoPatch
 		if (!text.IsNullOrWhiteSpace())
 		{
 			string text2 = Regex.Replace(UiTextMapper.ApplyTranslations(text), "<.*?>", string.Empty);
+			text2 = Regex.Replace(text2, @"\s*[\r\n]+\s*", " / ");
 			if (text2.Length > 50)
 			{
 				text2 = text2.Substring(0, 50) + "...";

@@ -16,6 +16,9 @@ namespace DiceMaster.LiveLog
 
     public static class PreviewDisplay
     {
+        public const string PartialStatus = "추가 영향 가능";
+        public const string UnsupportedStatus = "결과는 진행 후 확인";
+
         private static readonly Dictionary<string, string> statSignatures = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             {"Player", "sisi"}, {"Character", "sii"}, {"SetPlayer", "si"}, {"SetCharacter", "si"},
@@ -43,6 +46,10 @@ namespace DiceMaster.LiveLog
             return effect.Owner == "statmodifymanager" && (effect.Name == "GetDisplayTime" ||
                 effect.Name == "GetModifyString" || effect.Name == "UpdateSetPlayerStat");
         }
+
+        // Routing is still validated and traced, but is not a player-facing reward.
+        public static bool IsRoutingOnly(PreviewEffect effect)
+        { return effect.Owner == "luamanager" && effect.Name == "SetNextScript"; }
 
         public static bool IsKnownEffect(string owner, string name)
         {
@@ -212,8 +219,6 @@ namespace DiceMaster.LiveLog
                     case "NextMonth": return "다음 달 진행 · 행동 횟수·회차 플래그·상점·이야기 시간 갱신";
                     case "NextRound": return "다음 순 진행 · 행동 횟수·회차 플래그·필요 시 상점·이야기 시간 갱신";
                     case "SetMissionTime": return "미션 시간 " + S(e, 0) + ": 현재 시각 복사 후 " + Number(Math.Max(0, N(e, 2))) + "개월·" + Number(Math.Max(0, N(e, 3))) + "순 진행(year 인자 미사용)";
-                    case "SetNextScript": return S(e, 0).Length == 0 ? "후속 스크립트 빈 이름 등록(즉시 실행 없음)" :
-                        "후속 스크립트 지정: " + S(e, 0) + "(실행 시점·대상 변경 가능)";
                     case "ChangeScene":
                         if (S(e, 0) == "Combat") return Local("System/Combat/Duel", "결투");
                         if (S(e, 0) == "Battle") return Local("System/Combat/Skirmish", "난전");
@@ -223,11 +228,64 @@ namespace DiceMaster.LiveLog
             return null;
         }
 
+        private sealed class DisplayRow
+        {
+            public PreviewEffect Effect;
+            public string Text;
+        }
+
+        private static bool SameBranches(PreviewEffect left, PreviewEffect right)
+        {
+            if (left.Branches.Count != right.Branches.Count) return false;
+            for (int i = 0; i < left.Branches.Count; i++)
+                if (left.Branches[i].Group != right.Branches[i].Group || left.Branches[i].Alternative != right.Branches[i].Alternative)
+                    return false;
+            return true;
+        }
+
+        private static string BranchLabel(PreviewEffect effect)
+        {
+            if (effect.Branches.Count == 0) return "";
+            var path = new List<string>();
+            foreach (PreviewBranchContext branch in effect.Branches)
+            {
+                string alternative = branch.Alternative < 26 ? ((char)('A' + branch.Alternative)).ToString() : Number(branch.Alternative + 1);
+                path.Add(Number(branch.Group) + "-" + alternative + (branch.IsElse ? " · 그 외" : ""));
+            }
+            // Neutral branch colors distinguish alternatives, never pass/fail.
+            string[] colors = { "#7FC8D6", "#C5A2E0", "#E1BF79" };
+            int color = effect.Branches[effect.Branches.Count - 1].Alternative % colors.Length;
+            return "<color=" + colors[color] + ">[분기 " + string.Join(" → ", path) + "]</color> ";
+        }
+
+        private static string DescribeRows(List<DisplayRow> rows)
+        {
+            var lines = new List<string>();
+            bool hasFollowup = rows.Exists(row => row.Effect.Followup);
+            int route = 0;
+            for (int i = 0; i < rows.Count;)
+            {
+                PreviewEffect effect = rows[i].Effect;
+                bool newSection = i == 0 || rows[i - 1].Effect.Source != effect.Source || rows[i - 1].Effect.Followup != effect.Followup;
+                if (hasFollowup && newSection)
+                    lines.Add(effect.Followup ? "이어서 진행 시 · 구간 " + Number(++route) : "현재 선택");
+                var values = new List<string> { rows[i++].Text };
+                while (i < rows.Count && rows[i].Effect.Source == effect.Source && rows[i].Effect.Followup == effect.Followup &&
+                    rows[i].Effect.ExecutionUncertain == effect.ExecutionUncertain && SameBranches(effect, rows[i].Effect))
+                    values.Add(rows[i++].Text);
+                string label = BranchLabel(effect);
+                if (effect.ExecutionUncertain || effect.Conditional && !effect.Followup && effect.Branches.Count == 0)
+                    label += "조건부 · ";
+                lines.Add((hasFollowup ? "  " : "") + label + string.Join(" | ", values));
+            }
+            return string.Join("\n", lines);
+        }
+
         public static string Describe(PreviewAnalysis analysis)
         {
             if (analysis == null) return "확인된 효과 없음";
             Validate(analysis);
-            List<string> descriptions = new List<string>();
+            var descriptions = new List<DisplayRow>();
             bool failed = false, waiting = false, priorStateChange = !analysis.SnapshotAllowed, unsupported = false;
             foreach (PreviewIssue issue in analysis.Issues)
             {
@@ -239,24 +297,23 @@ namespace DiceMaster.LiveLog
             {
                 if (IsDisplayOnly(effect)) continue;
                 if (effect.ValidationError != null) { priorStateChange = true; continue; }
+                if (IsRoutingOnly(effect)) continue;
                 try
                 {
                     string text = Effect(effect, priorStateChange);
                     if (!string.IsNullOrEmpty(text))
                     {
-                        string prefix = effect.Followup ? "후속 스크립트 · " : "";
-                        if (effect.Conditional) prefix += "조건부 · ";
-                        descriptions.Add(prefix + text);
+                        descriptions.Add(new DisplayRow { Effect = effect, Text = text });
                     }
                 }
                 catch (DataNotReadyException) { failed = true; waiting = true; }
                 catch (Exception) { failed = true; }
-                if (effect.Name != "SetNextScript") priorStateChange = true;
+                priorStateChange = true;
             }
-            string status = unsupported ? (descriptions.Count > 0 ? "일부 결과 미리보기 미지원" : "결과 미리보기 미지원") :
+            string status = unsupported ? (descriptions.Count > 0 ? PartialStatus : UnsupportedStatus) :
                 descriptions.Count == 0 && !failed ? "확인된 효과 없음" : "";
             string result = status;
-            if (descriptions.Count > 0) result += (result.Length > 0 ? " | " : "") + string.Join(" | ", descriptions);
+            if (descriptions.Count > 0) result += (result.Length > 0 ? "\n" : "") + DescribeRows(descriptions);
             if (failed) throw new PreviewReadException(result, waiting);
             return result;
         }

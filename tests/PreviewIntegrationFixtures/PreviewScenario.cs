@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace DiceMaster
 {
@@ -59,6 +60,12 @@ namespace DiceMaster
         }
         static void Contains(string actual, string wanted, string context) => Check(actual.Contains(wanted), context + ": missing " + wanted + ", actual=" + actual);
         static void Excludes(string actual, string unwanted, string context) => Check(!actual.Contains(unwanted), context + ": unexpected " + unwanted + ", actual=" + actual);
+        static string Status(string name) => (string)Type("LiveLog.PreviewDisplay").GetField(name).GetValue(null);
+        static void SupportedText(string text, string context)
+        {
+            Excludes(text, Status("PartialStatus"), context);
+            Excludes(text, Status("UnsupportedStatus"), context);
+        }
         public static int RunBaseline()
         {
             string[] cases = {
@@ -102,20 +109,20 @@ namespace DiceMaster
         static void LexicalAndStates()
         {
             string text = Text("-- statmodifymanager.SetPlayer(\"secret_comment\", 99)\nlocal s = 'statmodifymanager.SetPlayer(\"secret_string\", 33)'\n--[=[ luamanager.NextMonth() ]=]\nlocal t = [==[statmodifymanager.Unknown(9)]==]\nstatmodifymanager.SetPlayer(\"money\",\n (50 + 50) * (2 - 1))");
-            Contains(text, "100", "Multiline nested arithmetic"); Excludes(text, "secret", "Comments/strings"); Excludes(text, "미지원", "Comments do not create issues");
+            Contains(text, "100", "Multiline nested arithmetic"); Excludes(text, "secret", "Comments/strings"); SupportedText(text, "Comments do not create issues");
             text = Text("statmodifymanager.SetCharacter(\"hero,a\", 7)");
-            Contains(text, "hero,a", "String comma remains one argument"); Excludes(text, "미지원", "String comma valid arity");
+            Contains(text, "hero,a", "String comma remains one argument"); SupportedText(text, "String comma valid arity");
             text = Text("statmodifymanager.Player(\"money\", reward, \"\", 1)\nstatmodifymanager.SetFlag(\"G3000\", 2)");
-            Check(text.StartsWith("일부 결과 미리보기 미지원"), "Partial support marker must be before descriptions"); Contains(text, "G3000", "Known effects survive unsupported sibling");
+            Check(text.StartsWith(Status("PartialStatus")), "Partial support marker must be before descriptions"); Contains(text, "G3000", "Known effects survive unsupported sibling");
             text = Text("statmodifymanager.Player(\"money\", reward, \"\", 1)");
-            Check(text.StartsWith("결과 미리보기 미지원"), "All unsupported must remain visible");
+            Check(text.StartsWith(Status("UnsupportedStatus")), "All unsupported must remain visible");
             Contains(Text("local x = 1\nstatmodifymanager.GetDisplayTime()\nstatmodifymanager.GetModifyString(\"money\",1)\nstatmodifymanager.UpdateSetPlayerStat(\"money\")"), "확인된 효과 없음", "Pure/display calls are not effects");
-            Contains(Text("statmodifymanager.UnrecognizedEffect(\"x\")"), "결과 미리보기 미지원", "Unknown manager effects cannot disappear");
+            Contains(Text("statmodifymanager.UnrecognizedEffect(\"x\")"), Status("UnsupportedStatus"), "Unknown manager effects cannot disappear");
             var flow = Analyze("statmodifymanager.SetFlag(\"before\",1)\nluamanager.ChangeScene(\"Combat\")\nstatmodifymanager.SetFlag(\"after\",2)");
             var effects = Items(flow, "Effects");
             Check(effects.Count == 3 && (string)Member(effects[0], "Name") == "SetFlag" && (string)Member(effects[1], "Name") == "ChangeScene" && (string)Member(effects[2], "Name") == "SetFlag", "Effect collection loses source order");
             text = AnalysisText(Analyze("if condition then\nstatmodifymanager.SetPlayer(\"money\",3)\nelse\nstatmodifymanager.SetPlayer(\"money\",4)\nend"));
-            Contains(text, "조건부", "Both branch effects conditional"); Contains(text, "3", "First branch preserved"); Contains(text, "4", "Else branch preserved");
+            Contains(text, "[분기 1-A]", "First alternative explicitly grouped"); Contains(text, "[분기 1-B", "Else alternative explicitly grouped"); Contains(text, "3", "First branch preserved"); Contains(text, "4", "Else branch preserved");
             var loop = Analyze("statmodifymanager.SetFlag(\"safe\",1)\nfor i=1,3 do\nstatmodifymanager.SetPlayer(\"money\",10)\nend");
             Check(Items(loop, "Issues").Count != 0, "Unsupported loop boundary lost"); Contains(AnalysisText(loop), "safe", "Known effect before loop preserved");
             var ret = Analyze("statmodifymanager.SetFlag(\"before\",1)\nreturn\nstatmodifymanager.SetFlag(\"unreachable\",2)");
@@ -157,7 +164,7 @@ namespace DiceMaster
             {
                 var analysis = Analyze(qualified + "\nstatmodifymanager.SetPlayer(\"money\",100)");
                 Check(HasReason(analysis, "qualified-manager-reference") && Items(analysis,"Effects").Count == 1, "Qualified owner suffix was mistaken for canonical game manager");
-                Contains(AnalysisText(analysis), "일부 결과 미리보기 미지원", "Qualified owner retains healthy later effect and issue");
+                Contains(AnalysisText(analysis), Status("PartialStatus"), "Qualified owner retains healthy later effect and issue");
             }
         }
         static void FunctionCoverage()
@@ -175,16 +182,100 @@ namespace DiceMaster
             foreach (string call in stat.Concat(lua))
             {
                 bool isStat = stat.Contains(call); string text = Text((isStat ? "statmodifymanager." : "luamanager.") + call);
-                Excludes(text, "미지원", "Required function: " + call); Excludes(text, "확인된 효과 없음", "Required function: " + call);
+                SupportedText(text, "Required function: " + call); Excludes(text, "확인된 효과 없음", "Required function: " + call);
                 Check(!string.IsNullOrWhiteSpace(text), "Required function silently omitted: " + call);
                 int opening = call.IndexOf('(');
                 string malformed = call.Substring(0, opening + 1) + (call.EndsWith("()") ? "1)" : ")");
-                Contains(Text((isStat ? "statmodifymanager." : "luamanager.") + malformed), "미지원", "Required function invalid arity: " + call);
+                Contains(Text((isStat ? "statmodifymanager." : "luamanager.") + malformed), Status("UnsupportedStatus"), "Required function invalid arity: " + call);
             }
             Contains(Text("luamanager.SetPlayerBattleSkill(\"skill\",99)"), "빈", "Battle skill index ignored, first empty slot");
             Contains(Text("luamanager.SetBattleSkillActive(\"skill\",2)"), "비활성", "Only active=1 activates");
             Contains(Text("luamanager.SwapUpgradeItem(\"item\",-1)"), "유지", "Negative item level preserves level");
             Contains(Text("luamanager.SetMissionTime(\"mission\",99,2,3)"), "현재 시각 복사", "Mission time progresses relatively");
+        }
+        static string Plain(string text) => Regex.Replace(text, "<[^>]+>", "");
+        static string LineWith(string text, string marker) => text.Split('\n').Single(line => line.Contains(marker));
+        static void BranchPresentation()
+        {
+            Check(Status("PartialStatus") == "추가 영향 가능" && Status("UnsupportedStatus") == "결과는 진행 후 확인", "Unknown-result copy must distinguish extra effects from wholly unknown results");
+            string partial = Text("statmodifymanager.SetFlag(\"known_effect\",1)\nunsupported_private_call()");
+            Contains(partial, "known_effect", "Unknown additional effect retains known result");
+            Contains(partial, "추가 영향 가능", "Unknown extra effect uses compact meaningful copy");
+            Excludes(partial, "???", "Unknown result must not look like a broken placeholder");
+            Excludes(partial, "미지원", "Parser implementation terms do not leak into result text");
+
+            var analysis = Analyze("statmodifymanager.SetFlag(\"before_groups\",1)\n" +
+                "if private_mental >= 100 then\n" +
+                "statmodifymanager.SetFlag(\"route_a_first\",1)\nstatmodifymanager.SetFlag(\"route_a_second\",2)\n" +
+                "elseif private_relationship > 20 then\n" +
+                "statmodifymanager.SetFlag(\"route_b_first\",3)\nstatmodifymanager.SetFlag(\"route_b_second\",4)\n" +
+                "else\nstatmodifymanager.SetFlag(\"route_else\",5)\nend\n" +
+                "if independent_condition then statmodifymanager.SetFlag(\"independent_effect\",6) end\n" +
+                "statmodifymanager.SetFlag(\"after_groups\",7)");
+            var effects = Items(analysis, "Effects").Cast<object>().ToArray();
+            Check(effects.Length == 8, "Branch presentation must retain all known effects");
+            var paths = effects.Select(effect => Items(effect, "Branches")).ToArray();
+            Check(paths[0].Count == 0 && paths[7].Count == 0, "Straight-line effects inherited branch membership");
+            Check(paths.Skip(1).Take(6).All(path => path.Count == 1), "Each simple conditional effect needs one branch context");
+            int group = (int)Member(paths[1][0], "Group");
+            for (int i = 1; i <= 5; i++) Check((int)Member(paths[i][0], "Group") == group, "Alternatives in one if need a shared group");
+            Check((int)Member(paths[1][0], "Alternative") == 0 && (int)Member(paths[2][0], "Alternative") == 0 &&
+                (int)Member(paths[3][0], "Alternative") == 1 && (int)Member(paths[4][0], "Alternative") == 1 &&
+                (int)Member(paths[5][0], "Alternative") == 2, "If/elseif/else alternatives must retain their order");
+            Check(!(bool)Member(paths[1][0], "IsElse") && !(bool)Member(paths[3][0], "IsElse") && (bool)Member(paths[5][0], "IsElse"), "Only actual else may be described as the remaining case");
+            Check((int)Member(paths[6][0], "Group") != group, "Independent if statements must not be presented as exclusive alternatives");
+            Check(effects.Skip(1).Take(6).All(effect => (bool)Member(effect, "Conditional")), "Branch grouping must not claim a guaranteed result");
+            string text = AnalysisText(analysis), plain = Plain(text);
+            string a = LineWith(plain, "route_a_first"), b = LineWith(plain, "route_b_first");
+            Contains(a, "[분기 1-A]", "First path label"); Contains(a, " | ", "Effects within one path are visually grouped");
+            Contains(a, "route_a_second", "Consecutive same-path effects belong to one line");
+            Contains(b, "[분기 1-B]", "Second path label"); Contains(b, "route_b_second", "Second path remains internally grouped");
+            Check(!a.Contains("route_b_") && !b.Contains("route_a_"), "Mutually exclusive paths were combined into one reward set");
+            string otherwise = LineWith(plain, "route_else"); Contains(otherwise, "분기 1-C", "Else keeps the same group"); Contains(otherwise, "그 외", "Else is labeled without inventing a predicate");
+            Contains(LineWith(plain, "independent_effect"), "[분기 2-A]", "Independent if uses a new group");
+            Excludes(LineWith(plain, "after_groups"), "분기", "Effects after end do not inherit a branch badge");
+            foreach (string privateCondition in new[] { "private_mental", "private_relationship", "independent_condition", ">=", "능력치", "성공", "실패" })
+                Excludes(plain, privateCondition, "Preview must not fabricate or expose unvalidated branch predicates");
+            Check(Regex.Matches(plain, Regex.Escape("[분기 1-A]")).Count == 1, "Same-branch label repeated once per effect");
+            var labels = Regex.Matches(text, @"<color=(#[0-9a-fA-F]{6,8})>\[분기 [^\]]+\]</color>");
+            Check(labels.Count >= 4, "Each branch alternative needs a bounded color label");
+            Check(labels[0].Groups[1].Value != labels[1].Groups[1].Value, "Alternative branch labels need distinct colors");
+            foreach (Match label in labels)
+            {
+                string color = label.Groups[1].Value.ToLowerInvariant();
+                Check(color != "#00ff00" && color != "#ff0000" && color != "#008000", "Branch color must not imply a success/failure verdict");
+            }
+
+            var nested = Analyze("if outer_private then\nstatmodifymanager.SetFlag(\"outer_only\",1)\n" +
+                "if inner_private then statmodifymanager.SetFlag(\"nested_a\",2) else statmodifymanager.SetFlag(\"nested_b\",3) end\n" +
+                "else statmodifymanager.SetFlag(\"outer_else\",4) end");
+            var nestedEffects = Items(nested, "Effects").Cast<object>().ToArray();
+            var nestedA = Items(nestedEffects[1], "Branches");
+            var nestedB = Items(nestedEffects[2], "Branches");
+            Check(nestedA.Count == 2 && nestedB.Count == 2, "Nested alternatives must retain the complete path");
+            Check((int)Member(nestedA[0], "Group") == (int)Member(nestedB[0], "Group") &&
+                (int)Member(nestedA[0], "Alternative") == (int)Member(nestedB[0], "Alternative") &&
+                (int)Member(nestedA[1], "Group") == (int)Member(nestedB[1], "Group") &&
+                (int)Member(nestedA[1], "Alternative") != (int)Member(nestedB[1], "Alternative"), "Nested siblings lost their shared outer path or distinct inner alternatives");
+            string nestedText = Plain(AnalysisText(nested));
+            Contains(LineWith(nestedText, "nested_a"), "[분기 1-A → 2-A]", "Nested first path readable");
+            Contains(LineWith(nestedText, "nested_b"), "분기 1-A → 2-B", "Nested else path readable");
+            Excludes(nestedText, "outer_private", "Nested condition source remains private");
+            Excludes(nestedText, "inner_private", "Nested condition source remains private");
+
+            foreach (string uncertain in new[] { "local x = private_flag and statmodifymanager.SetFlag(\"uncertain_effect\",1)", "unknown()\nstatmodifymanager.SetFlag(\"uncertain_effect\",1)" })
+            {
+                string uncertainText = AnalysisText(Analyze(uncertain));
+                Contains(uncertainText, "조건부", "Unclassified conditional execution keeps its separate badge");
+                Excludes(uncertainText, "[분기", "Unknown flow must not fabricate an if alternative");
+            }
+            var uncertainBranch = Analyze("unknown()\nif outer_predicate then if inner_predicate then statmodifymanager.SetFlag(\"uncertain_nested\",1) end end");
+            object uncertainNested = Items(uncertainBranch, "Effects")[0];
+            Check((bool)Member(uncertainNested, "ExecutionUncertain") && Items(uncertainNested, "Branches").Count == 2,
+                "Unknown earlier execution must retain uncertainty independently from nested if membership");
+            string uncertainBranchLine = LineWith(Plain(AnalysisText(uncertainBranch)), "uncertain_nested");
+            Contains(uncertainBranchLine, "[분기 1-A → 2-A]", "Uncertain nested result retains its real branch path");
+            Contains(uncertainBranchLine, "조건부", "Branch grouping must not erase inherited execution uncertainty");
         }
         static void Trace()
         {
@@ -196,18 +287,26 @@ namespace DiceMaster
             Func<string, object> reader = name => { reads++; return scripts.TryGetValue(name, out var code) ? Read("Success", code) : Read("Missing"); };
             var analysis = Analyze("statmodifymanager.SetFlag(\"root\",0)\nluamanager.SetNextScript(\"one\")", reader);
             string text = AnalysisText(analysis);
-            Contains(text, "후속 스크립트", "Followup provenance visible"); Contains(text, "조건부", "Registered script is not immediate guaranteed execution");
+            Contains(text, "이어서 진행 시", "Followup provenance visible"); Excludes(text, "후속 스크립트", "Internal script terminology is absent");
             Contains(text, "follow_one", "First followup"); Contains(text, "follow_two", "Second followup"); Excludes(text, "after_choice", "Stop before next user choice");
+            Contains(text, "이어서 진행 시 · 구간 1", "First serial followup is a story segment");
+            Contains(text, "이어서 진행 시 · 구간 2", "Second serial followup is a later story segment");
+            Excludes(text, "경로", "Serial followup scripts must not be presented as exclusive alternative routes");
+            Check(text.IndexOf("root", StringComparison.Ordinal) < text.IndexOf("이어서 진행 시", StringComparison.Ordinal) &&
+                text.IndexOf("이어서 진행 시", StringComparison.Ordinal) < text.IndexOf("follow_one", StringComparison.Ordinal), "Followup header must separate current effects from future effects");
+            Excludes(text, "다음 스크립트", "Internal route registration is not a player-visible reward");
+            Excludes(text, "SetNextScript", "Route API name is hidden while trace remains active");
             Check(reads == 2, "Multi-step trace must read each target exactly once");
             int healthyReads = reads;
             for (int i = 0; i < 10; i++) AnalysisText(analysis);
             Check(reads == healthyReads, "Healthy followup display re-read/reparsed resources");
             scripts["two"] = "statmodifymanager.SetFlag(\"before_cycle\",2)\nluamanager.SetNextScript(\"one\")";
             analysis = Analyze("luamanager.SetNextScript(\"one\")", reader); text = AnalysisText(analysis);
-            Contains(text, "일부 결과 미리보기 미지원", "Cycle retains partial support"); Contains(text, "before_cycle", "Cycle preserves preceding effects");
+            Contains(text, Status("PartialStatus"), "Cycle retains partial support"); Contains(text, "before_cycle", "Cycle preserves preceding effects");
             Check(Items(analysis, "Issues").Count > 0, "Cycle stop cause absent");
             var empty = Analyze("luamanager.SetNextScript(\"empty\")", name => Read("Success", ""));
             Check(Items(empty, "Issues").Count == 0, "Valid empty script is not missing/read failure");
+            Check(AnalysisText(empty) == "확인된 효과 없음" && Member(empty, "State").ToString() == "NoEffects", "Route registration alone must not claim a known reward");
             var missing = Analyze("luamanager.SetNextScript(\"missing\")", name => Read("Missing"));
             Check(Items(missing, "Issues").Count > 0, "Missing target disappears");
             foreach (string kind in new[] { "Waiting", "Failed" })
@@ -218,6 +317,7 @@ namespace DiceMaster
             }
             var dynamic = Analyze("luamanager.SetNextScript(target)", reader);
             Check(Items(dynamic, "Issues").Count > 0, "Dynamic target silently ignored");
+            Contains(AnalysisText(dynamic), Status("UnsupportedStatus"), "Hidden route detail must preserve dynamic-target uncertainty");
             reads = 0;
             AnalysisText(Analyze("luamanager.SetNextScript(\"one\")\nluamanager.SetNextScript(\"two\")", reader));
             Check(reads <= 2, "Overwritten next target made redundant reads");
@@ -367,7 +467,7 @@ namespace DiceMaster
             {
                 var next = (IDictionary)Invoke(parserType, Parser, "ExtractOptionActionsFromLua", "cached-preview", script);
                 Check(ReferenceEquals(actions, next[key]), "Unsupported analysis was retried/rebuilt instead of cached");
-                Contains(Describe((IList)actions), "미지원", "Cached unsupported status");
+                Contains(Describe((IList)actions), Status("UnsupportedStatus"), "Cached unsupported status");
             }
             int afterwards = DicePlugin.Warnings.Count + DicePlugin.Info.Count + DicePlugin.Errors.Count;
             Check(afterwards == logs, "Repeated unsupported display emitted duplicate diagnostics");
@@ -416,6 +516,7 @@ namespace DiceMaster
             Arithmetic(); Console.WriteLine("PREVIEW arithmetic passed");
             LexicalAndStates(); Console.WriteLine("PREVIEW lexical/state classification passed");
             FunctionCoverage(); Console.WriteLine("PREVIEW function coverage passed");
+            BranchPresentation(); Console.WriteLine("PREVIEW branch presentation passed");
             Trace(); Console.WriteLine("PREVIEW followup trace passed");
             NamingSafety(); State(); Console.WriteLine("PREVIEW state-dependent estimates passed");
             Cache(); LimitsAndRetry(); EventRetry(); Benchmark();
