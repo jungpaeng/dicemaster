@@ -6,12 +6,11 @@ import os
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
+from baseline import BASELINE_COMMIT, BASELINE_SHA256
 
 BUILD = Path(__file__).resolve().parent
 REPOSITORY = BUILD.parent
 ARTIFACTS = REPOSITORY / 'artifacts'
-BASELINE_COMMIT = 'f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec'
-BASELINE_SHA256 = '485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633'
 
 
 def digest(path):

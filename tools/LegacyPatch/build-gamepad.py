@@ -4,19 +4,29 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 
 root = Path(__file__).resolve().parents[2]
-mod_root = root
+sys.path.insert(0, str(root / 'build'))
+from baseline import get_baseline, protect_baseline_output
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input', type=Path, default=mod_root/'plugins/DiceMaster/DiceMaster.dll')
-    parser.add_argument('--output', type=Path, default=mod_root/'plugins/DiceMaster/DiceMaster.dll')
+    parser.add_argument('--input', type=Path,
+                        help='Input DLL; default: verified alpha.3 DLL recreated from local Git.')
+    parser.add_argument('--output', type=Path,
+                        default=root / 'artifacts/legacy-candidate/gamepad/DiceMaster.dll')
     args = parser.parse_args()
+    try:
+        protect_baseline_output(args.output, root)
+    except RuntimeError as error:
+        parser.error(str(error))
     dotnet = shutil.which('dotnet')
     if dotnet is None:
         parser.error('The .NET 8 SDK is required. Install it before running this script.')
+    if args.input is None:
+        args.input = get_baseline(root)
     input_bytes = args.input.read_bytes()
     with tempfile.TemporaryDirectory(prefix='dicemaster-gamepad-') as directory:
         work = Path(directory)
@@ -37,7 +47,7 @@ def main():
                         str(output)], check=True)
         subprocess.run([dotnet, str(tests/'GamepadTests.dll'), str(payload/'DiceMaster.GamepadPayload.dll'),
                         str(output)], check=True)
-        # Failed builds/tests leave the installed plugin untouched.
+        # Failed builds/tests leave any existing candidate untouched.
         if args.output.resolve() == args.input.resolve() and args.input.read_bytes() != input_bytes:
             raise RuntimeError('The input DLL changed while building; refusing to overwrite it.')
         args.output.parent.mkdir(parents=True, exist_ok=True)

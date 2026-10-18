@@ -25,7 +25,6 @@
 | 실제 `Mortal.Story.dll` | `ee9139a5e4631dc275b80cc3ff6a81a4959f3c908a3fe751e778a42350372249` | 이벤트 확률·스토리 Lua 경계 |
 | 실제 `Fungus.dll` | `bcb6d47eb31dedc5d23d0da281e0835af0f939f30b64a39aae7d5f6dab96cad2` | Lua 컴파일 성공·실패 반환 |
 | 설치된 DiceMaster `1.0.0` | `62ade4b719381fb31bfa7a356ae004299d391f53f13a4f085dc1a39e62cf5179` | 수정 전 기준 DLL과 동일한 분석·비교 사본 |
-| 설치된 DebugMenu | `ed035ebfe6cbdd566e070def647ac72b37e33c308bed20b1bdf9f056b15e938d` | 별도 모드 비교 자료 |
 
 설치된 DiceMaster 사본을 개발 후보로 복사하지 않았습니다. 실제 DLL 확보 전의 개발 후보 `56d85cd000cf6bf065237bcf032a1c6e18d2e739a09ead59e9fac2860b24206f`와 이후 새 후보도 별개입니다. 최종 빌드 후보의 크기·해시는 [검증 기록](ISSUE-1-VALIDATION.md)의 해당 실행 결과로 식별합니다. 원본 참조는 수정하지 않습니다.
 

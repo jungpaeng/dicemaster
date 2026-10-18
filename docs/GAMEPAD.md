@@ -47,7 +47,7 @@ A·X와 오른쪽 스틱·트리거는 원래 입력을 유지하며 키 입력 
 python3 build/build-source.py --references '<읽기 전용 참조 루트>'
 ```
 
-보존한 `tools/LegacyPatch/GamepadInjector/`는 같은 패드 소스를 링크하여 기존 DLL에 Update·OnGUI·주사위 창 초기화·설정·종료 지점을 연결하는 비교·복구 도구입니다. 기존 명령은 새 소스 프로젝트와 별도이며 기본 출력은 기존 배포 DLL입니다. 별도 후보에는 `--output`을 지정합니다.
+보존한 `tools/LegacyPatch/GamepadInjector/`는 같은 패드 소스를 링크하여 기존 DLL에 Update·OnGUI·주사위 창 초기화·설정·종료 지점을 연결하는 비교·복구 도구입니다. 기존 명령은 새 소스 프로젝트와 별도입니다. 기본 입력은 고정 Git 커밋에서 재생성·해시 확인한 alpha.3 DLL이고 기본 출력은 `artifacts/legacy-candidate/gamepad/DiceMaster.dll`이므로 기준을 덮어쓰지 않습니다. 다른 후보 위치에는 `--output`을 지정합니다.
 
 ```sh
 python3 tools/LegacyPatch/build-gamepad.py --output artifacts/legacy-local/DiceMaster.dll

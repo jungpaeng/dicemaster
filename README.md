@@ -5,7 +5,7 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드 후보](docs/SOURCE-BUILD.md)
 
-현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 C# 소스·리소스 복원과 별도 소스 빌드 후보 검증입니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 아래 게시 DLL로 고정합니다. 일반 소스 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 기존 기본 패치 빌드·배포 DLL은 보존하며, 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 빌드를 전환하거나 이슈 #3을 완료로 처리하지 않습니다. 이슈 #2의 기능 확장은 포함하지 않습니다. 명령·검사 범위·후보 식별은 [전체 소스 빌드 안내](docs/SOURCE-BUILD.md)에 기록합니다.
+현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 C# 소스·리소스 복원과 별도 소스 빌드 후보 검증입니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 아래 게시 DLL로 고정합니다. 일반 소스 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 기존 패치 공정과 배포 DLL은 Git 이력에서 재현하며, 자동 검사와 사용자 Windows 확인이 모두 끝나기 전에는 기본 빌드를 전환하거나 이슈 #3을 완료로 처리하지 않습니다. 이슈 #2의 기능 확장은 포함하지 않습니다. 명령·검사 범위·후보 식별은 [전체 소스 빌드 안내](docs/SOURCE-BUILD.md)에 기록합니다.
 
 **[v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다.** 사용자 승인에 따라 구조 변경을 commit·push하고 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 `src/DiceMaster/DiceMaster.csproj`를 새로 빌드했습니다. 설치 파일은 `DiceMaster-v1.0.3-alpha.4.zip`이며 익명 공개 다운로드의 CRC·두 파일·소스 빌드 DLL/패키지 설정 바이트·SHA-256 일치를 확인했습니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 비교·복구 기준인 alpha.3 DLL로 보존하므로 새 설치 ZIP의 DLL과 다릅니다. 최종 검사·해시·게시 ID는 [이슈 #3 배포 기록](docs/ISSUE-3-RELEASE.md)에 기록했습니다. Latest 정식 `v1.0.2`, 기본 빌드와 Windows 확인 보류 조건은 유지합니다.
 
@@ -117,7 +117,15 @@ dotnet build DiceMaster.sln -c Release \
   -p:GameReferences='<읽기 전용 참조 루트>'
 ```
 
-전체 명령과 외부 참조 계약은 [소스 빌드 안내](docs/SOURCE-BUILD.md)를 따릅니다. 루트 `config/`와 `plugins/`는 Windows 확인 전 기존 배포 상태를 보존하기 위해 유지합니다. 새 소스 프로젝트와 후보 결과의 위치를 정리한 것이며 기본 배포 DLL의 전환은 아닙니다.
+전체 명령과 외부 참조 계약은 [소스 빌드 안내](docs/SOURCE-BUILD.md)를 따릅니다. 루트 `config/`와 `plugins/`는 제거했습니다. 패키지 설정은 `packaging/config/DiceMaster.cfg`에서 읽고, 비교·복원용 기준 DLL은 고정 Git 커밋에서 SHA-256을 검증하여 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll`에 재생성합니다. 일반 소스 빌드는 Git이나 이 기준 DLL을 사용하지 않습니다.
+
+기존 모드 DLL·Git 데이터 없는 소스 스냅샷 빌드, 일곱 자동 검사, 기준 비교와 Release ZIP 검증을 함께 실행하려면 다음 명령을 사용합니다. 로컬 후보만 만들며 GitHub에 게시하지 않습니다.
+
+```sh
+python3 build/verify-release.py \
+  --references '<읽기 전용 참조 루트>' \
+  --output-dir artifacts/release-candidate
+```
 
 전환 전 기존 패치 빌드는 `tools/LegacyPatch/`에서 비교·복구용으로 보존합니다. 별도 후보 출력 예시는 다음과 같습니다.
 
@@ -127,7 +135,7 @@ python3 tools/LegacyPatch/build-log-refresh.py \
   --output artifacts/legacy-local/DiceMaster.dll
 ```
 
-기존 패치 명령의 기본 출력은 계속 `plugins/DiceMaster/DiceMaster.dll`이므로 개발 후보에는 `--output`을 지정합니다. 소스 구성과 검증 범위는 [개발 안내](docs/DEVELOPMENT.md)를 참고하세요.
+기존 패치 명령은 기본 입력을 고정 Git 기준에서 재생성하고, 기본 출력은 각각 `artifacts/legacy-candidate/gamepad/DiceMaster.dll`과 `artifacts/legacy-candidate/live-log/DiceMaster.dll`에 둡니다. 입력·출력이 분리되어 기준 DLL을 덮어쓰지 않습니다. 소스 구성과 검증 범위는 [개발 안내](docs/DEVELOPMENT.md)를 참고하세요.
 
 ## Release 등록
 
@@ -142,7 +150,7 @@ config/DiceMaster.cfg
 plugins/DiceMaster/DiceMaster.dll
 ```
 
-개발 파일과 DebugMenu 등 다른 모드는 포함하지 않습니다. alpha.4 ZIP의 DLL은 릴리스 태그 커밋의 소스 프로젝트를 빌드한 결과이며, 설정은 같은 커밋의 `packaging/config/DiceMaster.cfg`입니다. 보존한 루트 `plugins/`의 DLL을 ZIP에 복사하지 않습니다. alpha.3 이하의 ZIP은 각 배포 커밋의 루트 배포 파일과 일치하는 과거 이력입니다.
+개발 파일과 다른 모드는 포함하지 않습니다. alpha.4 ZIP의 DLL은 릴리스 태그 커밋의 소스 프로젝트를 빌드한 결과이며, 설정은 같은 커밋의 `packaging/config/DiceMaster.cfg`입니다. alpha.4 태그 당시 루트 `plugins/`의 기준 DLL을 ZIP에 복사하지 않았습니다. alpha.3 이하의 ZIP은 각 배포 커밋의 루트 배포 파일과 일치하는 과거 이력입니다. 현재 작업 트리에서 루트 두 폴더를 제거해도 기존 태그·게시 파일은 바뀌지 않습니다.
 **`v1.0.3-alpha.1`은 배포 기준 커밋 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 태그·두 파일 ZIP을 만들고 공개 다운로드 검증까지 마친 prerelease**입니다. 정식 Release는 실제 게임·사용자 Windows 검증까지 충족하기 전에는 공개하지 않습니다. prerelease는 기능 완료나 Windows 확인 완료로 처리하지 않으며 최신 정식 버전으로 지정하지 않습니다.
 향후 공개 조건은 [Release 등록 안내](docs/RELEASING.md)를 참고하세요.
 

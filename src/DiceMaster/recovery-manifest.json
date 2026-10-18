@@ -8,7 +8,8 @@
     "Let the C# 12 compiler regenerate RefSafetyRules(11) and embedded support attributes.",
     "Make GetMissions raw object reference inequality explicit (same baseline IL semantics).",
     "Retain decompiler-escaped legacy compiler identifiers; do not rewrite compiled IL.",
-    "Use authored net48 project template; extract byte-identical MinHook resources under Resources/native."
+    "Use authored net48 project template; extract byte-identical MinHook resources under Resources/native.",
+    "Replace three legacy external-plugin comment headings in ModTranslation (lines 1, 38 and 89); preserve every translation and CRLF byte."
   ],
   "source_text_newlines": "LF (linked managed source hashes normalize CRLF to LF)",
   "recovered_files": {
@@ -44,7 +45,7 @@
     "Properties/AssemblyInfo.cs": "6552b9cfe24308a2f43fcbb394aa8042778a14276ae2d4ab0d05c8432129102e",
     "ReflectionExtensions.cs": "54512d989e72db8a8e8a6a40e8055b5ac2b591851348672856fba0840458e028",
     "Resources/DiceMaster.Assets.mortaldice": "5cb5c10adea77234bbef4f8f348514526c9765e9c45fe2b4e8d3c334ecfc0ff6",
-    "Resources/DiceMaster.Translations.ModTranslation.txt": "6fc71ac1780be28b78e5ee193835a38e47d1526cbb9a143d05ff5206eceef1ec",
+    "Resources/DiceMaster.Translations.ModTranslation.txt": "7441c94d83df9f2ebe6ecdfe0489c752afe7ebeadc7b28ae6d15aca460acf5eb",
     "Resources/DiceMaster.Translations.Pairs": "172489a3a34fd27d93410b71b23dcfeb6d597723e5d2e0f4878eef464899ec00",
     "Resources/DiceMaster.Translations.TriggerTranslation1.0.5v.txt": "a528b4740da8fe1fd5218e50d8113720306ea1db21b959b0ab1545c13587dbd4",
     "Resources/DiceMaster.Translations._Substitutions.txt": "640d5fc2a5fae476b766c5b59481a10e7e7d68a605557485f5bf2277e6569909",

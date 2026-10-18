@@ -2,7 +2,7 @@
 
 [개발 안내](DEVELOPMENT.md) · [Release·전환 조건](RELEASING.md) · [PRD #3](https://github.com/jungpaeng/dicemaster/issues/3)
 
-전체 소스 빌드는 기존 기본 패치 빌드와 `plugins/DiceMaster/DiceMaster.dll`을 보존하는 별도 후보 경로입니다. 사용자 승인에 따라 구조 변경을 commit·push하고 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 프로젝트를 새로 빌드한 [v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다. 최종 빌드·검사·익명 공개 다운로드 검증과 자산 식별값은 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 자동 검사와 사용자 Windows 확인이 모두 완료되기 전에는 기본 빌드 전환·이슈 #3 완료로 처리하지 않습니다. Windows 설치·게임 실행은 수행하거나 요청하지 않으며 정식 Release·이슈 종료도 이번 승인에 포함하지 않습니다.
+전체 소스 빌드는 별도 후보 경로이며 기존 패치 공정과 기준 DLL은 고정 Git 이력에서 재현합니다. 사용자 승인에 따라 구조 변경을 commit·push하고 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 프로젝트를 새로 빌드한 [v1.0.3-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)를 2026-10-18 23:42:14 KST에 게시했습니다. 최종 빌드·검사·익명 공개 다운로드 검증과 자산 식별값은 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 자동 검사와 사용자 Windows 확인이 모두 완료되기 전에는 기본 빌드 전환·이슈 #3 완료로 처리하지 않습니다. Windows 설치·게임 실행은 수행하거나 요청하지 않으며 정식 Release·이슈 종료도 이번 승인에 포함하지 않습니다.
 
 ## 고정 기준과 최초 복원 시작 상태
 
@@ -10,7 +10,7 @@
 |---|---|
 | 복원·비교 버전 | `v1.0.3-alpha.3` |
 | 기준 태그 커밋 | `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` |
-| 기준 DLL | `plugins/DiceMaster/DiceMaster.dll`, 462,336바이트 |
+| 기준 DLL | 고정 커밋의 `plugins/DiceMaster/DiceMaster.dll`, 462,336바이트. 현재 재생성 위치는 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll` |
 | 기준 DLL SHA-256 | `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633` |
 | 작업 시작 HEAD | `9ca7730` (`docs: record verified v1.0.3-alpha.3 publication`) |
 | HEAD와 기준 차이 | 9개 문서만 변경, 34줄 추가·22줄 삭제. 기준 DLL·C# 관리 소스·도구·설정은 동일 |
@@ -24,17 +24,17 @@
 
 루트 솔루션과 `src/`·`tests/`를 일반 개발 진입점으로 만들고, `build/`에는 실행 가능한 빌드·검증 명령을, `tools/SourceRecovery/`에는 최초 복원 도구·프로젝트 템플릿을, `tools/LegacyPatch/`에는 기존 패치 도구와 payload 프로젝트를 배치합니다. 런타임 타입·네임스페이스·내장 리소스 논리 이름은 폴더 이동 때문에 바꾸지 않습니다. 예전 패드·로그 패치와 복원 명령은 `development/tools/`의 세 호환 진입점에서 새 경로로 전달합니다.
 
-`global.json`은 검증한 SDK를 지정하고 루트 `Directory.Build.props`는 공통 생성 경로와 제외 규칙만 둡니다. 주 모드의 net48과 검사 도구의 net8.0 타깃은 각 프로젝트에 남겨 공통 설정이 검사 대상을 덮어쓰지 않게 합니다. 새 후보 패키지 설정은 `packaging/`에 분리하고, 기존 배포 `config/`·`plugins/`를 보존해 구조 정리와 향후 기본 배포 전환을 구분합니다. 상세 트리는 [개발 안내](DEVELOPMENT.md#파일-구성)에 있습니다.
+`global.json`은 검증한 SDK를 지정하고 루트 `Directory.Build.props`는 공통 생성 경로와 제외 규칙만 둡니다. 주 모드의 net48과 검사 도구의 net8.0 타깃은 각 프로젝트에 남겨 공통 설정이 검사 대상을 덮어쓰지 않게 합니다. 새 후보 패키지 설정은 `packaging/`에서 관리하고 루트 배포 사본 `config/`·`plugins/`는 제거했습니다. 고정 Git 이력에서 기준을 재생성하므로 구조 정리 때문에 비교 기준이나 과거 배포 자산이 달라지지 않습니다. 상세 트리는 [개발 안내](DEVELOPMENT.md#파일-구성)에 있습니다.
 
 ## 소스와 리소스의 소유권
 
 `src/DiceMaster/DiceMaster.csproj`는 선택지 파서·번역·UI·주사위·후킹·어셈블리 속성과 Gamepad·LiveLog를 포함한 전체 모드 프로젝트입니다. 복원 C# 26개와 기존 관리 C# 8개(Gamepad 2개, LiveLog 6개)를 같은 소스 트리에 둡니다. Gamepad·LiveLog는 실제 하위 폴더이며 주 프로젝트의 형제 payload 프로젝트를 링크하지 않습니다. 기준 DLL에서 추출한 같은 타입은 제외하여 한 번만 컴파일하고 기존 후킹을 유지합니다. `DiceMaster.sln`은 주 프로젝트와 검사 프로젝트를 모으며 보존한 legacy payload는 포함하지 않습니다.
 
-UI/번역 리소스 5개와 MinHook x86/x64 DLL·라이선스 3개는 `src/DiceMaster/Resources/`에 둡니다. native 파일은 `Resources/native/`에 있으며 8개 모두 원래 논리 이름으로 내장합니다. 모든 리소스의 이름·속성·크기·SHA-256을 기준과 비교합니다. 기준의 에셋 리소스는 `Public`, 나머지 7개는 `Private`이며 이 속성을 그대로 유지합니다. 게임 소스는 복원하지 않으며 게임 DLL은 저장소에 복사하거나 내장하지 않습니다.
+UI/번역 리소스 5개와 MinHook x86/x64 DLL·라이선스 3개는 `src/DiceMaster/Resources/`에 둡니다. native 파일은 `Resources/native/`에 있으며 8개 모두 원래 논리 이름으로 내장합니다. 모든 리소스의 이름·속성을 기준과 비교하며, 7개는 크기·바이트 일치를 요구합니다. 번역 리소스 하나의 주석 세 줄만 정리한 차이는 기준·후보의 고정 SHA-256과 모든 비주석 행·빈 행·줄바꿈 비교로 한정합니다. 기준의 에셋 리소스는 `Public`, 나머지 7개는 `Private`이며 이 속성을 그대로 유지합니다. 게임 소스는 복원하지 않으며 게임 DLL은 저장소에 복사하거나 내장하지 않습니다.
 
-새 후보 ZIP의 설정 원본은 `packaging/config/DiceMaster.cfg`입니다. 기존 배포 상태인 루트 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`은 Windows 확인·전환 전까지 보존합니다. 구조를 정리해도 후보 ZIP의 설치 경로와 파일 개수는 바꾸지 않습니다.
+새 후보 ZIP의 설정 원본은 `packaging/config/DiceMaster.cfg`입니다. 루트 `config/`·`plugins/`가 없어도 일반 소스 빌드·후보 패키징을 수행합니다. alpha.3 비교·복원 기준은 고정 Git 커밋의 blob에서 해시를 확인하여 재생성하며, 기존 패치 출력도 `artifacts/legacy-candidate/`로 분리합니다. 후보 ZIP의 설치 경로 `config/DiceMaster.cfg`·`plugins/DiceMaster/DiceMaster.dll`과 두 파일 구성은 유지합니다.
 
-기준에서 복원한 모드 리소스의 식별은 다음과 같습니다. 비교 도구는 이 파일 목록만 보는 대신 기준 DLL과 후보 DLL에서 실제 내장된 데이터를 읽어 이름·속성·바이트를 비교합니다.
+현재 소스 프로젝트에 내장하는 모드 리소스의 식별은 다음과 같습니다. 비교 도구는 이 파일 목록만 보는 대신 기준 DLL과 후보 DLL에서 실제 내장된 데이터를 읽어 이름·속성·바이트를 비교합니다.
 
 | 내장 논리 이름 | 바이트 | SHA-256 |
 |---|---:|---|
@@ -42,12 +42,14 @@ UI/번역 리소스 5개와 MinHook x86/x64 DLL·라이선스 3개는 `src/DiceM
 | `DiceMaster.Gamepad.Native.LICENSE.txt` | 4,365 | `d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8` |
 | `DiceMaster.Gamepad.Native.MinHook.x64.dll` | 16,384 | `033e55af8995c3b260e56de73daf99ff4a7ce2fcbe4b3872db2270678d8c6585` |
 | `DiceMaster.Gamepad.Native.MinHook.x86.dll` | 12,800 | `1f28d13b8133551c8896cc556db768c94ebfaae0ad38e86719f3151f7b4ce1fc` |
-| `DiceMaster.Translations.ModTranslation.txt` | 44,349 | `6fc71ac1780be28b78e5ee193835a38e47d1526cbb9a143d05ff5206eceef1ec` |
+| `DiceMaster.Translations.ModTranslation.txt` | 44,278 | `7441c94d83df9f2ebe6ecdfe0489c752afe7ebeadc7b28ae6d15aca460acf5eb` |
 | `DiceMaster.Translations.Pairs` | 147,030 | `172489a3a34fd27d93410b71b23dcfeb6d597723e5d2e0f4878eef464899ec00` |
 | `DiceMaster.Translations.TriggerTranslation1.0.5v.txt` | 8,521 | `a528b4740da8fe1fd5218e50d8113720306ea1db21b959b0ab1545c13587dbd4` |
 | `DiceMaster.Translations._Substitutions.txt` | 2,514 | `640d5fc2a5fae476b766c5b59481a10e7e7d68a605557485f5bf2277e6569909` |
 
-어셈블리 이름 `DiceMaster`, Assembly/FileVersion `1.0.0.0`, InformationalVersion `1.0.0`, BepInPlugin GUID/이름 `DiceMaster`와 버전 `1.0.0`은 기준과 동일합니다. 배포 태그와 어셈블리 내부 버전은 별도 식별입니다. 이번 소스 빌드의 배포 태그는 `v1.0.3-alpha.4`이며 내부 버전은 기존 계약 보존을 위해 올리지 않습니다. DLL SHA-256으로 실제 산출물을 구분합니다.
+기준 DLL의 `ModTranslation.txt`는 44,349바이트 / SHA-256 `6fc71ac1780be28b78e5ee193835a38e47d1526cbb9a143d05ff5206eceef1ec`입니다. 별도 모드 자료 정리에 따라 주석 세 줄만 수정했으며 공용 게임 UI·플래그·참고문 번역은 DiceMaster에서 사용하므로 유지합니다. 다른 7개 리소스와 모든 C# 파일은 이 정리로 바꾸지 않습니다. 복원 도구도 새 임시 추출에 같은 주석 보정을 적용하므로 이전 임시 자료 없이 현재 소스를 재생성합니다.
+
+어셈블리 이름 `DiceMaster`, Assembly/FileVersion `1.0.0.0`, InformationalVersion `1.0.0`, BepInPlugin GUID/이름 `DiceMaster`와 버전 `1.0.0`은 기준과 동일합니다. 배포 태그와 어셈블리 내부 버전은 별도 식별입니다. 이미 게시한 소스 빌드의 배포 태그는 `v1.0.3-alpha.4`이며 이후 로컬 정리 후보는 아래 별도 기록으로 구분합니다. 내부 버전은 기존 계약 보존을 위해 올리지 않습니다. DLL SHA-256으로 실제 산출물을 구분합니다.
 
 기존 UI·한국어·네 탭·50자 선택지 요약/로그 전체 설명·설정 키와 기본값·세이브 형식·주사위/패드·로그/난수·수명주기 계약을 유지합니다. 이슈 #2 효과 분석 확대나 버그 수정은 포함하지 않습니다. 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기할 수 있는 alpha.3의 제한과 이슈 #1의 미완료 수용 기준은 그대로 남습니다.
 
@@ -98,7 +100,7 @@ python3 build/build-source.py \
   --references '/Users/im-yongbeen/Documents/Codex/2026-10-18/task/references/LegendOfMortal-mac-references-20261018'
 ```
 
-이 일반 소스 빌드는 기존 모드 DLL을 입력으로 읽거나 추출·병합·메서드 교체하지 않습니다. `DiceMaster.csproj`가 관리 소스·모드 리소스만 컴파일하며 기존 `plugins/DiceMaster/DiceMaster.dll`을 교체하지 않습니다. 기본 검증 후보 출력은 `artifacts/source-candidate/`입니다. 사용자 지정 위치에는 `--output-dir artifacts/<별도 후보>`를 사용합니다. 출력은 `artifacts/`의 하위 폴더이며 참조와 겹치지 않는 경로로 제한합니다. `artifacts/` 자체와 일반 컴파일 출력인 `artifacts/bin/`·`artifacts/obj/`는 후보 출력으로 사용할 수 없습니다. 이미 존재하는 대상은 유효한 소스 후보 manifest·DLL 해시가 일치하고 허용된 결과 파일만 있을 때 갱신합니다. 기존 배포 디렉터리나 알 수 없는 파일을 후보 출력으로 덮어쓰지 않습니다.
+이 일반 소스 빌드는 기존 모드 DLL을 입력으로 읽거나 추출·병합·메서드 교체하지 않습니다. `DiceMaster.csproj`가 관리 소스·모드 리소스만 컴파일하며 Git 데이터·기준 DLL·ILSpy도 필요하지 않습니다. 기본 검증 후보 출력은 `artifacts/source-candidate/`입니다. 사용자 지정 위치에는 `--output-dir artifacts/<별도 후보>`를 사용합니다. 출력은 `artifacts/`의 하위 폴더이며 참조와 겹치지 않는 경로로 제한합니다. `artifacts/` 자체와 일반 컴파일 출력인 `artifacts/bin/`·`artifacts/obj/`는 후보 출력으로 사용할 수 없습니다. 이미 존재하는 대상은 유효한 소스 후보 manifest·DLL 해시가 일치하고 허용된 결과 파일만 있을 때 갱신합니다. 기존 배포 디렉터리나 알 수 없는 파일을 후보 출력으로 덮어쓰지 않습니다.
 
 빌드는 새 임시 작업 폴더에서 컴파일하고 일곱 자동 검사(`LogRefreshTests`, `LiveLogEngineTests`, `LifecycleTests`, `LiveLogIntegrationTests`, `RealGameApiTests`, `GamepadTests`, `SourceBehaviorTests`)를 새 DLL에 실행한 뒤 후보를 생성합니다. 기본 출력은 다음과 같습니다.
 
@@ -118,11 +120,24 @@ artifacts/source-candidate/
 
 ```sh
 python3 build/verify-source.py \
-  --references '/Users/im-yongbeen/Documents/Codex/2026-10-18/task/references/LegendOfMortal-mac-references-20261018' \
-  --baseline plugins/DiceMaster/DiceMaster.dll
+  --references '/Users/im-yongbeen/Documents/Codex/2026-10-18/task/references/LegendOfMortal-mac-references-20261018'
 ```
 
-기본 후보는 `artifacts/source-candidate/DiceMaster.dll`이며 다른 후보에는 `--candidate <후보 DLL>`을 지정합니다. 비교 결과는 `compatibility.json`, `compatibility.log`에 기록합니다. 메타데이터 계약 외에 기준/후보의 실제 번역·주사위 메서드를 같은 대역 환경에서 실행해 관찰 결과를 비교합니다. 호환성 도구는 정상 후보 통과 후 리소스 속성/바이트, 누락/중복 타입, 중복 후킹, Harmony `__state` 이름, 설정 기본값, P/Invoke 진입점, `PadState` packing, delegate 호출 규약을 각각 변조한 10개 후보가 의도한 계약 때문에 실패하는지도 검사합니다. 비교에서만 고정 alpha.3 기준 DLL을 입력으로 읽습니다. 재컴파일한 DLL 전체 바이트 일치는 성공 조건이 아니며 DLL·ZIP 해시는 식별과 추적용입니다.
+기본 후보는 `artifacts/source-candidate/DiceMaster.dll`이며 다른 후보에는 `--candidate <후보 DLL>`을 지정합니다. `--baseline`을 생략하면 고정 Git 커밋의 기준 DLL을 자동 재생성합니다. Git 데이터가 없는 소스 압축본에서 비교할 때에는 같은 고정 해시의 파일을 `--baseline <기준 DLL>`로 명시합니다. 비교 결과는 `compatibility.json`, `compatibility.log`에 기록합니다. 메타데이터 계약 외에 기준/후보의 실제 번역·주사위 메서드를 같은 대역 환경에서 실행해 관찰 결과를 비교합니다. 호환성 도구는 정상 후보 통과 후 리소스 속성/바이트, 누락/중복 타입, 중복 후킹, Harmony `__state` 이름, 설정 기본값, P/Invoke 진입점, `PadState` packing, delegate 호출 규약과 번역 데이터 변조·과거 주석 복원을 포함한 12개 후보가 의도한 계약 때문에 실패하는지도 검사합니다. 비교에서만 고정 alpha.3 기준 DLL을 입력으로 읽습니다. 재컴파일한 DLL 전체 바이트 일치는 성공 조건이 아니며 DLL·ZIP 해시는 식별과 추적용입니다.
+
+## Release 후보의 로컬 검증
+
+다음 명령은 현재 관리 소스·검사·도구·패키지 설정만 새 임시 스냅샷에 복사하여 전체 빌드·일곱 검사·기준 비교·변조 거부 검사와 ZIP 검증을 실행합니다. 스냅샷에는 `.git/`, 루트 `config/`·`plugins/`, 예전 모드 DLL·생성 결과가 없으며 컴파일은 기준 DLL을 사용하지 않습니다. 기준 비교는 원래 저장소에서 고정 Git 기준을 재생성한 뒤 수행합니다.
+
+```sh
+python3 build/verify-release.py \
+  --references '/Users/im-yongbeen/Documents/Codex/2026-10-18/task/references/LegendOfMortal-mac-references-20261018' \
+  --output-dir artifacts/release-candidate
+```
+
+출력에는 새 `DiceMaster.dll`, `DiceMaster-release-candidate.zip`, `release-verification.json`, 빌드·호환성 보고서와 로그를 함께 둡니다. 검사는 ZIP CRC·정확히 두 경로·새 DLL 바이트·스냅샷의 패키지 설정 바이트·SHA-256을 확인하고 소스 출처와 입력 해시를 기록합니다. `--version vX.Y.Z...`를 지정하면 ZIP 이름은 `DiceMaster-vX.Y.Z....zip`입니다. 출력은 비어 있거나 존재하지 않는 `artifacts/` 하위 폴더만 허용하며 재실행은 새 `--output-dir`을 사용합니다. 기존 게시 영수증이나 다른 결과를 덮어쓰지 않습니다.
+
+게시할 커밋이 확정된 뒤에는 `--source-commit <40자리 전체 커밋 SHA>`로 해당 Git 커밋의 허용 목록만 추출하여 같은 검증을 재현할 수 있습니다. 인수를 생략하면 현재 작업 트리의 관리 입력을 검사하므로 미커밋 변경도 포함합니다. 이 명령은 로컬 검증만 수행하며 commit·push·태그·GitHub Release 게시를 실행하지 않습니다. Windows 확인과 기본 전환 조건은 계속 별도입니다.
 
 ## 기존 모드 DLL 없는 격리 빌드
 
@@ -135,21 +150,25 @@ python3 build/verify-clean-source.py \
 
 ## 최초 복원 재현과 설계 근거
 
-기준 DLL이 작업 트리에서 달라진 경우에도 저장소의 고정 커밋에서 별도 파일로 다시 꺼낼 수 있습니다. 이 명령은 작업 트리 DLL을 바꾸지 않습니다.
+비교·복원에 사용할 기준 DLL은 루트에 보관하지 않습니다. 다음 명령은 저장소의 고정 커밋에서 blob을 읽고 SHA-256을 검증한 뒤 Git에서 제외한 캐시에 재생성합니다.
 
 ```sh
-git show f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec:plugins/DiceMaster/DiceMaster.dll > /tmp/DiceMaster-alpha3-reference.dll
-shasum -a 256 /tmp/DiceMaster-alpha3-reference.dll
+python3 build/baseline.py
 ```
 
-결과가 위 기준 해시와 일치하는지 확인하고 복원/비교 명령의 `--baseline`에 이 별도 경로를 지정합니다.
+결과는 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll`입니다. 고정 기준은 브랜치 HEAD나 움직일 수 있는 태그 이름으로 결정하지 않으며 전체 커밋 SHA·저장소 내 blob 경로·DLL SHA-256으로 확인합니다. 정상인 캐시가 있어도 매번 고정 Git blob을 읽어 검증하고 캐시와 대조합니다. 캐시가 삭제되거나 일반 파일의 내용이 달라지면 검증한 blob으로 다시 생성하며 임의 DLL이나 과거 임시 추출본으로 대체하지 않습니다. 로컬 Git 이력에 고정 커밋이 없으면 캐시가 정상이어도 진단과 함께 실패하므로 필요한 Git 이력을 준비해야 합니다. 자동 네트워크 조회는 하지 않습니다. 일반 소스 빌드에는 Git 이력이나 이 캐시가 필요하지 않습니다.
+
+기준 재생성과 실패 진단은 다음 명령으로 검사합니다. 고정 Git blob·해시 확인, 캐시 삭제/변조 후 재생성, 기준 이력 누락, 다른 DLL, 심볼릭 링크·디렉터리 거부와 기존 패치 출력의 기준 캐시 덮어쓰기 차단을 확인합니다. 보고서는 `artifacts/baseline-checks/baseline-checks.json`에 기록합니다.
+
+```sh
+python3 build/verify-baseline.py
+```
 
 최초 복원은 ILSpy `9.1.0.7988`로 새로 수행합니다. 관리 도구를 준비한 뒤 빈 출력 폴더로 복원합니다.
 
 ```sh
 dotnet tool install ilspycmd --version 9.1.0.7988 --tool-path /tmp/dicemaster-ilspy
 python3 tools/SourceRecovery/recover-source.py \
-  --baseline plugins/DiceMaster/DiceMaster.dll \
   --references '/Users/im-yongbeen/Documents/Codex/2026-10-18/task/references/LegendOfMortal-mac-references-20261018' \
   --output /tmp/dicemaster-recovered \
   --ilspycmd /tmp/dicemaster-ilspy/ilspycmd
@@ -159,7 +178,6 @@ python3 tools/SourceRecovery/recover-source.py \
 
 ```sh
 python3 tools/SourceRecovery/recover-source.py \
-  --baseline plugins/DiceMaster/DiceMaster.dll \
   --references '/Users/im-yongbeen/Documents/Codex/2026-10-18/task/references/LegendOfMortal-mac-references-20261018' \
   --ilspycmd /tmp/dicemaster-ilspy/ilspycmd \
   --check
@@ -174,6 +192,7 @@ python3 tools/SourceRecovery/recover-source.py \
 - `DataHelper.GetMissions`의 `item2 != LiveMissionFilter`를 `(object)item2 != LiveMissionFilter`로 명시하여 기준 IL의 객체 참조 비교 의미를 보존합니다.
 - 디컴파일러가 복원한 기존 컴파일러 식별자를 유지하고 컴파일 후 IL을 다시 쓰지 않습니다.
 - 작성한 net48 프로젝트 템플릿으로 참조·어셈블리 속성·리소스 이름을 지정합니다.
+- `ModTranslation.txt`의 1·38·89행을 일반 게임 UI·DiceMaster 플래그·참고문 주석으로 바꿉니다. 번역 데이터와 CRLF는 보존하며 고정 기준 리소스 SHA-256을 확인한 뒤 적용합니다.
 
 프로젝트를 전체 모드 폴더에 배치한 이유는 게임 경계와 파서·UI·번역의 구현을 한 컴파일 단위에서 검토하기 위해서입니다. Gamepad·LiveLog를 주 프로젝트의 실제 폴더로 통합한 이유는 alpha.3 관리 구현과 단일 컴파일 소유권을 유지하면서 추출본의 중복 타입·후킹을 방지하기 위해서입니다. 기존 패치 payload 프로젝트만 같은 관리 파일을 링크하여 비교·복구를 재현합니다. 후보 디렉터리와 비교 단계를 분리한 이유는 정상 소스 빌드의 모드 DLL 의존성을 제거하고 기존 배포물을 유지하기 위해서입니다. 외부 게임 참조를 명시하고 로컬 경로만 받는 이유는 참조 버전을 식별하면서 게임 코드의 저장소·설치 ZIP 유입과 원본 수정 경로를 막기 위해서입니다.
 
@@ -186,7 +205,7 @@ python3 tools/SourceRecovery/recover-source.py \
 | 어셈블리·설정 | .NET Framework 4.8, 어셈블리/플러그인 식별, 공개 API, 설정 키·기본값 |
 | 후킹·리플렉션 | Harmony 대상·패치 서명·속성, 수명주기/Lua 경계, 중복 타입·후킹 부재 |
 | native ABI | P/Invoke 이름·호출 규약·구조체 레이아웃, XInput/MinHook 연결 |
-| 내장 리소스 | 8개 이름·속성·개수·크기·바이트 |
+| 내장 리소스 | 8개 이름·속성·개수, 7개 바이트 일치, 번역 하나의 주석 세 줄만 고정 해시 차이 허용·비주석 데이터 일치 |
 | 동작 | 실제 파서/요약/로그/캐시, 현재 탭·숨김, 실패 격리·이전 값·5초 재시도·수동 복구, 난수·게임 부작용 보존, 주사위·패드 |
 | 설치 ZIP | 정확히 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 두 파일, DLL은 이번 새 빌드와 동일 |
 
@@ -202,7 +221,7 @@ python3 tools/SourceRecovery/recover-source.py \
 - Harmony 대상이 아닌 내부 래퍼 `OptionInfoPatch.PreviewReadGroup`, `PreviewCheckComparison`, `PreviewReadEventRate`, `PositionEventCache.GeneratePreviewDynamicDesc`의 이름 없는 매개변수는 `P_0`로 복원됩니다. 매개변수의 형식·순서·플래그는 동일합니다.
 - 기존 payload 복사기가 누락한 C# `params`의 `ParamArrayAttribute`가 연결 소스의 `LogBridge.Call`, `LogBridge.CallDisplayHelper`, `PreviewFormatting.Helper`에 추가됩니다. `CallDisplayHelper`만 public이며 기존 메서드·배열 인수의 형식·이름·플래그와 호출 동작은 동일합니다. 이 속성은 C# 호출자가 배열을 펼친 인수 문법으로 호출할 수 있게 하며 기존 배열 호출의 런타임 연결은 유지합니다. 따라서 public 메타데이터 전체 바이트가 동일하다고 주장하지 않습니다.
 
-내장 번역/에셋 바이트와 native ABI가 같아도 Unity/native 실제 호출·리소스 로드·Harmony 설치·다른 모드·Windows UI/패드·실제 게임 성능을 검증한 것은 아닙니다. 이런 경로는 향후 별도 승인 후 사용자 확인이 필요합니다.
+내장 번역 데이터·에셋과 native ABI가 같아도 Unity/native 실제 호출·리소스 로드·Harmony 설치·다른 모드·Windows UI/패드·실제 게임 성능을 검증한 것은 아닙니다. 이런 경로는 향후 별도 승인 후 사용자 확인이 필요합니다.
 
 ## 실패 처리·확인 방법
 
@@ -218,6 +237,48 @@ python3 build/verify-source-failures.py \
 참조 누락·잘못된 해시, 기준 DLL/복원 도구 불일치, 컴파일 오류, 중복 타입/후킹, 리소스 불일치, 검사 실패는 명시적 비정상 종료입니다. 이전 DLL을 새 성공 결과로 복사하거나 보관 DLL로 조용히 대체하지 않습니다. 실패 진단과 새 결과 식별을 확인한 뒤 수정하고 새 후보 디렉터리에서 다시 실행합니다. 기존 성공 후보는 실패한 실행 때문에 교체되지 않으며, 이전 영수증을 이번 실행의 성공으로 해석하지 않습니다. 후보 승격 중 중단되어 `.pending`/`.previous`가 남으면 내용을 확인한 뒤 복구하고 재시도합니다. 비교·격리 검사는 시작 시 이전 성공 JSON을 지우므로 실패 뒤 과거 PASS 기록을 새 결과로 남기지 않습니다.
 
 문법 복원과 참조 보정은 기능 의미를 보존하는 범위로 제한합니다. 기능 변경이 필요해 보이는 경우 이번 복원에 섞지 않고 별도로 기록합니다. 런타임 진단은 기존 BepInEx 정책을 유지하며 전체 Lua·세이브·비밀정보를 새 로그에 추가하지 않습니다.
+
+## 루트 배포 폴더 제거 후 빌드·Release 검증
+
+사용자 승인에 따라 루트 `config/`·`plugins/`를 제거했습니다. 패키지 설정은 기존과 바이트가 같은 `packaging/config/DiceMaster.cfg`만 유지합니다. 비교·복원·기존 패치의 기본 기준은 고정 Git 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`의 DLL blob에서 매번 SHA-256을 검증하여 재생성합니다. 일반 소스 컴파일은 Git 이력과 기준 DLL을 사용하지 않습니다. 기존 게시 태그·설치 자산은 변경하지 않았습니다.
+
+| 이번 변경 후 실행 | 결과 |
+|---|---|
+| 루트 솔루션 Release 빌드 | 14개 프로젝트, 오류 0개·기존 경고 7개, DLL 해시는 아래 후보와 동일 |
+| `verify-release.py` 현재 소스 | 새 소스 스냅샷에서 전체 컴파일·일곱 자동 검사·기준 계약 2,750개·변조 거부 12종·동작 관찰값 비교 4,341개 통과 |
+| Release 설치 ZIP | 정확히 설정·새 DLL 두 파일, CRC·스냅샷 설정/빌드 DLL 바이트·SHA-256 일치 |
+| 기존 모드 DLL·Git 데이터 없는 격리 빌드 | 시작 시 기존 `DiceMaster.dll` 0개, 일곱 검사 통과, Release 후보와 DLL·ZIP 해시 일치 |
+| 기준 재생성·실패 보호 | 13종 통과: 루트 폴더 없음, 캐시 생성/삭제/오염 복구, Git 이력 누락 시 캐시 우회 거부, 잘못된 해시·symlink·비정상 파일·기준 덮어쓰기 거부 |
+| 소스 빌드 실패 경로 | 11종 통과, 이전 후보 보존·새 패키지 미생성·오래된 PASS 제거 |
+| Release 출력 보호 | 기존 게시 폴더·`artifacts/` 외부 경로·잘못된 버전·짧은 커밋 SHA 거부 4종, 기존 게시 ZIP 바이트 보존 |
+| 전체 소스 복원 재현 | 고정 Git DLL의 새 추출과 현재 통합 프로젝트 44개 파일 `--check` 통과 |
+| 기존 패치의 새 기본 경로 | 패드 525,430개 및 로그/엔진/수명주기/통합/API/리소스/반복 패치 검사 통과, 기준 DLL 해시 유지·루트 폴더 재생성 없음 |
+| alpha.4 고정 소스 커밋 재현 | `--source-commit 46bbf7486ab424696f1f5ba7d4126f6c12d11184 --version v1.0.3-alpha.4` 통과, 기존 게시 DLL·ZIP 바이트 그대로 재현 |
+
+현재 로컬 Release 후보는 `artifacts/release-candidate/DiceMaster.dll`(461,312바이트, SHA-256 `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1`)과 `DiceMaster-release-candidate.zip`(191,442바이트, SHA-256 `72c14f2743d0d65f668825ceec9d557e31d48302730f5afaa293c781190829a7`)입니다. 이전 주석 정리 후보와 같은 제품 입력이므로 DLL·ZIP 해시도 같습니다. 이번 변경은 기준 파일 보관·도구·문서 경로만 바꿉니다.
+
+재현한 alpha.4 DLL의 SHA-256은 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`, 설치 ZIP은 `ddd32abbaa886cea4e0975bd522addbb1339e71a59223137fbbe23114d9556b8`로 기존 게시 영수증과 같습니다. 이 결과는 현재 주석 정리 후보와 구분하며 과거 태그·Release를 덮어쓰지 않습니다.
+
+현재 소스의 출처·입력 해시·SDK·참조·검사·ZIP 영수증은 `artifacts/release-candidate/release-verification.json`과 같은 폴더의 빌드/호환성 보고서에 있습니다. 고정 커밋 재현은 `artifacts/release-alpha4-reproduction/`, 격리/실패/기존 패치/출력 보호 로그는 `artifacts/root-removal-checks/`, 기준 재생성 13종은 `artifacts/baseline-checks/baseline-checks.json`에 기록했습니다. 현재 소스 검증은 미커밋 작업 트리 입력임을 영수증에 명시합니다.
+
+이 절의 검증 당시에는 commit·push·태그·Release 게시를 수행하지 않았습니다. 이후 사용자가 이번 변경의 commit·push를 승인했으며 태그·Release 재게시와 Windows 설치·실행은 승인 범위에 포함하지 않습니다. Windows 사용자 확인과 기본 소스 빌드 전환, PRD #3 전체 완료는 계속 보류합니다. 루트 사본을 제거해도 고정 Git 이력이 있으면 같은 alpha.3 기준을 재생성할 수 있고, 게임 DLL·게임 소스는 저장소·설치 ZIP에 포함하지 않습니다.
+
+## 별도 모드 자료 정리 후 로컬 검증
+
+별도 모드의 DLL·설정 파일과 현재 문서의 관련 참조를 제거했습니다. C# 34개, 게임 UI·플래그·참고문 번역 데이터, `Pairs`의 2,130개 번역 쌍은 그대로 유지합니다. 빈 `DiceMaster.DebugPatch`는 외부 모드 의존성이 없는 기준의 공개 타입이고 `Awake`에서 참조하므로 메타데이터·기존 초기화 경로를 보존합니다. 번역 리소스의 주석 세 줄을 정리한 차이만 위 리소스 계약과 복원 도구에 명시했습니다.
+
+수정한 입력으로 `build/build-source.py`, `build/verify-source.py`, `build/verify-clean-source.py`, `tools/SourceRecovery/recover-source.py --check`를 다시 실행했습니다. 일곱 자동 검사 묶음이 통과했으며 기준 대비 계약 2,750개·변조 거부 12종·번역/주사위 관찰값 4,341개도 통과했습니다. 기존 DLL 0개인 격리 스냅샷의 새 DLL·ZIP 해시는 일반 후보와 동일합니다. 주 모드 컴파일은 기존 경고 7개·오류 0개입니다. 실패 경로 도구나 기존 패치 공정의 동작은 이번 정리에서 바꾸지 않았으며 과거 검사 기록과 이번 실행을 구분합니다.
+
+| 로컬 후보 식별 | 값 |
+|---|---|
+| DLL | `artifacts/source-candidate/DiceMaster.dll`, 461,312바이트 |
+| DLL SHA-256 | `db10926e620c0297dfd80a86b5a5dbcab209dab39f691704e45f83206587cba1` |
+| ZIP | `artifacts/source-candidate/DiceMaster-source-candidate.zip`, 191,442바이트 |
+| ZIP SHA-256 | `72c14f2743d0d65f668825ceec9d557e31d48302730f5afaa293c781190829a7` |
+| 당시 보존 기준 | 루트 alpha.3 DLL SHA-256 `485581c2…`, 루트 설정과 `packaging/config/DiceMaster.cfg` 바이트 동일. 이후 루트 사본은 제거하고 고정 Git 기준을 재생성하도록 변경 |
+| 검사 영수증 | `artifacts/source-candidate/build-manifest.json`, `compatibility.json`, `artifacts/comment-cleanup-checks/clean-build.json` |
+
+이 정리의 후보는 로컬 결과이며 기존 alpha.4 태그·게시 자산을 교체하지 않았습니다. 기본 빌드 전환·이슈 완료 처리는 보류하며 Windows 설치·게임 실행도 수행하거나 요청하지 않았습니다. 후속 루트 폴더 정리에서는 고정 Git 커밋에서 기준 DLL을 재생성하도록 비교·복원·기존 패치 경로를 함께 변경했습니다.
 
 ## alpha.4 최종 소스 커밋 빌드·게시 — 2026-10-18
 
@@ -297,4 +358,4 @@ macOS에서 Python `3.9.6`·.NET SDK `8.0.426`과 위 읽기 전용 참조를 �
 
 Windows 설치·실행은 수행하지 않았고 이번 요청에서 요청하지도 않습니다. 향후 별도 승인 후 같은 후보 DLL의 SHA-256, 게임/로더/패드/Steam Input 환경과 사용자 결과를 기록해야 합니다. 기준 대비 UI·번역·네 탭·선택지 요약/전체 설명·설정 유지·세이브·로그/난수/수명주기·음수/0/100 초과 주사위·키보드/마우스/패드·MinHook/XInput·Harmony 및 설치/롤백 경로가 대상입니다.
 
-자동 검사와 이 사용자 확인을 모두 통과하고 기본 명령·문서·배포 후보 경로를 전환한 뒤에만 PRD #3의 전환 조건을 완료로 처리합니다. 후보 상태에서는 기존 기본 빌드·배포 DLL을 보존하므로 로컬 롤백은 기존 경로를 계속 사용하는 것입니다. 향후 승인된 Windows 설치 뒤 문제 발생 시 게임 종료 후 보관 alpha.3 DLL을 복원하고 기존 설정·세이브를 유지합니다. 실제 Windows 업데이트/롤백은 아직 확인하지 않았습니다. 더 오래된 v1.0.2로 복원하면 선택지 결과 소실 문제가 다시 나타날 수 있고 v1.0.1에는 자동 갱신이 없습니다.
+자동 검사와 이 사용자 확인을 모두 통과하고 기본 명령·문서·배포 후보 경로를 전환한 뒤에만 PRD #3의 전환 조건을 완료로 처리합니다. 기존 기본 패치 공정과 배포 DLL은 고정 Git 커밋·기존 게시 자산으로 보존합니다. 루트 사본을 제거한 현재 로컬 비교·복구는 `build/baseline.py`로 동일 기준을 재생성하여 기존 패치 공정의 별도 후보 경로를 사용하는 것입니다. 향후 승인된 Windows 설치 뒤 문제 발생 시 게임 종료 후 보관 alpha.3 DLL을 복원하고 기존 설정·세이브를 유지합니다. 실제 Windows 업데이트/롤백은 아직 확인하지 않았습니다. 더 오래된 v1.0.2로 복원하면 선택지 결과 소실 문제가 다시 나타날 수 있고 v1.0.1에는 자동 갱신이 없습니다.

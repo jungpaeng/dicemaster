@@ -4,20 +4,32 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'build'))
+from baseline import get_baseline, protect_baseline_output
 
 
 def main():
-    root = Path(__file__).resolve().parents[2]
-    mod_root = root
+    root = ROOT
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input', type=Path, default=mod_root / 'plugins/DiceMaster/DiceMaster.dll')
-    parser.add_argument('--output', type=Path, default=mod_root / 'plugins/DiceMaster/DiceMaster.dll')
+    parser.add_argument('--input', type=Path,
+                        help='Input DLL; default: verified alpha.3 DLL recreated from local Git.')
+    parser.add_argument('--output', type=Path,
+                        default=root / 'artifacts/legacy-candidate/live-log/DiceMaster.dll')
     parser.add_argument('--game-managed', type=Path, help='Read-only game Managed folder for actual-game IL and hook contract checks.')
     args = parser.parse_args()
+    try:
+        protect_baseline_output(args.output, root)
+    except RuntimeError as error:
+        parser.error(str(error))
     dotnet = shutil.which('dotnet')
     if dotnet is None:
         parser.error('The .NET 8 SDK is required. Install it before running this script.')
+    if args.input is None:
+        args.input = get_baseline(root)
     input_bytes = args.input.read_bytes()
     with tempfile.TemporaryDirectory(prefix='dicemaster-log-refresh-') as directory:
         work = Path(directory)

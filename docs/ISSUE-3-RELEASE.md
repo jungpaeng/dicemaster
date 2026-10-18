@@ -21,9 +21,11 @@ plugins/DiceMaster/DiceMaster.dll
 
 태그 커밋의 루트 `plugins/DiceMaster/DiceMaster.dll`은 alpha.3 기준 DLL로 보존합니다. 따라서 alpha.4 설치 자산의 DLL과 루트 보존 DLL은 서로 다르며, ZIP이 루트 DLL과 같다는 검사를 적용하지 않습니다. 대신 태그 커밋의 프로젝트 빌드 결과와 자산 DLL 바이트 일치, 같은 커밋의 패키지 설정 바이트 일치, ZIP CRC·파일 수·경로·SHA-256을 확인합니다. GitHub의 자동 `Source code` 압축 파일에는 저장소의 보존 DLL도 포함되므로 설치용 Assets ZIP과 구분합니다.
 
-Assembly/FileVersion `1.0.0.0`, InformationalVersion `1.0.0`, BepInPlugin 버전 `1.0.0`은 기준의 메타데이터 계약을 보존합니다. 배포 태그 alpha.4와 내부 버전은 별도이며 실제 산출물은 DLL SHA-256으로 식별합니다. 게임 DLL·게임 소스·외부 참조·DebugMenu·개발 도구는 설치 ZIP에 포함하지 않습니다.
+Assembly/FileVersion `1.0.0.0`, InformationalVersion `1.0.0`, BepInPlugin 버전 `1.0.0`은 기준의 메타데이터 계약을 보존합니다. 배포 태그 alpha.4와 내부 버전은 별도이며 실제 산출물은 DLL SHA-256으로 식별합니다. 게임 DLL·게임 소스·외부 참조·다른 모드·개발 도구는 설치 ZIP에 포함하지 않습니다.
 
 ## 재현 명령과 검사
+
+아래 명령과 루트 DLL 경로는 고정 alpha.4 태그의 당시 구조를 재현하는 기록입니다. 현재 작업 트리는 루트 `config/`·`plugins/`를 제거했고 기준 DLL은 고정 alpha.3 Git 커밋에서 자동 재생성합니다. 현재 소스로 Release 후보를 검사하는 명령은 [소스 빌드 안내](SOURCE-BUILD.md#release-후보의-로컬-검증)를 따릅니다. 기존 alpha.4 태그·자산은 변경하지 않습니다.
 
 Python 3와 `global.json`에 명시한 .NET SDK `8.0.426`을 준비합니다. 태그 커밋의 저장소 루트에서 다음 명령을 실행합니다. 읽기 전용 게임 참조는 저장소 밖에 별도로 준비하며 정확한 파일·버전·해시는 `build/reference-contract.json`으로 검증합니다.
 

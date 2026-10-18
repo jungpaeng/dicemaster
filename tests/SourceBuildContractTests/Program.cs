@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -14,6 +15,9 @@ using Mono.Cecil.Cil;
 internal static class Program
 {
     const string BaselineHash = "485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633";
+    const string TranslationResource = "DiceMaster.Translations.ModTranslation.txt";
+    const string BaselineTranslationHash = "6fc71ac1780be28b78e5ee193835a38e47d1526cbb9a143d05ff5206eceef1ec";
+    const string SourceTranslationHash = "7441c94d83df9f2ebe6ecdfe0489c752afe7ebeadc7b28ae6d15aca460acf5eb";
     static int assertions, typeCount, methodCount, hookCount, nativeCount;
     static readonly HashSet<string> acceptedDifferences = new HashSet<string>(StringComparer.Ordinal);
     static readonly List<string> differences = new List<string>();
@@ -115,6 +119,9 @@ internal static class Program
         assertions++;
         if (!ok) differences.Add(message);
     }
+    static string ResourceHash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+    static string TranslationData(byte[] bytes) => string.Join("\n", Encoding.UTF8.GetString(bytes).Split('\n')
+        .Where(line => !line.TrimStart().StartsWith("//", StringComparison.Ordinal)));
     static void SetEqual<T>(string label, IEnumerable<T> before, IEnumerable<T> after, Func<T, string> key, Action<T, T> compare)
     {
         var expected = before.GroupBy(key).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
@@ -244,7 +251,20 @@ internal static class Program
             Equal("resource " + a.Name + " flags/type", a.Attributes + ":" + a.ResourceType, b.Attributes + ":" + b.ResourceType);
             Require(a is EmbeddedResource && b is EmbeddedResource, "Expected embedded resource " + a.Name);
             if (a is EmbeddedResource x && b is EmbeddedResource y)
-                Equal("resource " + a.Name + " bytes", Convert.ToHexString(SHA256.HashData(x.GetResourceData())), Convert.ToHexString(SHA256.HashData(y.GetResourceData())));
+            {
+                byte[] original = x.GetResourceData(), actual = y.GetResourceData();
+                if (a.Name == TranslationResource)
+                {
+                    // Three section headings were reviewed separately from the
+                    // pinned recovery. Pin both complete byte sequences; keep
+                    // every translation row, blank line and line ending equal.
+                    Equal("resource " + a.Name + " baseline bytes", BaselineTranslationHash, ResourceHash(original));
+                    Equal("resource " + a.Name + " bytes (reviewed section headings)", SourceTranslationHash, ResourceHash(actual));
+                    Equal("resource " + a.Name + " translation data rows", TranslationData(original), TranslationData(actual));
+                    acceptedDifferences.Add("translation resource section headings: " + a.Name + " (three comments; translation data unchanged)");
+                }
+                else Equal("resource " + a.Name + " bytes", ResourceHash(original), ResourceHash(actual));
+            }
         });
         if (differences.Count != 0)
         {
@@ -253,7 +273,7 @@ internal static class Program
             return 1;
         }
         foreach (string difference in acceptedDifferences.OrderBy(value => value, StringComparer.Ordinal)) Console.WriteLine("ACCEPTED SOURCE REPRESENTATION: " + difference);
-        Console.WriteLine($"PASS: {assertions} source-build contract assertions; {typeCount} named types, {methodCount} named methods, {hookCount} Harmony-marked methods, {nativeCount} P/Invoke/delegate methods, {before.MainModule.Resources.Count} resource names/flags/bytes identical. Compiler-generated identities, instruction encodings, MVID and PE bytes are outside this comparison; managed behavior and native runtime require separate checks.");
+        Console.WriteLine($"PASS: {assertions} source-build contract assertions; {typeCount} named types, {methodCount} named methods, {hookCount} Harmony-marked methods, {nativeCount} P/Invoke/delegate methods, {before.MainModule.Resources.Count} resource names/flags identical; 7 resource byte sequences identical and 1 has only three reviewed comment changes with all translation data unchanged. Compiler-generated identities, instruction encodings, MVID and PE bytes are outside this comparison; managed behavior and native runtime require separate checks.");
         return 0;
     }
     static int Main(string[] args)
@@ -285,6 +305,22 @@ internal static class Program
                 byte[] bytes = resource.GetResourceData(); bytes[0] ^= 1;
                 assembly.MainModule.Resources[0] = new EmbeddedResource(resource.Name, resource.Attributes, bytes);
             }, " bytes");
+            Reject("translation-data", assembly => {
+                int index = assembly.MainModule.Resources.ToList().FindIndex(resource => resource.Name == TranslationResource);
+                var resource = (EmbeddedResource)assembly.MainModule.Resources[index];
+                byte[] bytes = resource.GetResourceData();
+                int separator = Array.IndexOf(bytes, (byte)'=');
+                if (separator < 0) throw new InvalidDataException("Translation fixture has no key/value separator.");
+                bytes[separator] = (byte)':';
+                assembly.MainModule.Resources[index] = new EmbeddedResource(resource.Name, resource.Attributes, bytes);
+            }, " translation data rows");
+            Reject("restored-translation-headings", assembly => {
+                using var baseline = AssemblyDefinition.ReadAssembly(args[1]);
+                var original = (EmbeddedResource)baseline.MainModule.Resources.Single(resource => resource.Name == TranslationResource);
+                int index = assembly.MainModule.Resources.ToList().FindIndex(resource => resource.Name == TranslationResource);
+                var resource = assembly.MainModule.Resources[index];
+                assembly.MainModule.Resources[index] = new EmbeddedResource(resource.Name, resource.Attributes, original.GetResourceData());
+            }, " bytes (reviewed section headings)");
             Reject("missing-type", assembly => assembly.MainModule.GetType("DiceMaster.RichText").Name = "RichTextMissing", "source type missing/extra/duplicate DiceMaster.RichText");
             Reject("duplicate-type", assembly => assembly.MainModule.Types.Add(new TypeDefinition("DiceMaster", "RichText", TypeAttributes.Public)), "Duplicate candidate type full name.");
             Reject("duplicate-hook", assembly => {

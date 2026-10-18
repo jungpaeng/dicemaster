@@ -4,15 +4,15 @@
 
 ## 개발 범위
 
-현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 모드 C#·리소스 복원과 별도 전체 소스 빌드 후보입니다. 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 전체 소스 구성·재생성·빌드·검사·실패 처리와 남은 검증은 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 기본 패치 빌드와 배포 DLL은 유지합니다.
+현재 개발은 [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)의 전체 모드 C#·리소스 복원과 별도 전체 소스 빌드 후보입니다. 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec` / DLL SHA-256 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. 전체 소스 구성·재생성·빌드·검사·실패 처리와 남은 검증은 [SOURCE-BUILD.md](SOURCE-BUILD.md)에 기록합니다. 기존 패치 공정은 유지하며 기준 DLL은 고정 Git 커밋에서 재생성합니다.
 
 다음은 [이슈 #1 PRD](https://github.com/jungpaeng/dicemaster/issues/1)의 로그 자동 갱신과 난수 숫자 갱신 후속 구현입니다. 사용자가 모드 전용 `System.Random`으로 계산하고 UI 부가 문구를 붙이지 않는 변경과 `v1.0.3-alpha.3` prerelease 게시를 승인했습니다. 개별 `ConditionResultItem` 설명 또는 전체 이벤트 설명 안에서 결과를 재사용해 숫자·조건 색상·이벤트 확률 설명을 일치시키며, 게임 RNG와 조건 실행 카운터는 변경하지 않습니다. 실제 게임의 미래 판정을 예측하는 기능은 아닙니다. 새 소스의 최종 macOS 자동 검사·패드→로그 왕복·반복 패치·직접 패드·로컬 ZIP 검증을 마쳤습니다. 관리 동작 3,914개·메타데이터 1,011개·통합 134개를 최초/반복에서, 최종 패드 525,430개를 통과했고 11개 프로젝트의 MSBuild 경고·오류는 0입니다. 2026-10-18 22:43:45 KST에 [v1.0.3-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.3)를 배포 태그 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`에서 게시했습니다. 익명 공개 API·다운로드·CRC·정확히 두 파일·각 파일의 배포 커밋 바이트·ZIP/DLL SHA-256 일치를 검증했습니다. 게시 기록 문서 후속 커밋은 위 태그·ZIP의 기준을 바꾸지 않습니다. [검증 기록](ISSUE-1-VALIDATION.md)에 파일 해시·검사 범위를 남기고 이전 버전 결과를 승계하지 않습니다.
 
 [`v1.0.3-alpha.2`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.2)는 2026-10-18 21:52:10 KST에 배포 커밋 `015c80c2fd9f905aaece574b3b11da52e501d432`에서, [`v1.0.3-alpha.1`](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.1)은 21:08:36 KST에 `2d8936786845b534524b916537e7f1c3e5ab482d`에서 게시했습니다. 두 prerelease의 공개 다운로드·ZIP·DLL 바이트 일치를 검증했으며 각 이력을 보존합니다. 실제 게임 API 분석과 사용자의 Windows 게임 검증을 완료하기 전에는 기능·이슈 완료로 표시하거나 정식 Release를 공개하지 않습니다. prerelease 게시 승인은 Windows 실행 승인이 아닙니다. 실제 관리 DLL의 API·로드 경계 정적 분석은 macOS에서 수행했지만 runtime·native Unity·실제 리소스·Windows 검증은 미실행입니다. Windows PC는 기존 파일·정보 읽기만 허용되며 게임 실행이나 후보 설치를 요청하지 않습니다.
 
-전환 전 **기존 기본 빌드**는 `plugins/DiceMaster/DiceMaster.dll`에 패드 확장·로그 갱신 패치를 적용합니다. 아래 기존 패치 도구 안내는 비교·복구 경로로 보존합니다. 별도 소스 빌드는 선택지 파서·번역·UI를 포함한 전체 모드를 관리 소스에서 컴파일하며 기존 모드 DLL을 읽거나 패치하지 않습니다.
+전환 전 **기존 패치 공정**은 고정 alpha.3 Git 커밋에서 재생성한 기준 DLL에 패드 확장·로그 갱신 패치를 적용합니다. 아래 기존 패치 도구 안내는 비교·복구 경로로 보존하며 출력은 `artifacts/legacy-candidate/`에 분리합니다. 별도 소스 빌드는 선택지 파서·번역·UI를 포함한 전체 모드를 관리 소스에서 컴파일하며 기존 모드 DLL을 읽거나 패치하지 않습니다.
 
-자동 검사와 사용자 Windows 확인을 모두 통과하기 전에는 기본 빌드를 바꾸지 않습니다. 사용자 승인에 따라 폴더 구조 변경을 commit·push하고 `v1.0.3-alpha.4` prerelease를 2026-10-18 23:42:14 KST에 게시했습니다. 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 소스 프로젝트를 기존 모드 DLL 없는 스냅샷에서 새로 빌드·검사했고 공개 다운로드의 두 파일·CRC·DLL/설정 바이트·해시 일치를 확인했습니다. 루트 `plugins/`의 alpha.3 기준 DLL은 보존합니다. 게시 결과·자산 식별과 재현 절차는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 이슈 #2 확장, 이슈 #1 미완료 조건 해결, Windows 설치·게임 실행·이슈 종료·정식 Release는 이번 작업에 포함하지 않습니다.
+자동 검사와 사용자 Windows 확인을 모두 통과하기 전에는 기본 빌드를 바꾸지 않습니다. 사용자 승인에 따라 폴더 구조 변경을 commit·push하고 `v1.0.3-alpha.4` prerelease를 2026-10-18 23:42:14 KST에 게시했습니다. 태그 커밋 `46bbf7486ab424696f1f5ba7d4126f6c12d11184`의 소스 프로젝트를 기존 모드 DLL 없는 스냅샷에서 새로 빌드·검사했고 공개 다운로드의 두 파일·CRC·DLL/설정 바이트·해시 일치를 확인했습니다. alpha.4 태그 당시 루트의 alpha.3 기준 DLL과 새 설치 ZIP의 DLL은 서로 다릅니다. 현재 작업 트리는 루트 사본을 제거하고 고정 Git 커밋에서 기준을 재생성합니다. 게시 결과·자산 식별과 재현 절차는 [이슈 #3 배포 기록](ISSUE-3-RELEASE.md)에 기록했습니다. 이슈 #2 확장, 이슈 #1 미완료 조건 해결, Windows 설치·게임 실행·이슈 종료·정식 Release는 이번 작업에 포함하지 않습니다.
 
 ## 파일 구성
 
@@ -37,9 +37,12 @@ tests/                                # 동작·통합·후킹·ABI·리소스 �
 build/
 ├── build-source.py                   # 자동 검사 후 별도 후보 생성
 ├── source_build.py                   # 공통 빌드·참조·출력 관리
+├── baseline.py                       # 고정 Git 커밋에서 기준 DLL 재생성
+├── verify-baseline.py                # 기준 재생성·해시·캐시 보호 검사
 ├── verify-source.py                  # 고정 기준과 후보 비교
 ├── verify-clean-source.py            # 기존 모드 DLL 없는 격리 빌드
 ├── verify-source-failures.py          # 실패 진단·산출물 보존 검사
+├── verify-release.py                 # 소스 스냅샷 빌드·비교·Release ZIP 검사
 └── reference-contract.json           # 읽기 전용 외부 참조의 고정 해시
 tools/
 ├── SourceRecovery/                   # 기준 DLL에서 최초 복원 재현·템플릿
@@ -50,15 +53,16 @@ docs/                                  # 개발·복원·배포·검증 기록
 artifacts/                             # 생성 파일, Git 제외
 ├── bin/                              # 일반 dotnet build 산출물
 ├── obj/                              # 공통 중간 산출물
-└── source-candidate/                 # 검증한 DLL·ZIP·검사 보고서
-config/                                # 전환 전 기존 배포 설정 보존
-plugins/                               # 전환 전 기존 배포 DLL 보존
+├── source-candidate/                 # 검증한 DLL·ZIP·검사 보고서
+├── release-candidate/                # Release 사전 검증 결과
+├── baselines/v1.0.3-alpha.3/          # 고정 Git 기준에서 재생성한 DLL
+└── legacy-candidate/                 # 기존 패치 공정의 별도 후보 출력
 ```
 
 `DiceMaster.csproj`는 Gamepad·LiveLog를 실제 하위 폴더의 C# 소스로 한 번 컴파일합니다. `tools/LegacyPatch/`의 payload 프로젝트는 이 같은 소스를 링크하여 기존 비교·복구 공정을 유지하며 루트 솔루션에는 포함하지 않습니다. 게임 DLL·게임 소스는 외부 참조 경로에서 읽기만 합니다.
 
 소스·테스트·도구·패키지 설정은 Git으로 관리합니다. `artifacts/`, `bin/`, `obj/`는 생성 파일이므로 제외합니다. 예전 `development/releases/`의 출력과 게시 영수증은 이동하거나 정리하지 않고 그대로 보존하며 새 결과의 기준으로 사용하지 않습니다. 기존 `development/tools/`의 패드·로그 패치와 복원 명령 세 개는 새 `tools/` 명령을 호출하는 호환 진입점입니다.
-저장소에 있는 DebugMenu 설정과 DLL은 별도 모드이며 DiceMaster Release ZIP에는 포함하지 않습니다.
+루트 `config/`·`plugins/`는 제거했습니다. 새 패키지 설정은 `packaging/config/DiceMaster.cfg`에서 읽습니다. 비교·복원·기존 패치 명령은 `build/baseline.py`로 고정 Git 커밋의 DLL을 꺼내 SHA-256을 검증하고 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll`을 사용합니다. 기준 캐시는 지워도 재생성할 수 있으며 패치 출력과 분리합니다. 일반 소스 빌드는 Git 데이터나 기준 캐시에 의존하지 않습니다. ZIP 내부 설치 경로 `config/`·`plugins/`는 계속 유지합니다.
 
 ## 빌드 환경
 
@@ -103,24 +107,24 @@ python3 tools/LegacyPatch/build-gamepad.py \
   --output artifacts/legacy-local/DiceMaster.dll
 ```
 
-저장소의 실행용 DLL을 갱신하려면 다음을 실행합니다.
+기본 후보 `artifacts/legacy-candidate/gamepad/DiceMaster.dll`을 생성하려면 다음을 실행합니다.
 
 ```sh
 python3 tools/LegacyPatch/build-gamepad.py
 ```
 
-입력 DLL을 따로 지정할 수도 있습니다.
+입력 DLL을 따로 지정할 수도 있습니다. 다음 기준 파일은 기본 실행이나 `python3 build/baseline.py`가 재생성합니다.
 
 ```sh
 python3 tools/LegacyPatch/build-gamepad.py \
-  --input plugins/DiceMaster/DiceMaster.dll \
+  --input artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll \
   --output artifacts/legacy-local/DiceMaster.dll
 ```
 
 루트 `Directory.Build.props`는 `artifacts/`에 일반 출력과 중간 파일을 모으며, 임시 중간 출력 경로를 지정해도 소스 트리의 기존 `obj/`·`bin/` 생성 C# 파일을 다시 포함하지 않게 합니다.
 
 도구는 임시 디렉토리에서 빌드·통합하고 테스트를 실행한 뒤 출력 파일을 씁니다.
-빌드·테스트가 실패하면 실행용 DLL을 교체하지 않습니다. 기본 입력과 출력이 같은 경우에는 빌드 중 입력 DLL이 바뀌지 않았는지도 확인합니다.
+빌드·테스트가 실패하면 후보 DLL을 교체하지 않습니다. 기본 입력과 출력은 분리되며, 명시적으로 같은 경로를 지정한 경우에는 빌드 중 입력 DLL이 바뀌지 않았는지도 확인합니다.
 
 ## 패드 입력 처리
 
@@ -240,7 +244,7 @@ python3 tools/LegacyPatch/build-log-refresh.py \
 
 `build-log-refresh.py`는 출력 전 패치를 다시 적용한 별도 후보에도 실제 파서 통합 검사와 DLL 구조 검사를 실행합니다. payload 교체 전에 메서드 본문을 읽고 이전 후킹 참조를 새 참조에 연결하며, 해결되지 않은 호출이 있으면 출력하지 않습니다.
 
-자동 검사를 통과한 뒤 기본 출력으로 빌드하면 저장소 실행용 DLL을 갱신합니다. 패드 빌드와 로그 패치는 서로의 변경을 유지해야 하며, 반복 적용·두 도구의 교차 실행 후에도 갱신 호출과 패드 호출이 중복되지 않아야 합니다.
+로그 패치의 기본 출력은 `artifacts/legacy-candidate/live-log/DiceMaster.dll`입니다. 패드 빌드와 로그 패치는 서로의 변경을 유지해야 하며, 반복 적용·두 도구의 교차 실행 후에도 갱신 호출과 패드 호출이 중복되지 않아야 합니다. 교차 실행 검사는 직전 후보를 다음 도구의 `--input`으로 명시합니다.
 
 ## 검증
 

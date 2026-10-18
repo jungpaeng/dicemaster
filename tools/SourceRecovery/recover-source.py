@@ -9,13 +9,15 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPOSITORY / 'build'))
+from baseline import BASELINE_COMMIT, BASELINE_SHA256, get_baseline
+
 SOURCE = REPOSITORY / 'src/DiceMaster'
-BASELINE_COMMIT = 'f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec'
-BASELINE_SHA256 = '485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633'
 ILSPY_VERSION = '9.1.0.7988'
 GIT_ATTRIBUTES = '''*.cs text eol=lf
 *.csproj text eol=lf
@@ -28,6 +30,12 @@ NATIVE_RESOURCES = {
     'DiceMaster.Gamepad.Native.MinHook.x86.dll': 'MinHook.x86.dll',
     'DiceMaster.Gamepad.Native.LICENSE.txt': 'MinHook.LICENSE.txt',
 }
+MOD_TRANSLATION_SHA256 = '6fc71ac1780be28b78e5ee193835a38e47d1526cbb9a143d05ff5206eceef1ec'
+TRANSLATION_HEADINGS = {
+    1: '// 활협전 내장 UI 번역',
+    38: '// DiceMaster 플래그 설명',
+    89: '// 플래그 참고문 번역',
+}
 
 
 def digest(path):
@@ -38,6 +46,18 @@ def replace_once(text, old, new, label):
     if text.count(old) != 1:
         raise RuntimeError('Recovery transform did not match exactly once: ' + label)
     return text.replace(old, new)
+
+
+def clean_translation_headings(data):
+    """Replace three legacy comment headings, preserving all translation bytes."""
+    if hashlib.sha256(data).hexdigest() != MOD_TRANSLATION_SHA256:
+        raise RuntimeError('Translation headings require the pinned resource bytes.')
+    lines = data.splitlines(keepends=True)
+    for number, heading in TRANSLATION_HEADINGS.items():
+        if not lines[number - 1].startswith(b'//') or not lines[number - 1].endswith(b'\r\n'):
+            raise RuntimeError('Unexpected translation comment at line ' + str(number))
+        lines[number - 1] = heading.encode('utf-8') + b'\r\n'
+    return b''.join(lines)
 
 
 def recover(baseline, references, ilspycmd, output):
@@ -109,7 +129,10 @@ def recover(baseline, references, ilspycmd, output):
             else:
                 destination = output / 'Resources' / resource.name
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(resource, destination)
+            if resource.name == 'DiceMaster.Translations.ModTranslation.txt':
+                destination.write_bytes(clean_translation_headings(resource.read_bytes()))
+            else:
+                shutil.copyfile(resource, destination)
         # Authored Gamepad/LiveLog sources are the canonical definitions. Copy
         # them into a complete standalone source tree rather than re-decompiling
         # those namespaces or linking files from sibling production projects.
@@ -132,6 +155,7 @@ def recover(baseline, references, ilspycmd, output):
                 'Make GetMissions raw object reference inequality explicit (same baseline IL semantics).',
                 'Retain decompiler-escaped legacy compiler identifiers; do not rewrite compiled IL.',
                 'Use authored net48 project template; extract byte-identical MinHook resources under Resources/native.',
+                'Replace three legacy external-plugin comment headings in ModTranslation (lines 1, 38 and 89); preserve every translation and CRLF byte.',
             ],
             'source_text_newlines': 'LF (linked managed source hashes normalize CRLF to LF)',
             'recovered_files': {p.relative_to(output).as_posix(): digest(p)
@@ -152,7 +176,8 @@ def recover(baseline, references, ilspycmd, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--baseline', type=Path, default=REPOSITORY / 'plugins/DiceMaster/DiceMaster.dll')
+    parser.add_argument('--baseline', type=Path,
+                        help='Explicit alpha.3 DLL (SHA-256 checked); default: recreate from fixed local Git commit.')
     parser.add_argument('--references', type=Path, required=True,
                         help='Read-only root containing Mortal_Data/Managed and BepInEx/core.')
     parser.add_argument('--ilspycmd', type=Path, default=shutil.which('ilspycmd'),
@@ -163,10 +188,11 @@ def main():
     args = parser.parse_args()
     if args.ilspycmd is None:
         parser.error('Install ilspycmd 9.1.0.7988 or pass --ilspycmd.')
+    baseline = args.baseline.resolve() if args.baseline is not None else get_baseline()
     if args.check:
         with tempfile.TemporaryDirectory(prefix='dicemaster-source-recovery-check-') as folder:
             generated = Path(folder) / 'DiceMaster'
-            recover(args.baseline.resolve(), args.references.resolve(), args.ilspycmd.resolve(), generated)
+            recover(baseline, args.references.resolve(), args.ilspycmd.resolve(), generated)
             actual = SOURCE
             expected_files = {p.relative_to(generated) for p in generated.rglob('*') if p.is_file()}
             actual_files = {p.relative_to(actual) for p in actual.rglob('*') if p.is_file()
@@ -178,7 +204,7 @@ def main():
                 raise RuntimeError('Fresh recovery differs: ' + ', '.join(changes))
         print('Fresh pinned source/resource recovery matches checked-in component.')
     else:
-        recover(args.baseline.resolve(), args.references.resolve(), args.ilspycmd.resolve(), args.output.resolve())
+        recover(baseline, args.references.resolve(), args.ilspycmd.resolve(), args.output.resolve())
         print('Recovered pinned source component:', args.output.resolve())
 
 

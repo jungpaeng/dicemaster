@@ -16,7 +16,17 @@
 
 전체 소스 복원·비교 기준은 `v1.0.3-alpha.3` / `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`이며 기준 DLL SHA-256은 `485581c2b6d2eb9270e7e11ee5315a9e987dcc3a9b93f79e78a7d0ced4ee3633`입니다. [전체 소스 빌드](SOURCE-BUILD.md)는 별도 후보 DLL과 두 파일 ZIP을 만듭니다. 게시한 alpha.4 prerelease는 고정 태그 커밋의 `src/DiceMaster/DiceMaster.csproj`를 빌드한 DLL과 같은 커밋의 `packaging/config/DiceMaster.cfg`를 묶습니다. 태그의 루트 `plugins/DiceMaster/DiceMaster.dll`은 기존 alpha.3 비교·복구 기준이므로 게시 자산 DLL과 다릅니다. 태그에 기존 DLL을 교체하지 않고 빌드 영수증·해시·공개 다운로드로 소스 커밋과 자산을 연결합니다.
 
-저장소 구성은 루트 솔루션과 `src/`·`tests/`·`build/`·`tools/`·`packaging/`으로 정리했습니다. 일반 컴파일 DLL은 `artifacts/bin/DiceMaster/release/`, 자동 검사한 후보 DLL·ZIP·영수증은 `artifacts/source-candidate/`에 생성합니다. 새 후보 ZIP의 설정은 `packaging/config/DiceMaster.cfg`이며 ZIP 내부의 설치 경로는 계속 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`입니다. 루트 `config/`·`plugins/`와 기존 패치 명령의 기본 출력은 전환 전 상태를 보존합니다. 폴더 구조 변경과 prerelease 게시만으로 기본 배포 DLL을 교체하지 않습니다.
+저장소 구성은 루트 솔루션과 `src/`·`tests/`·`build/`·`tools/`·`packaging/`으로 정리했습니다. 일반 컴파일 DLL은 `artifacts/bin/DiceMaster/release/`, 자동 검사한 후보 DLL·ZIP·영수증은 `artifacts/source-candidate/`에 생성합니다. 루트 `config/`·`plugins/`는 제거했으며 새 후보 ZIP의 설정은 `packaging/config/DiceMaster.cfg`에서 읽습니다. ZIP 내부 설치 경로는 계속 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`입니다. 비교·복원 기준은 `python3 build/baseline.py`로 고정 Git 커밋에서 꺼내 해시 확인 후 `artifacts/baselines/v1.0.3-alpha.3/DiceMaster.dll`에 둡니다. 기존 패치 명령의 기본 입력도 이 기준이며 출력은 `artifacts/legacy-candidate/`로 분리합니다. 기존 태그·배포 자산과 기본 전환 보류 조건은 유지합니다.
+
+Release 후보 사전 검증은 다음 명령으로 수행합니다. 관리 소스만 담은 스냅샷에서 기존 모드 DLL과 `.git/` 없이 빌드·일곱 검사를 실행하고, 고정 기준 비교·변조 거부·ZIP CRC·두 파일·빌드 DLL/패키지 설정 바이트·SHA-256을 확인합니다.
+
+```sh
+python3 build/verify-release.py \
+  --references '<읽기 전용 참조 루트>' \
+  --output-dir artifacts/release-candidate
+```
+
+완료 결과는 `release-verification.json`과 빌드·호환성 보고서 및 로그로 기록합니다. 게시할 커밋 확정 후에는 `--source-commit <40자리 전체 커밋 SHA>`로 그 커밋만 검사하고 `--version vX.Y.Z...`로 ZIP 자산명을 정할 수 있습니다. 기존 영수증을 덮어쓰지 않도록 출력 폴더는 비어 있거나 없어야 하며 재실행에는 새 경로를 지정합니다. 이 명령은 로컬 검증만 수행합니다. 새 태그·게시·push는 별도 사용자 지시에 따라 실행하며 현재 루트 정리 작업으로 기존 alpha.4 태그나 자산을 바꾸지 않습니다.
 
 후보를 기본 개발·배포 경로로 바꾸려면 같은 후보 식별값으로 다음 증거를 모두 확보해야 합니다.
 
@@ -27,7 +37,7 @@
 
 Windows 설치·실행은 현재 수행하거나 요청하지 않습니다. 자동 검사만 통과한 후보는 이슈 #3 완료나 기본 전환의 근거가 되지 않습니다. 이슈 #1의 알려진 제한과 미완료 조건, 이슈 #2의 기능 확장은 별도로 유지합니다. 이번 alpha.4 게시 승인은 Windows 실행 승인이 아니며 과거 prerelease도 전환 증거로 승계하지 않습니다.
 
-전환 전 복구는 후보 출력 디렉터리를 다시 만들거나 별도로 보관하고 기존 기본 패치 빌드·`plugins/DiceMaster/DiceMaster.dll`을 그대로 사용하는 것입니다. 참조 폴더나 기존 배포 파일을 덮어쓰지 않습니다. 향후 승인된 설치 뒤 문제가 생기면 게임을 종료하고 보관한 alpha.3 DLL을 복원하며 기존 설정과 세이브를 유지합니다. 이 실제 Windows 업데이트·롤백은 아직 확인하지 않았습니다. v1.0.2의 선택지 결과 소실, 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기하는 alpha.3의 알려진 제한은 소스 복원으로 해결했다고 표시하지 않습니다.
+전환 전 비교·복구는 후보 출력 디렉터리를 별도로 만들고 고정 Git 커밋에서 alpha.3 기준을 재생성하여 기존 패치 공정에 사용하는 것입니다. 참조 폴더나 기존 게시 파일을 덮어쓰지 않습니다. 향후 승인된 설치 뒤 문제가 생기면 게임을 종료하고 보관한 alpha.3 DLL을 복원하며 기존 설정과 세이브를 유지합니다. 이 실제 Windows 업데이트·롤백은 아직 확인하지 않았습니다. v1.0.2의 선택지 결과 소실, 제자리/무동작/실패 로드 후 다음 성공 Lua까지 대기하는 alpha.3의 알려진 제한은 소스 복원으로 해결했다고 표시하지 않습니다.
 
 ## alpha.3 게시 기록
 
@@ -53,7 +63,7 @@ alpha.3 ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` �
 | 게시 시각 | 2026-10-18 12:08:36 UTC / 21:08:36 KST |
 | ZIP 크기·SHA-256 | 188,793바이트, `95c753037a4cf5fe16db37735dbf4833c2ed76af71c7bd941c6f76d791932429` |
 
-설치 ZIP에는 아래 두 파일만 포함합니다. DebugMenu·개발 파일·문서·로그·수신 게임 DLL·`.DS_Store`·`__MACOSX` 등은 포함하지 않습니다.
+설치 ZIP에는 아래 두 파일만 포함합니다. 다른 모드·개발 파일·문서·로그·수신 게임 DLL·`.DS_Store`·`__MACOSX` 등은 포함하지 않습니다.
 
 ```text
 config/DiceMaster.cfg
