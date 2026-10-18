@@ -7,7 +7,7 @@
 
 기본 개발·배포 경로를 전체 C# 소스 빌드로 전환하고 **[정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다.** [설치 ZIP 다운로드](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.3/DiceMaster-v1.0.3.zip) · [PRD #3 완료](https://github.com/jungpaeng/dicemaster/issues/3). [이슈 #3 PRD](https://github.com/jungpaeng/dicemaster/issues/3)에 따라 모드 소스·리소스를 복원하고 Gamepad·LiveLog를 같은 프로젝트에 통합했습니다. 일반 빌드는 기존 `DiceMaster.dll`을 입력으로 사용하지 않습니다. 복원·비교 기준은 `v1.0.3-alpha.3`의 커밋 `f8d8dd8610f20ccc323d8c3e0386bc5b98bcaeec`과 DLL 해시로 고정하며 기존 패치 공정은 비교·복구용으로 보존합니다.
 
-2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상 DLL은 SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 현재 빌드는 번역 주석 세 줄 정리를 포함하므로 DLL 전체 해시가 다릅니다. 사용자 확인 범위와 두 DLL의 비교, 자동 검사·정식 게시 결과는 [소스 빌드 안내](docs/SOURCE-BUILD.md)와 [배포 기록](docs/ISSUE-3-RELEASE.md)에 구분합니다.
+2026-10-19 사용자가 공개 [alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상 DLL은 SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`입니다. 정식 v1.0.3 빌드는 번역 주석 세 줄 정리를 포함하므로 DLL 전체 해시가 다릅니다. 사용자 확인 범위와 두 DLL의 비교, 자동 검사·정식 게시 결과는 [소스 빌드 안내](docs/SOURCE-BUILD.md)와 [배포 기록](docs/ISSUE-3-RELEASE.md)에 구분합니다.
 
 이 전환은 기존 동작을 보존하는 소스 복원 범위입니다. [이슈 #1](https://github.com/jungpaeng/dicemaster/issues/1)·[이슈 #2](https://github.com/jungpaeng/dicemaster/issues/2)의 기능이나 상태를 추가 변경하지 않으며 기존 알려진 제한은 보존합니다. 게임 RNG와 분리한 모드 전용 `System.Random`의 숫자·색상·이벤트 확률은 화면 갱신 때 얻는 값이며 실제 게임 판정의 예측값은 아닙니다.
 
@@ -86,6 +86,14 @@ GitHub가 제공하는 `Source code` 압축 파일은 저장소 전체를 받는
 확률·조건의 원래 게임 API는 난수 소비와 조건 실행 카운터 변경을 일으킬 수 있어, 알려진 모드 설명 경로에는 게임 상태를 쓰지 않는 별도 평가를 적용합니다. alpha.3은 모드 전용 `System.Random`으로 숫자를 생성하며 게임 RNG와 `_count`는 건드리지 않습니다. 개별 `ConditionResultItem` 설명에서는 숫자와 색상이 같은 평가 결과를 사용하고, 이벤트 설명에서는 헤더·활성 조건·모든 확률 항목이 한 평가 결과를 공유합니다. 미션·스위치의 서로 다른 조건 항목은 별도로 평가하므로 같은 참조도 다시 추첨할 수 있습니다. 화면의 난수 숫자·색상·난수에 의존하는 이벤트 확률은 해당 갱신에서 얻은 값이며 실제 게임 실행 결과를 보장하지 않습니다. UI에는 `표시용` 같은 부가 문구를 붙이지 않습니다. alpha.1의 난수 행 실패 정책과 alpha.2의 범위·판정 미정·미지원·제한적 이론 확률은 [변경 이력](CHANGELOG.md)에 보존합니다. 지원하지 않는 자료·순환 참조와 실제 조회 오류는 기존 오류 상태로 구분합니다. 정상적으로 항목이 없는 경우에는 기존 빈 목록 표시를 유지합니다. 새 설정은 추가하지 않으며 `EnableOptionInfo=false`로 설정하고 재시작하면 정보 표시와 자동 갱신을 끕니다.
 
 진단은 기존 BepInEx 로그를 사용합니다. 같은 게임 세션·항목·원인의 연속 실패는 최초 1회, 복구는 1회 기록하는 것이 목표입니다. 제보에는 관련 탭·항목, 재현 순서와 해당 오류·복구 로그를 포함하고 전체 Lua 원문이나 세이브 내용은 첨부하지 않아도 됩니다. 실제 적용 범위와 미확인 API는 [개발 안내](docs/DEVELOPMENT.md)와 [실제 게임 API 분석](docs/REAL-GAME-API-FINDINGS.md)·[문맥 전환 분석](docs/GAME-LIFECYCLE-ANALYSIS.md)을 확인하세요.
+
+## v1.0.4-alpha.1 prerelease — 선택지 미리보기
+
+[v1.0.4-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.1)는 최신 전체 소스에서 선택지 미리보기 분석을 확대합니다. 16개 StatModifyManager 함수와 12개 LuaManager 함수, 상수 사칙연산, 조건부·후속 효과를 다룹니다. `일부 결과 미리보기 미지원` / `결과 미리보기 미지원` / `확인된 효과 없음`을 구분하고 미지원 안내를 50자 요약 앞에 남깁니다. Tab 로그에는 전체 설명이 표시됩니다. center·mental은 안전하게 현재값을 읽을 수 있을 때 예상량을 표시하고, 선행 변경·분기·후속 실행이 불확실하면 의미와 조건을 설명합니다.
+
+`SetNextScript`는 다음 스크립트 지정이며 즉시 실행을 뜻하지 않습니다. 로컬 리터럴 연결은 다음 사용자 선택까지만 분석하고, 연결 효과에는 `후속 스크립트`·`조건부`를 붙입니다. 변수·동적 호출·루프 실행과 변수 대입 추론은 지원하지 않습니다. 개발 안전 한도와 검사·후보 해시는 [PRD 2 구현 기록](docs/ISSUE-2-IMPLEMENTATION.md)에 적습니다. 실제 Lua 대조·최종 추적 제한·이 후보의 Windows 확인은 남아 있으며 현재 공개 v1.0.3에 이 기능이 포함됐다는 뜻은 아닙니다.
+
+설정은 기존 `EnableOptionInfo`를 사용합니다. 제보는 후보 DLL 해시, 선택지·스크립트 식별자, 재현 순서, 최초 오류/복구 로그만으로 시작하며 전체 Lua·세이브는 진단 로그에 남기지 않습니다. 후보 설치나 Windows 실행을 이번 작업에서 수행하거나 요청하지 않습니다.
 
 ## 공개 버전 업데이트와 롤백
 

@@ -44,16 +44,30 @@ internal static class OptionInfoPatch
 	[HarmonyPatch(typeof(LeanLocalizationResolver), "GetStoryText")]
 	public static void LeanLocalizationResolver_GetStoryText_Postfix(string key, ref string __result)
 	{
-		if (_suppressStoryTextPostfix || ConfigManager.EnableOptionInfo == null || !ConfigManager.EnableOptionInfo.Value || string.IsNullOrEmpty(key) || LuaParser.Instance.OptionResult == null || !LuaParser.Instance.OptionResult.ContainsKey(key))
+		if (_suppressStoryTextPostfix || ConfigManager.EnableOptionInfo == null || !ConfigManager.EnableOptionInfo.Value || string.IsNullOrEmpty(key) || LuaParser.Instance.OptionResult == null)
 		{
 			return;
 		}
-		List<DiceMaster.LuaParse.Action> list = LuaParser.Instance.OptionResult[key];
-		if (list == null || list.Count == 0)
+		string text;
+		if (!LuaParser.Instance.OptionResult.TryGetValue(key, out List<DiceMaster.LuaParse.Action> list) || list == null)
 		{
-			return;
+			if (!LuaParser.Instance.IncompleteOptionDiscovery || !key.StartsWith("O_", StringComparison.Ordinal)) return;
+			text = "결과 미리보기 미지원";
 		}
-		string text = LuaParser.Description(list);
+		else
+		{
+			try
+			{
+				text = list.Count == 0 ? "확인된 효과 없음" : LuaParser.Description(list);
+				LogBridge.RecordDescriptionResult(list, null);
+			}
+			catch (PreviewReadException failure)
+			{
+				LogBridge.RecordDescriptionResult(list, failure);
+				text = (failure.IsWaiting ? RefreshEngine.WaitingStatus : RefreshEngine.ReadFailureStatus) +
+					" | " + failure.PartialDescription;
+			}
+		}
 		if (!text.IsNullOrWhiteSpace())
 		{
 			string text2 = Regex.Replace(UiTextMapper.ApplyTranslations(text), "<.*?>", string.Empty);

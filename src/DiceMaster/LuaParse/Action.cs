@@ -2,6 +2,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Mortal.Core;
+using DiceMaster.LiveLog;
 
 namespace DiceMaster.LuaParse;
 
@@ -13,15 +14,33 @@ public class Action
 
 	public string Content { get; set; }
 
-	public string Description { get; private set; }
+	private string description;
+
+	public PreviewAnalysis Analysis { get; set; }
+
+	public string Description
+	{
+		get { return Analysis == null ? description : PreviewDisplay.Describe(Analysis); }
+		private set { description = value; }
+	}
 
 	public Action(ActionType type, string content, bool isConditional = false)
 	{
 		Type = type;
 		Content = content;
 		IsConditional = isConditional;
-		Description = ParseAction();
+		if (type == ActionType.BattleScene)
+		{
+			Description = ParseAction();
+			return;
+		}
+		Analysis = PreviewAnalyzer.Analyze("", content ?? "");
+		foreach (PreviewEffect effect in Analysis.Effects) effect.Conditional |= isConditional;
 	}
+
+	private Action(PreviewAnalysis analysis) { Analysis = analysis; }
+
+	public static Action FromAnalysis(PreviewAnalysis analysis) { return new Action(analysis); }
 
 	private string ParseAction()
 	{

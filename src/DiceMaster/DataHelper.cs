@@ -672,6 +672,27 @@ public static class DataHelper
 		return ((textAsset != null) ? textAsset.text : null) ?? string.Empty;
 	}
 
+	// This boundary only reads the game's local Resources namespace. A missing
+	// asset differs from a successfully loaded asset whose text is empty.
+	public static DiceMaster.LiveLog.ScriptReadResult ReadPreviewScript(string scriptName)
+	{
+		if (string.IsNullOrWhiteSpace(scriptName) || scriptName.StartsWith("/") ||
+			scriptName.Contains(":") || scriptName.Contains("\\"))
+			return DiceMaster.LiveLog.ScriptReadResult.Failed();
+		foreach (string part in scriptName.Split('/'))
+			if (part == ".." || part == "." || part.Length == 0)
+				return DiceMaster.LiveLog.ScriptReadResult.Failed();
+		foreach (char character in scriptName)
+			if (char.IsControl(character)) return DiceMaster.LiveLog.ScriptReadResult.Failed();
+		try
+		{
+			TextAsset asset = Resources.Load<TextAsset>("story/chinesetraditional/" + scriptName.ToLowerInvariant());
+			return asset == null ? DiceMaster.LiveLog.ScriptReadResult.Missing() :
+				DiceMaster.LiveLog.ScriptReadResult.Success(asset.text ?? string.Empty);
+		}
+		catch (Exception) { return DiceMaster.LiveLog.ScriptReadResult.Failed(); }
+	}
+
 	public static string GetCompareOperator(StatCompareType compareType)
 	{
 		return (int)compareType switch

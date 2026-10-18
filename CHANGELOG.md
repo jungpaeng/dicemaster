@@ -3,6 +3,13 @@
 설치용 ZIP은 [GitHub Releases](https://github.com/jungpaeng/dicemaster/releases)에서 배포합니다.
 이 문서의 버전은 이 저장소에서 배포하는 ZIP의 버전입니다.
 
+## [v1.0.4-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4-alpha.1) — 2026-10-19 (prerelease)
+
+- 선택지 효과를 구문 경계·명령 순서·조건·출처와 함께 분석하고 일부/전체 미지원·효과 미발견·읽기 실패를 구분합니다.
+- StatModifyManager 16개·LuaManager 12개, 안전한 상수 사칙연산과 center·mental의 조건부 예상량, 여러 단계의 리터럴 후속 연결을 추가합니다. Lua·게임 진행 코드를 표시 목적으로 실행하지 않습니다.
+- 기존 요약 50자·로그 전체 설명·미지원 최초 진단·실제 실패 5초 재시도·문맥 캐시·로그/난수/주사위/패드 계약을 유지합니다.
+- 최신 전체 소스 빌드를 사용하며 기존 패치 공정에도 같은 분석 소스를 연결합니다. 새 후보·자동 검사·미완료 실제 Lua/Windows 확인과 임시 추적 한도는 [구현 기록](docs/ISSUE-2-IMPLEMENTATION.md)에 구분합니다. 사용자가 2026-10-19 commit·push와 이 prerelease 게시를 승인했습니다. 정식 Latest v1.0.3과 이슈 #2 open 상태는 유지합니다.
+
 ## [v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3) — 2026-10-19
 
 - 기본 개발·배포 경로를 `src/DiceMaster/DiceMaster.csproj`의 전체 소스 빌드로 전환합니다. Gamepad·LiveLog를 같은 프로젝트에서 한 번 컴파일하며 기존 모드 DLL을 입력으로 사용하지 않습니다. `tools/LegacyPatch/`는 비교·복구용으로 남깁니다.

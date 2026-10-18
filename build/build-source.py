@@ -83,14 +83,20 @@ def main():
         manifest = {
             'status': 'local-source-candidate', 'default_build_switched': True,
             'windows_validation': policy['windows_validation'],
-            'runtime_equivalence': 'Separate release verification must compare this build with the user-tested alpha.4 DLL.',
+            'candidate_validation': {
+                'scope': 'PRD 2 local implementation',
+                'windows_runtime': 'not-run', 'real_lua_comparison': 'not-run',
+                'final_trace_limits': 'pending real Lua and runtime cost measurements',
+                'historical_windows_confirmation_applies_to_this_candidate': False,
+            },
+            'runtime_equivalence': 'PRD 2 changes behavior; historical alpha.4 confirmation does not validate this candidate. New runtime evidence is pending.',
             'created_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'recovery_baseline': {'commit': BASELINE_COMMIT, 'sha256': BASELINE_SHA256,
                                   'used_as_normal_build_input': False},
             'sdk': version, 'references': inputs, 'source_sha256': source_hashes,
             'build_input_sha256': input_hashes,
             'dll': record(candidate), 'zip': record(archive), 'config': record(config),
-            'tests': results, 'compatibility_comparison': 'separate verify-source.py required',
+            'tests': results, 'compatibility_comparison': 'Separate scoped preservation checks required; historical full-equivalence checks are expected to reject PRD 2 behavior changes.',
             'nuget_audit': 'disabled for repeatable offline builds; no vulnerability audit claimed',
         }
         write_json(stage / 'build-manifest.json', manifest)

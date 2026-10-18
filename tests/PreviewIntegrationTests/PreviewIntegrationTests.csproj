@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <Compile Include="../../tools/Shared/PayloadCopier.cs" Link="PayloadCopier.cs" />
+    <Compile Include="../Shared/PreviewFixtureBoundary.cs" Link="PreviewFixtureBoundary.cs" />
+  </ItemGroup>
+</Project>

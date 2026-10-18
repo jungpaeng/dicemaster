@@ -87,6 +87,7 @@ static class LiveLogIntegrationTests
         target = fixtures.MainModule;
         var module = source.MainModule;
         new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || type.Namespace == "DiceMaster.LiveLog");
+        PreviewFixtureBoundary.Install(target);
         var probe = target.GetType("DiceMaster.Probe").Fields.Single(field => field.Name == "ParserEntries");
         foreach (var method in target.GetType("DiceMaster.LuaParse.LuaParser").Methods.Where(method => method.Name.StartsWith("Extract") && method.HasBody))
         {

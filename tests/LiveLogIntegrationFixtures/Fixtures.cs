@@ -34,6 +34,32 @@ namespace HarmonyLib
 }
 namespace Mortal.Core
 {
+    public enum PreviewStatKind
+    {
+        [OBB.Framework.Attributes.StringValue("disposition")] Disposition,
+        [OBB.Framework.Attributes.StringValue("mental")] Mental
+    }
+    public class PlayerStatManagerData
+    {
+        private static PlayerStatManagerData _instance = new PlayerStatManagerData();
+        public object _stats = new PlayerStatData();
+        public static int InstanceReads;
+        public static PlayerStatManagerData Instance { get { InstanceReads++; throw new InvalidOperationException("Preview called game singleton getter"); } }
+        public static void Ready(bool ready) { _instance = ready ? new PlayerStatManagerData() : null; }
+        public static GameStat Primary => (GameStat)((PlayerStatData)_instance._stats).List[0];
+    }
+    public class PlayerStatData
+    {
+        public IList List = new object[] { new GameStat { _type = PreviewStatKind.Disposition }, new GameStat { _type = PreviewStatKind.Mental } };
+    }
+    public class ItemDatabase
+    {
+        private static ItemDatabase _instance;
+        public static int InstanceReads;
+        public static ItemDatabase Instance { get { InstanceReads++; throw new InvalidOperationException("Preview initialized ItemDatabase"); } }
+        public static bool IsAbsent => _instance == null;
+    }
+    public class StatConvertCollectionData { public IList List = new List<object>(); }
     public enum GameItemType { None, Book, Misc, Special }
     public interface ILocaleResolver { string GetString(string key); string GetStoryText(string key); }
     public class LocalizationManager : UnityEngine.Object
@@ -74,6 +100,7 @@ namespace Mortal.Core
     }
     public class GameStat
     {
+        public PreviewStatKind _type;
         public object _statAdditionData;
         public int Reads;
         public bool Throw;
@@ -120,11 +147,18 @@ namespace Mortal.Core
     }
     public class MissionManagerData : UnityEngine.Object
     {
-        public static MissionManagerData Instance { get; set; } = new MissionManagerData();
+        private static MissionManagerData _instance = new MissionManagerData();
+        public static int InstanceReads;
+        public static MissionManagerData Instance { get { InstanceReads++; return _instance; } set { _instance = value; } }
         public Dictionary<string, MissionCheckData> ActiveSubMissions { get; set; } = new Dictionary<string, MissionCheckData>();
         public object _subMissions = new MissionCollection();
     }
     public class MissionCollection { public IList List = new List<object> { new MissionData() }; }
+}
+namespace OBB.Framework.Attributes
+{
+    [AttributeUsage(AttributeTargets.Field)]
+    public sealed class StringValueAttribute : Attribute { public StringValueAttribute(string value) { } }
 }
 namespace Mortal.Story
 {
@@ -136,6 +170,7 @@ namespace Mortal.Story
     }
     public class PositionEventData : UnityEngine.Object
     {
+        public string ResultType { get; set; } = "event";
         public int State, _defaultRate = 10;
         public bool _toggleCondition;
         public Mortal.Core.ConditionResultItem _activeCondition;
@@ -202,6 +237,13 @@ namespace DiceMaster
         public static bool Ready = true;
         public static object LiveMissionFilter;
         public static string FailingCheckpoint;
+        public static Func<string, object> PreviewScriptReader;
+        public static object ReadPreviewScriptBoundary(string name)
+        {
+            if (PreviewScriptReader != null) { ScriptReads++; return PreviewScriptReader(name); }
+            Type result = typeof(DataHelper).Assembly.GetType("DiceMaster.LiveLog.ScriptReadResult", true);
+            return result.GetMethod("Success").Invoke(null, new object[] { LoadLuaScript(name) });
+        }
         public static string LoadLuaScript(string name) { ScriptReads++; return "statmodifymanager.SetFlag(\"G9000\", 2)"; }
         public static string GetItemName(Mortal.Core.GameItemType type, string id) => id;
         public static string GetTalentName(string id) => id;
@@ -249,8 +291,10 @@ namespace DiceMaster
         string GenerateStaticDesc(Mortal.Story.PositionEventData value) { StaticReads++; return Scenario.ExtractEventDescription(); }
         string GenerateDynamicDesc(Mortal.Story.PositionEventData value) => throw new InvalidOperationException("Actual event formatter IL not installed");
         public void ClearDisplayCaches() { eventDescCache.Clear(); }
+        public void RetryDefinitionReads(Mortal.Story.PositionEventData value) { }
     }
     public static class UiTextMapper { public static string ApplyTranslations(string value) => value; }
+    public static class UntranslatedLogger { public static void LogUntranslated(string category, string key, string original) { } }
     public static class RichText
     {
         public static int ConditionColors;
@@ -335,7 +379,7 @@ namespace DiceMaster
             var originalActions = Options["O_fixture_one"];
             Check(plugin.optionEntries.Count == 1, "Actual display path did not show the parsed option");
             string expected = plugin.optionEntries[0].Description;
-            Check(expected.Contains("G3000)(2)") && expected.Contains("G4000)(-3)"), "SetFlag/AddFlag planned values changed: " + expected);
+            Check(expected.Contains("G3000)(2)") && expected.Contains("G4000") && expected.Contains("-3"), "SetFlag/AddFlag planned values changed: " + expected);
             int analyses = AnalysisCount;
             int parserEntries = Probe.ParserEntries;
             for (int i = 1; i <= 8; i++) { DataHelper.CurrentValue = i * 10; UnityEngine.Time.unscaledTime = i; Tick(plugin); }
@@ -345,7 +389,7 @@ namespace DiceMaster
             Check(Probe.ParserEntries == parserEntries, "Normal display called the actual Lua extraction methods");
             string story = "선택 문구";
             OptionInfoPatch.LeanLocalizationResolver_GetStoryText_Postfix("O_fixture_one", ref story);
-            Check(story.Contains("G3000)(2)") && story.Contains("G4000)(-3)"), "Actual game option summary diverged from parser results: " + story);
+            Check(story.Contains("G3000)(2)") && story.Contains("G4000") && story.Contains("-3"), "Actual game option summary diverged from parser results: " + story);
             Tick(plugin, true);
             Check(AnalysisCount == analyses + 1, "Manual refresh did not regenerate fixed analysis");
             Check(Probe.ParserEntries > parserEntries, "Manual refresh did not call the real Lua parser");

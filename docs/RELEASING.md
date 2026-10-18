@@ -2,6 +2,26 @@
 
 [사용자 안내](../README.md) · [개발·검증](DEVELOPMENT.md) · [전체 소스 빌드 후보](SOURCE-BUILD.md) · [변경 이력](../CHANGELOG.md) · [검증 기록](ISSUE-1-VALIDATION.md) · [alpha.3 설명](ISSUE-1-RELEASE-DRAFT.md) · [전체 소스 alpha.4 기록](ISSUE-3-RELEASE.md)
 
+## PRD 2 prerelease의 별도 범위
+
+사용자가 2026-10-19 KST에 PRD 2 구현의 commit·push와 새 prerelease 게시를 승인했습니다. 대상은 `v1.0.4-alpha.1`, 설치 자산은 `DiceMaster-v1.0.4-alpha.1.zip`이며 `prerelease=true`·`make_latest=false`로 게시합니다. 기존 정식 Latest `v1.0.3`과 이전 Release·태그·자산을 보존합니다. [게시 설명](ISSUE-2-RELEASE.md)과 [구현·검증 기록](ISSUE-2-IMPLEMENTATION.md)에 범위와 식별값을 구분합니다.
+
+실제 Lua 대조·실제 자료와 비용에 근거한 최종 추적 제한·이 후보의 사용자 Windows 확인은 남아 있으므로 PRD 2 전체나 기능을 완료로 처리하지 않고 이슈 #2를 open으로 유지합니다. 과거 alpha.4/PRD 3 Windows 확인은 승계하지 않습니다. 이번 승인은 게임 설치·실행·오류 주입을 포함하지 않습니다.
+
+게시할 소스 커밋을 확정한 뒤 prerelease 전용 사전 검증을 실행합니다. 해당 커밋의 소스만 허용 목록으로 추출하여 기존 모드 DLL·Git 데이터·이전 출력 없이 새로 빌드하고 8개 검사 프로그램을 실행합니다. 검토한 DLL/설정 해시·선택 커밋의 빌드 입력·ZIP CRC·정확히 두 파일·각 파일 바이트 일치를 요구합니다.
+
+```sh
+python3 build/verify-preview-release.py \
+  --references '<읽기 전용 참조 루트>' \
+  --source-commit '<게시할 40자리 커밋 SHA>' \
+  --version v1.0.4-alpha.1 \
+  --expected-dll-sha256 f02b3511760b0054b35319766ae5704bd76282cb48f90ae525231ca1a7ae6da3 \
+  --expected-config-sha256 8fada1d878689e70f1ec510c6438116f7ab6e69e1e7a728bbb0986164e77bc7e \
+  --output-dir artifacts/releases/v1.0.4-alpha.1
+```
+
+이 명령은 게시·Git 변경을 하지 않으며 prerelease 버전만 허용합니다. PRD 3의 전체 소스 복원/alpha.4 동등성 검사용 `verify-release.py`는 그대로 보존합니다. PRD 2는 의도한 동작 변경이 있어 과거 DLL과의 전체 동등성을 주장하지 않습니다. 별도의 기존 본문·리소스·번역/주사위·반복/교차 검사와 동일 DLL 해시를 보존 근거로 사용하고, 게시 후 익명 공개 다운로드와 커밋·자산 해시를 다시 확인합니다.
+
 ## v1.0.3 정식 전환 — 2026-10-19
 
 사용자는 PRD #3 완료 시 정식 Release 게시와 이슈 종료를 지시했고, 2026-10-19 KST에 **Windows 검증을 완료했으며 공개된 alpha.4를 직접 내려받아 사용했다**고 확인했습니다. 이를 alpha.4 DLL SHA-256 `24c27953e4156b6c5ce9090947fd25a34aabc08a979fe6b2b0a525ae39257fe1`에 대한 사용자 확인으로 기록합니다. 게임·BepInEx 버전, 패드/Steam Input 환경, 항목별 결과·로그·업데이트/롤백 증거는 별도 제공되지 않았습니다. 이 환경을 과거 수신 참조의 환경으로 추정하거나 정식 후보를 직접 Windows에서 실행했다고 기록하지 않습니다.

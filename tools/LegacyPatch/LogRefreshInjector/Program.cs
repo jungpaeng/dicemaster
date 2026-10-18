@@ -13,6 +13,16 @@ static partial class LogRefreshInjector
     static FieldDefinition depth;
     static MethodDefinition previewDynamic, rebuild;
     static readonly HashSet<MethodDefinition> changed = new();
+    static readonly HashSet<string> previewBodies = new(StringComparer.Ordinal) {
+        "DiceMaster.LuaParse.Action::.ctor", "DiceMaster.LuaParse.Action::get_Description", "DiceMaster.LuaParse.Action::set_Description",
+        "DiceMaster.LuaParse.LuaParser::.ctor", "DiceMaster.LuaParse.LuaParser::.cctor",
+        "DiceMaster.LuaParse.LuaParser::ClearCaches", "DiceMaster.LuaParse.LuaParser::ExtractOptionActionsFromLua",
+        "DiceMaster.LuaParse.LuaParser::ExtractOptionActionsFromChooseBlocks", "DiceMaster.LuaParse.LuaParser::BuildActionListFromBlock",
+        "DiceMaster.LuaParse.LuaParser::ExtractSwitchBranchFirstStoryTextsFromLua", "DiceMaster.LuaParse.LuaParser::ExtractFirstStoryTextKey",
+        "DiceMaster.LuaParse.LuaParser::AddActionsToList", "DiceMaster.LuaParse.LuaParser::ExtractSwitchCheckFromLua",
+        "DiceMaster.LuaParse.LuaParser::ExtractPositionWorkFromLua", "DiceMaster.LuaParse.LuaParser::ParseFirstLuaArgument",
+        "DiceMaster.LuaParse.LuaParser::ExtractActionsFromLua", "DiceMaster.LuaParse.LuaParser::Description"
+    };
     static IEnumerable<TypeDefinition> AllTypes(IEnumerable<TypeDefinition> roots)
     {
         foreach (var type in roots)
@@ -55,7 +65,7 @@ static partial class LogRefreshInjector
     }
     static void GuardPreview(MethodDefinition method)
     {
-        if (method.Body.Instructions.First().Operand == depth) return;
+        if (method.Body.Instructions.First().Operand is FieldReference guard && guard.FullName == depth.FullName) return;
         changed.Add(method);
         var il = method.Body.GetILProcessor();
         var original = method.Body.Instructions.First();
@@ -171,6 +181,20 @@ static partial class LogRefreshInjector
     {
         foreach (var type in module.Types.Where(t => t.Namespace == "DiceMaster.LiveLog").ToArray()) module.Types.Remove(type);
         new PayloadCopier(payload, module, t => t.Namespace == "DiceMaster.LiveLog");
+        if (payload.GetType("DiceMaster.LuaParse.LuaParser") == null)
+            throw new InvalidDataException("PRD 2 requires the full source-built payload including LuaParse.");
+        // Merge the parser metadata so older callers keep the same field and
+        // method definitions. Only this named namespace and two display/read
+        // boundaries are installed from the full source candidate.
+        var existingParserMethods = new HashSet<string>(AllTypes(module.Types).SelectMany(t => t.Methods).Select(m => m.FullName), StringComparer.Ordinal);
+        var preview = new PayloadCopier(payload, module, t => t.Namespace == "DiceMaster.LuaParse", merge: true,
+            replaceBody: m => !existingParserMethods.Contains(m.FullName) || previewBodies.Contains(m.DeclaringType.FullName + "::" + m.Name));
+        changed.Add(preview.CopyMethod(Method(payload.GetType("DiceMaster.OptionInfoPatch"), "LeanLocalizationResolver_GetStoryText_Postfix"), patch));
+        changed.Add(preview.CopyMethod(Method(payload.GetType("DiceMaster.DataHelper"), "ReadPreviewScript"), module.GetType("DiceMaster.DataHelper")));
+        changed.Add(preview.CopyMethod(Method(payload.GetType("DiceMaster.PositionEventCache"), "GenerateStaticDesc"), cache));
+        changed.Add(preview.CopyMethod(Method(payload.GetType("DiceMaster.PositionEventCache"), "GetPositionEventDesc"), cache));
+        changed.Add(preview.CopyMethod(Method(payload.GetType("DiceMaster.PositionEventCache"), "RetryDefinitionReads"), cache));
+        preview.RebindReferences();
         // Existing strict-reflection hooks must bind to the replacement payload
         // definitions when applying the patch to an already patched assembly.
         foreach (var type in module.Types.Where(t => t.Namespace != "DiceMaster.LiveLog"))
@@ -245,7 +269,7 @@ static partial class LogRefreshInjector
             var method = Method(plugin, name);
             var button = method.Body.Instructions.First(i => i.OpCode == OpCodes.Ldstr &&
                 ((string)i.Operand == "이벤트 실행" || (string)i.Operand == "미션 실행"));
-            if (button.Previous.OpCode == OpCodes.Brfalse) continue;
+            if (button.Previous.OpCode == OpCodes.Brfalse || button.Previous.OpCode == OpCodes.Brfalse_S) continue;
             changed.Add(method);
             var skip = method.Body.Instructions.SkipWhile(i => i != button).First(i =>
                 i.OpCode.Code == Code.Brfalse || i.OpCode.Code == Code.Brfalse_S).Operand as Instruction;

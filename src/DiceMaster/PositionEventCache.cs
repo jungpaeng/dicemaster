@@ -67,12 +67,24 @@ public class PositionEventCache
 		{
 			return "";
 		}
-		if (!eventDescCache.TryGetValue(eventData, out var value))
+		try
 		{
-			value = GenerateStaticDesc(eventData);
-			eventDescCache[eventData] = value;
+			if (!eventDescCache.TryGetValue(eventData, out var value))
+			{
+				value = GenerateStaticDesc(eventData);
+				eventDescCache[eventData] = value;
+			}
+			string description = GeneratePreviewDynamicDesc(eventData) + "\n" + value;
+			if (OptionInfoPatch.DisplayRefreshDepth == 0) LogBridge.RecordDescriptionResult(eventData, null);
+			return description;
 		}
-		return GeneratePreviewDynamicDesc(eventData) + "\n" + value;
+		catch (PreviewReadException failure)
+		{
+			if (OptionInfoPatch.DisplayRefreshDepth != 0) throw;
+			LogBridge.RecordDescriptionResult(eventData, failure);
+			return (failure.IsWaiting ? RefreshEngine.WaitingStatus : RefreshEngine.ReadFailureStatus) +
+				" | " + failure.PartialDescription;
+		}
 	}
 
 	public int GetPositionEventRate(PositionEventData eventData)
@@ -135,6 +147,13 @@ public class PositionEventCache
 			value = eventData.name;
 		}
 		List<DiceMaster.LuaParse.Action> source = GetDefinitionParser().ExtractActionsFromLua(value + "_" + eventData.ResultType);
+		if (source.Count > 0 && source[0].Analysis != null)
+		{
+			// The structured description owns branch/followup labels. Wrapping
+			// the whole analysis in "immediate" would mislabel conditional effects.
+			stringBuilder.AppendLine(LuaParser.Description(source));
+			return stringBuilder.ToString();
+		}
 		List<DiceMaster.LuaParse.Action> actions = source.Where((DiceMaster.LuaParse.Action a) => !a.IsConditional).ToList();
 		List<DiceMaster.LuaParse.Action> actions2 = source.Where((DiceMaster.LuaParse.Action a) => a.IsConditional).ToList();
 		string text = LuaParser.Description(actions);
@@ -145,6 +164,14 @@ public class PositionEventCache
 		stringBuilder.AppendLine(localizedSystemTextForCache + (string.IsNullOrEmpty(text) ? localizedSystemTextForCache3 : text));
 		stringBuilder.AppendLine(localizedSystemTextForCache2 + (string.IsNullOrEmpty(text2) ? localizedSystemTextForCache3 : text2));
 		return stringBuilder.ToString();
+	}
+
+	internal void RetryDefinitionReads(PositionEventData eventData)
+	{
+		if (eventData == null) return;
+		if (!scriptPrefixCache.TryGetValue(eventData, out string prefix)) prefix = eventData.name;
+		List<DiceMaster.LuaParse.Action> actions = GetDefinitionParser().ExtractActionsFromLua(prefix + "_" + eventData.ResultType);
+		LuaParser.RefreshPreviewReads(actions);
 	}
 
 	private string GenerateDynamicDesc(PositionEventData eventData)

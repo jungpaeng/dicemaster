@@ -29,6 +29,8 @@ namespace DiceMaster.LiveLog
         private static bool hasSourceClock;
         private static readonly Dictionary<string, EventSource> eventSources = new Dictionary<string, EventSource>();
         private static readonly Dictionary<string, string> boundaryFailures = new Dictionary<string, string>();
+        private static readonly Dictionary<string, Value> partialOptions = new Dictionary<string, Value>();
+        private static readonly Dictionary<string, Value> partialEvents = new Dictionary<string, Value>();
         public static int AnalysisCount;
 
         private sealed class EventSource
@@ -283,6 +285,9 @@ namespace DiceMaster.LiveLog
             eventSources.Clear();
             eventParser = null;
             boundaryFailures.Clear();
+            partialOptions.Clear();
+            partialEvents.Clear();
+            PreviewDiagnostics.ResetContext();
             tickTime = 0;
             hasSourceClock = false;
             lua = friendly = null;
@@ -423,11 +428,24 @@ namespace DiceMaster.LiveLog
                     object actions = item.Value;
                     queries.Add(new DisplayQuery(key, () => {
                         object state = Call(Patch(), "EvaluateStoryReadState", optionStories, key);
-                        return new Value {
+                        Value value = new Value {
                             Key = (string)Call(owner, "ColorizeKeyByStoryReadState", key, state),
-                            Description = Translate((string)Call(TypeFor("DiceMaster.LuaParse.LuaParser"), "Description", actions)),
                             Text = (string)Call(Patch(), "ResolveOptionStoryText", key), StoryState = state
                         };
+                        Call(TypeFor("DiceMaster.LuaParse.LuaParser"), "RefreshPreviewReads", actions);
+                        try
+                        {
+                            value.Description = Translate((string)Call(TypeFor("DiceMaster.LuaParse.LuaParser"), "Description", actions));
+                            partialOptions.Remove(key);
+                            return value;
+                        }
+                        catch (PreviewReadException failure)
+                        {
+                            value.Description = Translate(failure.PartialDescription);
+                            partialOptions[key] = value;
+                            if (failure.IsWaiting) throw new DataNotReadyException();
+                            throw new InvalidOperationException("Preview read boundary failed.");
+                        }
                     }));
                 }
             }
@@ -496,10 +514,23 @@ namespace DiceMaster.LiveLog
                         if (data == null) continue;
                         string id = position + "/" + RuntimeHelpers.GetHashCode(data);
                         queries.Add(new DisplayQuery(id, () => {
-                            PrepareEventDefinition(data);
-                            return new Value { Data = data,
-                                Key = (string)Call(Cache(), "GetPositionEventName", data),
-                                Description = Translate((string)Call(Cache(), "GetPositionEventDesc", data)) };
+                            Value value = new Value { Data = data,
+                                Key = (string)Call(Cache(), "GetPositionEventName", data) };
+                            Call(Cache(), "RetryDefinitionReads", data);
+                            try
+                            {
+                                PrepareEventDefinition(data);
+                                value.Description = Translate((string)Call(Cache(), "GetPositionEventDesc", data));
+                                partialEvents.Remove(id);
+                                return value;
+                            }
+                            catch (PreviewReadException failure)
+                            {
+                                value.Description = Translate(failure.PartialDescription);
+                                partialEvents[id] = value;
+                                if (failure.IsWaiting) throw new DataNotReadyException();
+                                throw new InvalidOperationException("Preview event read boundary failed.");
+                            }
                         }));
                     }
                 }
@@ -577,6 +608,10 @@ namespace DiceMaster.LiveLog
             foreach (DisplayRow row in rows)
             {
                 Value value = row.Value as Value;
+                if (value == null && tab == "선택지" && !string.IsNullOrEmpty(row.Status))
+                    partialOptions.TryGetValue(row.Id, out value);
+                if (value == null && tab == "이벤트" && !string.IsNullOrEmpty(row.Status))
+                    partialEvents.TryGetValue(row.Id, out value);
                 if (value == null && string.IsNullOrEmpty(row.Status)) continue;
                 string key = value == null ? row.Id : value.Key;
                 if (value == null && (row.Id == RefreshEngine.DiscoveryRowId || tab == "이벤트" || tab == "미션"))

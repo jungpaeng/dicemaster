@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using DiceMaster.LiveLog;
 
 namespace DiceMaster.LuaParse;
 
@@ -43,6 +44,13 @@ public class LuaParser
 
 	private Dictionary<string, Dictionary<string, Dictionary<string, string>>> luaSwitchBranchStoryText;
 
+	private readonly Dictionary<string, Dictionary<string, List<Action>>> previewOptionCache = new Dictionary<string, Dictionary<string, List<Action>>>();
+	private readonly Dictionary<string, string> previewSources = new Dictionary<string, string>();
+	private string previewSourceName = "";
+	private readonly Dictionary<string, bool> previewIncomplete = new Dictionary<string, bool>();
+	public bool IncompleteOptionDiscovery;
+	private static readonly HashSet<PreviewAnalysis> retryArmed = new HashSet<PreviewAnalysis>();
+
 	public static LuaParser Instance => instance.Value;
 
 	private LuaParser()
@@ -59,151 +67,60 @@ public class LuaParser
 
 	public void ClearCaches()
 	{
-		luaOptions.Clear();
-		luaSwitchCheck.Clear();
-		luaPositionWork.Clear();
-		luaModification.Clear();
-		luaOptionStoryText.Clear();
-		luaSwitchStoryText.Clear();
-		luaSwitchBranchStoryText.Clear();
-		DicePlugin.LogInfo("LuaParser 내부 캐시(luaOptions, luaSwitchCheck 등)가 모두 청소되었습니다!");
+		luaOptions.Clear(); luaSwitchCheck.Clear(); luaPositionWork.Clear(); luaModification.Clear();
+		luaOptionStoryText.Clear(); luaSwitchStoryText.Clear(); luaSwitchBranchStoryText.Clear();
+		OptionResult.Clear(); previewOptionCache.Clear(); previewSources.Clear(); retryArmed.Clear();
+		previewSourceName = ""; IncompleteOptionDiscovery = false; previewIncomplete.Clear();
 	}
 
 	public Dictionary<string, List<Action>> ExtractOptionActionsFromLua(string friendlyName, string luaScript = "")
 	{
-		Dictionary<string, List<Action>> dictionary = new Dictionary<string, List<Action>>();
-		if (!luaOptions.ContainsKey(friendlyName))
+		friendlyName = friendlyName ?? ""; luaScript = luaScript ?? "";
+		if (previewOptionCache.TryGetValue(friendlyName, out var cached) &&
+			(luaScript.Length == 0 || previewSources[friendlyName] == luaScript))
 		{
-			luaOptions[friendlyName] = new List<string>();
-			Dictionary<string, List<string>> dictionary2 = new Dictionary<string, List<string>>();
-			luaOptionStoryText[friendlyName] = dictionary2;
-			MatchCollection matchCollection = indexMarkerRegex.Matches(luaScript);
-			for (int i = 0; i < matchCollection.Count; i++)
-			{
-				string value = matchCollection[i].Groups[1].Value;
-				luaOptions[friendlyName].Add(value);
-				int num = matchCollection[i].Index + matchCollection[i].Length;
-				int num2 = luaScript.Length;
-				if (i + 1 < matchCollection.Count)
-				{
-					num2 = Math.Min(num2, matchCollection[i + 1].Index);
-				}
-				num2 = Math.Min(num2, FindOptionBranchEnd(luaScript, num, num2));
-				string blockContent = luaScript.Substring(num, num2 - num);
-				string text = ExtractFirstStoryTextKey(blockContent);
-				dictionary2[value] = (string.IsNullOrEmpty(text) ? new List<string>() : new List<string> { text });
-				if (OptionResult.ContainsKey(value))
-				{
-					dictionary[value] = OptionResult[value];
-					continue;
-				}
-				List<Action> list = new List<Action>();
-				AddActionsToList(blockContent, modifyRegex, ActionType.ModifyAction, list);
-				AddActionsToList(blockContent, battleScenesRegex, ActionType.BattleScene, list);
-				dictionary[value] = list;
-				OptionResult[value] = list;
-			}
-			ExtractOptionActionsFromChooseBlocks(luaScript, luaOptions[friendlyName], dictionary2, dictionary);
+			IncompleteOptionDiscovery = previewIncomplete[friendlyName];
+			foreach (var pair in cached) OptionResult[pair.Key] = pair.Value;
+			return cached;
 		}
-		else
+		previewSourceName = friendlyName;
+		var result = new Dictionary<string, List<Action>>();
+		var keys = new List<string>(); var stories = new Dictionary<string, List<string>>();
+		var blocks = PreviewSyntax.OptionBlocks(luaScript, out bool incomplete);
+		IncompleteOptionDiscovery = incomplete; previewIncomplete[friendlyName] = incomplete;
+		if (incomplete)
 		{
-			List<string> list2 = luaOptions[friendlyName];
-			if (!luaOptionStoryText.ContainsKey(friendlyName))
-			{
-				luaOptionStoryText[friendlyName] = new Dictionary<string, List<string>>();
-			}
-			Dictionary<string, List<string>> dictionary3 = luaOptionStoryText[friendlyName];
-			foreach (string item in list2)
-			{
-				if (OptionResult.ContainsKey(item))
-				{
-					dictionary.Add(item, OptionResult[item]);
-				}
-				else
-				{
-					dictionary.Add(item, new List<Action>());
-					DicePlugin.LogError("CRITICAL ERROR: luaOptions에 있는 키 '" + item + "'가 OptionResult에 없습니다! (friendlyName: " + friendlyName + ") 이 문제는 게임을 불안정하게 만들 수 있습니다!");
-				}
-				if (!dictionary3.ContainsKey(item))
-				{
-					dictionary3[item] = new List<string>();
-				}
-			}
+			var discovery = PreviewAnalyzer.Analyze(friendlyName, "");
+			discovery.AddIssue(friendlyName, "options", "option-lexical-limit");
+			PreviewDiagnostics.Report(discovery, "*");
 		}
-		return dictionary;
+		foreach (var block in blocks)
+		{
+			if (result.ContainsKey(block.Key)) continue;
+			var analysis = PreviewAnalyzer.Analyze(friendlyName, block.Body, DataHelper.ReadPreviewScript);
+			if (block.LimitReached) analysis.AddIssue(friendlyName, "options", "option-lexical-limit");
+			analysis.OptionKey = block.Key;
+			PreviewDiagnostics.Report(analysis, block.Key);
+			result[block.Key] = new List<Action> { Action.FromAnalysis(analysis) };
+			keys.Add(block.Key); stories[block.Key] = string.IsNullOrEmpty(block.Story) ? new List<string>() : new List<string> { block.Story };
+		}
+		if (previewOptionCache.TryGetValue(friendlyName, out var previous)) foreach (var pair in previous) OptionResult.Remove(pair.Key);
+		previewOptionCache[friendlyName] = result; previewSources[friendlyName] = luaScript;
+		luaOptions[friendlyName] = keys; luaOptionStoryText[friendlyName] = stories;
+		luaSwitchStoryText.Remove(friendlyName); luaSwitchBranchStoryText.Remove(friendlyName);
+		foreach (var pair in result) OptionResult[pair.Key] = pair.Value;
+		return result;
 	}
 
 	private void ExtractOptionActionsFromChooseBlocks(string luaScript, List<string> optionKeys, Dictionary<string, List<string>> optionStoryMap, Dictionary<string, List<Action>> optionActionMap)
 	{
-		if (string.IsNullOrWhiteSpace(luaScript) || optionKeys == null || optionStoryMap == null || optionActionMap == null)
+		foreach (var block in PreviewSyntax.OptionBlocks(luaScript))
 		{
-			return;
-		}
-		foreach (Match item in chooseAssignmentRegex.Matches(luaScript))
-		{
-			string text = item.Groups[1].Value.Trim();
-			string text2 = ParseFirstLuaArgument(item.Groups[2].Value);
-			if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(text2))
-			{
-				continue;
-			}
-			int startIndex = item.Index + item.Length;
-			int num = FindOptionTableDeclaration(luaScript, text2, item.Index);
-			if (num < 0)
-			{
-				continue;
-			}
-			Dictionary<string, string> dictionary = ParseOptionTableItems(luaScript, text2, num, item.Index);
-			if (dictionary.Count == 0)
-			{
-				continue;
-			}
-			int num2 = FindIfLineForSwitchVar(luaScript, text, startIndex, luaScript.Length);
-			if (num2 < 0)
-			{
-				continue;
-			}
-			int num3 = FindLineEnd(luaScript, num2, luaScript.Length);
-			if (num3 >= luaScript.Length)
-			{
-				continue;
-			}
-			Dictionary<string, string> dictionary2 = ExtractFirstStoryTextByBranchFromIfElseChain(luaScript, text, num2, num3, luaScript.Length);
-			Dictionary<string, string> dictionary3 = ExtractBranchBlockByLabelFromIfElseChain(luaScript, text, num2, num3, luaScript.Length);
-			foreach (KeyValuePair<string, string> item2 in dictionary)
-			{
-				string key = item2.Key;
-				string value = item2.Value;
-				if (!string.IsNullOrWhiteSpace(value))
-				{
-					if (!optionKeys.Contains(value))
-					{
-						optionKeys.Add(value);
-					}
-					if (!optionStoryMap.TryGetValue(value, out var value2))
-					{
-						value2 = (optionStoryMap[value] = new List<string>());
-					}
-					if (dictionary2.TryGetValue(key, out var value3) && !string.IsNullOrWhiteSpace(value3) && !value2.Contains(value3))
-					{
-						value2.Add(value3);
-					}
-					List<Action> list2 = null;
-					if (dictionary3.TryGetValue(key, out var value4))
-					{
-						list2 = BuildActionListFromBlock(value4);
-					}
-					if (!optionActionMap.TryGetValue(value, out var value5) || value5 == null || value5.Count == 0)
-					{
-						value5 = (optionActionMap[value] = list2 ?? new List<Action>());
-						OptionResult[value] = value5;
-					}
-					else if (!OptionResult.ContainsKey(value))
-					{
-						OptionResult[value] = value5;
-					}
-				}
-			}
+			if (!optionKeys.Contains(block.Key)) optionKeys.Add(block.Key);
+			if (!optionStoryMap.ContainsKey(block.Key)) optionStoryMap[block.Key] = new List<string>();
+			if (block.Story.Length != 0 && !optionStoryMap[block.Key].Contains(block.Story)) optionStoryMap[block.Key].Add(block.Story);
+			if (!optionActionMap.ContainsKey(block.Key)) optionActionMap[block.Key] = BuildActionListFromBlock(block.Body);
+			OptionResult[block.Key] = optionActionMap[block.Key];
 		}
 	}
 
@@ -247,14 +164,7 @@ public class LuaParser
 
 	private List<Action> BuildActionListFromBlock(string blockContent)
 	{
-		List<Action> list = new List<Action>();
-		if (string.IsNullOrWhiteSpace(blockContent))
-		{
-			return list;
-		}
-		AddActionsToList(blockContent, modifyRegex, ActionType.ModifyAction, list);
-		AddActionsToList(blockContent, battleScenesRegex, ActionType.BattleScene, list);
-		return list;
+		return new List<Action> { Action.FromAnalysis(PreviewAnalyzer.Analyze(previewSourceName, blockContent, DataHelper.ReadPreviewScript)) };
 	}
 
 	public Dictionary<string, List<string>> ExtractOptionFirstStoryTextsFromLua(string friendlyName, string luaScript = "")
@@ -299,52 +209,21 @@ public class LuaParser
 
 	public Dictionary<string, Dictionary<string, string>> ExtractSwitchBranchFirstStoryTextsFromLua(string friendlyName, string luaScript = "")
 	{
-		if (luaSwitchBranchStoryText.ContainsKey(friendlyName))
+		if (luaSwitchBranchStoryText.TryGetValue(friendlyName, out var cached)) return cached;
+		var result = new Dictionary<string, Dictionary<string, string>>();
+		var tokens = PreviewSyntax.Tokenize(luaScript);
+		for (int i = 2; i < tokens.Count; i++)
 		{
-			return luaSwitchBranchStoryText[friendlyName];
+			if (tokens[i - 1].Text != "=" || !tokens[i - 2].IsIdentifier || !PreviewSyntax.TryCall(tokens, i, out var owner, out var name, out var open, out var close) || owner != "checkpointmanager" || name != "Switch" || close < 0) continue;
+			var args = PreviewSyntax.Arguments(luaScript, tokens, open, close);
+			if (args.Count == 0 || !PreviewSyntax.TryString(args[0], out var key)) continue;
+			int branch = PreviewSyntax.FindAssignedBranch(tokens, close + 1, tokens[i - 2].Text); if (branch < 0) continue;
+			var entries = new Dictionary<string, string>();
+			foreach (var b in PreviewSyntax.Branches(tokens, branch, out var ending)) entries[b.Label] = PreviewSyntax.FirstStory(PreviewSyntax.Slice(luaScript, tokens, b.Start, b.End));
+			result[key] = entries;
 		}
-		Dictionary<string, Dictionary<string, string>> dictionary = new Dictionary<string, Dictionary<string, string>>();
-		List<Match> list = switchAssignmentRegex.Matches(luaScript).Cast<Match>().ToList();
-		for (int i = 0; i < list.Count; i++)
-		{
-			Match match = list[i];
-			string value = match.Groups[1].Value;
-			string text = ParseFirstLuaArgument(match.Groups[2].Value);
-			if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(text))
-			{
-				continue;
-			}
-			int startIndex = match.Index + match.Length;
-			int length = luaScript.Length;
-			int num = FindIfLineForSwitchVar(luaScript, value, startIndex, length);
-			if (num < 0)
-			{
-				continue;
-			}
-			int num2 = FindLineEnd(luaScript, num, length);
-			if (num2 >= length)
-			{
-				continue;
-			}
-			Dictionary<string, string> dictionary2 = ExtractFirstStoryTextByBranchFromIfElseChain(luaScript, value, num, num2, length);
-			if (!dictionary.TryGetValue(text, out var value2))
-			{
-				value2 = (dictionary[text] = new Dictionary<string, string>());
-			}
-			foreach (KeyValuePair<string, string> item in dictionary2)
-			{
-				if (!value2.ContainsKey(item.Key))
-				{
-					value2[item.Key] = item.Value;
-				}
-				else if (string.IsNullOrWhiteSpace(value2[item.Key]) && !string.IsNullOrWhiteSpace(item.Value))
-				{
-					value2[item.Key] = item.Value;
-				}
-			}
-		}
-		luaSwitchBranchStoryText[friendlyName] = dictionary;
-		return dictionary;
+		luaSwitchBranchStoryText[friendlyName] = result;
+		return result;
 	}
 
 	private static int FindOptionBranchEnd(string luaScript, int startIndex, int hardLimit)
@@ -416,16 +295,7 @@ public class LuaParser
 
 	private static string ExtractFirstStoryTextKey(string blockContent)
 	{
-		if (string.IsNullOrWhiteSpace(blockContent))
-		{
-			return string.Empty;
-		}
-		Match match = storyTextRegex.Match(blockContent);
-		if (!match.Success)
-		{
-			return string.Empty;
-		}
-		return ParseFirstLuaArgument(match.Groups[1].Value);
+		return PreviewSyntax.FirstStory(blockContent);
 	}
 
 	private static int FindIfLineForSwitchVar(string luaScript, string switchResultVar, int startIndex, int hardLimit)
@@ -629,24 +499,14 @@ public class LuaParser
 
 	public List<string> ExtractSwitchCheckFromLua(string friendlyName, string luaScript = "")
 	{
-		if (luaSwitchCheck.ContainsKey(friendlyName))
-		{
-			return luaSwitchCheck[friendlyName];
-		}
-		List<string> list = ExtractMatches(luaScript, switchRegex);
-		luaSwitchCheck[friendlyName] = list;
-		return list;
+		if (luaSwitchCheck.TryGetValue(friendlyName, out var cached)) return cached;
+		return luaSwitchCheck[friendlyName] = ExtractPreviewCallKeys(luaScript, "checkpointmanager", "Switch");
 	}
 
 	public List<string> ExtractPositionWorkFromLua(string friendlyName, string luaScript = "")
 	{
-		if (luaPositionWork.ContainsKey(friendlyName))
-		{
-			return luaPositionWork[friendlyName];
-		}
-		List<string> list = ExtractMatches(luaScript, positionRegex);
-		luaPositionWork[friendlyName] = list;
-		return list;
+		if (luaPositionWork.TryGetValue(friendlyName, out var cached)) return cached;
+		return luaPositionWork[friendlyName] = ExtractPreviewCallKeys(luaScript, "checkpointmanager", "Position");
 	}
 
 	private List<string> ExtractMatches(string luaScript, Regex regex)
@@ -665,51 +525,60 @@ public class LuaParser
 
 	private static string ParseFirstLuaArgument(string rawArgs)
 	{
-		if (string.IsNullOrWhiteSpace(rawArgs))
-		{
-			return string.Empty;
-		}
-		Match match = Regex.Match(rawArgs, "^\\s*['\\\"]([^'\\\"]+)['\\\"]");
-		if (match.Success)
-		{
-			return match.Groups[1].Value.Trim();
-		}
-		int num = rawArgs.IndexOf(',');
-		return ((num >= 0) ? rawArgs.Substring(0, num) : rawArgs).Trim().Trim('\'', '"');
+		var source = "f(" + (rawArgs ?? "") + ")"; var tokens = PreviewSyntax.Tokenize(source);
+		if (tokens.Count < 3) return "";
+		var args = PreviewSyntax.Arguments(source, tokens, 1, tokens.Count - 1);
+		if (args.Count == 0) return "";
+		return PreviewSyntax.TryString(args[0], out var value) ? value : args[0].Trim();
 	}
 
 	public List<Action> ExtractActionsFromLua(string luaScriptName)
 	{
-		if (luaModification.ContainsKey(luaScriptName))
+		if (luaModification.TryGetValue(luaScriptName, out var cached)) return cached;
+		var read = DataHelper.ReadPreviewScript(luaScriptName);
+		PreviewAnalysis analysis;
+		if (read.State == ScriptReadState.Success) analysis = PreviewAnalyzer.Analyze(luaScriptName, read.Text, DataHelper.ReadPreviewScript);
+		else
 		{
-			return luaModification[luaScriptName];
+			analysis = PreviewAnalyzer.Analyze(luaScriptName, "", DataHelper.ReadPreviewScript);
+			analysis.RootNeedsRead = true;
+			analysis.AddIssue(luaScriptName, "script", read.State == ScriptReadState.Missing ? "script-target-missing" : read.State == ScriptReadState.Waiting ? "script-data-waiting" : "script-read-failed", true, read.State == ScriptReadState.Waiting);
 		}
-		string[] array = DataHelper.LoadLuaScript(luaScriptName).Split(new string[3] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-		List<Action> list = new List<Action>();
-		bool isConditional = false;
-		string[] array2 = array;
-		for (int i = 0; i < array2.Length; i++)
+		analysis.SnapshotAllowed = false;
+		analysis.OptionKey = luaScriptName;
+		PreviewDiagnostics.Report(analysis, luaScriptName);
+		var actions = new List<Action> { Action.FromAnalysis(analysis) };
+		// Keep failed definitions too. Only the owning visible row may retry
+		// their resource reads; repeated fixed-description requests read cache.
+		luaModification[luaScriptName] = actions;
+		return actions;
+	}
+
+	private static List<string> ExtractPreviewCallKeys(string script, string wantedOwner, string wantedName)
+	{
+		var result = new List<string>(); var tokens = PreviewSyntax.Tokenize(script);
+		for (int i = 0; i < tokens.Count; i++)
+			if (PreviewSyntax.TryCall(tokens, i, out var owner, out var name, out var open, out var close) && owner == wantedOwner && name == wantedName && close >= 0)
+			{
+				var args = PreviewSyntax.Arguments(script, tokens, open, close);
+				if (args.Count > 0 && PreviewSyntax.TryString(args[0], out var key) && !result.Contains(key)) result.Add(key);
+				i = close;
+			}
+		return result;
+	}
+
+	public static void RefreshPreviewReads(List<Action> actions)
+	{
+		if (actions == null) return;
+		foreach (var action in actions)
 		{
-			string text = array2[i].Trim();
-			if (text.StartsWith("if") || text.StartsWith("elseif"))
-			{
-				isConditional = true;
-			}
-			else if (text.StartsWith("end"))
-			{
-				isConditional = false;
-			}
-			foreach (Match item in modifyRegex.Matches(text))
-			{
-				list.Add(new Action(ActionType.ModifyAction, item.Value, isConditional));
-			}
-			foreach (Match item2 in battleScenesRegex.Matches(text))
-			{
-				list.Add(new Action(ActionType.BattleScene, item2.Value, isConditional));
-			}
+			var analysis = action.Analysis;
+			if (analysis == null || !analysis.HasReadFailures) continue;
+			if (retryArmed.Add(analysis)) continue;
+			PreviewAnalyzer.RetryReads(analysis);
+			PreviewDiagnostics.Report(analysis, analysis.OptionKey ?? analysis.RootName);
+			if (!analysis.HasReadFailures) retryArmed.Remove(analysis);
 		}
-		luaModification[luaScriptName] = list;
-		return list;
 	}
 
 	public static string Description(List<Action> actions)

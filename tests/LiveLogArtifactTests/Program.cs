@@ -24,8 +24,38 @@ internal static class Program
         "DiceMaster.PositionEventCache::ClearDisplayCaches", "DiceMaster.PositionEventCache::GetPositionEvents",
         "DiceMaster.UiTextMapper::TryGetCachedTranslation", "DiceMaster.UiTextMapper::CacheTranslation",
         "DiceMaster.DataHelper::GetMissions", "DiceMaster.DataHelper::ExtractConditions",
-        "DiceMaster.PositionEventCache::GenerateDynamicDesc"
+        "DiceMaster.PositionEventCache::GenerateDynamicDesc",
+        "DiceMaster.OptionInfoPatch::LeanLocalizationResolver_GetStoryText_Postfix",
+        // These wrappers are checked instruction-for-instruction below. Source
+        // builds can include a compiler nop/local around the same pure call.
+        "DiceMaster.OptionInfoPatch::PreviewReadGroup", "DiceMaster.OptionInfoPatch::PreviewCheckComparison",
+        "DiceMaster.OptionInfoPatch::PreviewReadEventRate",
+        "DiceMaster.PositionEventCache::GenerateStaticDesc",
+        "DiceMaster.PositionEventCache::GetDefinitionParser",
+        "DiceMaster.LuaParse.Action::.ctor", "DiceMaster.LuaParse.Action::get_Description", "DiceMaster.LuaParse.Action::set_Description",
+        "DiceMaster.LuaParse.LuaParser::.ctor", "DiceMaster.LuaParse.LuaParser::.cctor",
+        "DiceMaster.LuaParse.LuaParser::ClearCaches", "DiceMaster.LuaParse.LuaParser::ExtractOptionActionsFromLua",
+        "DiceMaster.LuaParse.LuaParser::ExtractOptionActionsFromChooseBlocks", "DiceMaster.LuaParse.LuaParser::BuildActionListFromBlock",
+        "DiceMaster.LuaParse.LuaParser::ExtractSwitchBranchFirstStoryTextsFromLua", "DiceMaster.LuaParse.LuaParser::ExtractFirstStoryTextKey",
+        "DiceMaster.LuaParse.LuaParser::AddActionsToList", "DiceMaster.LuaParse.LuaParser::ExtractSwitchCheckFromLua",
+        "DiceMaster.LuaParse.LuaParser::ExtractPositionWorkFromLua", "DiceMaster.LuaParse.LuaParser::ParseFirstLuaArgument",
+        "DiceMaster.LuaParse.LuaParser::ExtractActionsFromLua", "DiceMaster.LuaParse.LuaParser::Description"
     };
+
+    private static readonly Dictionary<string, string> lifecycleDelegates = LifecycleDelegates();
+    private static Dictionary<string, string> LifecycleDelegates()
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (string target in new[] { "SaveSystem_NewGameData", "SaveSystem_NewActGameData", "SaveSystem_LoadGameData", "SaveSystem_AutoLoadGameData", "SaveSystem_LoadRestoreSaveData", "SaveSystem_ExecuteLoadGameData", "SceneController_StartLoadScene" })
+        {
+            result.Add("LiveLog_" + target + "_Prefix", "EnterTransition");
+            result.Add("LiveLog_" + target + "_Finalizer", "ExitTransition");
+        }
+        result.Add("LiveLog_LuaStage_Prefix", "StageLua");
+        result.Add("LiveLog_LuaComplete_Postfix", "CompleteLua");
+        result.Add("LiveLog_LuaAbort_Finalizer", "AbortLua");
+        return result;
+    }
 
     private static void Check(bool value, string message)
     {
@@ -51,6 +81,19 @@ internal static class Program
     private static bool IsBrFalse(Instruction instruction)
     {
         return instruction != null && (instruction.OpCode == OpCodes.Brfalse || instruction.OpCode == OpCodes.Brfalse_S);
+    }
+    private static bool IsBrTrue(Instruction instruction)
+    {
+        return instruction != null && (instruction.OpCode == OpCodes.Brtrue || instruction.OpCode == OpCodes.Brtrue_S);
+    }
+
+    private static bool HasPreviewGuard(IList<Instruction> code)
+    {
+        if (code.Count < 4 || !IsDepth(code[0])) return false;
+        if (IsBrFalse(code[1])) return code[2].OpCode == OpCodes.Ret && ReferenceEquals(code[1].Operand, code[3]) && !IsDepth(code[3]);
+        // The full-source compiler can invert the condition and branch to the
+        // existing final ret. This also skips the entire gameplay body.
+        return IsBrTrue(code[1]) && ReferenceEquals(code[1].Operand, code[code.Count - 1]) && code[code.Count - 1].OpCode == OpCodes.Ret && !IsDepth(code[2]);
     }
 
     private static string OriginalDisplayCall(MethodReference call)
@@ -246,6 +289,13 @@ internal static class Program
                 Check(matches.Length == 1 && matches[0].Attributes == method.Attributes && matches[0].ImplAttributes == method.ImplAttributes,
                     "Existing method signature/attributes changed: " + method.FullName);
                 MethodDefinition after = matches[0];
+                if (type.FullName == "DiceMaster.OptionInfoPatch" && lifecycleDelegates.TryGetValue(method.Name, out string lifecycleCall))
+                {
+                    Check(Calls(after, "DiceMaster.LiveLog.LogBridge", lifecycleCall) == 1 &&
+                        after.Body.Instructions.Where(i => i.Operand is MethodReference).All(i => ((MethodReference)i.Operand).DeclaringType.FullName == "DiceMaster.LiveLog.LogBridge"),
+                        "Lifecycle wrapper contains a missing/duplicated or foreign call: " + after.FullName);
+                    continue;
+                }
                 if (replacements.Contains(type.FullName + "::" + method.Name) &&
                     !(type.FullName == "DiceMaster.DataHelper" && method.Name == "ExtractConditions" &&
                       method.Parameters[0].ParameterType.FullName != "Mortal.Core.ConditionResultItem")) continue;
@@ -300,9 +350,8 @@ internal static class Program
         {
             MethodDefinition method = Method(output, "DiceMaster.OptionInfoPatch", name);
             IList<Instruction> code = method.Body.Instructions;
-            Check(code.Count > 3 && IsDepth(code[0]) && IsBrFalse(code[1]) && code[2].OpCode == OpCodes.Ret && ReferenceEquals(code[1].Operand, code[3]),
+            Check(HasPreviewGuard(code),
                 "Preview guard missing/invalid: " + method.FullName);
-            Check(!IsDepth(code[3]), "Preview guard duplicated: " + method.FullName);
         }
         MethodDefinition tick = Method(output, "DiceMaster.LiveLog.RefreshEngine", "Tick");
         Check(tick.Parameters.Count == 9 && tick.Parameters[0].ParameterType.FullName == "System.String" && tick.Parameters[3].ParameterType.FullName == "System.Single",

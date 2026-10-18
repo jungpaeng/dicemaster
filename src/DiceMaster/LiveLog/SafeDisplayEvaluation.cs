@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 namespace DiceMaster.LiveLog
 {
     public sealed class RandomDisplayValueException : InvalidOperationException { }
+    public sealed class UnsupportedDisplayStatException : InvalidOperationException { }
 
     // Read semantics audited against Steam build 26021712. Never call the
     // game's GetValue/GetResult/Check/Execute chain from a display evaluation:
@@ -119,13 +120,14 @@ namespace DiceMaster.LiveLog
                 Enter(stat);
                 try
                 {
-                    if (stat.GetType().FullName != "Mortal.Core.GameStat") throw new InvalidOperationException("Unknown display stat.");
+                    if (stat.GetType().FullName != "Mortal.Core.GameStat") throw new UnsupportedDisplayStatException();
                     object collections = Read(stat, "_statAdditionData");
                     if (collections == null) return;
                     foreach (object collection in (IEnumerable)collections)
                     {
-                        if (collection == null || collection.GetType().FullName != "Mortal.Core.StatConvertCollectionData")
-                            throw new InvalidOperationException("Unknown display conversion collection.");
+                        if (collection == null) throw new InvalidOperationException("Null display conversion collection.");
+                        if (collection.GetType().FullName != "Mortal.Core.StatConvertCollectionData")
+                            throw new UnsupportedDisplayStatException();
                         foreach (object conversion in List(collection, "List"))
                         {
                             if (conversion == null) throw new InvalidOperationException("Null display conversion.");
@@ -134,11 +136,17 @@ namespace DiceMaster.LiveLog
                                 ValidateStat(Read(conversion, "_statData"));
                             else if (type != "Mortal.Core.FlagDataRateConvertData" && type != "Mortal.Core.BookLevelStatConvertData" &&
                                      type != "Mortal.Core.UpgradeItemStatConvertData")
-                                throw new InvalidOperationException("Unknown display conversion.");
+                                throw new UnsupportedDisplayStatException();
                         }
                     }
                 }
                 finally { active.Remove(stat); }
+            }
+
+            public int StatFinalValue(object stat)
+            {
+                ValidateStat(stat);
+                return Number(stat, "FinalValue");
             }
 
             public bool Compare(object value)
@@ -211,6 +219,7 @@ namespace DiceMaster.LiveLog
         public static bool CheckCondition(object value) { return new Evaluation().Condition(value); }
         public static bool CheckConditionData(object value) { return new Evaluation().ConditionData(value); }
         public static int ReadEventRate(object value) { return new Evaluation().Rate(value); }
+        public static int ReadStatFinalValue(object value) { return new Evaluation().StatFinalValue(value); }
         // Shared only with the structured preview. This retains the audited
         // known-reference semantics without calling a gameplay evaluator.
         internal static int ReadReference(object value) { return new Evaluation().Reference(value); }
