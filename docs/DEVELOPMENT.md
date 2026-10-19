@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #5 — v1.0.6-alpha.7 준비
+## PRD #5 — v1.0.6-alpha.7 prerelease
 
-최신 `origin/main`의 `661622d8f221f25d58f871321caed935c952d6e9`에서 팝업 목록·기본 선택을 보완한다. 목록은 정상 발동 가능/불가 상태 행을 제거한 **굵은 제목·결과 요약 두 줄**이다. 제목은 기존 문자 이스케이프·회색 구분을 유지하고 굵은 폭으로 측정해 말줄임한다. 결과 자체의 효과색·선택 화살표·조건 설명·진행 버튼은 유지한다.
+**2026-10-20 02:43:23 KST에 [v1.0.6-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.7) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.7/DiceMaster-v1.0.6-alpha.7.zip). 최신 `origin/main`의 `661622d8f221f25d58f871321caed935c952d6e9`에서 시작했고 README·구현·검사를 포함한 소스·태그 `5630a1a88a6f99cabad146c405810b1918ca83e1`를 main에 반영했다. 팝업 목록·기본 선택을 보완했다. 목록은 정상 발동 가능/불가 상태 행을 제거한 **굵은 제목·결과 요약 두 줄**이다. 제목은 기존 문자 이스케이프·회색 구분을 유지하고 굵은 폭으로 측정해 말줄임한다. 결과 자체의 효과색·선택 화살표·조건 설명·진행 버튼은 유지한다.
 
 가상 무작위 목록 항목을 제거하고 초기에는 후보 미선택이다. A/Enter는 선택 전에는 진행하지 않고 ↑↓의 첫 탐색은 첫 후보부터 시작한다. B/Escape는 기존 무작위 판정이며 하단 `무작위로 진행 [B / Esc]` 버튼 자체로 안내한다. 터치만 사용하는 환경을 위해 이 버튼을 클릭할 수 있게 유지하며 별도 하단 안내에는 같은 문구를 반복하지 않는다. 첫 선택/재클릭·터치 진행, 실제 후보의 토큰·대상·결과·일반/조건 무시 검증과 읽기 실패 차단을 유지한다.
 
-새 전체·격리 빌드와 14개 자동 검사 프로그램, 고정 커밋 재빌드·공개 다운로드 검증은 준비 단계다. 이전 alpha.6 수치·파일 식별값을 이번 실행 결과로 재사용하지 않는다. [alpha.7 배포 기록](ISSUE-5-ALPHA7-RELEASE.md)에 실제 결과를 보충하고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)의 새 DLL·장치 확인은 대기한다. Latest v1.0.5와 이슈 #5 open을 유지한다. 아래 alpha.6의 세 줄·상태 행·게시 수치는 당시 이력이다.
+전체·격리·고정 소스 재빌드에서 각각 14개 검사 프로그램과 검토 DLL/cfg/ZIP의 동일 바이트·전체 검사 결과 일치를 확인했다. 고정 재빌드는 02:42:13 KST에 기존 모드 DLL 0개에서 완료했고 빌드 입력 174개·소스/리소스 71개를 대조했다. 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256도 확인했다. [alpha.7 배포 기록](ISSUE-5-ALPHA7-RELEASE.md)에 실제 검사·파일·게시 결과를 기록하며 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)의 새 DLL·장치 확인은 대기한다. 기존 30개 Release·태그·자산과 Latest v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다. 게시 결과를 보충하는 이번 문서 커밋은 빌드 소스·태그·공개 자산과 구분하며 고정 소스의 준비 문구와 아래 alpha.6은 당시 이력이다.
 
 ## PRD #5 — v1.0.6-alpha.6 prerelease
 

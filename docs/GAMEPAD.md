@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.6-alpha.7 준비 — 두 줄 목록·무작위 조작·굵은 제목
+## v1.0.6-alpha.7 — 두 줄 목록·무작위 조작·굵은 제목
 
 팝업 목록은 **굵은 이벤트 제목·결과 요약 두 줄**이며 정상 발동 가능/불가 텍스트 행은 제거한다. 제목의 정상 발동 불가 회색·선택 화살표의 노랑과 결과 자체 효과색은 유지한다. 첫 클릭·터치는 후보 선택이고 선택된 같은 행의 새 클릭·터치는 표시된 일반 진행/명시 조건 무시 요청이다.
 
 목록에는 무작위 항목을 두지 않으며 초기 후보는 미선택이다. 선택 전 A/Enter/Shift+Enter는 진행하지 않고 ↑↓·왼쪽 스틱의 첫 탐색은 첫 후보부터 시작한다. **B/Escape는 무작위 진행**이며 하단 `무작위로 진행 [B / Esc]` 버튼으로 안내한다. 별도 하단 안내에는 이를 반복하지 않으며 키보드·패드가 없는 터치 환경에서도 이 버튼을 클릭·터치할 수 있다. 진행 버튼·A 확인, 목록과 별도의 휠/오른쪽 스틱 상세 읽기와 입력 해제·중립·오래된 요청 거부는 유지한다.
 
-새 빌드·14개 검사 프로그램·게시 검증은 준비 단계다. [alpha.7 배포 기록](ISSUE-5-ALPHA7-RELEASE.md)에 실제 실행 결과를 보충하며 새 DLL의 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.6의 세 줄·상태 행·게시 결과는 당시 이력이다.
+**2026-10-20 02:43:23 KST에 [alpha.7 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.7)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.7/DiceMaster-v1.0.6-alpha.7.zip). 소스·태그 `5630a1a`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 다운로드의 CRC·두 파일·바이트·해시 검증을 통과했다. README·구현·검사는 main에 반영했으며 Latest v1.0.5를 유지한다. [alpha.7 배포 기록](ISSUE-5-ALPHA7-RELEASE.md)에 상세 결과를 기록하며 새 DLL의 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.6의 세 줄·상태 행·게시 결과는 당시 이력이다.
 
 ## v1.0.6-alpha.6 — 팝업 안내·효과색·후보 구분
 

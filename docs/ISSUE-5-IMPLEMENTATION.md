@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.7 준비 · 새 빌드·게시 검증과 Windows·장치 확인 대기**. 최신 main `661622d8f221f25d58f871321caed935c952d6e9`에서 팝업 상태 행·무작위 목록 항목 제거와 첫 줄 제목 굵게 표시를 반영한다. [alpha.7 배포 안내](ISSUE-5-ALPHA7-RELEASE.md)에 실제 검사·파일·게시 결과를 보충한다. 아래 동작·입력 절은 현재 alpha.7 준비 동작이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 실제 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.7 prerelease 게시 · 실제 Windows·장치 확인 대기**. 2026-10-20 02:43:23 KST에 소스·태그 `5630a1a88a6f99cabad146c405810b1918ca83e1`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 최신 main `661622d8f221f25d58f871321caed935c952d6e9`에서 팝업 상태 행·무작위 목록 항목 제거와 첫 줄 제목 굵게 표시를 반영했고 README·소스·검사를 main에 반영했다. [alpha.7 배포 안내](ISSUE-5-ALPHA7-RELEASE.md)에 검사·파일·게시 결과를 기록한다. 아래 동작·입력 절은 현재 alpha.7 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. 이번 별도 후속 문서 커밋은 빌드 소스·태그·자산을 바꾸지 않고 고정 소스의 준비 문구와 구분한다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 실제 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 alpha.6은 2026-10-20 02:29:50 KST에 소스·태그 `b68046494656c03a7d0c9cb4a13b78258e73f52f`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 이후 사용자는 상태 행·무작위 목록 항목 제거와 제목 굵게 표시를 요청했다. 이 요청을 새 DLL의 Windows 확인 완료로 취급하지 않으며 당시 결과는 [alpha.6 배포 안내](ISSUE-5-ALPHA6-RELEASE.md)에 보존한다.
 

@@ -1,11 +1,11 @@
 # 변경 이력
 
-## v1.0.6-alpha.7 준비
+## [v1.0.6-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.7) — 2026-10-20 (prerelease)
 
 - 팝업 목록의 정상 발동 가능/발동 불가 문구를 제거하고 굵은 이벤트 제목·효과색을 보존한 결과 요약의 두 줄로 정리합니다. 정상 발동 불가 후보의 제목은 회색이며 선택·명시 조건 무시와 읽기 실패 차단은 유지합니다.
 - 목록의 별도 무작위 항목을 제거하고 B/Escape 안내와 하단 클릭·터치 무작위 버튼을 유지합니다. 초기에는 후보를 선택하지 않고 A/Enter로 진행하지 않으며 ↑↓ 탐색은 첫 후보부터 시작합니다.
 - `Section_...:이벤트_이름` 제목 첫 줄 전체를 굵게 표시하며 굵은 글자의 실제 폭을 기준으로 말줄임합니다. 선택 전후 행 높이와 첫 선택/같은 행 재클릭·터치 진행을 유지합니다.
-- 새 소스 빌드·격리 재빌드·14개 검사 프로그램과 고정 커밋·공개 파일 검증을 준비합니다. 완료 결과는 [alpha.7 배포 기록](docs/ISSUE-5-ALPHA7-RELEASE.md)에 별도로 기록하며 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+- 2026-10-20 02:43:23 KST prerelease 게시. 소스·태그 `5630a1a`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 ZIP의 CRC·두 파일·바이트·해시 검증을 통과했습니다. README·구현·검사를 `origin/main`에 반영했으며 기존 30개 Release·태그·자산과 Latest v1.0.5를 보존했습니다. 상세 수치는 [alpha.7 배포 기록](docs/ISSUE-5-ALPHA7-RELEASE.md)에 기록합니다. 새 DLL의 실제 Windows 확인과 이슈 #5 완료는 대기입니다.
 
 ## [v1.0.6-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.6) — 2026-10-20 (prerelease)
 
