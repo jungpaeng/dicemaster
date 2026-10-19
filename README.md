@@ -5,6 +5,10 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
+## v1.0.5 정식 Release 준비
+
+지금까지의 로그 창 개편·Xbox/XInput 탐색·한국어 표시·목록 예약 표시와 해제를 **정식 v1.0.5**로 반영합니다. 검증된 alpha.9의 동일 DLL·cfg·ZIP을 승격하고 새 태그의 빌드 입력 153개·소스 63개 일치를 확인합니다. 코드 변경·재빌드·검사 재실행·재압축은 하지 않습니다. [전체 변경·설치·SHA-256·복구·Windows 확인](docs/ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 정식 게시·Latest 지정 결과는 확인 후 기록하며, 실제 Windows 확인과 이슈 #4 완료는 별도로 대기합니다.
+
 ## PRD #4 — v1.0.5-alpha.9 prerelease
 
 **2026-10-19 23:23:31 KST에 [v1.0.5-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.9)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.9/DiceMaster-v1.0.5-alpha.9.zip). 이벤트·미션 목록의 `(예약 중)` 표시와 새 A/Enter/Space·선택된 행 재클릭/터치의 예약·해제를 제공합니다. 미션 해제는 확인 가능한 모드 소유 변경만 복구하며 같은 문맥의 마지막 명시 취소 대상이 즉시 자동 재예약되지 않게 합니다. 소스 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`의 깨끗한 재빌드·12개 검사와 공개 ZIP의 SHA-256·CRC·두 파일·내부 바이트를 확인했습니다. [설치·해시·복구·Windows 확인표](docs/ISSUE-4-ALPHA9-RELEASE.md)를 따르며 기존 cfg를 보존하고 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다. [로컬 검토 기록](docs/ISSUE-4-RESERVATION-TOGGLE.md)과 아래 alpha.8 공개 파일은 보존합니다.

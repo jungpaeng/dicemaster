@@ -8,6 +8,12 @@
 
 ## PRD #4 후보와 prerelease
 
+### v1.0.5 정식 승격 준비
+
+사용자의 Release 반영 지시에 따라 alpha.9의 전체 로그 후속을 정식 v1.0.5로 승격합니다. 현재 빌드 입력 153개·생산 소스 63개는 alpha.9의 고정 재빌드 소스 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`와 동일합니다. 새 소스 태그 커밋의 Git 입력도 대조하고 기존 DLL/cfg/ZIP을 바이트 그대로 복사합니다. ZIP 이름만 `DiceMaster-v1.0.5.zip`으로 바꾸며 재압축하지 않습니다.
+
+기존 12개 검사와 익명 공개 다운로드 검증은 alpha.9에서 실행한 기록으로 구분하고 이번에 재실행한 것으로 표현하지 않습니다. 과거 PRD #3 동등성 검증기·정책을 변경하거나 Windows 확인을 만들어내지 않습니다. [정식 승격·설치·SHA-256·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따르며 새 `promotion-verification.json`과 공개 게시 영수증을 `artifacts/releases/v1.0.5/`에 보존합니다. 실제 게시/Latest 결과는 확인 후 기록하고 이슈 #4는 사용자 Windows 확인까지 open을 유지합니다.
+
 ### v1.0.5-alpha.9 게시·고정 커밋 재빌드 검증
 
 `--output-dir artifacts/issue-4/reservation-toggle`로 목록 예약 표시·새 확인 입력의 예약/해제와 미션 소유 상태 복구 후속을 전체 소스로 빌드했습니다. 실제 소비·동일 객체 재예약·조회 실패 사이의 오래된 입력을 예약 슬롯·문맥·변경 세대로 거부하며 기존 최신 대상/게임 멤버십·홀드/중립 보호를 유지합니다. [상세 계약·로컬 검토 기록](ISSUE-4-RESERVATION-TOGGLE.md)을 따릅니다.

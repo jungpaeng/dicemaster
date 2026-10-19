@@ -1,5 +1,11 @@
 # 소스 기반 Release와 게시 이력
 
+## v1.0.5 정식 승격 준비
+
+사용자의 “지금까지 작업한 내용을 release로 반영해” 지시에 따라 PRD #4 alpha.1~alpha.9의 최종 결과를 새 정식 v1.0.5와 Latest로 게시합니다. 기존 alpha.9의 검증된 DLL·cfg·ZIP을 그대로 승격하며 기존 Release·태그·자산은 보존합니다. 새 태그의 빌드 입력 153개·생산 소스 63개와 alpha.9의 동일성, ZIP 바이트·SHA-256·CRC·두 파일을 확인합니다.
+
+이번 승격은 새 코드·빌드·검사 실행을 포함하지 않습니다. alpha.9의 고정 재빌드·12개 검사와 공개 다운로드 검증을 출처로 연결하고 별도 `promotion-verification.json`을 작성합니다. [정식 변경·설치·해시·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 사용자 게시 지시를 Windows 확인 완료로 해석하지 않으며 이슈 #2 closed·#4 open을 유지합니다. 실제 게시 시각·소스 태그·Release/asset ID·Latest·익명 다운로드와 기존 23개 Release/태그 보존 결과는 확인 후 기록합니다.
+
 ## PRD #4 alpha.9 목록 예약 표시·해제 게시
 
 사용자의 커밋·prerelease 지시에 따라 **2026-10-19 23:23:31 KST에 [v1.0.5-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.9)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.9/DiceMaster-v1.0.5-alpha.9.zip)은 목록 `(예약 중)` 표시와 새 A/Enter/Space·선택된 행 재클릭/터치의 예약·해제를 포함합니다. 미션 해제는 확인 가능한 모드 소유 활성 항목만 복원하며 마지막 명시 취소 대상의 즉시 자동 재예약을 같은 문맥에서 억제합니다. 이미 소비된 결과·게임 진행은 되감지 않으며 [설치·복구·Windows 확인표](ISSUE-4-ALPHA9-RELEASE.md)를 따릅니다.
