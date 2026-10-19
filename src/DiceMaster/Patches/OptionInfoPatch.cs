@@ -20,8 +20,6 @@ internal static class OptionInfoPatch
 {
 	private static PositionController _currentPositionControllerInstance;
 
-	public static PositionEventData TargetEvent;
-
 	public static MissionCheckData TargetMission;
 
 	private static string _lastLuaString;
@@ -201,18 +199,6 @@ internal static class OptionInfoPatch
 		if (DisplayRefreshDepth == 0)
 		{
 			LogCheckpoint(GetLocalizedSystemText("System/Log/TriggerSwitchCheckpoint", "분기 체크포인트 발동:"), __instance.GetFieldValue<List<ConditionResultItem>>("_items"));
-		}
-	}
-
-	[HarmonyPostfix]
-	[HarmonyPatch(typeof(PositionEventData), "GetRate")]
-	public static void PositionEventData_GetRate_Postfix(PositionEventData __instance, ref int __result)
-	{
-		if (DisplayRefreshDepth == 0 && !(TargetEvent != __instance))
-		{
-			__result = 99999;
-			TargetEvent = null;
-			LogBridge.NotifyReservationChanged("이벤트");
 		}
 	}
 

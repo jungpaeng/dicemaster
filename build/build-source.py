@@ -82,22 +82,34 @@ def main():
                          if path.is_file() and not {'bin', 'obj'}.intersection(path.parts)}
         manifest = {
             'status': 'local-source-candidate', 'default_build_switched': True,
-            'windows_validation': policy['windows_validation'],
+            'windows_validation': {
+                'status': 'pending',
+                'new_release_dll_directly_windows_tested': False,
+                'confirmation_source': None,
+                'environment_note': 'PRD 5 candidate has not been run in Windows; v1.0.5 user confirmation is an implementation baseline only.',
+            },
+            'historical_source_restoration_windows_validation': policy['windows_validation'],
             'candidate_validation': {
-                'scope': 'PRD 4 log GUI and XInput navigation local candidate',
+                'scope': 'PRD 5 current-action event selection popup local candidate',
                 'windows_runtime': 'not-run; maintainer confirmation required',
-                'real_lua_comparison': 'PRD 2 analysis unchanged; see existing evidence',
+                'real_lua_comparison': 'PRD 2 analysis preserved; PRD 5 parsed literal Position coroutine gates tested separately',
                 'final_trace_limits': 'PRD 2 limits preserved',
                 'historical_windows_confirmation_applies_to_this_candidate': False,
             },
-            'runtime_equivalence': 'PRD 4 changes GUI and input behavior; previous Windows confirmation does not validate this candidate. Maintainer Windows verification is pending.',
+            'runtime_equivalence': 'PRD 5 replaces event weight reservations with current-action result selection. User-confirmed v1.0.5 is the starting baseline, not Windows validation of this candidate.',
+            'implementation_baseline': {
+                'release': 'v1.0.5',
+                'source_commit': '8886309e2a7248fa13544f81546e3c4795ff9611',
+                'working_head_at_start': '40813f9',
+                'windows_confirmation': 'User confirmed v1.0.5 Windows verification in this chat on 2026-10-20 Asia/Seoul; no per-scenario or environment detail supplied.',
+            },
             'created_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'recovery_baseline': {'commit': BASELINE_COMMIT, 'sha256': BASELINE_SHA256,
                                   'used_as_normal_build_input': False},
             'sdk': version, 'references': inputs, 'source_sha256': source_hashes,
             'build_input_sha256': input_hashes,
             'dll': record(candidate), 'zip': record(archive), 'config': record(config),
-            'tests': results, 'compatibility_comparison': 'Scoped preservation and actual candidate boundary checks apply; historical full-equivalence checks reject intentional PRD 2/4 changes.',
+            'tests': results, 'compatibility_comparison': 'Scoped preservation and actual candidate boundary checks apply; historical full-equivalence checks reject intentional PRD 2/4/5 changes.',
             'nuget_audit': 'disabled for repeatable offline builds; no vulnerability audit claimed',
         }
         write_json(stage / 'build-manifest.json', manifest)

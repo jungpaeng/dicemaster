@@ -6,7 +6,7 @@ using DiceMaster.Gamepad;
 using DiceMaster.LiveLog;
 using UnityEngine;
 
-internal static class Program
+internal static partial class Program
 {
     private static int checks;
     private static void Check(bool condition, string message)
@@ -19,6 +19,7 @@ internal static class Program
         RendererNativeWindowBounds();
         RendererNavigation();
         RendererWithoutSearch();
+        RendererEventSelectionQueryAndConfig();
         RendererMissionStatusRows();
         RendererWaitingStatusExplanation();
         RendererDirectListReservations();
@@ -181,22 +182,16 @@ internal static class Program
         object target = new object();
         Publish(model, "이벤트", Item("event1", target), Item("event2", new object()));
         renderer.Handle(LogPadCommand.Activate);
-        Check(Area(renderer) == "List" && !model.Tab("이벤트").ExecutionFocus && LogBridge.Reservations == 0, "first A only selects an event without entering or reserving");
         renderer.Handle(LogPadCommand.Activate);
-        Check(Area(renderer) == "List" && !model.Tab("이벤트").ExecutionFocus && LogBridge.Reservations == 1,
-            "second fresh A directly reserves the selected event and releases action authority");
+        Check(Area(renderer) == "List" && !model.Tab("이벤트").ExecutionFocus && LogBridge.Reservations == 0,
+            "event A selects for inspection and never reserves even after repeated confirmation");
         renderer.Handle(LogPadCommand.Down);
-        Check(model.Tab("이벤트").SelectedId == "event2" && !model.Tab("이벤트").ExecutionFocus && LogBridge.Reservations == 1,
-            "down always moves list selection without reserving");
+        Check(model.Tab("이벤트").SelectedId == "event2" && LogBridge.Reservations == 0,
+            "event down navigates read-only related candidates");
         renderer.Handle(LogPadCommand.Up);
-        Check(model.Tab("이벤트").SelectedId == "event1" && !model.Tab("이벤트").ExecutionFocus,
-            "up returns list selection to the previous event after a reservation");
+        Check(model.Tab("이벤트").SelectedId == "event1", "event up returns to previous candidate");
         renderer.Handle(LogPadCommand.Activate);
-        Check(LogBridge.Reservations == 2 && ReferenceEquals(LogBridge.LastTarget, target) && !LogBridge.IsReserved("이벤트", target),
-            "a fresh A on the reserved selected event releases that reservation");
-        renderer.Handle(LogPadCommand.Activate);
-        Check(LogBridge.Reservations == 3 && !model.Tab("이벤트").ExecutionFocus && LogBridge.IsReserved("이벤트", target),
-            "a separate fresh A can reserve again after release with no persistent action focus");
+        Check(LogBridge.Reservations == 0, "event confirmation cannot invoke the legacy reservation bridge");
         renderer.Handle(LogPadCommand.Left);
         renderer.Scroll(1);
         Check(model.Tab("이벤트").DetailScroll > 0 && model.Tab("이벤트").ListScroll == 0, "right stick scrolls selected detail while list owns focus");
@@ -247,7 +242,7 @@ internal static class Program
         try
         {
             Screen.width = 2560; Screen.height = 1440;
-            foreach (string tab in new[] { "선택지", "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "선택지", "조건", "미션" })
             {
                 ConfigureLayout(new Rect(120, 100, 1200, 900), 20);
                 var model = new LogModel(); model.ResetContext(740);
@@ -283,8 +278,8 @@ internal static class Program
                 renderer.Handle(LogPadCommand.Tools);
                 Repaint(renderer);
                 var tools = GUILayout.ScrollViews[0].Controls.FindAll(control => control.Button);
-                Check(tools.Count == 17 && !tools.Exists(control => control.Text.Contains("검색", StringComparison.Ordinal) || control.Text.Contains("자판", StringComparison.Ordinal)),
-                    tab + ": tools expose exactly the seventeen remaining actions without search or character input");
+                Check(tools.Count == 20 && !tools.Exists(control => control.Text.Contains("자판", StringComparison.Ordinal)),
+                    tab + ": tools expose twenty actions including event configuration and filter, with no screen keyboard");
                 Check(tools[0].Text.Contains("게임 데이터 새로고침", StringComparison.Ordinal)
                     && tools[11].Text.Contains("기본값 복구", StringComparison.Ordinal)
                     && tools[12].Text.Contains("패드 소유자", StringComparison.Ordinal)
@@ -576,7 +571,7 @@ internal static class Program
         bool savedResult = LogBridge.ReservationResult;
         try
         {
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
             {
                 int attempts = LogBridge.Reservations;
                 object target = new object(); int closes = 0;
@@ -746,7 +741,7 @@ internal static class Program
         object oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
         try
         {
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
             {
                 LogBridge.SetReservation(tab, null);
                 object firstTarget = new object(), secondTarget = new object();
@@ -890,14 +885,14 @@ internal static class Program
             var eventModel = new LogModel(); var eventRenderer = PointerReservationRenderer(eventModel, "이벤트", eventTarget);
             var missionModel = new LogModel(); var missionRenderer = PointerReservationRenderer(missionModel, "미션", missionTarget);
             eventRenderer.Handle(LogPadCommand.Activate); missionRenderer.Handle(LogPadCommand.Activate);
-            Check(LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget),
-                "event and mission reservations coexist in independent game slots");
+            Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.IsReserved("미션", missionTarget),
+                "read-only event confirmation leaves the independent mission reservation intact");
             eventRenderer.Handle(LogPadCommand.Activate);
             Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.IsReserved("미션", missionTarget),
-                "releasing an event cannot erase the mission reservation");
+                "event confirmation cannot reserve or clear the mission slot");
             missionRenderer.Handle(LogPadCommand.Activate);
-            Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.CurrentReservation("미션") == null,
-                "releasing the mission affects only its own slot");
+            Check(LogBridge.CurrentReservation("미션") == null, "mission reservation still toggles off");
+
         }
         finally
         {
@@ -913,7 +908,7 @@ internal static class Program
         int attempts = LogBridge.Reservations;
         try
         {
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
             {
                 foreach (string action in new[] { "close", "tab", "tools" })
                 {
@@ -1084,7 +1079,7 @@ internal static class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
                 foreach (bool touch in new[] { false, true })
                 {
                     object firstTarget = new object(), secondTarget = new object();
@@ -1148,7 +1143,7 @@ internal static class Program
         try
         {
             GamepadBridge.PointerActivity = () => pointerActivities++;
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
             {
                 Func<string, bool> reserve = text => text.Contains("pointer-target", StringComparison.Ordinal);
                 foreach (int kind in new[] { 0, 1, 2, 3 })
@@ -1258,7 +1253,7 @@ internal static class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
                 foreach (string transition in new[] { "gamepad-stays", "gamepad-to-mouse", "mouse-pad-override", "unknown" })
                     foreach (PadState held in new[] {
                         new PadState { Buttons = PadButtons.A }, new PadState { Buttons = PadButtons.B },
@@ -1348,7 +1343,7 @@ internal static class Program
             foreach (string boundary in new[] { "focus", "ready", "disconnect", "close", "explicit-cancel" })
             {
                 GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
-                var model = new LogModel(); var renderer = PointerReservationRenderer(model, "이벤트", new object());
+                var model = new LogModel(); var renderer = PointerReservationRenderer(model, "미션", new object());
                 var controller = new LogPadController(); var states = new PadState[4]; bool[] connected = { true, false, false, false };
                 controller.Tick(true, true, true, LogInputMode.Gamepad, 0, states, connected);
                 controller.Tick(true, true, true, LogInputMode.Gamepad, .1, states, connected);
@@ -1383,7 +1378,7 @@ internal static class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
                 foreach (string modeCase in new[] { "Gamepad", "KeyboardMouse", "Unknown", "Gamepad-to-mouse" })
                 {
                     GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
@@ -1551,10 +1546,10 @@ internal static class Program
         Check(Area(conditionRenderer) == "List" && !conditions.Tab("조건").ExecutionFocus, "condition right cannot enter a preview with no actionable control");
         conditions.Tab("조건").ExecutionFocus = true;
         ReservationTicket dummyConditionTicket = conditions.Tab("조건").BeginReservation();
-        Check(dummyConditionTicket != null, "dummy target supplies a valid generic model ticket to exercise renderer tab safety");
+        Check(dummyConditionTicket == null, "condition model cannot mint mission-only reservation authority even with a dummy target");
         typeof(LogRenderer).GetMethod("Reserve", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(conditionRenderer, new object[] { dummyConditionTicket });
         Check(LogBridge.Reservations == reservations && !conditions.Tab("조건").ExecutionFocus,
-            "condition tab rejects a valid generic reservation ticket at its renderer action boundary");
+            "condition renderer cannot reserve when the mission-only model refuses authority");
         conditions.Tab("조건").ExecutionFocus = true;
         conditionRenderer.Handle(LogPadCommand.Activate);
         Check(LogBridge.Reservations == reservations, "dummy reservable targets and forced execution focus cannot reserve a condition");
@@ -1877,15 +1872,16 @@ internal static class Program
                 }
                 else
                 {
-                    string healthyCaption = "▶ " + healthy.Title + (storyRead ? "\n읽음 정보 없음" : "");
+                    string eligibilityCaption = tab == "이벤트" ? "판정 미확인 · " : "";
+                    string healthyCaption = "▶ " + healthy.Title + (storyRead ? "\n읽음 정보 없음" : tab == "이벤트" ? "\n판정 미확인" : "");
                     Check(pane.Controls.Exists(control => control.Button && control.Text == healthyCaption),
                         tab + ": healthy caption keeps only applicable story-read information without a trailing blank status row");
                     Check(!GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && string.IsNullOrEmpty(control.Text)),
                         tab + ": healthy detail does not allocate a blank state label");
-                    Check(pane.Controls.Exists(control => control.Button && control.Text == read.Title + "\n읽음")
-                        && pane.Controls.Exists(control => control.Button && control.Text == unread.Title + "\n미독"),
+                    Check(pane.Controls.Exists(control => control.Button && control.Text == read.Title + "\n" + eligibilityCaption + "읽음")
+                        && pane.Controls.Exists(control => control.Button && control.Text == unread.Title + "\n" + eligibilityCaption + "미독"),
                         tab + ": explicit read state remains visible without dangling join punctuation");
-                    Check(pane.Controls.Exists(control => control.Button && control.Text == analyzed.Title + "\n" + (storyRead ? "읽음 정보 없음 · " : "") + "추가 영향 가능")
+                    Check(pane.Controls.Exists(control => control.Button && control.Text == analyzed.Title + "\n" + (storyRead ? "읽음 정보 없음 · " : eligibilityCaption) + "추가 영향 가능")
                         && !pane.Controls.Exists(control => control.Button && control.Text.Contains("\n · ", StringComparison.Ordinal)),
                         tab + ": healthy analysis explanation retains its context without a leading separator");
                     if (!storyRead)
@@ -1940,7 +1936,7 @@ internal static class Program
         renderer.Handle(LogPadCommand.Down);
         Check(!model.Tab("이벤트").ExecutionFocus && Area(renderer) == "List", "failed publication cannot retain reservation authority");
         string summary = (string)typeof(LogRenderer).GetMethod("Summary", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
-        Check(summary.Contains("게시 실패 · 이전 값 (예약 불가)", StringComparison.Ordinal), "publication failure reason remains visible in summary");
+        Check(summary.Contains("게시 실패 · 이전 값", StringComparison.Ordinal) && !summary.Contains("예약", StringComparison.Ordinal), "publication failure reason remains visible in summary");
         foreach (string tab in new[] { "선택지", "조건", "미션" })
         {
             while (renderer.CurrentTab != tab) renderer.Handle(LogPadCommand.NextTab);
@@ -2015,7 +2011,7 @@ internal static class Program
                             scenario + ": localization cannot mutate publication fields, selected identity or target");
                         int before = LogBridge.Reservations;
                         renderer.Handle(LogPadCommand.Activate);
-                        if (tab == "조건")
+                        if (tab != "미션")
                             Check(LogBridge.Reservations == before && !model.Tab(tab).ExecutionFocus,
                                 scenario + ": condition localization never creates a reservation control");
                         else
@@ -2373,7 +2369,7 @@ internal static class Program
                     "pad can restore readable window/font defaults from pressure layout");
             }
 
-            foreach (string tab in new[] { "이벤트", "미션" })
+            foreach (string tab in new[] { "미션" })
             {
                 DiceMaster.Config.ConfigManager.LogWindowWidth.Value = 540;
                 DiceMaster.Config.ConfigManager.LogWindowHeight.Value = 440;

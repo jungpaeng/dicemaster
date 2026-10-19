@@ -104,7 +104,10 @@ static class LogRefreshTests
             "DiceMaster.LiveLog.LogBridge", "StageLua"), "Lua staging boundary missing");
         Check(Calls(Find(module, "DiceMaster.OptionInfoPatch", "LiveLog_LuaComplete_Postfix"),
             "DiceMaster.LiveLog.LogBridge", "CompleteLua"), "Successful Lua boundary missing");
-        foreach (var name in new[] { "LuaEnvironment_LoadLuaFunction_Prefix", "PrefixExecuteConditionResult", "PrefixExecuteSwitchResult", "PrefixCheckMission", "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" })
+        Check(module.GetType("DiceMaster.OptionInfoPatch").Fields.All(f => f.Name != "TargetEvent") &&
+            module.GetType("DiceMaster.OptionInfoPatch").Methods.All(m => m.Name != "PositionEventData_GetRate_Postfix"),
+            "Event weight reservation and its 99999 hook must be removed");
+        foreach (var name in new[] { "LuaEnvironment_LoadLuaFunction_Prefix", "PrefixExecuteConditionResult", "PrefixExecuteSwitchResult", "PrefixCheckMission", "MissionCheckData_Postfix" })
         {
             Check(HasPreviewGuard(Find(module, "DiceMaster.OptionInfoPatch", name)), "Missing preview guard: " + name);
         }
@@ -117,10 +120,12 @@ static class LogRefreshTests
         using (var fixtures = AssemblyDefinition.ReadAssembly(args[1]))
         {
             target = fixtures.MainModule;
-            new PayloadCopier(module, target, type => (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+            new PayloadCopier(module, target, type => (type.Namespace == "DiceMaster.LiveLog" ||
+                type.Namespace == "DiceMaster.EventSelection" && (type.Name.StartsWith("EventEligibility") || type.Name.StartsWith("EventEligibilityReason")) ||
+                new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             var groups = new Dictionary<string, string[]> {
                 ["DiceMaster.PositionEventCache"] = new[] { "GetPositionEventDesc", "GeneratePreviewDynamicDesc", "ClearDisplayCaches", "GetPositionEvents" },
-                ["DiceMaster.OptionInfoPatch"] = new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" },
+                ["DiceMaster.OptionInfoPatch"] = new[] { "MissionCheckData_Postfix" },
                 ["DiceMaster.DicePlugin"] = new[] { "ClearLogEntries" },
                 ["DiceMaster.UiTextMapper"] = new[] { "TryGetCachedTranslation", "CacheTranslation", "ApplyTranslations", "ConvertGetFlagExpression" }
             };

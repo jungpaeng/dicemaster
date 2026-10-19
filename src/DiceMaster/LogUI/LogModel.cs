@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DiceMaster.EventSelection;
 
 namespace DiceMaster.LogUI
 {
@@ -39,7 +40,9 @@ namespace DiceMaster.LogUI
     public sealed class LogItem
     {
         public string Id = "", RawId = "", Title = "", Text = "", Description = "";
+        public string SearchDisplayTitle = "";
         public LogConditionDetails ConditionDetails;
+        public EventEligibilitySnapshot EventEligibility;
         public LogReadState ReadState;
         public readonly List<string> AnalysisStates = new List<string>();
         public string RefreshStatus = "";
@@ -50,6 +53,8 @@ namespace DiceMaster.LogUI
         public bool ReservationAllowed = true;
         public bool CanSelect { get { return !IsStatusOnly; } }
         public bool CanReserve { get { return CanSelect && Target != null && ReservationAllowed && RefreshState == LogRefreshState.Healthy; } }
+        public bool IsAvailableEvent { get { return !IsStatusOnly && RefreshState == LogRefreshState.Healthy &&
+            EventEligibility != null && EventEligibility.IsEligible && EventEligibility.CanUseResult; } }
     }
 
     public sealed class LogSnapshot
@@ -64,6 +69,7 @@ namespace DiceMaster.LogUI
             // Classification is supplied by the bridge, never inferred here
             // from a translated title, missing Target or failed reservation.
             var ordered = new List<LogItem>(rows == null ? 0 : rows.Count);
+            List<LogItem> otherEvents = null;
             List<LogItem> statusRows = null;
             if (rows != null)
                 foreach (LogItem row in rows)
@@ -72,7 +78,13 @@ namespace DiceMaster.LogUI
                         if (statusRows == null) statusRows = new List<LogItem>();
                         statusRows.Add(row);
                     }
+                    else if (Tab == "이벤트" && !row.IsAvailableEvent)
+                    {
+                        if (otherEvents == null) otherEvents = new List<LogItem>();
+                        otherEvents.Add(row);
+                    }
                     else ordered.Add(row);
+            if (otherEvents != null) ordered.AddRange(otherEvents);
             if (statusRows != null) ordered.AddRange(statusRows);
             Rows = ordered.AsReadOnly();
         }
@@ -102,6 +114,59 @@ namespace DiceMaster.LogUI
         public float ListScroll, DetailScroll;
         public bool ExecutionFocus;
         private long selectionVersion;
+        private string searchQuery = "";
+        private bool availableOnly;
+        private IList<LogItem> visibleRows;
+
+        public string SearchQuery
+        {
+            get { return searchQuery; }
+            set
+            {
+                string next = value ?? "";
+                if (Snapshot.Tab != "이벤트" || next == searchQuery) return;
+                searchQuery = next; ApplyViewChange();
+            }
+        }
+
+        public bool AvailableOnly
+        {
+            get { return availableOnly; }
+            set
+            {
+                if (Snapshot.Tab != "이벤트" || value == availableOnly) return;
+                availableOnly = value; ApplyViewChange();
+            }
+        }
+
+        // Pure projection of the last publication; typing/searching/filtering
+        // cannot invoke a game evaluator or extend the visible refresh scope.
+        public IList<LogItem> VisibleRows
+        {
+            get
+            {
+                if (visibleRows != null) return visibleRows;
+                if (Snapshot.Tab != "이벤트" || !availableOnly && searchQuery.Length == 0)
+                    return visibleRows = Snapshot.Rows;
+                var result = new List<LogItem>();
+                foreach (LogItem row in Snapshot.Rows)
+                    if ((!availableOnly || !PublicationFailed && row.IsAvailableEvent) && Matches(row, searchQuery)) result.Add(row);
+                return visibleRows = result.AsReadOnly();
+            }
+        }
+
+        private static bool Matches(LogItem row, string query)
+        { return query.Length == 0 || (row.Title ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            (row.SearchDisplayTitle ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            (row.RawId ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            (row.Description ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            (row.Text ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0; }
+
+        private void ApplyViewChange()
+        {
+            visibleRows = null; ListScroll = 0; CancelExecution();
+            if (SelectedId != null && Selected == null) ClearSelection();
+        }
 
         public LogTabState(long contextId, string tab)
         { Snapshot = new LogSnapshot(contextId, tab, null); }
@@ -110,7 +175,7 @@ namespace DiceMaster.LogUI
         {
             get
             {
-                foreach (LogItem row in Snapshot.Rows)
+                foreach (LogItem row in VisibleRows)
                     if (row.Id == SelectedId && row.CanSelect) return row;
                 return null;
             }
@@ -118,7 +183,7 @@ namespace DiceMaster.LogUI
 
         public bool Select(string id)
         {
-            foreach (LogItem row in Snapshot.Rows)
+            foreach (LogItem row in VisibleRows)
                 if (row.Id == id)
                 {
                     if (!row.CanSelect) return false;
@@ -140,6 +205,7 @@ namespace DiceMaster.LogUI
         {
             LogItem previous = Selected;
             Snapshot = snapshot;
+            visibleRows = null;
             HasPublished = true;
             PublicationFailed = false;
             LogItem next = Selected;
@@ -151,6 +217,7 @@ namespace DiceMaster.LogUI
         internal void Reset(long contextId)
         {
             Snapshot = new LogSnapshot(contextId, Snapshot.Tab, null);
+            searchQuery = ""; availableOnly = false; visibleRows = null;
             HasPublished = false; PublicationFailed = false;
             ClearSelection(); ListScroll = DetailScroll = 0;
         }
@@ -158,20 +225,20 @@ namespace DiceMaster.LogUI
         public ReservationTicket BeginReservation(object reservationState = null)
         {
             LogItem row = Selected;
-            if (PublicationFailed || !ExecutionFocus || row == null || !row.CanReserve) return null;
+            if (Snapshot.Tab != "미션" || PublicationFailed || !ExecutionFocus || row == null || !row.CanReserve) return null;
             return new ReservationTicket(Snapshot.ContextId, Snapshot.Tab, row.Id, row.Target, selectionVersion, reservationState);
         }
 
         public bool CanActivate(ReservationTicket ticket)
         {
             LogItem row = Selected;
-            return !PublicationFailed && ticket != null && ExecutionFocus && ticket.ContextId == Snapshot.ContextId && ticket.Tab == Snapshot.Tab &&
+            return Snapshot.Tab == "미션" && !PublicationFailed && ticket != null && ExecutionFocus && ticket.ContextId == Snapshot.ContextId && ticket.Tab == Snapshot.Tab &&
                 ticket.SelectionVersion == selectionVersion && row != null && row.CanReserve && row.Id == ticket.Id &&
                 ReferenceEquals(row.Target, ticket.Target);
         }
 
         internal void MarkPublicationFailure()
-        { PublicationFailed = true; CancelExecution(); }
+        { PublicationFailed = true; visibleRows = null; CancelExecution(); }
     }
 
     public sealed class LogModel

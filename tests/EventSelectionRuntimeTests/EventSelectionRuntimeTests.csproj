@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.cs" Link="EventSelectionRuntime.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventLuaGate.cs" Link="EventLuaGate.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventExecutionPatches.cs" Link="EventExecutionPatches.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/PreviewSyntax.cs" Link="PreviewSyntax.cs" />
+    <Reference Include="Fungus"><HintPath>$(GameReferences)/Mortal_Data/Managed/Fungus.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.CoreModule.dll</HintPath><Aliases>gameUnity</Aliases></Reference>
+    <Reference Include="0Harmony"><HintPath>$(GameReferences)/BepInEx/core/0Harmony.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

@@ -7,6 +7,7 @@ using BepInEx.Logging;
 using BepInEx.Unity.Mono;
 using DiceMaster.Config;
 using DiceMaster.EmbeddedTranslations;
+using DiceMaster.EventSelection;
 using DiceMaster.Gamepad;
 using DiceMaster.LiveLog;
 using DiceMaster.LogUI;
@@ -46,8 +47,11 @@ public class DicePlugin : BaseUnityPlugin
 	private bool showLogWindow;
 	private string currentTab = "선택지";
 	private LogRenderer logRenderer;
+	private readonly EventPopupRenderer eventPopup = new EventPopupRenderer();
 	private readonly LogCursorScope logCursor = new LogCursorScope();
 	private LogInputMode logInputMode;
+	private LogInputMode eventInputMode;
+	private bool eventInputModeKnown;
 	private long lastLogContext = -1;
 
 	internal float nextLiveLogRefresh;
@@ -60,6 +64,14 @@ public class DicePlugin : BaseUnityPlugin
 		_logger = base.Logger;
 		UntranslatedLogger.Initialize();
 		ConfigManager.Init();
+		EventSelectionRuntime.Enabled = () => ConfigManager.GetConfigValue(ConfigManager.EnableOptionInfo)
+			&& ConfigManager.GetConfigValue(ConfigManager.EnableEventSelectionPopup);
+		EventSelectionRuntime.WaitingChanged = waiting =>
+		{
+			eventPopup.ResetInput();
+			GamepadBridge.SetModalCapture(showLogWindow || waiting, Application.isFocused, Paths.CachePath);
+			GameActionGate.SetLogState(showLogWindow || waiting, Application.isFocused);
+		};
 		try
 		{
 			GameActionGate.Initialize(_harmony);
@@ -71,6 +83,7 @@ public class DicePlugin : BaseUnityPlugin
 			if (ConfigManager.EnableOptionInfo.Value)
 			{
 				_harmony.PatchAll(typeof(OptionInfoPatch));
+				EventSelectionRuntime.Install(_harmony);
 			}
 		}
 		catch (Exception ex)
@@ -98,13 +111,15 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void SetLogOpen(bool open, int padOwner = -1)
 	{
+		EventSelectionRuntime.CancelConfirmation();
 		showLogWindow = open;
 		logInputMode = GameInputModeResolver.Resolve();
-		logCursor.SetActive(open && Application.isFocused, logInputMode);
-		GameActionGate.SetLogState(open, Application.isFocused);
+		logCursor.SetActive((open || EventSelectionRuntime.Waiting) && Application.isFocused, logInputMode);
+		GameActionGate.SetLogState(open || EventSelectionRuntime.Waiting, Application.isFocused);
 		EnsureLogRenderer();
 		logRenderer.ResetInputFocus();
 		GamepadBridge.CancelLogInput();
+		eventPopup.ResetInput();
 		if (open && padOwner >= 0) GamepadBridge.BeginPadLog(padOwner);
 	}
 
@@ -112,8 +127,11 @@ public class DicePlugin : BaseUnityPlugin
 	{
 		EnsureLogRenderer();
 		logInputMode = GameInputModeResolver.Resolve();
-		logCursor.SetActive(showLogWindow && Application.isFocused, logInputMode);
-		GameActionGate.SetLogState(showLogWindow, Application.isFocused);
+		ObserveEventInputMode(logInputMode);
+		EventSelectionRuntime.Tick(!showLogWindow && Application.isFocused, Time.unscaledTime);
+		bool modalOpen = showLogWindow || EventSelectionRuntime.Waiting;
+		logCursor.SetActive(modalOpen && Application.isFocused, logInputMode);
+		GameActionGate.SetLogState(modalOpen, Application.isFocused);
 		SynchronizeLogContext();
 		if (Input.GetKeyDown(ConfigManager.LogMenuToggleKey.Value))
 		{
@@ -122,7 +140,7 @@ public class DicePlugin : BaseUnityPlugin
 		else
 		{
 			int padOwner = GamepadBridge.PollLogOpener(ConfigManager.EnableGamepadLogOpen.Value,
-				Application.isFocused, showLogWindow, Paths.CachePath);
+				Application.isFocused, modalOpen, Paths.CachePath);
 			if (!showLogWindow && padOwner >= 0) SetLogOpen(true, padOwner);
 		}
 		currentTab = logRenderer.CurrentTab;
@@ -130,18 +148,42 @@ public class DicePlugin : BaseUnityPlugin
 		SynchronizeLogContext();
 		// This runs even with dice adjustment disabled or the log closed: the
 		// shared owner must finish consuming held input before returning it.
-		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow, Application.isFocused,
+		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow || EventSelectionRuntime.Waiting, Application.isFocused,
 			logInputMode, Time.unscaledTime, Paths.CachePath);
 		if (frame.ResetFocus) logRenderer.ResetInputFocus(frame.PreservePointerTransaction);
+		if (frame.ResetFocus)
+		{
+			eventPopup.ResetInput();
+			if (!frame.PreservePointerTransaction) EventSelectionRuntime.CancelConfirmation();
+		}
+		eventPopup.UpdateInput();
 		if (showLogWindow && Application.isFocused)
 		{
 			logRenderer.Handle(frame.Command);
 			logRenderer.Scroll(frame.Scroll);
 			logRenderer.InputHint = GamepadBridge.LogHint();
 		}
+		else if (EventSelectionRuntime.Waiting && Application.isFocused)
+		{
+			eventPopup.InputHint = GamepadBridge.LogHint().Replace("로그", "이벤트 선택");
+			eventPopup.Handle(frame.Command);
+		}
 		DicePatch.UpdateGamepad();
 		string gateWarning = GameActionGate.ConsumeWarning();
 		if (!string.IsNullOrEmpty(gateWarning)) LogWarning(gateWarning);
+	}
+
+	private void ObserveEventInputMode(LogInputMode mode)
+	{
+		// The log can preserve its own pointer transaction on a device-mode
+		// change. A queued event result must still lose its confirmation.
+		if (eventInputModeKnown && eventInputMode != mode && EventSelectionRuntime.Waiting)
+		{
+			EventSelectionRuntime.CancelConfirmation();
+			eventPopup.ResetInput();
+		}
+		eventInputMode = mode;
+		eventInputModeKnown = true;
 	}
 
 	private void SynchronizeLogContext()
@@ -156,6 +198,8 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void OnDestroy()
 	{
+		EventSelectionRuntime.Invalidate("모드 종료");
+		EventSelectionRuntime.WaitingChanged = null;
 		logCursor.Release();
 		GameActionGate.SetLogState(false, false);
 		_harmony?.UnpatchSelf();
@@ -164,16 +208,19 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void OnApplicationFocus(bool focused)
 	{
-		logCursor.SetActive(showLogWindow && focused, logInputMode);
-		GameActionGate.SetLogState(showLogWindow, focused);
+		EventSelectionRuntime.CancelConfirmation();
+		logCursor.SetActive((showLogWindow || EventSelectionRuntime.Waiting) && focused, logInputMode);
+		GameActionGate.SetLogState(showLogWindow || EventSelectionRuntime.Waiting, focused);
 		if (!focused) GamepadBridge.SuspendLogOpener();
 		GamepadBridge.CancelPadEntry();
 		logRenderer?.ResetInputFocus();
+		eventPopup.ResetInput();
 		GamepadBridge.CancelLogInput();
 	}
 
 	private void OnDisable()
 	{
+		EventSelectionRuntime.Invalidate("모드 비활성화");
 		logCursor.Release();
 		GameActionGate.SetLogState(false, Application.isFocused);
 		logRenderer?.ResetInputFocus();
@@ -182,6 +229,7 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void OnGUI()
 	{
+		ObserveEventInputMode(GameInputModeResolver.Resolve());
 		// The game can relock the cursor after Update when its scheme changes.
 		// Keep the visible log reachable without changing that game scheme.
 		if (showLogWindow)
@@ -190,6 +238,11 @@ public class DicePlugin : BaseUnityPlugin
 			logCursor.SetActive(Application.isFocused, logInputMode);
 			EnsureLogRenderer();
 			logRenderer.Draw();
+		}
+		else if (EventSelectionRuntime.Waiting)
+		{
+			logCursor.SetActive(Application.isFocused, logInputMode);
+			eventPopup.Draw();
 		}
 		else logCursor.Release();
 		DicePatch.DrawGamepadHint();

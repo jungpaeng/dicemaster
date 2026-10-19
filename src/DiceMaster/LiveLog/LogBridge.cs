@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.CompilerServices;
 using DiceMaster.LogUI;
+using DiceMaster.EventSelection;
 
 namespace DiceMaster.LiveLog
 {
@@ -68,7 +69,6 @@ namespace DiceMaster.LiveLog
             { Manager = manager; Entries = entries; Key = key; Target = target; HadPrevious = hadPrevious; Previous = previous; }
         }
 
-        private static readonly ReservationSlot eventReservation = new ReservationSlot();
         private static readonly ReservationSlot missionReservation = new ReservationSlot();
         private static MissionEntryMutation missionEntryMutation;
         private static object canceledMissionTarget;
@@ -84,6 +84,7 @@ namespace DiceMaster.LiveLog
         {
             public string Key, Description, Text, RawId, Position;
             public LogConditionDetails ConditionDetails;
+            public EventEligibilitySnapshot EventEligibility;
             public object Data, Source, StoryState;
             public readonly List<string> AnalysisStates = new List<string>();
         }
@@ -281,8 +282,8 @@ namespace DiceMaster.LiveLog
                 owner = Read(TypeFor("DiceMaster.DicePlugin"), "Instance");
                 ResetCore();
                 Write(Patch(), "_lastLuaString", null); Write(Patch(), "_lastFriendlyName", null);
-                Write(Patch(), "TargetEvent", null); Write(Patch(), "TargetMission", null);
-                NotifyReservationChanged("이벤트"); NotifyReservationChanged("미션");
+                Write(Patch(), "TargetMission", null);
+                NotifyReservationChanged("미션");
             });
             return token;
         }
@@ -333,6 +334,11 @@ namespace DiceMaster.LiveLog
 
         private static void ResetCore()
         {
+            // Optional only for portable historical fixtures; the full-source
+            // production assembly always owns this runtime. Reset actual
+            // execution authority on every game/Lua context replacement.
+            Type selectionRuntime = typeof(LogBridge).Assembly.GetType("DiceMaster.EventSelection.EventSelectionRuntime", false);
+            if (selectionRuntime != null) Call(selectionRuntime, "Invalidate", "게임 문맥 변경");
             Model.ResetContext(checked(++contextId));
             // A new game context owns its own active mission state. Never roll
             // a prior context's dictionary back while invalidating UI requests.
@@ -378,9 +384,6 @@ namespace DiceMaster.LiveLog
             friendly = name;
             Write(Patch(), "_lastLuaString", text);
             Write(Patch(), "_lastFriendlyName", name);
-            // Preserve the original real-Lua boundary's event request semantics.
-            Write(Patch(), "TargetEvent", null);
-            NotifyReservationChanged("이벤트");
             AdvanceSourceClock((float)Read(TypeFor("UnityEngine.Time"), "unscaledTime"));
             if (Enabled()) Analyze();
         }
@@ -589,7 +592,8 @@ namespace DiceMaster.LiveLog
                         string id = position + "/" + Identity(data);
                         queries.Add(new DisplayQuery(id, () => {
                             Value value = new Value { Data = data, Position = position, RawId = (string)Read(data, "name"),
-                                Key = (string)Call(Cache(), "GetPositionEventName", data) };
+                                Key = (string)Call(Cache(), "GetPositionEventName", data),
+                                EventEligibility = EventEligibility.Evaluate(data) };
                             Call(Cache(), "RetryDefinitionReads", data);
                             try
                             {
@@ -740,14 +744,17 @@ namespace DiceMaster.LiveLog
                         Title = Localize(Translate(key ?? "")), Text = value == null ? "" : Localize(Translate(value.Text ?? "")),
                         Description = Localize(description ?? ""), Target = value == null ? null : value.Data,
                         ConditionDetails = value == null ? null : MapConditionDetails(value.ConditionDetails, Localize),
+                        EventEligibility = value == null ? null : value.EventEligibility,
                         RefreshStatus = row.Status ?? "", RefreshState = row.Status == RefreshEngine.WaitingStatus ? LogRefreshState.Waiting :
                             row.Status == RefreshEngine.RetainedFailureStatus ? LogRefreshState.RetainedFailure :
                             string.IsNullOrEmpty(row.Status) ? LogRefreshState.Healthy : LogRefreshState.ReadFailure,
-                        HasLastGood = row.Value != null, ReservationAllowed = !discoveryFailed && lifecycle.IsReady,
+                        HasLastGood = row.Value != null, ReservationAllowed = tab == "미션" && !discoveryFailed && lifecycle.IsReady,
                         // No mission value means a diagnostic row, not a
                         // mission whose description can be inspected/acted on.
                         IsStatusOnly = tab == "미션" && value == null
                     };
+                    if (tab == "이벤트") modelRow.SearchDisplayTitle =
+                        (string)Call(TypeFor("DiceMaster.EmbeddedTranslations.Display"), "TranslateLabel", modelRow.Title);
                     if (value != null)
                     {
                         string state = value.StoryState == null ? "" : value.StoryState.ToString();
@@ -785,10 +792,10 @@ namespace DiceMaster.LiveLog
         { return ChangeReservation(expectedContext, tab, id, target, null, false); }
 
         private static ReservationSlot Slot(string tab)
-        { return tab == "이벤트" ? eventReservation : tab == "미션" ? missionReservation : null; }
+        { return tab == "미션" ? missionReservation : null; }
 
         private static string ReservationField(string tab)
-        { return tab == "이벤트" ? "TargetEvent" : "TargetMission"; }
+        { return "TargetMission"; }
 
         private static object ObserveReservation(string tab)
         {
@@ -908,20 +915,7 @@ namespace DiceMaster.LiveLog
                 if (toggle && (snapshot.ContextId != expectedContext || snapshot.Tab != tab || snapshot.Revision != Slot(tab).Revision ||
                     !ReferenceEquals(snapshot.Target, currentReservation))) return;
                 bool cancel = toggle && ReferenceEquals(snapshot.Target, target);
-                if (tab == "이벤트")
-                {
-                    IList definitions = (IList)Read(Read(RequireManager("Mortal.Story.CheckPointManager"), "_position"), "List");
-                    bool present = false;
-                    foreach (object position in definitions)
-                        if (position != null && (string)Read(position, "name") == value.Position)
-                            foreach (object candidate in (IList)Read(position, "List"))
-                                if (ReferenceEquals(candidate, target)) present = true;
-                    if (!present) return;
-                    Write(Patch(), "TargetEvent", cancel ? null : target);
-                    NotifyReservationChanged(tab);
-                    reserved = true;
-                }
-                else if (tab == "미션")
+                if (tab == "미션")
                 {
                     object manager = RequireManager("Mortal.Core.MissionManagerData");
                     bool present = false;
@@ -945,7 +939,7 @@ namespace DiceMaster.LiveLog
 
         public static bool IsReserved(string tab, object target)
         {
-            if (target == null || (tab != "이벤트" && tab != "미션")) return false;
+            if (target == null || tab != "미션") return false;
             try { return ReferenceEquals(ObserveReservation(tab), target); }
             catch (Exception) { return false; }
         }

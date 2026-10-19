@@ -265,7 +265,6 @@ namespace DiceMaster
     public static class OptionInfoPatch
     {
         public static int DisplayRefreshDepth;
-        public static Mortal.Story.PositionEventData TargetEvent;
         public static Mortal.Core.MissionCheckData TargetMission;
         public static bool _suppressStoryTextPostfix;
         public static string _lastLuaString, _lastFriendlyName;
@@ -475,10 +474,13 @@ namespace DiceMaster
             Check((string)Member(row, "RawId") == Event.name && ReferenceEquals(Member(row, "Target"), Event), "Actual event identity/target was lost at publication");
             Check(((IList)Member(row, "AnalysisStates")).Count > 0, "Fixed event analysis did not reach structured model");
             object state = LogTab("이벤트"); InstanceCall(state, "Select", id);
-            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Valid event did not reach real reservation field");
-            Check(ReferenceEquals(OptionInfoPatch.TargetEvent, Event) && (bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Reservation UI source diverged from real field");
-            OptionInfoPatch.TargetEvent = null;
-            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Consumed actual reservation remained in UI state");
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Read-only event list created a reservation");
+            Check(!(bool)Member(row, "CanReserve") && !(bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Removed event reservation still appeared actionable");
+            object eligibility = Member(row, "EventEligibility");
+            Check(eligibility != null && Member(eligibility, "State").ToString() == "Eligible", "Read-only structured event eligibility did not reach the log");
+            object[] eventCapture = { "이벤트", new object() };
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", eventCapture) && eventCapture[1] == null,
+                "Read-only event list captured pre-execution authority");
             EmbeddedTranslations.Display.Throw = true; UnityEngine.Time.unscaledTime = 101.5f; Tick(plugin);
             Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Failed actual publication left previous healthy target executable");
             Check((bool)Member(LogTab("이벤트"), "PublicationFailed") && !(bool)Member(LogTab("이벤트"), "ExecutionFocus"), "Actual publication failure did not reach UI state/cancel execution focus");
@@ -510,7 +512,50 @@ namespace DiceMaster
             Check((long)Member(LogModel, "ContextId") != context && Member(LogTab("미션"), "Selected") == null && ModelRows("미션").Count == 0, "Closed-window context boundary did not invalidate UI state");
             Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "미션", id, Mission), "Prior-context target survived actual Lua publication boundary");
             CheckMissionStatusPublications();
+            CheckEventEligibility();
             return assertions - before;
+        }
+
+        static void CheckEventEligibility()
+        {
+            object Evaluate(Mortal.Story.PositionEventData data) => Invoke("DiceMaster.EventSelection.EventEligibility", "Evaluate", data);
+            void AssertState(Mortal.Story.PositionEventData data, string state, string reason, bool canUse)
+            {
+                object snapshot = Evaluate(data);
+                Check(Member(snapshot, "State").ToString() == state && Member(snapshot, "Reason").ToString() == reason &&
+                    (bool)Member(snapshot, "CanUseResult") == canUse, "Structured read-only event eligibility: " + state + "/" + reason);
+            }
+            Mortal.Core.StatGroupVariable Number(int number) => new Mortal.Core.StatGroupVariable {
+                _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 0, _constant = number } }
+            };
+            var comparison = new Mortal.Core.StatCompareItem { _value1 = Number(3), _value2 = Number(8),
+                _compareOp = Mortal.Core.StatCompareType.GreaterEqual };
+            var condition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { comparison } };
+            int conditionExecutions = Mortal.Core.ConditionResultData.Executions;
+            int resultReads = Mortal.Core.StatGroupVariable.OriginalReads, checkReads = Mortal.Core.StatCompareItem.OriginalReads;
+            var candidate = new Mortal.Story.PositionEventData { _defaultRate = 10 };
+            AssertState(candidate, "Eligible", "None", true);
+            candidate._defaultRate = 0; AssertState(candidate, "Ineligible", "ZeroWeight", true);
+            candidate._defaultRate = -3; AssertState(candidate, "Ineligible", "ZeroWeight", true);
+            candidate._defaultRate = 10; candidate._toggleCondition = true; candidate._activeCondition = condition;
+            AssertState(candidate, "Ineligible", "ConditionsNotMet", true);
+            Check(((string)Member(Evaluate(candidate), "Summary")).Contains("3 ≥ 8"), "Event condition shortage summary lost actual structured values/operator");
+            comparison._value1 = Number(9); AssertState(candidate, "Eligible", "None", true);
+            comparison._value1._value[0]._checkType = 7;
+            comparison._value1._value[0]._randomMin = 1; comparison._value1._value[0]._randomMax = 10;
+            AssertState(candidate, "Unknown", "Random", true);
+            candidate._toggleCondition = false;
+            candidate._eventRateItem = new[] { new Mortal.Story.PositionEventRateItem { Condition = condition, Rate = 20 } };
+            AssertState(candidate, "Unknown", "Random", true);
+            comparison._value1._value[0]._checkType = 99;
+            AssertState(candidate, "Unknown", "Unsupported", true);
+            candidate._eventRateItem = null; AssertState(candidate, "Unknown", "ReadFailure", false);
+            candidate._eventRateItem = new Mortal.Story.PositionEventRateItem[0];
+            candidate._toggleCondition = true; candidate._activeCondition = new Mortal.Core.ConditionResultItem { _items = null };
+            AssertState(candidate, "Unknown", "ReadFailure", false);
+            Check(Mortal.Core.ConditionResultData.Executions == conditionExecutions && Mortal.Core.StatGroupVariable.OriginalReads == resultReads &&
+                Mortal.Core.StatCompareItem.OriginalReads == checkReads && UnityEngine.Random.Calls == 0,
+                "Eligibility display invoked original condition/value/RNG evaluation");
         }
 
         // Actual delivered bridge + model + one-use consume postfix IL. Only
@@ -536,7 +581,7 @@ namespace DiceMaster
                 Probe.FailReservationReads = false;
                 PositionEventCache.ThrowDescription = false; EmbeddedTranslations.Display.Throw = false;
                 Event.Destroyed = Mission.Destroyed = false;
-                OptionInfoPatch.TargetEvent = null; OptionInfoPatch.TargetMission = null;
+                OptionInfoPatch.TargetMission = null;
                 position = new Mortal.Story.PositionDefinition { name = "fixture_position" };
                 position.List.Add(Event);
                 var positions = new Mortal.Story.PositionCollection(); positions.List.Add(position);
@@ -563,19 +608,18 @@ namespace DiceMaster
             bool Reserve() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, id, target);
             void SetSlot(object value)
             {
-                if (tab == "이벤트") OptionInfoPatch.TargetEvent = (Mortal.Story.PositionEventData)value;
-                else OptionInfoPatch.TargetMission = (Mortal.Core.MissionCheckData)value;
+                OptionInfoPatch.TargetMission = (Mortal.Core.MissionCheckData)value;
                 Invoke("DiceMaster.LiveLog.LogBridge", "NotifyReservationChanged", tab);
             }
             void Consume()
             {
-                object[] arguments = { target, tab == "이벤트" ? (object)0 : false };
-                Invoke("DiceMaster.OptionInfoPatch", tab == "이벤트" ? "PositionEventData_GetRate_Postfix" : "MissionCheckData_Postfix", arguments);
-                Check(tab == "이벤트" ? (int)arguments[1] == 99999 : (bool)arguments[1], "Actual consume postfix keeps the existing forced outcome");
+                object[] arguments = { target, false };
+                Invoke("DiceMaster.OptionInfoPatch", "MissionCheckData_Postfix", arguments);
+                Check((bool)arguments[1], "Actual mission consume postfix keeps the existing forced outcome");
                 Check(!Reserved(), "Actual consume postfix clears the real pending slot");
             }
 
-            foreach (string kind in new[] { "이벤트", "미션" })
+            foreach (string kind in new[] { "미션" })
             {
                 Prepare(kind);
                 object empty = Capture();
@@ -597,8 +641,9 @@ namespace DiceMaster
                 object reserveBeforeOther = Capture(); SetSlot(null);
                 Check(!Toggle(reserveBeforeOther) && !Reserved(), "Old reserve intent rejects a changed nonselected slot");
                 Check(!Toggle(new object()), "A caller cannot forge an opaque snapshot");
-                object wrongTab = Capture(kind == "이벤트" ? "미션" : "이벤트");
-                Check(!Toggle(wrongTab), "A snapshot cannot cross tabs");
+                object[] eventSlot = { "이벤트", new object() };
+                Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", eventSlot) && eventSlot[1] == null,
+                    "Event capture remained available beside mission-only reservations");
                 object[] unsupported = { "조건", new object() };
                 Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", unsupported) && unsupported[1] == null,
                     "Unsupported capture fails closed instead of looking like an empty slot");
@@ -986,7 +1031,7 @@ namespace DiceMaster
             UnityEngine.Time.unscaledTime = 100;
             NewLua(Lua("O_lifecycle_old"), "lifecycle_old"); Tick(plugin);
             Check(plugin.optionEntries.Count == 1 && Options.Contains("O_lifecycle_old"), "Lifecycle fixture did not start with an active real-parser context");
-            OptionInfoPatch.TargetEvent = Event; OptionInfoPatch.TargetMission = Mission;
+            OptionInfoPatch.TargetMission = Mission;
             PositionEventCache.Instance.eventDescCache[Event] = "old fixed description";
             long outer = TransitionPrefix("SaveSystem_LoadGameData");
             Check(outer != 0, "Production load prefix did not return a finalizer state token");
@@ -994,7 +1039,7 @@ namespace DiceMaster
                 "Production load prefix retained old UI rows");
             Check(Options.Count == 0 && PositionEventCache.Instance.eventDescCache.Count == 0,
                 "Production load prefix retained shared parser or fixed event caches");
-            Check(OptionInfoPatch.TargetEvent == null && OptionInfoPatch.TargetMission == null &&
+            Check(OptionInfoPatch.TargetMission == null &&
                 OptionInfoPatch._lastLuaString == null && OptionInfoPatch._lastFriendlyName == null,
                 "Production load prefix retained cross-session requests or last source");
             int parses = Probe.ParserEntries, analyses = AnalysisCount;
@@ -1335,11 +1380,10 @@ namespace DiceMaster
             eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent });
             Check(DicePlugin.Warnings.Count == eventWarnings + 1, "Narrative event error flooded diagnostics");
             bool protectedEventFailed = false;
-            OptionInfoPatch.TargetEvent = previewEvent;
             OptionInfoPatch.DisplayRefreshDepth = 1;
             try { eventBoundary.Invoke(PositionEventCache.Instance, new object[] { badEvent }); }
             catch (TargetInvocationException failure) { protectedEventFailed = failure.InnerException is InvalidOperationException; }
-            Check(protectedEventFailed && OptionInfoPatch.DisplayRefreshDepth == 1 && ReferenceEquals(OptionInfoPatch.TargetEvent, previewEvent),
+            Check(protectedEventFailed && OptionInfoPatch.DisplayRefreshDepth == 1,
                 "Protected event error was swallowed, leaked depth, or consumed execution request");
             OptionInfoPatch.DisplayRefreshDepth = 0;
             badEvent._activeCondition = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { good } };

@@ -157,6 +157,24 @@ static class Program
         Check(update.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "LogMenuToggleKey"), "existing configurable open key is used");
         Check(updateCalls.Any(c => c.Name == "GetKeyDown"), "keyboard open entry point retained");
         Check(Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Draw"), "actual OnGUI calls replacement renderer");
+        const string runtime = "DiceMaster.EventSelection.EventSelectionRuntime", popup = "DiceMaster.LogUI.EventPopupRenderer";
+        Check(Calls(Method(plugin, "Awake")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "Install") &&
+                updateCalls.Any(c => c.DeclaringType.FullName == runtime && c.Name == "Tick") &&
+                Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == popup && c.Name == "Draw"),
+            "delivered runtime installation, visible refresh and popup rendering must be connected to the actual plugin");
+        Check(new[] { "SetLogOpen", "OnApplicationFocus", "ObserveEventInputMode" }.All(name =>
+                Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation")) &&
+                updateCalls.Any(c => c.DeclaringType.FullName == plugin && c.Name == "ObserveEventInputMode"),
+            "log transitions, focus and actual mode changes must invalidate queued result confirmations independently of pointer preservation");
+        Check(Calls(Method(pad, "SetModalCapture")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput" && c.Name == "set_LogActive") &&
+                Calls(Method(pad, "SetModalCapture")).Any(c => c.Name == "RequireNeutral") &&
+                types.Where(t => t.FullName == plugin || t.FullName.StartsWith(plugin + "/", StringComparison.Ordinal))
+                    .SelectMany(t => t.Methods).SelectMany(Calls).Any(c => c.DeclaringType.FullName == pad && c.Name == "SetModalCapture"),
+            "Lua admission must immediately capture the existing native instance with a full neutral barrier");
+        Check(Calls(Method(popup, "Submit")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "Select") &&
+                Calls(Method(popup, "Submit")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "ContinueRandom") &&
+                !Type(popup).Methods.SelectMany(Calls).Any(c => c.DeclaringType.Namespace.StartsWith("Mortal.", StringComparison.Ordinal)),
+            "popup explicit commands must queue requests in the runtime without invoking game event methods from rendering");
         const string cursor = "DiceMaster.LogUI.LogCursorScope";
         Check(new[] { "SetLogOpen", "Update", "OnGUI", "OnApplicationFocus" }.All(name =>
                 Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == cursor && c.Name == "SetActive")) &&
@@ -225,17 +243,29 @@ static class Program
         var choices = Method(renderer, "DrawChoices");
         var uiMethods = types.Where(t => t.Namespace == "DiceMaster.LogUI").SelectMany(t => t.Methods).ToArray();
         Check(!types.Any(t => t.FullName == "DiceMaster.LogUI.LocalSearchKeyboard") &&
-                !Type("DiceMaster.LogUI.LogItem").Fields.Any(f => f.Name.IndexOf("search", StringComparison.OrdinalIgnoreCase) >= 0) &&
-                !Type("DiceMaster.LogUI.LogTabState").Methods.Any(m => new[] { "get_Search", "SetSearch", "Matches", "Contains", "VisibleRows", "get_HiddenErrorCount" }.Contains(m.Name)),
-            "delivered UI model must remove search state, text cache, filtering, hidden-error accounting and the local search keyboard type");
-        Check(!uiMethods.Any(m => new[] { "DrawSearch", "ClearSearch", "OpenKeyboard", "BuildKeyboardCells", "AddKeyboardAction", "DrawKeyboard", "NavigateKeyboard", "PressKeyboardCell" }.Contains(m.Name)) &&
-                !new[] { Type(renderer), Type("DiceMaster.LogUI.LogLayout") }.SelectMany(t => t.Fields)
-                    .Any(f => f.Name.IndexOf("search", StringComparison.OrdinalIgnoreCase) >= 0),
-            "delivered renderer and layout must not retain removed search controls, composition/navigation or reserved geometry");
-        Check(!uiMethods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "TextField") &&
-                !uiMethods.Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
-                    .Any(i => i.OpCode == OpCodes.Ldstr && i.Operand is string value && value.Contains("검색")),
-            "delivered UI must have no search text field or search-only tool, empty-result and hint strings");
+                new[] { "set_SearchQuery", "set_AvailableOnly" }.All(name =>
+                    Method("DiceMaster.LogUI.LogTabState", name).Body.Instructions.Any(i =>
+                        i.OpCode == OpCodes.Ldstr && (string)i.Operand == "이벤트")),
+            "event query/filter state must be guarded by the event tab and must not restore the old screen keyboard");
+        var eventControls = Method(renderer, "DrawEventControls");
+        Check(Calls(eventControls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "TextField") &&
+                Calls(Method(renderer, "DrawListDetail")).Any(c => c.FullName == eventControls.FullName) &&
+                Calls(Method(renderer, "DrawListDetail")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_IsEventTab") &&
+                !new[] { "DrawChoices", "DrawConditionDetails" }.SelectMany(name => Calls(Method(renderer, name)))
+                    .Any(c => c.FullName == eventControls.FullName),
+            "event list dispatch must own native text search; choice and condition views must not gain search UI");
+        Check(!WithinType(eventControls).SelectMany(Calls).Any(c => new[] { "GetRate", "GetResult", "Check", "Execute", "Parse" }.Contains(c.Name)) &&
+                Calls(Method(renderer, "get_VisibleRows")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogTabState" && c.Name == "get_VisibleRows"),
+            "event search/filter consumes only published rows and cannot evaluate or execute game decisions");
+        Check(Calls(Method(renderer, "ToolLabel")).Any(c => c.Name == "get_Value" && c.DeclaringType.Namespace == "DiceMaster.Config") &&
+                new[] { "ToolLabel", "ActivateTool" }.All(name => Method(renderer, name).Body.Instructions.Any(i =>
+                    i.Operand is FieldReference field && field.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && field.Name == "EnableEventSelectionPopup")) &&
+                configRegistration.Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == "EnableEventSelectionPopup") &&
+                Calls(Method("DiceMaster.Config.ConfigElement`1", "SetValue")).Any(c => c.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && c.Name == "SaveConfig"),
+            "mouse/pad popup tool must use the registered BepInEx option and its existing persistent SaveConfig path");
+        Check(Method(renderer, "get_SupportsReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldc_I4_3) &&
+                Method("DiceMaster.LogUI.LogTabState", "BeginReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == "미션"),
+            "renderer and model must keep reservation authority restricted to missions");
         Check(choices.Body.Instructions.Any(i => i.Operand is FieldReference field &&
                 field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "Description") &&
                 Calls(choices).Any(c => c.Name == "Label") &&
@@ -368,10 +398,13 @@ static class Program
                 Method(bridge, "TryReserve").Parameters.Count == 4 &&
                 Method(bridge, "TryReserve").ReturnType.FullName == "System.Boolean",
             "delivered bridge must distinguish failed capture from an empty slot, accept an opaque toggle snapshot and retain the legacy reservation API");
-        Check(new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix", "PositionController_OnPositionClick_Prefix" }
+        Check(new[] { "MissionCheckData_Postfix", "PositionController_OnPositionClick_Prefix" }
                 .All(name => Calls(Method("DiceMaster.OptionInfoPatch", name)).Any(c =>
                     c.DeclaringType.FullName == bridge && c.Name == "NotifyReservationChanged")),
-            "actual game event/mission consumption and automatic mission assignment must invalidate captured reservation revisions");
+            "actual mission consumption and automatic mission assignment must invalidate captured reservation revisions");
+        Check(types.Single(t => t.FullName == "DiceMaster.OptionInfoPatch").Fields.All(f => f.Name != "TargetEvent") &&
+                types.Single(t => t.FullName == "DiceMaster.OptionInfoPatch").Methods.All(m => m.Name != "PositionEventData_GetRate_Postfix"),
+            "event reservation field and weight override must be absent from the delivered DLL");
         Check(Calls(Method("DiceMaster.OptionInfoPatch", "PositionController_OnPositionClick_Prefix")).Any(c =>
                 c.DeclaringType.FullName == bridge && c.Name == "ShouldAutoReserveMission"),
             "actual location-click automatic mission assignment must respect an explicit cancellation in the current context");

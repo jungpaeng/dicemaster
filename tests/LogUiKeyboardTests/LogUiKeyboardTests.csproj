@@ -10,6 +10,7 @@
     <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogCursorScope.cs" Link="LogCursorScope.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventEligibilitySnapshot.cs" Link="EventEligibilitySnapshot.cs" />
     <Compile Include="../../src/DiceMaster/Gamepad/LogPadController.cs" Link="LogPadController.cs" />
     <Compile Include="../../src/DiceMaster/Gamepad/PadController.cs" Link="PadController.cs" />
   </ItemGroup>

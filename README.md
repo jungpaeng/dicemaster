@@ -5,6 +5,16 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
+## PRD #5 — v1.0.6-alpha.1 prerelease 준비
+
+이벤트 사전 예약·99999 가중치 보정을 제거하고, 지원하는 실제 판정 직전에 좌측 하단 팝업에서 **일반 지정 / 조건 무시하고 이번만 지정 / 무작위**를 고릅니다. 조건 무시는 이번 발동 자격만 우회하며 능력치·호감도를 미리 바꾸지 않습니다. 미션 예약과 주사위 기능은 유지합니다.
+
+`[DiceMaster].EnableEventSelectionPopup=true`가 기본값이며 로그 도구의 **이벤트 선택 팝업 사용: ON/OFF**를 마우스·패드로 바꾸면 저장됩니다. OFF는 미확정 대기를 취소하고 원래 진행으로 넘깁니다. 상위 `EnableOptionInfo=false` 시작·설정 실패에서는 대기하지 않습니다. 큰 로그의 이벤트 탭에만 검색·가능 우선 정렬·가능만 필터를 제공하며 실제 지정은 현재 판정 팝업에서 합니다. 기존 Tab/설정 키·L3/R3 열기와 공유 입력의 해제·중립 보호를 유지합니다.
+
+이번 팝업은 실제 manager의 직접 리터럴 점 호출 `checkpointmanager.Position("문자열 리터럴")`이 비메인 Lua 코루틴에서 실행되는 경로만 지원합니다. 동적 인수·별칭·콜론 호출·직접 동기 호출 등은 원래 판정으로 진행합니다. 사용자가 확인한 v1.0.5 Windows 결과는 선행 기준이며 **새 DLL의 실제 Windows 확인은 대기**입니다.
+
+사용자의 커밋·prerelease 지시에 따라 `v1.0.6-alpha.1`과 설치 자산 `DiceMaster-v1.0.6-alpha.1.zip`을 준비합니다. [변경·지원 범위·해시·DLL만 적용/복구](docs/ISSUE-5-ALPHA1-RELEASE.md) · [Windows 확인표](docs/ISSUE-5-WINDOWS-VALIDATION.md). 게시 전 준비 기록이며 Latest 정식 v1.0.5와 기존 배포를 유지하고 이슈 #5는 종료하지 않습니다. 아래 공개 버전·이전 후보 설명은 당시 이력입니다.
+
 ## v1.0.5 정식 Release
 
 **2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip). 로그 창 개편·Xbox/XInput 탐색·한국어 표시·목록 예약 표시와 해제를 모두 반영합니다. 정식 태그 `8886309e2a7248fa13544f81546e3c4795ff9611`의 입력 153개·소스 63개가 고정 재빌드·12개 검사와 공개 다운로드 검증을 통과한 alpha.9와 같고, DLL/cfg/ZIP도 동일 바이트입니다. 이번 승격은 새 빌드·검사 실행이나 Windows 확인 완료를 뜻하지 않습니다. [전체 변경·SHA-256·설치/복구·Windows 확인](docs/ISSUE-4-STABLE-RELEASE.md)을 따르며 기존 cfg를 보존해 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 별도로 대기합니다. 아래 prerelease 기록·파일은 보존합니다.

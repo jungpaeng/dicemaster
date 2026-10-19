@@ -53,7 +53,7 @@ static partial class RealGameApiTests
                 VerifyMetadataContract(candidate, root);
                 metadataAssertions += assertions - before;
             }
-            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             if (destination.MainModule.GetType("DiceMaster.LiveLog.SafeDisplayEvaluation") == null)
                 throw new InvalidDataException("Candidate does not contain SafeDisplayEvaluation.");
         }
@@ -77,6 +77,7 @@ static partial class RealGameApiTests
         if (args.Length == 4)
         {
             TestSafeEvaluation();
+            TestEventEligibility();
             if (fixture.GetType("DiceMaster.LiveLog.RandomPreview") != null) TestRandomPreview();
         }
         Console.WriteLine($"PASS: {assertions - metadataAssertions} managed behavior assertions and {metadataAssertions} metadata contract assertions; Unity/random/data boundaries are managed fixtures, native game runtime NOT executed.");
@@ -279,6 +280,36 @@ static partial class RealGameApiTests
         ResetRandom();
         Eq(40, Call(Rate(40, true, Condition("AND", randomComparison)), "GetRate"), "GetRate accepts RNG-backed condition");
         Eq(1, StaticGet("UnityEngine.Random", "Calls"), "GetRate can consume RNG transitively");
+    }
+
+    static void TestEventEligibility()
+    {
+        object Evaluate(object data) => T("DiceMaster.EventSelection.EventEligibility").GetMethod("Evaluate").Invoke(null, new[] { data });
+        void State(object data, string state, string reason, bool force)
+        {
+            object snapshot = Evaluate(data);
+            Eq(state, Get(snapshot, "State").ToString(), "event eligibility state from audited game data");
+            Eq(reason, Get(snapshot, "Reason").ToString(), "event eligibility structured cause");
+            Eq(force, Get(snapshot, "CanUseResult"), "event eligibility explicit-force readability boundary");
+        }
+        ResetRandom();
+        State(Rate(10, false, null), "Eligible", "None", true);
+        State(Rate(0, false, null), "Ineligible", "ZeroWeight", true);
+        State(Rate(-4, false, null), "Ineligible", "ZeroWeight", true);
+        State(Rate(10, true, False()), "Ineligible", "ConditionsNotMet", true);
+        object randomCondition = Condition("AND", Comparison(Group("Sum", RandomReference()), Constant(5)));
+        State(Rate(10, true, randomCondition), "Unknown", "Random", true);
+        State(Rate(10, false, null, RateItem(2, randomCondition)), "Unknown", "Random", true);
+        State(Rate(10, true, null), "Unknown", "ReadFailure", false);
+        object malformed = Rate(10, false, null); Set(malformed, "_eventRateItem", null);
+        State(malformed, "Unknown", "ReadFailure", false);
+        State(null, "Unknown", "ReadFailure", false);
+        object counted = New("Mortal.Core.ConditionResultData");
+        Set(counted, "_items", List("ConditionResultItem", True())); Set(counted, "_count", 37);
+        object backed = Value("條件設定"); Set(backed, "_condition", counted);
+        State(Rate(10, true, Condition("AND", Comparison(Group("Sum", backed), Constant(1)))), "Eligible", "None", true);
+        Eq(37, Get(counted, "_count"), "eligibility never consumes original condition counters");
+        Eq(0, StaticGet("UnityEngine.Random", "Calls"), "eligibility never consumes original game RNG");
     }
 
     static void TestSafeEvaluation()

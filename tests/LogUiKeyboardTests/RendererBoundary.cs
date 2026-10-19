@@ -29,7 +29,7 @@ namespace UnityEngine
         public static bool operator ==(Rect first, Rect second) => first.Equals(second);
         public static bool operator !=(Rect first, Rect second) => !first.Equals(second);
     }
-    public struct Color { public Color(float r, float g, float b) { } public static Color white => new Color(1, 1, 1); }
+    public struct Color { public Color(float r, float g, float b) { } public static Color white => new Color(1, 1, 1); public static Color yellow => new Color(1, 1, 0); }
     public sealed class RectOffset
     {
         public int left, right, top, bottom;
@@ -68,11 +68,17 @@ namespace UnityEngine
         }
         public Vector2 CalcSize(GUIContent content) => new Vector2((content.text?.Length ?? 0) * Math.Max(10, fontSize) * .72f, CalcHeight(content, float.MaxValue));
     }
-    public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
+    public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
     {
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
-        public static void FocusControl(string name) { } public static void DragWindow(Rect rect) { }
+        private static string focusedControl;
+        public static string NextControlName;
+        public static void FocusControl(string name) { focusedControl = name; }
+        public static string GetNameOfFocusedControl() => focusedControl;
+        public static void SetNextControlName(string name) { NextControlName = name; }
+        public static void Box(Rect rect, string text) { }
+        public static void DragWindow(Rect rect) { }
         public static Rect Window(int id, Rect rect, Action<int> draw, string title, GUIStyle style)
             => GUILayout.InvokeWindow(id, rect, draw, style, false, Array.Empty<GUILayoutOption>());
     }
@@ -130,6 +136,7 @@ namespace UnityEngine
         public static readonly List<BoxRecord> Boxes = new List<BoxRecord>();
         public static Func<int, Vector2, Vector2> ScrollInput;
         public static Func<string, bool> ButtonInput;
+        public static Func<string, string> TextFieldInput;
         public static bool ConsumeButtonEvent;
         private static readonly Stack<Group> Groups = new Stack<Group>();
         private static readonly Dictionary<int, Rect> NativeWindows = new Dictionary<int, Rect>();
@@ -339,6 +346,13 @@ namespace UnityEngine
         }
         public static void Label(string text, GUIStyle style, params GUILayoutOption[] options)
         { LiteralLabels.Add(text); Control(text, style, false, options); }
+        public static string TextField(string text, GUIStyle style, params GUILayoutOption[] options)
+        {
+            Control(text, style, false, options);
+            if (Event.current.rawType == EventType.MouseDown && LastRect.Contains(Event.current.mousePosition)) GUI.FocusControl(GUI.NextControlName);
+            GUI.NextControlName = null;
+            return TextFieldInput == null ? text : TextFieldInput(text);
+        }
         public static void FlexibleSpace() { }
         public static void Space(float height) => Advance(Allocate(height, Array.Empty<GUILayoutOption>()));
         public static GUILayoutOption Width(float value) => new GUILayoutOption("Width", value);
@@ -363,11 +377,11 @@ namespace UnityEngine
         public static int Clamp(int value, int min, int max) => Math.Max(min, Math.Min(max, value));
         public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
     }
-    public static class Input { public static readonly HashSet<KeyCode> Held = new HashSet<KeyCode>(); public static bool GetKey(KeyCode key) => Held.Contains(key); }
+    public static class Input { public static readonly HashSet<KeyCode> Held = new HashSet<KeyCode>(); public static bool GetKey(KeyCode key) => Held.Contains(key); public static bool anyKey => Held.Count > 0; public static int touchCount; }
     public sealed class Event
     {
         public static Event current = new Event(); public EventType type = EventType.Layout, rawType = EventType.Layout;
-        public KeyCode keyCode; public int button; public Vector2 mousePosition; public void Use() { type = EventType.Used; }
+        public KeyCode keyCode; public int button; public bool shift; public Vector2 mousePosition; public void Use() { type = EventType.Used; }
     }
 }
 namespace DiceMaster.Config
@@ -384,6 +398,7 @@ namespace DiceMaster.Config
         public static Element<float> LogWindowX = new Element<float>(20), LogWindowY = new Element<float>(20), LogWindowWidth = new Element<float>(872), LogWindowHeight = new Element<float>(960);
         public static Element<int> LogFontSize = new Element<int>(20);
         public static Element<bool> EnableOptionInfo = new Element<bool>(true);
+        public static Element<bool> EnableEventSelectionPopup = new Element<bool>(true);
         public static Element<UnityEngine.KeyCode> LogMenuToggleKey = new Element<UnityEngine.KeyCode>(UnityEngine.KeyCode.Tab);
     }
 }

@@ -39,9 +39,7 @@ namespace Mortal.Story
         public int State;
         public int GetRate()
         {
-            int result = State * 10;
-            DiceMaster.OptionInfoPatch.PositionEventData_GetRate_Postfix(this, ref result);
-            return result;
+            return State * 10;
         }
     }
 }
@@ -78,9 +76,7 @@ namespace DiceMaster
     public static class OptionInfoPatch
     {
         public static int DisplayRefreshDepth;
-        public static Mortal.Story.PositionEventData TargetEvent;
         public static Mortal.Core.MissionCheckData TargetMission;
-        public static void PositionEventData_GetRate_Postfix(Mortal.Story.PositionEventData value, ref int result) => throw new Exception("IL not installed");
         public static void MissionCheckData_Postfix(Mortal.Core.MissionCheckData value, ref bool result) => throw new Exception("IL not installed");
     }
     public class PositionEventCache
@@ -158,11 +154,8 @@ namespace DiceMaster
             Check(PositionEventCache.StaticCalls == 1 && PositionEventCache.DynamicCalls == 2, "Only fixed description should be cached");
             Check(OptionInfoPatch.DisplayRefreshDepth == 0, "Preview depth leaked");
 
-            OptionInfoPatch.TargetEvent = value;
             Check(cache.GetPositionEventDesc(value).Contains("rate=20"), "Preview used forced event rate");
-            Check(ReferenceEquals(OptionInfoPatch.TargetEvent, value), "Preview consumed event request");
-            Check(value.GetRate() == 99999 && OptionInfoPatch.TargetEvent == null, "Normal event execution no longer consumes request");
-            Check(value.GetRate() == 20, "Forced rate was not one-shot");
+            Check(value.GetRate() == 20 && value.GetRate() == 20, "Event rate must retain original values without reservation forcing");
             var mission = new Mortal.Core.MissionCheckData(); OptionInfoPatch.TargetMission = mission;
             bool passed = false; OptionInfoPatch.DisplayRefreshDepth = 1;
             OptionInfoPatch.MissionCheckData_Postfix(mission, ref passed);

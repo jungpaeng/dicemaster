@@ -3,7 +3,8 @@
 This prerelease-only path retains the original source-restoration verifier. The
 default --scope prd2 keeps its original candidate contract. Select --scope prd4
 explicitly for the reviewed log GUI/XInput candidate and its 12 test programs.
-Neither scope claims historical runtime equivalence, feature completion or a
+Select --scope prd5 for the current-action event popup and its 14 test programs.
+No scope claims historical runtime equivalence, feature completion or a
 Windows run of the candidate.
 No Git refs, network resources, installed plugins or game references are written.
 """
@@ -38,6 +39,31 @@ PRD4_REQUIRED_TESTS = frozenset({
     'SourceBehaviorTests', 'PreviewIntegrationTests', 'LogUiModelTests',
     'LogUiWiringTests', 'LogUiKeyboardTests', 'LogOpenerIntegrationTests',
 })
+PRD5_VALIDATION = {
+    'scope': 'PRD 5 current-action event selection popup local candidate',
+    'windows_runtime': 'not-run; maintainer confirmation required',
+    'real_lua_comparison': 'PRD 2 analysis preserved; PRD 5 parsed literal Position coroutine gates tested separately',
+    'final_trace_limits': 'PRD 2 limits preserved',
+    'historical_windows_confirmation_applies_to_this_candidate': False,
+}
+PRD5_RUNTIME_BOUNDARY = (
+    'PRD 5 replaces event weight reservations with current-action result selection. '
+    'User-confirmed v1.0.5 is the starting baseline, not Windows validation of this candidate.')
+PRD5_IMPLEMENTATION_BASELINE = {
+    'release': 'v1.0.5',
+    'source_commit': '8886309e2a7248fa13544f81546e3c4795ff9611',
+    'working_head_at_start': '40813f9',
+    'windows_confirmation': 'User confirmed v1.0.5 Windows verification in this chat on 2026-10-20 Asia/Seoul; no per-scenario or environment detail supplied.',
+}
+PRD5_WINDOWS_VALIDATION = {
+    'status': 'pending',
+    'new_release_dll_directly_windows_tested': False,
+    'confirmation_source': None,
+    'environment_note': 'PRD 5 candidate has not been run in Windows; v1.0.5 user confirmation is an implementation baseline only.',
+}
+PRD5_REQUIRED_TESTS = PRD4_REQUIRED_TESTS | frozenset({
+    'EventSelectionRuntimeTests', 'EventPopupTests',
+})
 
 
 def validate_preview_candidate(manifest, scope):
@@ -64,6 +90,23 @@ def validate_preview_candidate(manifest, scope):
             if (not isinstance(evidence, list) or not evidence
                     or any(not isinstance(line, str) or not line.strip() for line in evidence)):
                 raise RuntimeError('PRD 4 preview test evidence is empty or malformed: ' + name)
+    elif scope == 'prd5':
+        windows_validation = manifest.get('windows_validation')
+        if (validation != PRD5_VALIDATION
+                or validation.get('historical_windows_confirmation_applies_to_this_candidate') is not False
+                or manifest.get('runtime_equivalence') != PRD5_RUNTIME_BOUNDARY
+                or manifest.get('implementation_baseline') != PRD5_IMPLEMENTATION_BASELINE
+                or windows_validation != PRD5_WINDOWS_VALIDATION
+                or windows_validation.get('new_release_dll_directly_windows_tested') is not False):
+            raise RuntimeError('PRD 5 preview must preserve its exact scope, baseline and pending Windows boundaries.')
+        tests = manifest.get('tests')
+        if not isinstance(tests, dict) or not PRD5_REQUIRED_TESTS.issubset(tests):
+            raise RuntimeError('PRD 5 preview requires all 14 candidate test programs.')
+        for name in PRD5_REQUIRED_TESTS:
+            evidence = tests[name]
+            if (not isinstance(evidence, list) or not evidence
+                    or any(not isinstance(line, str) or not line.strip() for line in evidence)):
+                raise RuntimeError('PRD 5 preview test evidence is empty or malformed: ' + name)
     else:
         raise RuntimeError('Unsupported preview candidate scope: ' + str(scope))
     for claim in ('historical_full_runtime_equivalence_claimed', 'feature_or_issue_completion_claimed'):
@@ -74,8 +117,8 @@ def validate_preview_candidate(manifest, scope):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--scope', choices=('prd2', 'prd4'), default='prd2',
-                        help='Candidate validation contract (default: prd2). PRD 4 requires explicit selection.')
+    parser.add_argument('--scope', choices=('prd2', 'prd4', 'prd5'), default='prd2',
+                        help='Candidate validation contract (default: prd2). PRD 4 and PRD 5 require explicit selection.')
     parser.add_argument('--references', type=Path, required=True)
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--version', required=True)
@@ -144,6 +187,13 @@ def main():
             package_name = 'DiceMaster-' + args.version + '.zip'
             shutil.copyfile(archive, stage / package_name)
             shutil.copyfile(log, stage / 'verification.log')
+            scope_boundaries = {}
+            if args.scope == 'prd5':
+                scope_boundaries = {name: manifest[name] for name in (
+                    'runtime_equivalence', 'implementation_baseline', 'windows_validation')}
+                historical = 'historical_source_restoration_windows_validation'
+                if historical in manifest:
+                    scope_boundaries[historical] = manifest[historical]
             write_json(stage / 'release-verification.json', {
                 'status': 'prerelease-commit-build-verified', 'published': False,
                 'created_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -157,6 +207,7 @@ def main():
                 'zip_file_list_and_crc': 'pass', 'candidate_validation': validation,
                 'historical_full_runtime_equivalence_claimed': False,
                 'feature_or_issue_completion_claimed': False,
+                **scope_boundaries,
             })
             output.parent.mkdir(parents=True, exist_ok=True)
             if output.exists():

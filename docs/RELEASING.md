@@ -1,5 +1,13 @@
 # 소스 기반 Release와 게시 이력
 
+## PRD #5 — v1.0.6-alpha.1 prerelease 준비
+
+2026-10-20 사용자가 현재 PRD #5 구현의 커밋·prerelease 게시를 지시했습니다. 대상은 `v1.0.6-alpha.1`, 자산은 `DiceMaster-v1.0.6-alpha.1.zip`이며 [변경·지원 한계·설치·복구·SHA-256](ISSUE-5-ALPHA1-RELEASE.md)을 게시 설명으로 사용합니다. 이번 행동의 일반·명시 조건 무시·무작위 선택 팝업과 이벤트 예약/99999 보정 제거, 미션·주사위 유지가 범위입니다. 기본 ON 설정·로그 도구 저장·상위 설정, 이벤트만 검색/필터, 공유 입력 해제·중립과 제한된 Lua 지원 경로를 함께 안내합니다.
+
+사전 원격 확인에서 기존 Release·태그는 각각 24개이며 대상 버전은 없습니다. `prerelease=true`·`make_latest=false`로 새 후보만 게시하고 Latest 정식 v1.0.5와 기존 태그·Release·자산을 유지합니다. 소스 커밋은 실제 커밋 후 확정하고 `verify-preview-release.py --scope prd5`의 고정 커밋 전체 재빌드·14개 검사와 검토 DLL/cfg/ZIP 일치, 게시 후 태그·공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인합니다. 결과 영수증은 `artifacts/releases/v1.0.6-alpha.1/`에 보존합니다. 이 절은 게시 전 준비 기록이며 성공·게시 시각·원격 ID는 아직 기록하지 않습니다.
+
+검토 DLL SHA-256은 `fc2baea75bf1d1bb856411af49c4485c19f3369e77f573524dd2da56733a789c`, cfg는 `66b34802ed57b53db7ad977e96e8e17ef4847149e08ac3f244788f0704d9aea7`, ZIP은 `f512a1c11f9a39eefd0ae37174b116ed8316c7b33db5ef1fddb49ff2bffac019`입니다. 로컬 전체 빌드·14개 검사와 격리 소스 재빌드는 통과했으며 최종 고정 커밋 검증과 구분합니다. 게임 소스·게임 DLL은 배포하지 않고 기존 cfg를 보존해 DLL만 교체합니다. **새 DLL의 Windows 확인은 대기**이며 v1.0.5 사용자 확인을 승계하지 않습니다. [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에 별도 결과를 남기며 이슈 #5를 종료하지 않습니다.
+
 ## v1.0.5 정식 Release·Latest 게시
 
 사용자의 “지금까지 작업한 내용을 release로 반영해” 지시에 따라 **2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)은 alpha.1~alpha.9에서 반영한 로그 GUI·Xbox/XInput 탐색·한국어 표시·예약 표시/해제를 포함합니다. 소스·태그 `8886309e2a7248fa13544f81546e3c4795ff9611`, Release ID `417427722`·asset ID `656586246`, `draft=false`·`prerelease=false`·`make_latest=true`입니다. [전체 변경·설치·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다.

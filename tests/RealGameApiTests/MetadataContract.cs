@@ -182,12 +182,12 @@ static partial class RealGameApiTests
         var eventCall = Calls(events).Single();
         Check(eventCall.DeclaringType.FullName == "DiceMaster.LiveLog.PreviewFormatting" && eventCall.Name == "EventDescription" &&
             ParametersAre(eventCall, "System.Object") && eventCall.ReturnType.FullName == "System.String", "event formatter exact payload contract");
-        var remainingRiskyCalls = AllTypes(candidate.MainModule.Types).SelectMany(type => type.Methods).Where(method => method.HasBody)
+        var allRiskyCalls = AllTypes(candidate.MainModule.Types).SelectMany(type => type.Methods).Where(method => method.HasBody)
             .SelectMany(method => method.Body.Instructions.Select(instruction => instruction.Operand).OfType<MethodReference>()
                 .Where(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original))
-                .Select(call => method.FullName + " -> " + call.FullName)).ToArray();
-        Check(remainingRiskyCalls.Length == 0, "no risky original description API references anywhere, including nested/lambda types: " + string.Join("; ", remainingRiskyCalls));
-        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting" }
+                .Select(call => (Method: method, Call: call))).ToArray();
+        Check(allRiskyCalls.Length == 0, "display and direct-selection validation must use pure audited reads, with no original API fallback: " + string.Join("; ", allRiskyCalls));
+        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting", "DiceMaster.EventSelection.EventEligibility" }
             .Select(name => candidate.MainModule.GetType(name) ?? throw new InvalidDataException("Missing preview payload " + name)).ToArray();
         foreach (var method in AllTypes(evaluators).SelectMany(type => type.Methods).Where(method => method.HasBody))
             Check(!Calls(method).Any(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original) ||

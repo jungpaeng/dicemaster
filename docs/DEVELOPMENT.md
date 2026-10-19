@@ -2,6 +2,14 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## PRD #5 — v1.0.6-alpha.1 prerelease 준비
+
+2026-10-20 사용자의 “v1.0.5에서 Windows 확인 완료”를 선행 기준으로, 현재 구현의 커밋·prerelease 게시 지시를 받았습니다. 대상은 `v1.0.6-alpha.1`, 설치 자산은 `DiceMaster-v1.0.6-alpha.1.zip`입니다. [변경·지원 경로·해시·설치/복구](ISSUE-5-ALPHA1-RELEASE.md), [구현 당시 기록](ISSUE-5-IMPLEMENTATION.md), [새 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 구분합니다. Latest 정식 v1.0.5를 유지하고 이슈 #5는 종료하지 않습니다.
+
+`EventSelection/`은 실제 manager의 직접 리터럴 점 `Position` 호출이 비메인 Lua 코루틴에서 실행될 때만 대기·문맥 토큰·일반/명시 조건 무시 결과 직접 지정을 담당합니다. `LogUI/EventPopupRenderer.cs`는 조회와 명시 요청을 담당합니다. 동적/별칭/콜론/메인 Lua/직접 동기 경로는 원래 판정으로 넘깁니다. 이벤트 예약·99999 보정은 제거하고 미션 예약·주사위와 기존 로그/공유 native 입력·해제/중립을 유지합니다. 표시용 평가는 원본 판정 체인을 호출하지 않고 가시성·0.25초/5초·캐시 계약을 유지합니다.
+
+로컬 후보와 격리 소스 재빌드의 14개 검사 프로그램이 통과했습니다. 게시에는 고정 커밋을 `verify-preview-release.py --scope prd5`로 재검증해 검토 DLL/cfg/ZIP 바이트와 비교합니다. 영수증 경로는 `artifacts/releases/v1.0.6-alpha.1/`이며 실제 결과는 검증 완료 후 기록합니다. DLL/cfg 두 파일 패키지·게임 참조 비배포와 DLL만 교체/이전 DLL 복구를 유지합니다. **새 DLL의 Windows 게임·입력·화면 확인은 대기**이며 자동 대역 검사와 구분합니다. 아래 PRD #4·이전 개발 기록은 당시 이력입니다.
+
 ## 개발 범위
 
 PRD #4의 현재 로컬 작업은 [로그 GUI·입력 구현 기록](ISSUE-4-IMPLEMENTATION.md)을 따릅니다. 선행 PRD #2 완료 후 `102cafe`에서 시작했으며 `LogBridge.Model`→`LogUI.LogRenderer`→동일 게시 대상 예약 검증과 공유 XInput의 로그 우선 소유권을 전체 소스로 빌드합니다. `LogUiModelTests`와 `LogUiWiringTests` 및 기존 실제 DLL 통합 검사를 후보 생성 경로에 연결합니다. 새 후보의 사용자 Windows 확인은 [별도 검증표](ISSUE-4-WINDOWS-VALIDATION.md)에 남기며 과거 배포/검증 이력과 구분합니다.

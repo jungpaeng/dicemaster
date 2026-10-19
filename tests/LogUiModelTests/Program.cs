@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DiceMaster.LogUI;
+using DiceMaster.EventSelection;
 
 static class Program
 {
@@ -19,12 +20,12 @@ static class Program
     static int Main()
     {
         var model = new LogModel(); model.ResetContext(1);
-        Check(!model.Tab("이벤트").HasPublished, "Unpublished state was confused with a successful empty list");
-        Publish(model, "이벤트");
-        Check(model.Tab("이벤트").HasPublished && model.Tab("이벤트").Snapshot.Rows.Count == 0, "Successful empty publication remained waiting");
+        Check(!model.Tab("미션").HasPublished, "Unpublished state was confused with a successful empty list");
+        Publish(model, "미션");
+        Check(model.Tab("미션").HasPublished && model.Tab("미션").Snapshot.Rows.Count == 0, "Successful empty publication remained waiting");
         var target = new object(); var other = new object();
-        Publish(model, "이벤트", Row("a", target), Row("b", other));
-        var events = model.Tab("이벤트");
+        Publish(model, "미션", Row("a", target), Row("b", other));
+        var events = model.Tab("미션");
         Check(events.Selected == null, "Publication must not auto-select a reservation target");
         Check(events.Select("a"), "Explicit target selection failed");
         events.ListScroll = 140; events.DetailScroll = 230;
@@ -35,17 +36,17 @@ static class Program
         ticket = events.BeginReservation(reservationState);
         Check(ReferenceEquals(ticket.ReservationState, reservationState) && events.CanActivate(ticket),
             "Action ticket did not carry the original opaque reservation state");
-        Publish(model, "이벤트", Row("b", other, "바뀐 제목"), Row("a", target, "번역 변경"));
+        Publish(model, "미션", Row("b", other, "바뀐 제목"), Row("a", target, "번역 변경"));
         Check(events.SelectedId == "a" && events.Selected.Title == "번역 변경", "Reorder/title must not change selected identity");
         Check(events.ListScroll == 140 && events.DetailScroll == 230, "Warm publication reset list/detail scroll");
         Check(events.CanActivate(ticket), "Healthy same-target refresh wrongly invalidated ticket");
         Check(ReferenceEquals(ticket.ReservationState, reservationState), "Healthy publication replaced the original game-boundary snapshot");
-        model.MarkPublicationFailure("이벤트");
+        model.MarkPublicationFailure("미션");
         Check(events.PublicationFailed && !events.CanActivate(ticket) && events.BeginReservation() == null, "Publication failure retained executable stale view");
-        Publish(model, "이벤트", Row("b", other), Row("a", target));
+        Publish(model, "미션", Row("b", other), Row("a", target));
         Check(!events.PublicationFailed && events.SelectedId == "a" && !events.CanActivate(ticket), "Publication recovery failed or revived old confirmation");
-        Publish(model, "미션", Row("m", new object()));
-        Check(model.Tab("이벤트").SelectedId == "a" && model.Tab("미션").Selected == null, "Tab state mixed");
+        Publish(model, "이벤트", Row("m", new object()));
+        Check(model.Tab("미션").SelectedId == "a" && model.Tab("이벤트").Selected == null, "Tab state mixed");
         Check(events.Snapshot.Rows.Count == 2 && events.Snapshot.Rows[0].Id == "b" && events.Snapshot.Rows[1].Id == "a",
             "Publication omitted or reordered an unselected row");
         events.Select("a"); ticket = Arm(events); events.Select("b");
@@ -57,18 +58,18 @@ static class Program
         Check(model.Tab("조건").Snapshot.Rows.Count == 1 && model.Tab("조건").Snapshot.Rows[0].Title == rich.Title &&
             model.Tab("조건").Snapshot.Rows[0].Description == rich.Description, "Publication changed rich-text title or full description");
         events.Select("a"); ticket = Arm(events);
-        Publish(model, "이벤트", Row("b", other));
+        Publish(model, "미션", Row("b", other));
         Check(events.Selected == null && !events.CanActivate(ticket) && events.DetailScroll == 0, "Target disappearance retained action/detail navigation identity");
-        Publish(model, "이벤트", Row("a", target), Row("b", other));
+        Publish(model, "미션", Row("a", target), Row("b", other));
         Check(events.Selected == null && !events.CanActivate(ticket), "Held activation attached itself to reappearing target");
         events.Select("a"); ticket = Arm(events);
         var failed = Row("a", target); failed.RefreshState = LogRefreshState.RetainedFailure; failed.HasLastGood = true;
-        Publish(model, "이벤트", failed, Row("b", other));
+        Publish(model, "미션", failed, Row("b", other));
         Check(events.SelectedId == "a" && !events.Selected.CanReserve && !events.CanActivate(ticket), "Failed last-good row permitted reservation");
         var waiting = Row("waiting"); waiting.RefreshState = LogRefreshState.Waiting; waiting.RefreshStatus = "게임 데이터 대기 중";
         var unreadable = Row("unreadable"); unreadable.RefreshState = LogRefreshState.ReadFailure; unreadable.RefreshStatus = "읽기 실패";
         var staged = new List<LogItem> { failed, waiting, unreadable, Row("b", other) };
-        var fullSnapshot = new LogSnapshot(model.ContextId, "이벤트", staged); staged.Clear(); model.Publish(fullSnapshot);
+        var fullSnapshot = new LogSnapshot(model.ContextId, "미션", staged); staged.Clear(); model.Publish(fullSnapshot);
         Check(events.Snapshot.Rows.Count == 4 && ReferenceEquals(events.Snapshot.Rows[0], failed) &&
             ReferenceEquals(events.Snapshot.Rows[1], waiting) && ReferenceEquals(events.Snapshot.Rows[2], unreadable) &&
             events.Snapshot.Rows[3].Id == "b", "Full publication lost an error/waiting row or shared the caller's mutable list");
@@ -78,13 +79,13 @@ static class Program
             "Waiting/read-failure descriptions were inaccessible or produced a reservation ticket");
         events.Select("a");
         Check(Arm(events) == null, "Failed row produced reservation ticket");
-        Publish(model, "이벤트", Row("a", target));
+        Publish(model, "미션", Row("a", target));
         events.Select("a"); ticket = Arm(events);
         var stale = Row("a", target); stale.ReservationAllowed = false;
-        Publish(model, "이벤트", stale);
+        Publish(model, "미션", stale);
         Check(!events.CanActivate(ticket) && events.BeginReservation() == null, "Discovery failure allowed retained target");
-        Publish(model, "이벤트", Row("a", target)); events.Select("a"); ticket = Arm(events);
-        Publish(model, "이벤트", Row("a", new object()));
+        Publish(model, "미션", Row("a", target)); events.Select("a"); ticket = Arm(events);
+        Publish(model, "미션", Row("a", new object()));
         Check(events.Selected == null && !events.CanActivate(ticket), "Object replacement behind same ID retained execution");
         var firstOption = Row("o1"); firstOption.Description = "조건에 따른 가능한 변화 전체";
         firstOption.ReadState = LogReadState.Unread; firstOption.AnalysisStates.Add("Partial");
@@ -139,22 +140,23 @@ static class Program
             "New context retained option navigation or a prior option tab reference");
         Check(conditions.Selected == null && conditions.ListScroll == 0 && conditions.DetailScroll == 0 &&
             !conditions.HasPublished && conditions.Snapshot.Rows.Count == 0, "New context retained checkpoint detail navigation");
-        model.Publish(new LogSnapshot(1, "이벤트", new[] { Row("stale", target) }));
-        Check(model.Tab("이벤트").Snapshot.Rows.Count == 0, "Late prior-context publication was admitted");
-        Publish(model, "이벤트", Row("a", target)); events = model.Tab("이벤트"); events.Select("a"); ticket = Arm(events);
+        model.Publish(new LogSnapshot(1, "미션", new[] { Row("stale", target) }));
+        Check(model.Tab("미션").Snapshot.Rows.Count == 0, "Late prior-context publication was admitted");
+        Publish(model, "미션", Row("a", target)); events = model.Tab("미션"); events.Select("a"); ticket = Arm(events);
         model.CancelExecution(); Check(!events.CanActivate(ticket), "Mode/focus loss did not cancel pending ticket");
         for (int i = 0; i < 300; i++)
         {
             var rows = new List<LogItem>();
             for (int j = 0; j < 40; j++) rows.Add(Row(((j + i) % 40).ToString(), target));
-            Publish(model, "이벤트", rows.ToArray());
+            Publish(model, "미션", rows.ToArray());
             events.Select("17"); events.ListScroll = 80; events.DetailScroll = 125;
-            Publish(model, "이벤트", rows.ToArray());
+            Publish(model, "미션", rows.ToArray());
             Check(events.Snapshot.Rows.Count == 40 && events.SelectedId == "17" && events.ListScroll == 80 && events.DetailScroll == 125,
                 "Full publication, stable identity or list/detail scroll stress regression");
         }
         StatusOnlyRows();
         StructuredConditionDetails();
+        EventViews();
         Console.WriteLine("PASS: " + checks + " log model assertions (full publications, status-only rows, navigation, identity, last-good/errors, context and activation tickets).");
         Measure();
         return 0;
@@ -286,6 +288,58 @@ static class Program
         Check(model.Tab("조건").Selected == null && model.Tab("조건").Snapshot.Rows.Count == 0 && state.Snapshot.Rows.Count == 0
             && state.ListScroll == 0 && state.DetailScroll == 0,
             "Context replacement or late structured publication restored the old checkpoint and branches");
+    }
+
+    static void EventViews()
+    {
+        var model = new LogModel(); model.ResetContext(50);
+        LogItem Available(string id) { var row = Row(id, new object()); row.EventEligibility = new EventEligibilitySnapshot(
+            EventEligibilityState.Eligible, EventEligibilityReason.None, 5, "조건 충족"); return row; }
+        var first = Available("a"); first.Description = "첫 설명 · 호감도";
+        var second = Available("b"); second.Title = "번역 제목"; second.SearchDisplayTitle = "P_성공_42";
+        var blocked = Row("blocked", new object()); blocked.EventEligibility = new EventEligibilitySnapshot(
+            EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, 0, "체력 부족");
+        var unknown = Row("unknown", new object()); unknown.EventEligibility = new EventEligibilitySnapshot(
+            EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "난수 의존");
+        var retained = Available("retained"); retained.RefreshState = LogRefreshState.RetainedFailure;
+        Publish(model, "이벤트", blocked, first, unknown, second, retained);
+        var events = model.Tab("이벤트");
+        Check(events.VisibleRows.Count == 5 && events.Snapshot.Rows[0].Id == "a" && events.Snapshot.Rows[1].Id == "b" &&
+            events.Snapshot.Rows[2].Id == "blocked" && events.Snapshot.Rows[3].Id == "unknown" && events.Snapshot.Rows[4].Id == "retained",
+            "Event ordering did not retain each group's original order or treated retained eligibility as available");
+        Check(!events.AvailableOnly && events.SearchQuery == "", "A new event view did not start unfiltered");
+        events.Select("blocked"); events.ExecutionFocus = true;
+        Check(events.BeginReservation() == null, "Read-only related event list created an execution/reservation request");
+        events.ListScroll = 72; events.AvailableOnly = true;
+        Check(events.VisibleRows.Count == 2 && events.Selected == null && events.ListScroll == 0 && !events.ExecutionFocus,
+            "Available-only filter retained an unavailable selection or stale input authority");
+        Check(!events.Select("unknown"), "Filter admitted an invisible unknown event selection");
+        events.Select("b"); events.DetailScroll = 23;
+        Publish(model, "이벤트", blocked, second, unknown, first, retained);
+        Check(events.SelectedId == "b" && events.DetailScroll == 23 && events.VisibleRows[0].Id == "b",
+            "Eligibility sorting reset selection instead of retaining current target identity");
+        model.MarkPublicationFailure("이벤트");
+        Check(events.VisibleRows.Count == 0 && events.Selected == null && events.Snapshot.Rows.Count == 5,
+            "Failed publication advertised retained last-good eligibility as currently available");
+        Publish(model, "이벤트", blocked, second, unknown, first, retained);
+        Check(events.VisibleRows.Count == 2 && !events.PublicationFailed, "Complete publication failed to recover the available event projection");
+        events.SearchQuery = "raw/A";
+        Check(events.VisibleRows.Count == 1 && events.VisibleRows[0].Id == "a" && events.Selected == null,
+            "Case-insensitive original-ID search failed or left a hidden selection");
+        events.SearchQuery = "호감도";
+        Check(events.VisibleRows.Count == 1 && events.VisibleRows[0].Id == "a", "Full Korean description search lost existing event information");
+        events.SearchQuery = "번역 제목";
+        Check(events.VisibleRows.Count == 1 && events.VisibleRows[0].Id == "b", "Event translated-name search failed");
+        events.SearchQuery = "성공";
+        Check(events.VisibleRows.Count == 1 && events.VisibleRows[0].Id == "b", "Exact displayed translated event-label search failed");
+        events.SearchQuery = "없음";
+        Check(events.VisibleRows.Count == 0 && events.Snapshot.Rows.Count == 5, "Empty search altered the authoritative publication");
+        events.AvailableOnly = false; events.SearchQuery = "";
+        Check(events.VisibleRows.Count == 5 && unknown.EventEligibility.State == EventEligibilityState.Unknown &&
+            blocked.EventEligibility.Reason == EventEligibilityReason.ConditionsNotMet, "View changes overwrote structured eligibility causes");
+        events.AvailableOnly = true; events.SearchQuery = "a"; model.ResetContext(51);
+        Check(!events.AvailableOnly && events.SearchQuery == "" && events.VisibleRows.Count == 0 &&
+            !model.Tab("이벤트").AvailableOnly && model.Tab("이벤트").SearchQuery == "", "Event query/filter leaked across game contexts");
     }
 
     static void Measure()

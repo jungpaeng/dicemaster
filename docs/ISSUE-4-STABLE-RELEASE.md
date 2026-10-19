@@ -1,5 +1,11 @@
 # DiceMaster v1.0.5 — 로그 창 개편·패드 탐색·예약 토글
 
+## 2026-10-20 사용자 후속 확인
+
+2026-10-20 Asia/Seoul의 작업 대화에서 사용자가 **“v1.0.5에서 Windows 확인 완료”**라고 확인했다. v1.0.5의 소스·태그 `8886309e2a7248fa13544f81546e3c4795ff9611`을 PRD #5 구현의 선행 안정화 기준으로 사용하며 착수 HEAD는 `40813f9`다. 사용자별 게임/로더·패드/Steam Input·해상도·개별 시나리오·설치 DLL 해시는 제공되지 않아 추가하지 않는다.
+
+이 확인은 아래 게시 당시의 “사용자 확인 대기”에 대한 후속 근거다. 당시 검사·해시·게시 영수증은 변경하지 않으며 이 문서 기록만으로 GitHub 이슈 상태를 바꾸지 않는다. 이번 PRD #5의 팝업·결과 직접 지정·조건 무시·입력 전환은 새 후보에서 별도 확인해야 한다. [새 구현 기록](ISSUE-5-IMPLEMENTATION.md) · [새 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 아래는 v1.0.5 게시 당시 기록이다.
+
 **2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)은 고정 재빌드·12개 검사와 공개 다운로드 검증을 통과한 alpha.9의 DLL·cfg·ZIP과 동일한 바이트입니다. 정식 소스·태그 `8886309e2a7248fa13544f81546e3c4795ff9611`의 Git 입력 153개·생산 소스 63개도 alpha.9와 같음을 확인했습니다. 재빌드·검사 재실행·재압축 없이 파일을 승격했으며 정식 공개 다운로드·태그·Latest와 기존 배포 보존을 검증했습니다.
 
 **정식 배포 채널 지정과 기능·이슈 완료는 별개다.** 사용자의 게시 지시를 실제 Windows 검증 완료 근거로 취급하지 않는다. 에이전트는 게임을 설치하거나 실행하지 않았으며, 이번 DLL의 실제 패드 탐색·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기다. 자동 검사·정식 게시만으로 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)를 닫지 않는다. 선행 이슈 #2 closed·이슈 #4 open을 유지한다.

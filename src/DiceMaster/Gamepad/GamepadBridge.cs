@@ -15,6 +15,16 @@ namespace DiceMaster.Gamepad
         private static LogInputMode lastMode;
         private static int controller = -1, value;
         private static string warning;
+        // The Lua gate can start between Updates. Capture the same native
+        // instance immediately so its opening A cannot reach the next screen.
+        public static void SetModalCapture(bool active, bool focused, string cacheRoot)
+        {
+            if (active) Initialize(cacheRoot);
+            native.RequireNeutral();
+            native.LogActive = active && focused && !failed;
+            if (active) native.WindowActive = false;
+            log.Cancel(); adjustment.Reset();
+        }
         // Polling a configured opener is independent of the dice controller.
         // Detection and capture happen in the real game-facing native hook;
         // this main-thread boundary only accepts its queued owner identity.

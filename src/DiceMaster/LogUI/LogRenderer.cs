@@ -31,6 +31,9 @@ namespace DiceMaster.LogUI
         private Action pendingAction;
         private GUIStyle textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle, statusStyle, boxStyle, windowStyle;
         private GUIStyle chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle;
+        private GUIStyle searchStyle;
+        private const string EventSearchControl = "DiceMaster.EventSearch";
+        private bool releaseTextFocus;
         private LogSnapshot cachedSnapshot;
         private string cachedSummary;
         private readonly List<Rect> toolRects = new List<Rect>();
@@ -49,8 +52,10 @@ namespace DiceMaster.LogUI
         public Rect WindowRect => window;
         private LogTabState State => model.Tab(CurrentTab);
         private bool IsChoiceTab => currentTabIndex == 0;
+        private bool IsEventTab => currentTabIndex == 2;
         private bool HasStoryReadState => currentTabIndex < 2;
-        private bool SupportsReservation => currentTabIndex >= 2;
+        private bool SupportsReservation => currentTabIndex == 3;
+        private IList<LogItem> VisibleRows => IsEventTab ? State.VisibleRows : State.Snapshot.Rows;
         private float RowHeight => renderedFont * 2f + 14f;
         private float ChoiceGap => Math.Max(8, renderedFont * .6f);
 
@@ -107,6 +112,7 @@ namespace DiceMaster.LogUI
                 return;
             }
             model.CancelExecution();
+            releaseTextFocus = true;
             area = Area.List;
             pointerIdentity = null;
             pointerReservation = null;
@@ -162,6 +168,7 @@ namespace DiceMaster.LogUI
         {
             if (Synchronize()) return;
             if (command == LogPadCommand.None) return;
+            releaseTextFocus = true;
             // A fresh key/pad command supersedes an unfinished mouse/touch
             // press. Its later release cannot reserve the abandoned target.
             pointerIdentity = null;
@@ -207,7 +214,7 @@ namespace DiceMaster.LogUI
             }
             // Details are always readable and have no focusable controls.
             if (command == LogPadCommand.Left || command == LogPadCommand.Right) return;
-            IList<LogItem> rows = State.Snapshot.Rows;
+            IList<LogItem> rows = VisibleRows;
             if (command == LogPadCommand.Up || command == LogPadCommand.Down)
             {
                 int direction = command == LogPadCommand.Down ? 1 : -1;
@@ -229,7 +236,7 @@ namespace DiceMaster.LogUI
                     foreach (LogItem row in rows) if (row.CanSelect) { Select(row.Id); break; }
                     return;
                 }
-                Reserve(ArmSelectedReservation());
+                if (SupportsReservation) Reserve(ArmSelectedReservation());
             }
         }
 
@@ -293,12 +300,14 @@ namespace DiceMaster.LogUI
             chromeTitleStyle = new GUIStyle(titleStyle) { fontSize = chromeFont };
             chromeButtonStyle = new GUIStyle(buttonStyle) { fontSize = chromeFont };
             chromeSelectedStyle = new GUIStyle(selectedStyle) { fontSize = chromeFont };
+            searchStyle = new GUIStyle(GUI.skin.textField) { fontSize = chromeFont, richText = false, wordWrap = false,
+                padding = new RectOffset(6, 6, 5, 5) };
             scrollStyle = new GUIStyle { padding = new RectOffset(0, 0, 0, 0) };
             // GUILayout includes inherited skin margins in its minimum sizes.
             // Our measured rectangles budget padding explicitly, so margins
             // must not make a supposedly fixed pane grow past its clip area.
             foreach (GUIStyle style in new[] { textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle,
-                statusStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle })
+                statusStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle, searchStyle })
             {
                 style.margin = new RectOffset(0, 0, 0, 0);
                 style.fixedWidth = style.fixedHeight = 0;
@@ -311,7 +320,8 @@ namespace DiceMaster.LogUI
 
         private void DrawWindow(int id)
         {
-            GUI.FocusControl(null);
+            if (releaseTextFocus || !IsEventTab || area != Area.List)
+            { GUI.FocusControl(null); releaseTextFocus = false; }
             string summary = "문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary();
             float width = Math.Max(1, window.width - Math.Max(8, chromeFont * .55f) * 2);
             layout = LogLayout.Calculate(window, chromeFont,
@@ -420,18 +430,23 @@ namespace DiceMaster.LogUI
         {
             float headingHeight = chromeFont + 14;
             float listWidth = Math.Max(140, BodyWidth * .36f);
-            GUILayout.BeginHorizontal(GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
-            GUILayout.BeginVertical(GUILayout.Width(listWidth), GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
-            string listTitle = SupportsReservation ? "목록" : "체크포인트";
+            float paneHeight = Math.Max(1, BodyHeight - (IsEventTab ? DrawEventControls() : 0));
+            GUILayout.BeginHorizontal(GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
+            GUILayout.BeginVertical(GUILayout.Width(listWidth), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
+            string listTitle = IsEventTab || SupportsReservation ? "목록" : "체크포인트";
             Display.Label((area == Area.List ? "▶ " : "") + listTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
-            Vector2 list = BeginListScroll(Math.Max(1, BodyHeight - headingHeight));
+            Vector2 list = BeginListScroll(Math.Max(1, paneHeight - headingHeight));
             State.ListScroll = list.y;
-            IList<LogItem> rows = State.Snapshot.Rows;
+            IList<LogItem> rows = VisibleRows;
             rowRects.Clear();
             float contentBottom = 0;
             bool waitingExplanationShown = false;
             bool hasSelectable = false;
-            if (rows.Count == 0) DrawEmpty();
+            if (rows.Count == 0)
+            {
+                if (IsEventTab && State.Snapshot.Rows.Count > 0) Label("검색·필터에 맞는 이벤트가 없습니다. 검색을 지우거나 전체 보기로 바꾸세요.", statusStyle);
+                else DrawEmpty();
+            }
             foreach (LogItem row in rows)
             {
                 if (row.CanSelect) hasSelectable = true;
@@ -465,11 +480,11 @@ namespace DiceMaster.LogUI
             GUILayout.EndScrollView();
             CompleteListScroll(GUILayoutUtility.GetLastRect(), contentBottom);
             GUILayout.EndVertical();
-            GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true), GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
+            GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
             LogItem selectedRow = State.Selected;
-            string detailTitle = SupportsReservation ? "상세" : "조건 상세";
+            string detailTitle = IsEventTab || SupportsReservation ? "상세" : "조건 상세";
             Display.Label(detailTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
-            Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, BodyHeight - headingHeight - 10));
+            Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, paneHeight - headingHeight - 10));
             State.DetailScroll = detail.y;
             DrawOverflowChrome();
             if (selectedRow == null)
@@ -486,8 +501,13 @@ namespace DiceMaster.LogUI
                 if (SupportsReservation)
                 {
                     Label(ReservationStatus(selectedRow), statusStyle);
-                    Label(CurrentTab == "이벤트" ? "다음 해당 판정의 가중치를 높입니다. 즉시 발생하거나 지정 이벤트가 발생함을 보장하지 않습니다." :
-                        "해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
+                    Label("해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
+                }
+                if (IsEventTab)
+                {
+                    Label("관련 이벤트 조회입니다. 실제 행동의 판정에 도달하면 작은 팝업에서 이번 결과를 선택합니다.", statusStyle);
+                    if (selectedRow.EventEligibility != null && !string.IsNullOrEmpty(selectedRow.EventEligibility.Summary))
+                        Label((selectedRow.RefreshState == LogRefreshState.Healthy ? "" : "이전 조회 설명: ") + selectedRow.EventEligibility.Summary, statusStyle);
                 }
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
@@ -498,6 +518,59 @@ namespace DiceMaster.LogUI
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
+        }
+
+        private float DrawEventControls()
+        {
+            const string label = "이벤트 검색 · 이름 / 식별자 / 설명";
+            string filter = EventFilterLabel();
+            float labelHeight = TextHeight(label, statusStyle, BodyWidth);
+            float inputHeight = chromeFont + 14;
+            float filterHeight = TextHeight(filter, chromeButtonStyle, BodyWidth);
+            GUILayout.Label(label, statusStyle, GUILayout.Height(labelHeight));
+            GUI.SetNextControlName(EventSearchControl);
+            string query = GUILayout.TextField(State.SearchQuery, searchStyle, GUILayout.Height(inputHeight), GUILayout.ExpandWidth(true));
+            Event evt = Event.current;
+            if (GUI.enabled && IsPointerPress(evt.rawType) && evt.button == 0 && GUILayoutUtility.GetLastRect().Contains(evt.mousePosition))
+            {
+                // TextField owns its own mouse capture. Preserve that focus
+                // across the controller's pointer takeover barrier just as a
+                // selected-row press preserves its down/up transaction.
+                pointerIdentity = EventSearchControl;
+                pointerContext = model.ContextId;
+                GamepadBridge.NotifyPointerActivity();
+                CancelPending();
+            }
+            if (!string.Equals(query, State.SearchQuery, StringComparison.Ordinal))
+            {
+                string next = query;
+                pendingAction = () => SetEventQuery(next, true);
+            }
+            SafeButton(filter, "event:available", ToggleEventFilter, height: filterHeight, chrome: true);
+            GUILayout.Space(8);
+            return labelHeight + inputHeight + filterHeight + 8;
+        }
+
+        private string EventFilterLabel() => "발동 가능한 항목만 보기: " + (model.Tab("이벤트").AvailableOnly ? "ON" : "OFF · 전체 보기");
+
+        private void SetEventQuery(string value, bool textEntry = false)
+        {
+            model.Tab("이벤트").SearchQuery = value;
+            if (IsEventTab) observedSelection = State.SelectedId;
+            CancelPending();
+            // Typing hands input away from the pad without a hard focus reset
+            // on the next Update, which would discard the text caret each key.
+            if (textEntry) GamepadBridge.NotifyKeyboardActivity();
+            ensureVisible = true;
+            manualListScroll = false;
+        }
+
+        private void ToggleEventFilter()
+        {
+            LogTabState events = model.Tab("이벤트");
+            events.AvailableOnly = !events.AvailableOnly;
+            ResetInputFocus();
+            GamepadBridge.CancelLogInput();
         }
 
         private void DrawConditionDetails(LogConditionDetails details)
@@ -545,7 +618,7 @@ namespace DiceMaster.LogUI
             "현재 미션 단계가 없거나 설명 조회에 필요한 게임 자료를 얻지 못했습니다. 미션 미완료·조건 미충족을 뜻하지 않습니다. 이 탭을 연 동안 재조회하며 새로고침으로 다시 확인할 수 있습니다." :
             "설명 조회에 필요한 게임 자료를 아직 얻지 못했습니다. 이 탭을 연 동안 재조회하며 새로고침으로 다시 확인할 수 있습니다.";
 
-        private int ToolCount => 17;
+        private int ToolCount => 20;
         private void DrawTools()
         {
             Vector2 scroll = BeginScroll(toolScroll, BodyHeight);
@@ -591,7 +664,10 @@ namespace DiceMaster.LogUI
                 case 13: return "선택지 탭으로";
                 case 14: return "이벤트 탭으로";
                 case 15: return "이전 영역으로 돌아가기";
-                default: return "로그 창 닫기";
+                case 16: return "로그 창 닫기";
+                case 17: return "이벤트 선택 팝업 사용: " + (ConfigManager.EnableEventSelectionPopup.Value ? "ON" : "OFF");
+                case 18: return EventFilterLabel();
+                default: return "이벤트 검색 지우기";
             }
         }
 
@@ -619,6 +695,9 @@ namespace DiceMaster.LogUI
                 case 14: SwitchTab(2); break;
                 case 15: ReturnFromTools(); break;
                 case 16: close?.Invoke(); break;
+                case 17: ConfigManager.EnableEventSelectionPopup.Value = !ConfigManager.EnableEventSelectionPopup.Value; break;
+                case 18: ToggleEventFilter(); break;
+                case 19: SetEventQuery(""); break;
             }
             if (layoutInitialized && hasViewport)
             {
@@ -696,6 +775,7 @@ namespace DiceMaster.LogUI
             if (index == currentTabIndex) return;
             CancelPending();
             currentTabIndex = index;
+            releaseTextFocus = true;
             area = Area.List;
             observedSelection = State.SelectedId;
             cachedSnapshot = null;
@@ -741,6 +821,12 @@ namespace DiceMaster.LogUI
                 row.RefreshState == LogRefreshState.Waiting ? "설명 조회 대기" : row.RefreshStatus;
             string result = string.IsNullOrEmpty(read) ? status :
                 string.IsNullOrEmpty(status) ? read : read + " · " + status;
+            if (IsEventTab)
+            {
+                string eligibility = row.RefreshState != LogRefreshState.Healthy || State.PublicationFailed || row.EventEligibility == null ?
+                    "판정 미확인" : row.EventEligibility.StatusText;
+                result = eligibility + (string.IsNullOrEmpty(result) ? "" : " · " + result);
+            }
             foreach (string state in row.AnalysisStates)
             {
                 string analysis = state == "Supported" ? "분석 지원" : state == "Partial" ? "추가 영향 가능" : state == "Unsupported" ? "결과는 진행 후 확인" :
@@ -752,7 +838,7 @@ namespace DiceMaster.LogUI
 
         private string ReservationStatus(LogItem row)
         {
-            string action = CurrentTab == "이벤트" ? "이벤트 우선 예약" : "미션 조건 통과 예약";
+            const string action = "미션 조건 통과 예약";
             bool reserved = LogBridge.IsReserved(CurrentTab, row.Target);
             string state = reserved ? "활성화 (예약 중)" : "비활성화 (예약 없음)";
             if (row.CanReserve && !State.PublicationFailed)
@@ -770,6 +856,7 @@ namespace DiceMaster.LogUI
         {
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
             if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (IsEventTab) return "현재: 이벤트 조회 · ↑↓ 항목 이동 / 오른쪽 스틱 본문 / 이름·ID·설명 검색 / 도구에서 가능 항목 필터 / B 닫기";
             if (State.Selected == null) return "현재: " + (SupportsReservation ? "목록" : "체크포인트 목록") + " · ↑↓ 항목 이동 / 오른쪽 스틱 목록 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!SupportsReservation) return "현재: 체크포인트 목록 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!State.Selected.CanReserve || State.PublicationFailed) return "현재: 목록 · 예약 변경 불가 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
@@ -829,6 +916,15 @@ namespace DiceMaster.LogUI
                 GamepadBridge.NotifyPointerActivity();
             if (evt.type == EventType.KeyUp) { heldKeys.Remove(evt.keyCode); return; }
             if (evt.type != EventType.KeyDown || evt.keyCode == ConfigManager.LogMenuToggleKey.Value) return;
+            if (IsEventTab && area == Area.List && GUI.GetNameOfFocusedControl() == EventSearchControl)
+            {
+                GamepadBridge.NotifyKeyboardActivity();
+                if (evt.keyCode == KeyCode.Escape || evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+                { GUI.FocusControl(null); heldKeys.Add(evt.keyCode); evt.Use(); }
+                // Text entry (including X, Y, space and arrows) belongs to the
+                // search field, never to a reservation or global log command.
+                return;
+            }
             LogPadCommand command = evt.keyCode == KeyCode.UpArrow ? LogPadCommand.Up : evt.keyCode == KeyCode.DownArrow ? LogPadCommand.Down :
                 evt.keyCode == KeyCode.LeftArrow ? LogPadCommand.Left : evt.keyCode == KeyCode.RightArrow ? LogPadCommand.Right :
                 evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter || evt.keyCode == KeyCode.Space ? LogPadCommand.Activate :

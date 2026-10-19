@@ -86,7 +86,7 @@ static class LiveLogIntegrationTests
         using var fixtures = AssemblyDefinition.ReadAssembly(args[1]);
         target = fixtures.MainModule;
         var module = source.MainModule;
-        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || type.Namespace == "DiceMaster.EventSelection" && (type.Name == "EventEligibility" || type.Name == "EventEligibilitySnapshot" || type.Name == "EventEligibilityState" || type.Name == "EventEligibilityReason") || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
         // The fixture project deliberately has no duplicate model definitions.
         // Bind its object-returning helper boundary to the DTO copied from this
         // exact delivered DLL, then install the real helper body below for the
@@ -138,7 +138,7 @@ static class LiveLogIntegrationTests
         // Exercise real one-use consumption together with the bridge revision
         // protocol. The fixtures provide game objects, never replacement
         // implementations of the reservation or consume/clear behavior.
-        foreach (string name in new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" })
+        foreach (string name in new[] { "MissionCheckData_Postfix" })
         {
             var hook = patchSource.Methods.Single(method => method.Name == name);
             var installed = new MethodDefinition(hook.Name, hook.Attributes, Type(hook.ReturnType));
