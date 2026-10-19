@@ -17,6 +17,7 @@ namespace DiceMaster.LogUI
         private long token = -1, pointerToken;
         private string pointerCandidate, pointerResult, pointerSelection;
         private object pointerTarget;
+        private bool pointerRowConfirmation, pointerPrimaryAvailable, pointerPrimaryForce;
         private string primaryCandidate, primaryResult;
         private object primaryTarget;
         private bool primaryAvailable, primaryForce;
@@ -76,6 +77,8 @@ namespace DiceMaster.LogUI
             EventCandidate row = Find(pointerCandidate);
             if (pointerCandidate != Random && (row == null || !ReferenceEquals(row.Target, pointerTarget)
                 || row.Result != pointerResult)) return false;
+            if (pointerRowConfirmation && pointerPrimaryAvailable && pointerCandidate != Random
+                && (row == null || (pointerPrimaryForce ? !row.CanForce : !row.CanSelect))) return false;
             return !pointerControl.StartsWith("normal:", StringComparison.Ordinal) || (row != null && row.CanSelect);
         }
 
@@ -169,7 +172,7 @@ namespace DiceMaster.LogUI
             float inner = Math.Max(1, width - 24);
             float actionHeight = chromeButton.CalcHeight(new GUIContent("조건 무시하고 이번만 진행 [A / Enter]"), inner) + 6;
             float headingHeight = chrome.CalcHeight(new GUIContent("이번 행동의 이벤트 선택"), inner) + 8;
-            string hint = "↑↓ 선택 · A/Enter 선택한 방식으로 진행 · B/Esc 무작위 · Tab 로그";
+            string hint = "클릭·터치로 선택 · 선택한 행을 다시 눌러 진행\n↑↓ 선택 · A/Enter 진행 · B/Esc 무작위 · Tab 로그";
             if (!string.IsNullOrEmpty(InputHint)) hint += "\n" + InputHint;
             float hintHeight = chrome.CalcHeight(new GUIContent(hint), inner) + 6;
             float statusHeight = chrome.CalcHeight(new GUIContent(EventSelectionRuntime.Status ?? ""), inner);
@@ -226,29 +229,53 @@ namespace DiceMaster.LogUI
             Action action = deferred; deferred = null;
             action?.Invoke();
             Event evt = Event.current;
-            if (IsUp(evt) || evt.type == EventType.TouchLeave || evt.rawType == EventType.TouchLeave) pointerControl = null;
+            if (IsUp(evt) || evt.type == EventType.TouchLeave) pointerControl = null;
             if (bounds.Contains(evt.mousePosition) && (evt.type == EventType.MouseDown || evt.type == EventType.MouseUp || evt.type == EventType.ScrollWheel)) evt.Use();
         }
 
         private void Row(string id, string caption, float width)
         {
+            if (selected == id)
+            {
+                string action = id == Random ? "무작위로 진행"
+                    : primaryAvailable ? primaryForce ? "조건 무시하고 이번만 진행" : "이 이벤트로 진행"
+                    : "진행 불가 · 대상/결과 확인 필요";
+                caption += "\n다시 클릭·터치: " + action;
+            }
             SafeButton((selected == id ? "▶ " : "") + caption, "row:" + id,
-                () => { selected = id; detailScroll = 0; CapturePrimaryIntent(); }, selected == id ? highlighted : button, width - 20);
+                () => {
+                    if (selected == id)
+                    {
+                        // This intent belongs to the fresh press, rather than
+                        // a later repaint whose eligibility may have changed.
+                        if (pointerRowConfirmation && pointerPrimaryAvailable) Submit(pointerPrimaryForce, id == Random);
+                    }
+                    else { selected = id; detailScroll = 0; CapturePrimaryIntent(); }
+                }, selected == id ? highlighted : button, width - 20);
             rowBounds[id] = GUILayoutUtility.GetLastRect();
         }
 
         private void SafeButton(string caption, string identity, Action action, GUIStyle style, float width = 0)
         {
             Event evt = Event.current;
-            bool down = evt.type != EventType.Used && (evt.type == EventType.MouseDown || evt.rawType == EventType.MouseDown
-                || evt.type == EventType.TouchDown || evt.rawType == EventType.TouchDown);
-            bool up = IsUp(evt);
+            bool down = evt.type == EventType.MouseDown || evt.type == EventType.TouchDown;
+            bool up = evt.type == EventType.MouseUp || evt.type == EventType.TouchUp;
             var content = new GUIContent(caption);
             // GUI.Button consumes MouseDown/Up. GetLastRect after that would
             // return a dummy Used-event rectangle and lose the transaction.
             Rect rect = GUILayoutUtility.GetRect(content, style, GUILayout.MinWidth(1),
                 GUILayout.MaxWidth(width > 0 ? width : Screen.width), GUILayout.ExpandWidth(true));
-            bool clicked = GUI.Button(rect, content, style);
+            // Native IMGUI buttons accept mouse phases only. Some window/input
+            // paths deliver a direct touch phase instead of mouse emulation.
+            // Keep Unity's own clipped hit test/capture, adapting only this call.
+            EventType inputType = evt.type;
+            bool translateTouch = inputType == EventType.TouchDown || inputType == EventType.TouchUp || inputType == EventType.TouchMove;
+            if (inputType == EventType.TouchDown) evt.type = EventType.MouseDown;
+            else if (inputType == EventType.TouchUp) evt.type = EventType.MouseUp;
+            else if (inputType == EventType.TouchMove) evt.type = EventType.MouseDrag;
+            bool clicked;
+            try { clicked = GUI.Button(rect, content, style); }
+            finally { if (translateTouch && evt.type != EventType.Used) evt.type = inputType; }
             if (down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled && !neutral)
             {
                 pointerControl = identity; pointerToken = token;
@@ -256,14 +283,18 @@ namespace DiceMaster.LogUI
                 pointerCandidate = identity.StartsWith("row:", StringComparison.Ordinal) ? identity.Substring(4) : selected;
                 EventCandidate row = Find(pointerCandidate);
                 pointerTarget = row?.Target; pointerResult = row?.Result;
+                pointerRowConfirmation = identity.StartsWith("row:", StringComparison.Ordinal) && pointerCandidate == selected;
+                pointerPrimaryForce = primaryForce;
+                pointerPrimaryAvailable = primaryAvailable && primaryCandidate == pointerCandidate
+                    && (pointerCandidate == Random || (ReferenceEquals(primaryTarget, pointerTarget) && primaryResult == pointerResult));
                 GamepadBridge.NotifyPointerActivity();
             }
             if (clicked && up && GUI.enabled && !neutral && pointerControl == identity && PointerValid())
                 deferred = action;
         }
 
-        private static bool IsUp(Event evt) => evt.type == EventType.MouseUp || evt.rawType == EventType.MouseUp
-            || evt.type == EventType.TouchUp || evt.rawType == EventType.TouchUp;
+        private static bool IsUp(Event evt) => evt.type == EventType.MouseUp || evt.type == EventType.TouchUp
+            || (evt.type == EventType.Used && (evt.rawType == EventType.MouseUp || evt.rawType == EventType.TouchUp));
 
         private void HandleKeyboard()
         {

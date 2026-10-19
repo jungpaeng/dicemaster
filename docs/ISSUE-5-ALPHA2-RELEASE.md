@@ -89,3 +89,10 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 기존 `codex/prd5-prerelease` 작업 브랜치와 새 태그를 사용했고 기본 main은 변경하지 않았다. `draft=false`·`prerelease=true`·`make_latest=false`, Latest v1.0.5와 기존 25개 Release·태그·자산 보존을 확인했다. 이슈 #2 closed·#4 open·#5 open도 유지했다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.2/`의 `release-verification.json`, `build-manifest.json`, `public-release.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md` 등에 보존한다.
 
 이 문서는 게시 결과를 보충하는 후속 문서 커밋에 포함한다. 빌드 소스·태그 `e710200`과 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스의 문서는 게시 전 준비 상태를 포함하고 당시 검사·파일의 근거를 보존한다.
+
+
+## 2026-10-20 사용자 후속 확인
+
+alpha.2 게시 뒤 같은 대화에서 사용자가 **팝업에서 터치로 항목이 선택되는 것은 확인했지만, 전체 로그의 탭·목록 등 선택 영역은 여전히 터치로 선택되지 않는다**고 보고했다. 이어서 팝업에서 선택한 행을 다시 터치하면 바로 진행하도록 요청했다. 이는 팝업의 터치 행 선택 성공과 전체 로그의 터치 실패에 한정한 보고다. 실제 설치 파일의 해시, 게임·로더·Windows 버전, 장치 모델·드라이버·입력 이벤트 종류는 제공되지 않았다. 앞서 사용자가 설명한 트랙패드·마우스로 인식되는 모니터 터치 환경을 이번 보고의 모든 입력 단계로 단정하지 않는다.
+
+따라서 위 게시 당시 “실제 Windows 확인 대기”를 전체 통과로 바꾸지 않는다. 팝업 결과 확정·조건 무시·패드·다른 장치의 성공도 이 보고에서 확인되지 않았다. 전체 로그의 잔여 문제와 팝업 행 재클릭 진행은 [alpha.3 후속](ISSUE-5-ALPHA3-RELEASE.md)에서 다루며, 새 DLL은 별도로 확인한다. alpha.2의 태그·공개 파일·게시 당시 자동 검사 결과는 변경하지 않는다.

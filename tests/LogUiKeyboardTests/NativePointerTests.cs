@@ -6,6 +6,45 @@ using UnityEngine;
 
 internal static partial class Program
 {
+    private static void RendererNonInputPassesPreservePointer()
+    {
+        GUILayout.ButtonInput = null; GUILayout.ResetPointerCapture();
+        var model = new LogModel(); model.ResetContext(791);
+        Publish(model, "조건", Item("non-input-pass"));
+        var renderer = new LogRenderer(model, null, null);
+        renderer.Handle(LogPadCommand.None);
+
+        // rawType identifies the original event, while type is the event this
+        // callback is processing. Layout/repaint/filtered callbacks must never
+        // finish or create a gesture merely because rawType is a mouse event.
+        foreach (EventType pass in new[] { EventType.Layout, EventType.Repaint, EventType.Ignore })
+        {
+            Vector2 point = PointerTarget(renderer, control => control.Button && control.Text.Contains("조건", StringComparison.Ordinal));
+            DrawPointer(renderer, EventType.MouseDown, EventType.MouseDown, point);
+            Check((string)Field(renderer, "pointerIdentity") == "tab:1", "physical press starts a tab transaction");
+            DrawPointer(renderer, pass, EventType.MouseUp, point);
+            Check((string)Field(renderer, "pointerIdentity") == "tab:1",
+                pass + " retaining raw mouse-up cannot finish the physical press before its input callback");
+            SoftResetForPointer(renderer);
+            renderer.Handle(LogPadCommand.None); renderer.Scroll(0);
+            DrawPointer(renderer, EventType.MouseUp, EventType.MouseUp, point);
+            Check(renderer.CurrentTab == "조건" && Field(renderer, "pointerIdentity") == null,
+                "matching input release activates the tab once after " + pass);
+            renderer.Handle(LogPadCommand.PreviousTab);
+        }
+
+        renderer.Handle(LogPadCommand.NextTab);
+        Repaint(renderer);
+        GUILayout.ControlRecord first = GUILayout.Controls.Find(control => control.Button && control.Text == "선택지");
+        var corner = new Vector2(first.WindowLocalRect.x + .5f, first.WindowLocalRect.y + .5f);
+        foreach (EventType pass in new[] { EventType.Layout, EventType.Repaint, EventType.Ignore })
+        {
+            DrawPointer(renderer, pass, EventType.MouseDown, corner);
+            Check(Field(renderer, "pointerIdentity") == null,
+                pass + " retaining raw mouse-down cannot arm a real or dummy control rectangle");
+        }
+    }
+
     private static void RendererNativeConsumedCornerPress()
     {
         GUILayout.ButtonInput = null; GUILayout.ResetPointerCapture();
@@ -72,15 +111,19 @@ internal static partial class Program
             ConfigManager.LogWindowX.Value = ConfigManager.LogWindowY.Value = 20;
             // No synthetic ButtonInput success is supplied in these cases.
             // Mouse types cover both a trackpad and mouse-emulated touchscreen;
-            // the third form covers raw touch translated to effective mouse.
-            foreach (int kind in new[] { 0, 1, 2 })
+            // The third form covers raw touch translated to effective mouse;
+            // the fourth is untranslated touch sent through the renderer's
+            // explicit native-button adapter, with no injected success value.
+            foreach (int kind in new[] { 0, 1, 2, 3 })
             {
                 ConfigManager.LogFontSize.Value = 20;
-                Input.touchCount = kind == 1 ? 1 : 0;
-                EventType down = EventType.MouseDown, up = EventType.MouseUp;
-                EventType rawDown = kind == 2 ? EventType.TouchDown : EventType.MouseDown;
-                EventType rawUp = kind == 2 ? EventType.TouchUp : EventType.MouseUp;
-                string scenario = kind == 0 ? "trackpad mouse" : kind == 1 ? "mouse-emulated monitor touch" : "touch translation " + kind;
+                Input.touchCount = kind == 1 || kind == 3 ? 1 : 0;
+                EventType down = kind == 3 ? EventType.TouchDown : EventType.MouseDown;
+                EventType up = kind == 3 ? EventType.TouchUp : EventType.MouseUp;
+                EventType rawDown = kind >= 2 ? EventType.TouchDown : EventType.MouseDown;
+                EventType rawUp = kind >= 2 ? EventType.TouchUp : EventType.MouseUp;
+                string scenario = kind == 0 ? "trackpad mouse" : kind == 1 ? "mouse-emulated monitor touch" :
+                    kind == 2 ? "effective mouse translated from touch" : "direct touch native-button adapter";
                 GUILayout.ResetPointerCapture();
                 var model = new LogModel(); model.ResetContext(760 + kind);
                 Publish(model, "조건", Item("native-first"), Item("native-second"));
@@ -96,6 +139,13 @@ internal static partial class Program
                         scenario + ": consumed down retains the identity from its actual pre-consumption rectangle");
                     SoftResetForPointer(renderer);
                     Repaint(renderer);
+                    foreach (EventType pass in new[] { EventType.Layout, EventType.Repaint, EventType.Ignore })
+                    {
+                        DrawPointer(renderer, pass, rawUp, point);
+                        Check(Field(renderer, "pointerIdentity") != null,
+                            scenario + ": " + pass + " with an unchanged raw release cannot cancel a chrome, row or tool press");
+                    }
+                    renderer.Handle(LogPadCommand.None); renderer.Scroll(0);
                     DrawPointer(renderer, up, rawUp, point);
                     Check(Event.current.type == EventType.Used && Field(renderer, "pointerIdentity") == null,
                         scenario + ": consumed up completes and clears the same pointer transaction");

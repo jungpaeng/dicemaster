@@ -56,11 +56,30 @@ internal static partial class Program
             GamepadBridge.Cancelled = controller.Cancel;
             Vector2 searchPoint = PointerTarget(renderer, control => !control.Button && control.Text == "");
             DrawPointer(renderer, EventType.MouseDown, EventType.MouseDown, searchPoint);
+            Check(Event.current.type == EventType.Used && (string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch",
+                "native TextField consumption retains the search identity from its pre-consumption rectangle");
             LogPadFrame takeover = controller.Tick(true, true, true, LogInputMode.Gamepad, .2, padStates, connected);
             if (takeover.ResetFocus) renderer.ResetInputFocus(takeover.PreservePointerTransaction);
             DrawPointer(renderer, EventType.MouseUp, EventType.MouseUp, searchPoint); Repaint(renderer);
             Check(takeover.ResetFocus && takeover.PreservePointerTransaction && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
                 "actual controller mouse takeover preserves the event text caret across the next Update");
+            GUI.FocusControl(null);
+            DrawPointer(renderer, EventType.TouchDown, EventType.TouchDown, searchPoint);
+            Check(Event.current.type == EventType.Used && (string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch"
+                && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
+                "direct touch is adapted to the actual native TextField mouse boundary and focuses the search field");
+            foreach (EventType pass in new[] { EventType.Layout, EventType.Repaint, EventType.Ignore })
+            {
+                DrawPointer(renderer, pass, EventType.TouchUp, searchPoint);
+                Check((string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch",
+                    pass + " with raw touch-up cannot cancel the search field's active pointer transaction");
+            }
+            LogPadFrame touchTakeover = controller.Tick(true, true, true, LogInputMode.Gamepad, .25, padStates, connected);
+            if (touchTakeover.ResetFocus) renderer.ResetInputFocus(touchTakeover.PreservePointerTransaction);
+            renderer.Handle(touchTakeover.Command); renderer.Scroll(touchTakeover.Scroll);
+            DrawPointer(renderer, EventType.TouchUp, EventType.TouchUp, searchPoint); Repaint(renderer);
+            Check(touchTakeover.ResetFocus && touchTakeover.PreservePointerTransaction && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
+                "actual controller Update between direct touch down/up retains the native search caret");
             GUILayout.TextFieldInput = previous => "특별한 설명";
             Repaint(renderer); GUILayout.TextFieldInput = null;
             LogPadFrame typing = controller.Tick(true, true, true, LogInputMode.Gamepad, .3, padStates, connected);

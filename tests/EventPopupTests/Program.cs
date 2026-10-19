@@ -131,6 +131,7 @@ internal static class Program
             "Popup must show translated game names without raw rich text markup");
 
         PointerRegressions();
+        RowReclickRegressions();
         KeyboardContextualConfirmation();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
@@ -251,7 +252,8 @@ internal static class Program
         ConsumedDownDoesNotRetarget();
         var eventPairs = new[] {
             (EventType.MouseDown, EventType.MouseUp, EventType.MouseDown, EventType.MouseUp),
-            (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp)
+            (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp),
+            (EventType.TouchDown, EventType.TouchUp, EventType.TouchDown, EventType.TouchUp)
         };
         foreach (var pair in eventPairs)
         foreach (string candidate in new[] { "eligible", "blocked", "broken" })
@@ -371,7 +373,10 @@ internal static class Program
         Pointer(rawTouchPopup, EventType.TouchDown, EventType.TouchDown, rawTouch);
         rawTouchPopup.ResetInput(true);
         Pointer(rawTouchPopup, EventType.TouchUp, EventType.TouchUp, rawTouch);
-        Check(EventSelectionRuntime.Commands == 0, "Raw touch events cannot manufacture execution without Unity button acceptance");
+        Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == "eligible" && !EventSelectionRuntime.Forced,
+            "Direct touch adapter preserves Unity button capture through pointer takeover and confirms exactly once");
+        Pointer(rawTouchPopup, EventType.TouchUp, EventType.TouchUp, rawTouch);
+        Check(EventSelectionRuntime.Commands == 1, "Direct touch adapter cannot confirm a duplicate release");
 
         foreach (string shortcut in new[] { "A / Enter", "B / Esc" })
         {
@@ -389,6 +394,155 @@ internal static class Program
         Check(EventSelectionRuntime.Commands == 0, "Outside press cannot manufacture a popup confirmation on release inside");
         GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
         Input.Held.Clear(); Input.touchCount = 0;
+    }
+
+    private static void RowReclickRegressions()
+    {
+        var eventPairs = new[] {
+            (EventType.MouseDown, EventType.MouseUp, EventType.MouseDown, EventType.MouseUp),
+            (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp),
+            (EventType.TouchDown, EventType.TouchUp, EventType.TouchDown, EventType.TouchUp)
+        };
+        foreach (var pair in eventPairs)
+        {
+            foreach (string candidate in new[] { "eligible", "blocked", "broken" })
+            {
+                var popup = Start();
+                Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+                Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                    pair + " first row click selects without requesting an event: " + candidate);
+                Draw(popup);
+                Check(GUILayout.Buttons.Any(text => text.StartsWith("▶ ") && RowCaption(text, candidate)
+                    && text.Contains("다시 클릭·터치:")),
+                    "Selected row advertises its explicit repeat-click action: " + candidate);
+                Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+                Check(candidate == "broken" ? EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0
+                    : EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == candidate
+                        && EventSelectionRuntime.Forced == (candidate == "blocked"),
+                    pair + " a fresh second row click uses the presented contextual action: " + candidate);
+            }
+
+            var randomPopup = Start();
+            Click(randomPopup, text => RowCaption(text, "random"), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random,
+                pair + " selected random row click requests the original game decision");
+
+            foreach (string change in new[] { "same-target-snapshot", "normal-to-blocked", "force-to-normal", "token", "target", "result", "removed" })
+            {
+                var popup = Start();
+                string candidate = change == "force-to-normal" ? "blocked" : "eligible";
+                Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+                Vector2 point = Point(popup, text => RowCaption(text, candidate));
+                Pointer(popup, pair.Item1, pair.Item3, point);
+                int index = candidate == "blocked" ? 1 : 0;
+                EventCandidate original = EventSelectionRuntime.Candidates[index];
+                if (change == "token") EventSelectionRuntime.Token++;
+                else if (change == "removed") EventSelectionRuntime.Candidates.RemoveAt(index);
+                else
+                {
+                    bool eligible = change != "normal-to-blocked";
+                    EventSelectionRuntime.Candidates[index] = new EventCandidate {
+                        Id = original.Id, Title = original.Title, Target = change == "target" ? new object() : original.Target,
+                        Result = change == "result" ? "changed-result" : original.Result,
+                        CanSelect = eligible, CanForce = !eligible
+                    };
+                }
+                // A repaint must not upgrade the press into the newly shown
+                // force/normal action, even when the row ID stays unchanged.
+                Draw(popup);
+                popup.ResetInput(true); popup.UpdateInput();
+                Pointer(popup, pair.Item2, pair.Item4, point);
+                Check(change == "same-target-snapshot" ? EventSelectionRuntime.Commands == 1 && !EventSelectionRuntime.Forced
+                    : EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                    pair + " selected-row press retains target/result/action intent across " + change);
+                if (change == "normal-to-blocked" || change == "force-to-normal")
+                {
+                    popup.UpdateInput();
+                    Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+                    Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == candidate
+                        && EventSelectionRuntime.Forced == (change == "normal-to-blocked"),
+                        "A fresh selected-row click after the changed action is shown accepts that action: " + change);
+                }
+            }
+
+            foreach (string invalid in new[] { "duplicate-up", "outside-down", "release-other-row", "unselected-cross-row" })
+            {
+                var popup = Start();
+                if (invalid != "unselected-cross-row")
+                    Click(popup, text => RowCaption(text, "eligible"), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+                Vector2 eligiblePoint = Point(popup, text => RowCaption(text, "eligible"));
+                Vector2 blockedPoint = Point(popup, text => RowCaption(text, "blocked"));
+                Pointer(popup, pair.Item1, pair.Item3, invalid == "outside-down" ? new Vector2(-50, -50) : eligiblePoint);
+                Pointer(popup, pair.Item2, pair.Item4, invalid.Contains("cross-row") || invalid == "release-other-row" ? blockedPoint : eligiblePoint);
+                if (invalid == "duplicate-up")
+                {
+                    Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == "eligible",
+                        pair + " matching selected-row release submits exactly once");
+                    Pointer(popup, pair.Item2, pair.Item4, eligiblePoint);
+                    Check(EventSelectionRuntime.Commands == 1, pair + " duplicate row release cannot submit again");
+                }
+                else Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                    pair + " invalid selected-row gesture cannot submit: " + invalid);
+            }
+
+            var takeoverPopup = Start();
+            var controller = new LogPadController(); var states = new PadState[4]; bool[] connected = { true, false, false, false };
+            controller.Tick(true, true, true, LogInputMode.Gamepad, 0, states, connected);
+            controller.Tick(true, true, true, LogInputMode.Gamepad, .1, states, connected);
+            GamepadBridge.PointerActivity = controller.PointerActivity;
+            Vector2 firstRow = Point(takeoverPopup, text => RowCaption(text, "eligible"));
+            Pointer(takeoverPopup, pair.Item1, pair.Item3, firstRow);
+            states[0] = new PadState { Buttons = PadButtons.A };
+            LogPadFrame frame = controller.Tick(true, true, true, LogInputMode.Gamepad, .2, states, connected);
+            Check(frame.ResetFocus && frame.PreservePointerTransaction && frame.Command == LogPadCommand.None,
+                "Pointer takeover in gamepad mode consumes held A before the first row selection");
+            takeoverPopup.ResetInput(frame.PreservePointerTransaction); takeoverPopup.UpdateInput();
+            Pointer(takeoverPopup, pair.Item2, pair.Item4, firstRow);
+            Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                pair + " first pointer row selection never executes in gamepad mode with held A");
+            Draw(takeoverPopup);
+            Check(GUILayout.Buttons.Any(text => text.StartsWith("▶ ") && RowCaption(text, "eligible")),
+                "Pointer takeover completes selection in gamepad mode");
+            GamepadBridge.PointerActivity = null;
+        }
+
+        NonInputPhaseRegressions(eventPairs);
+    }
+
+    private static void NonInputPhaseRegressions((EventType Down, EventType Up, EventType RawDown, EventType RawUp)[] eventPairs)
+    {
+        var identity = typeof(EventPopupRenderer).GetField("pointerControl", BindingFlags.Instance | BindingFlags.NonPublic);
+        foreach (var pair in eventPairs)
+        foreach (EventType phase in new[] { EventType.Layout, EventType.Repaint, EventType.Ignore })
+        {
+            var popup = Start();
+            Click(popup, text => RowCaption(text, "eligible"), pair.Down, pair.Up, pair.RawDown, pair.RawUp);
+            Vector2 eligiblePoint = Point(popup, text => RowCaption(text, "eligible"));
+            Pointer(popup, phase, pair.RawDown, eligiblePoint);
+            Check(identity.GetValue(popup) == null,
+                phase + " carrying raw " + pair.RawDown + " cannot capture a popup row transaction");
+            Pointer(popup, pair.Up, pair.RawUp, eligiblePoint);
+            Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                "A release after a noninput raw-down phase cannot submit: " + phase + " " + pair);
+
+            popup = Start();
+            Click(popup, text => RowCaption(text, "eligible"), pair.Down, pair.Up, pair.RawDown, pair.RawUp);
+            eligiblePoint = Point(popup, text => RowCaption(text, "eligible"));
+            Vector2 otherPoint = Point(popup, text => RowCaption(text, "blocked"));
+            Pointer(popup, pair.Down, pair.RawDown, eligiblePoint);
+            Check((string)identity.GetValue(popup) == "row:eligible", "Real pointer down captures selected row before noninput passes");
+            Pointer(popup, phase, pair.RawDown, otherPoint);
+            Check((string)identity.GetValue(popup) == "row:eligible",
+                phase + " carrying raw " + pair.RawDown + " cannot retarget a valid active press");
+            Pointer(popup, phase, pair.RawUp, eligiblePoint);
+            Check((string)identity.GetValue(popup) == "row:eligible" && EventSelectionRuntime.Commands == 0,
+                phase + " carrying raw " + pair.RawUp + " cannot clear or submit a valid active press");
+            Pointer(popup, pair.Up, pair.RawUp, eligiblePoint);
+            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == "eligible" && !EventSelectionRuntime.Forced,
+                "The real release after noninput phases completes the original press exactly once: " + phase + " " + pair);
+            Pointer(popup, pair.Up, pair.RawUp, eligiblePoint);
+            Check(EventSelectionRuntime.Commands == 1, "Duplicate release after noninput phases cannot repeat the action");
+        }
     }
 
 }

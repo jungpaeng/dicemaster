@@ -4,6 +4,14 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## PRD #5 — v1.0.6-alpha.3 준비
+
+사용자의 전체 로그 터치 수정·팝업 선택 행 재클릭/터치 진행 요청에 따른 후속 시험판이다. 앞서 요청한 main 반영 원칙에 따라 최신 `origin/main`에서 작업하고 README·구현·검사를 함께 main에 반영한다. 대상은 `v1.0.6-alpha.3`, 설치 자산은 `DiceMaster-v1.0.6-alpha.3.zip`이며 [변경·설치·복구·검증 상태](ISSUE-5-ALPHA3-RELEASE.md)를 따른다.
+
+실제 전체 소스 검사·격리 재빌드·고정 커밋 `verify-preview-release.py --scope prd5` 재빌드와 검토 DLL/cfg/ZIP 일치를 확인한 뒤, 새 태그·prerelease를 `prerelease=true`·`make_latest=false`로 게시한다. 사전 원격 목록과 게시 후 태그·공개 페이지·인증 없는 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 대조한다. 기존 태그·Release·자산·Latest v1.0.5를 보존하고 이슈 #5를 종료하지 않는다.
+
+이 절은 준비 기록이며 실제 통과 수·고정 소스·해시·시각·원격 ID를 아직 주장하지 않는다. 결과 영수증 예정 경로는 `artifacts/releases/v1.0.6-alpha.3/`다. 새 DLL의 실제 Windows 확인은 대기이며 alpha.2 팝업 터치 행 선택 성공을 새 DLL의 통과로 쓰지 않는다. 아래 alpha.2의 별도 브랜치 게시 방식은 당시 이력이다.
+
 ## PRD #5 — v1.0.6-alpha.2 prerelease
 
 사용자의 A 확인 통일·클릭/터치 수정과 검증 후 커밋·prerelease 지시에 따라 **2026-10-20 01:02:17 KST에 [v1.0.6-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.2)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.2/DiceMaster-v1.0.6-alpha.2.zip). 소스·태그는 `e71020020b1b7f1938f22ff4a60d046c8bace839`, Release ID `417484069`·asset ID `656733547`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. [변경·설치·복구·검증 상태](ISSUE-5-ALPHA2-RELEASE.md)를 따릅니다. 새 Windows 확인과 이슈 #5 완료는 대기입니다.

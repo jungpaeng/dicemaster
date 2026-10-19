@@ -279,7 +279,8 @@ static class Program
                         i.OpCode == OpCodes.Ldstr && (string)i.Operand == "이벤트")),
             "event query/filter state must be guarded by the event tab and must not restore the old screen keyboard");
         var eventControls = Method(renderer, "DrawEventControls");
-        Check(Calls(eventControls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == "TextField") &&
+        Check(Calls(eventControls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUI" && c.Name == "TextField") &&
+                Calls(eventControls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayoutUtility" && c.Name == "GetRect") &&
                 Calls(Method(renderer, "DrawListDetail")).Any(c => c.FullName == eventControls.FullName) &&
                 Calls(Method(renderer, "DrawListDetail")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_IsEventTab") &&
                 !new[] { "DrawChoices", "DrawConditionDetails" }.SelectMany(name => Calls(Method(renderer, name)))

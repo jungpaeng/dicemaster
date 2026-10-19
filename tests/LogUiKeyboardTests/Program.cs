@@ -28,6 +28,7 @@ internal static partial class Program
         NativeButtonEventContract();
         RendererNativePointerTransactions();
         RendererNativeConsumedCornerPress();
+        RendererNonInputPassesPreservePointer();
         CursorOwnershipLifecycle();
         RendererListPointerSelectionTransactions();
         RendererPointerTakeoverTransactions();
@@ -1231,7 +1232,10 @@ internal static partial class Program
                 int rejectedAttempts = LogBridge.Reservations;
                 DrawPointer(rejectedRenderer, EventType.TouchDown, EventType.TouchDown, rejectedPoint);
                 SoftResetForPointer(rejectedRenderer);
-                DrawPointer(rejectedRenderer, EventType.TouchUp, EventType.TouchUp, rejectedPoint);
+                // The renderer now adapts direct touch into native mouse
+                // phases. Explicitly reject this boundary release instead of
+                // relying on native Button's lack of untranslated touch input.
+                DrawPointer(rejectedRenderer, EventType.TouchUp, EventType.TouchUp, rejectedPoint, _ => false);
                 DrawPointer(rejectedRenderer, EventType.TouchUp, EventType.TouchUp, rejectedPoint, reserve, consume: true);
                 Check(LogBridge.Reservations == rejectedAttempts && Field(rejectedRenderer, "pointerIdentity") == null,
                     "touch events alone do not manufacture success when Unity's button boundary did not accept the release");

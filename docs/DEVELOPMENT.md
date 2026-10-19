@@ -2,6 +2,14 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## PRD #5 — v1.0.6-alpha.3 준비
+
+전체 로그의 터치 실패와 팝업 선택 행 재클릭·터치 진행을 보완한다. 최신 `origin/main`을 기준으로 구현·검사·README를 함께 반영하며 새 고정 커밋·태그로 시험판을 준비한다. 검사·해시·게시 사실은 [alpha.3 배포 기록](ISSUE-5-ALPHA3-RELEASE.md)에 실제 결과로 기록한다.
+
+전체 로그는 effective 입력 단계에서만 누름·해제를 시작하고, `Used`+원래 입력은 정리에만 사용한다. 버튼·이벤트 검색 칸 안에서 별도 터치 단계를 마우스로 전달해 native 입력의 잘림·소유권 처리를 유지한다. 팝업은 첫 클릭으로 선택하고 선택된 행의 새 클릭으로 표시된 일반/명시 조건 무시/무작위를 확정한다. 누름 뒤 토큰·대상 객체·결과·진행 방식이 바뀌면 취소한다.
+
+사용자는 alpha.2의 팝업 터치 선택 성공과 전체 로그 터치 실패를 보고했다. 실제 Windows 창의 이벤트 전달은 관찰하지 않았으므로 native 창 필터를 증상의 확정 원인으로 쓰지 않는다. 새 alpha.3의 실제 장치 결과는 [Windows 검증표](ISSUE-5-WINDOWS-VALIDATION.md)에 별도로 남긴다. 아래 alpha.2의 검사·게시 수치는 당시 기록이다.
+
 ## PRD #5 — v1.0.6-alpha.2 prerelease
 
 **2026-10-20 01:02:17 KST에 [v1.0.6-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.2) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.2/DiceMaster-v1.0.6-alpha.2.zip). 고정 소스·태그 `e71020020b1b7f1938f22ff4a60d046c8bace839`의 재빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·두 파일·내부 바이트 검증을 통과했습니다. 공통 UI 2,654개·팝업 503개·후보 DLL 연결 83개 검사를 포함하며 상세 결과와 파일 식별값은 [alpha.2 배포 기록](ISSUE-5-ALPHA2-RELEASE.md)에 있습니다. 새 DLL의 실제 Windows 확인은 [검증표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 아래 alpha.1의 검사·게시 결과를 새 검사로 사용하지 않습니다.

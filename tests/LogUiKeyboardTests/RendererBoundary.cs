@@ -81,6 +81,7 @@ namespace UnityEngine
         public static void DragWindow(Rect rect) { }
         public static bool Button(Rect rect, string text, GUIStyle style) => GUILayout.ButtonAtRect(rect, text, style);
         public static bool Button(Rect rect, GUIContent content, GUIStyle style) => GUILayout.ButtonAtRect(rect, content.text, style);
+        public static string TextField(Rect rect, string text, GUIStyle style) => GUILayout.TextFieldAtRect(rect, text, style);
         public static Rect Window(int id, Rect rect, Action<int> draw, string title, GUIStyle style)
             => GUILayout.InvokeWindow(id, rect, draw, style, false, Array.Empty<GUILayoutOption>());
     }
@@ -390,8 +391,19 @@ namespace UnityEngine
         { LiteralLabels.Add(text); Control(text, style, false, options); }
         public static string TextField(string text, GUIStyle style, params GUILayoutOption[] options)
         {
-            Control(text, style, false, options);
-            if (Event.current.rawType == EventType.MouseDown && LastRect.Contains(Event.current.mousePosition)) GUI.FocusControl(GUI.NextControlName);
+            Rect rect = GUILayoutUtility.GetRect(new GUIContent(text), style, options);
+            return TextFieldAtRect(rect, text, style);
+        }
+        internal static string TextFieldAtRect(Rect rect, string text, GUIStyle style)
+        {
+            RecordControl(text, style, false, rect);
+            if (GUI.enabled && Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition)
+                && Current.Clip.Contains(new Vector2(Event.current.mousePosition.x + Current.GuiOrigin.x,
+                    Event.current.mousePosition.y + Current.GuiOrigin.y)))
+            {
+                GUI.FocusControl(GUI.NextControlName);
+                Event.current.Use();
+            }
             GUI.NextControlName = null;
             return TextFieldInput == null ? text : TextFieldInput(text);
         }

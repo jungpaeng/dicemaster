@@ -364,7 +364,13 @@ namespace DiceMaster.LogUI
             // Restore the old whole-window drag area. Keep this after controls
             // so buttons and scrollbars retain their mouse capture.
             GUI.DragWindow(new Rect(0, 0, window.width, window.height));
-            if (IsPointerRelease(Event.current.rawType) && pendingAction == null) { pointerIdentity = null; pointerReservation = null; PersistLayout(true); }
+            Event evt = Event.current;
+            // A native window callback can have a different effective event
+            // from rawType. Layout/repaint/filtered callbacks cannot finish a
+            // press before its real release callback. Native controls consume
+            // accepted input, so Used still needs the original release type.
+            bool released = IsPointerRelease(evt.type) || evt.type == EventType.Used && IsPointerRelease(evt.rawType);
+            if (released && pendingAction == null) { pointerIdentity = null; pointerReservation = null; PersistLayout(true); }
         }
 
         private Vector2 BeginScroll(float y, float height)
@@ -528,10 +534,18 @@ namespace DiceMaster.LogUI
             float inputHeight = chromeFont + 14;
             float filterHeight = TextHeight(filter, chromeButtonStyle, BodyWidth);
             GUILayout.Label(label, statusStyle, GUILayout.Height(labelHeight));
-            GUI.SetNextControlName(EventSearchControl);
-            string query = GUILayout.TextField(State.SearchQuery, searchStyle, GUILayout.Height(inputHeight), GUILayout.ExpandWidth(true));
             Event evt = Event.current;
-            if (GUI.enabled && IsPointerPress(evt.rawType) && evt.button == 0 && GUILayoutUtility.GetLastRect().Contains(evt.mousePosition))
+            bool down = IsPointerPress(evt.type);
+            Rect inputRect = GUILayoutUtility.GetRect(new GUIContent(State.SearchQuery), searchStyle,
+                GUILayout.MinWidth(1), GUILayout.Height(inputHeight), GUILayout.ExpandWidth(true));
+            GUI.SetNextControlName(EventSearchControl);
+            EventType originalType = evt.type;
+            bool translateTouch = originalType == EventType.TouchDown || originalType == EventType.TouchUp || originalType == EventType.TouchMove;
+            if (translateTouch) evt.type = NativePointerType(originalType);
+            string query;
+            try { query = GUI.TextField(inputRect, State.SearchQuery, searchStyle); }
+            finally { if (translateTouch && evt.type != EventType.Used) evt.type = originalType; }
+            if (GUI.enabled && down && evt.button == 0 && inputRect.Contains(evt.mousePosition))
             {
                 // TextField owns its own mouse capture. Preserve that focus
                 // across the controller's pointer takeover barrier just as a
@@ -710,12 +724,12 @@ namespace DiceMaster.LogUI
         private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false, float maxWidth = 0)
         {
             Event evt = Event.current;
-            // Unity may translate touch to an effective mouse event; Button
-            // can consume that event. Capture both forms before drawing it.
-            // An earlier control may already own this raw press. Its Used
-            // layout entries have dummy rectangles and cannot start a new one.
-            bool down = evt.type != EventType.Used && (IsPointerPress(evt.rawType) || IsPointerPress(evt.type));
-            bool up = IsPointerRelease(evt.rawType) || IsPointerRelease(evt.type);
+            // Classify the callback's effective event before Button consumes
+            // it. rawType can retain a physical press/release during layout,
+            // repaint or a filtered window callback; none is fresh input.
+            // Translated touch is already an effective mouse event here.
+            bool down = IsPointerPress(evt.type);
+            bool up = IsPointerRelease(evt.type);
             GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
             // MinHeight also forces maxHeight in Unity's word-wrap sizer. Let
             // rows measure their full wrapped caption at the final viewport
@@ -729,7 +743,22 @@ namespace DiceMaster.LogUI
                 GUILayoutUtility.GetRect(content, style, GUILayout.MinWidth(1), GUILayout.MaxWidth(maxWidth), GUILayout.ExpandWidth(true)) :
                 height > 0 ? GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true), GUILayout.Height(height)) :
                 GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true));
-            bool pressed = GUI.Button(rect, content, style);
+            // Unity's native Button handles mouse phases only. Some screens
+            // deliver direct touch instead of an effective mouse event inside
+            // a native window. Normalize only real touch input for the native
+            // button so its hit-test clipping and mouse capture stay in charge.
+            EventType originalType = evt.type;
+            bool translateTouch = originalType == EventType.TouchDown || originalType == EventType.TouchUp || originalType == EventType.TouchMove;
+            if (translateTouch)
+                evt.type = NativePointerType(originalType);
+            bool pressed;
+            try { pressed = GUI.Button(rect, content, style); }
+            finally
+            {
+                // Retain native consumption; otherwise let later controls see
+                // the same touch event rather than a manufactured mouse phase.
+                if (translateTouch && evt.type != EventType.Used) evt.type = originalType;
+            }
             if (down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled)
             {
                 pointerIdentity = identity;
@@ -958,6 +987,8 @@ namespace DiceMaster.LogUI
         }
 
         private static bool IsPointerPress(EventType type) => type == EventType.MouseDown || type == EventType.TouchDown;
+        private static EventType NativePointerType(EventType type) => type == EventType.TouchDown ? EventType.MouseDown :
+            type == EventType.TouchUp ? EventType.MouseUp : EventType.MouseDrag;
         private static bool IsPointerRelease(EventType type) => type == EventType.MouseUp || type == EventType.TouchUp;
         private static bool IsPointerDrag(EventType type) => type == EventType.MouseDrag || type == EventType.TouchMove;
     }
