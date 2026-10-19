@@ -156,6 +156,7 @@ static class Program
         }
         StatusOnlyRows();
         StructuredConditionDetails();
+        ConditionDetailReservations();
         EventViews();
         SharedReservationAuthority();
         Console.WriteLine("PASS: " + checks + " log model assertions (full publications, status-only rows, navigation, identity, last-good/errors, context and activation tickets).");
@@ -345,39 +346,158 @@ static class Program
     }
 
 
+    static void ConditionDetailReservations()
+    {
+        var model = new LogModel(); model.ResetContext(70);
+        var pool = new object(); var first = new object(); var second = new object(); var fallback = new object();
+        LogItem Checkpoint(object identity, object one, object two, object other, string id = "checkpoint")
+        {
+            var row = Row(id, identity, "체크포인트 제목");
+            row.Description = "돈 >= 10\n체력 >= 20\n그 외";
+            row.ConditionDetails = new LogConditionDetails("처음 충족한 분기", new[] {
+                new LogConditionBranch("분기 1", "첫 조건", "돈 >= 10", "one", one),
+                new LogConditionBranch("분기 2", "앞 조건 불충족", "체력 >= 20", "two", two),
+                new LogConditionBranch("그 외", "모두 불충족", "", "fallback", other)
+            }, row.Description);
+            return row;
+        }
+        LogItem initial = Checkpoint(pool, first, second, fallback);
+        Publish(model, "조건", initial);
+        var state = model.Tab("조건");
+        Check(state.Snapshot.Rows.Count == 1 && state.Selected == null && state.SelectedBranch == null &&
+            !state.SelectBranch("one") && Arm(state) == null,
+            "Condition detail choices expanded list rows or became active before selecting their parent");
+        Check(state.Select(initial.Id) && state.SelectedBranch == null && state.SelectedReservationTarget == null &&
+            !state.CanReserveSelected && Arm(state) == null,
+            "Selecting a checkpoint inferred its first branch or armed the checkpoint pool");
+        Check(state.SelectBranch("one") && state.SelectedBranchId == "one" &&
+            ReferenceEquals(state.SelectedBranch.Target, first) && ReferenceEquals(state.SelectedReservationTarget, first) &&
+            state.CanReserveSelected,
+            "Explicit detail selection lost branch identity or used the checkpoint pool as the reservation target");
+        object opaque = new object(); state.ExecutionFocus = true;
+        ReservationTicket ticket = state.BeginReservation(opaque);
+        Check(ticket != null && ticket.Id == initial.Id && ticket.BranchId == "one" &&
+            ReferenceEquals(ticket.Target, first) && ReferenceEquals(ticket.ReservationState, opaque) && state.CanActivate(ticket),
+            "Detail reservation ticket did not bind parent ID, selected branch and original game snapshot");
+        state.ListScroll = 48; state.DetailScroll = 160;
+        var refreshed = Checkpoint(pool, first, second, fallback);
+        refreshed.ConditionDetails = new LogConditionDetails("바뀐 안내", new[] {
+            new LogConditionBranch("그 외 번역 변경", "", "", "fallback", fallback),
+            new LogConditionBranch("분기 1 번역 변경", "새 조건 표시", "돈 >= 15", "one", first),
+            new LogConditionBranch("분기 2", "", "체력 >= 30", "two", second)
+        });
+        Publish(model, "조건", refreshed);
+        Check(state.SelectedId == initial.Id && state.SelectedBranchId == "one" && state.ListScroll == 48 &&
+            state.DetailScroll == 160 && state.SelectedBranch.Title == "분기 1 번역 변경" && state.CanActivate(ticket),
+            "Healthy detail reorder/translation/values refresh lost identity, scroll or pending confirmation");
+        Publish(model, "조건", Checkpoint(pool, first, new object(), fallback));
+        Check(state.SelectedBranchId == "one" && state.CanActivate(ticket),
+            "Replacing an unselected sibling invalidated the unchanged selected result");
+        Check(state.SelectBranch("two") && !state.CanActivate(ticket) && state.SelectedId == initial.Id &&
+            state.DetailScroll == 160 && Arm(state) != null,
+            "Selecting another detail branch retained an old ticket or reset parent reading position");
+        ticket = Arm(state); state.ClearBranchSelection();
+        Check(state.SelectedId == initial.Id && state.SelectedBranch == null && state.SelectedBranchId == null &&
+            state.DetailScroll == 160 && !state.CanActivate(ticket) && Arm(state) == null,
+            "Clearing a branch removed the parent reading context or retained reservation authority");
+        state.SelectBranch("fallback"); ticket = Arm(state);
+        Check(ticket != null && ticket.BranchId == "fallback" && ReferenceEquals(ticket.Target, fallback),
+            "Fallback branch lost its own opaque result identity");
+        state.SelectBranch("one"); ticket = Arm(state);
+        var retained = Checkpoint(pool, first, second, fallback);
+        retained.RefreshState = LogRefreshState.RetainedFailure; retained.HasLastGood = true;
+        Publish(model, "조건", retained);
+        Check(state.SelectedId == initial.Id && state.Selected.ConditionDetails.Branches.Count == 3 &&
+            state.DetailScroll == 160 && !state.CanActivate(ticket) && Arm(state) == null && !state.CanReserveSelected,
+            "Retained complete detail became reservable after a read failure");
+        Publish(model, "조건", Checkpoint(pool, first, second, fallback));
+        Check(!state.CanActivate(ticket), "Recovery revived a pre-failure condition confirmation");
+        state.SelectBranch("one"); ticket = Arm(state);
+        model.MarkPublicationFailure("조건");
+        Check(!state.CanActivate(ticket) && Arm(state) == null && state.SelectedId == initial.Id,
+            "Failed condition publication retained execution authority or erased readable parent details");
+        Publish(model, "조건", Checkpoint(pool, first, second, fallback)); state.SelectBranch("one"); ticket = Arm(state);
+        foreach (string changed in new[] { "selected item", "count", "mode" })
+        {
+            Publish(model, "조건", Checkpoint(pool, new object(), new object(), new object()));
+            Check(state.SelectedId == initial.Id && state.SelectedBranch == null && state.DetailScroll == 160 &&
+                !state.CanActivate(ticket) && Arm(state) == null,
+                "Changed " + changed + " choice authority retained detail selection/ticket or lost parent scroll");
+            Publish(model, "조건", Checkpoint(pool, first, second, fallback));
+            Check(state.SelectedBranch == null && !state.CanActivate(ticket),
+                "A reappearing " + changed + " result auto-selected itself or revived held confirmation");
+            state.SelectBranch("one"); ticket = Arm(state);
+        }
+        var removed = Checkpoint(pool, first, second, fallback);
+        removed.ConditionDetails = new LogConditionDetails("", new[] {
+            new LogConditionBranch("분기 2", "", "", "two", second)
+        });
+        Publish(model, "조건", removed);
+        Check(state.SelectedId == initial.Id && state.SelectedBranch == null && !state.CanActivate(ticket) && Arm(state) == null,
+            "Disappearing selected detail branch retained reservation authority");
+        Publish(model, "조건", Checkpoint(pool, first, second, fallback)); state.SelectBranch("one"); ticket = Arm(state);
+        var blocked = Checkpoint(pool, first, second, fallback); blocked.ReservationAllowed = false;
+        Publish(model, "조건", blocked);
+        Check(!state.CanReserveSelected && !state.CanActivate(ticket) && Arm(state) == null,
+            "Discovery failure allowed a healthy-looking nested condition choice");
+        Publish(model, "조건", Checkpoint(pool, first, second, fallback), Checkpoint(new object(), new object(), null, null, "other"));
+        state.SelectBranch("one"); ticket = Arm(state); state.Select("other");
+        Check(state.SelectedId == "other" && state.SelectedBranch == null && state.DetailScroll == 0 && !state.CanActivate(ticket),
+            "Changing parent retained another checkpoint's branch selection or confirmation");
+        state.SelectBranch("one"); ticket = Arm(state);
+        Publish(model, "조건", Checkpoint(new object(), first, second, fallback, "other"));
+        Check(state.Selected == null && state.SelectedBranch == null && !state.CanActivate(ticket),
+            "Replacing checkpoint pool behind the same ID inherited its selected branch");
+        Publish(model, "조건", initial); state.Select(initial.Id); state.SelectBranch("one"); ticket = Arm(state);
+        model.ResetContext(71);
+        Check(state.Selected == null && state.SelectedBranch == null && !state.CanActivate(ticket) &&
+            model.Tab("조건").Snapshot.Rows.Count == 0,
+            "Context reset retained nested detail authority");
+    }
+
     static void SharedReservationAuthority()
     {
         foreach (string tab in new[] { "조건", "이벤트", "미션" })
         {
             var model = new LogModel(); model.ResetContext(60);
             object target = new object(), stateSnapshot = new object();
-            var row = Row("result", target);
+            LogItem Reservable(string id, object value)
+            {
+                var item = Row(id, value);
+                if (tab == "조건") item.ConditionDetails = new LogConditionDetails("분기 안내", new[] {
+                    new LogConditionBranch("분기 1", "조건", "본문", "branch", value)
+                });
+                return item;
+            }
+            void Select(LogTabState value, string id)
+            { value.Select(id); if (tab == "조건") value.SelectBranch("branch"); }
+            var row = Reservable("result", target);
             Publish(model, tab, row);
             var state = model.Tab(tab);
             Check(state.SupportsReservation && state.BeginReservation() == null && state.Selected == null,
                 tab + ": publication cannot arm or auto-select a reservable result");
-            state.Select(row.Id); state.ExecutionFocus = true;
+            Select(state, row.Id); state.ExecutionFocus = true;
             ReservationTicket ticket = state.BeginReservation(stateSnapshot);
             Check(ticket != null && ticket.Tab == tab && ReferenceEquals(ticket.ReservationState, stateSnapshot) && state.CanActivate(ticket),
                 tab + ": an explicit selected result carries the opaque game-boundary snapshot");
-            Publish(model, tab, Row(row.Id, target));
+            Publish(model, tab, Reservable(row.Id, target));
             Check(state.CanActivate(ticket), tab + ": a healthy same-target refresh retains the pending confirmation");
             foreach (string foreign in new[] { "조건", "이벤트", "미션", "선택지" })
             {
                 if (foreign == tab) continue;
-                Publish(model, foreign, Row(row.Id, target));
+                Publish(model, foreign, Reservable(row.Id, target));
                 var other = model.Tab(foreign); other.Select(row.Id); other.ExecutionFocus = true;
                 Check(!other.CanActivate(ticket), tab + ": a matching result identity cannot activate in another tab");
             }
             row.ReservationAllowed = false; Publish(model, tab, row);
             Check(!state.CanActivate(ticket) && Arm(state) == null, tab + ": disabling a branch cancels pending authority");
-            row.ReservationAllowed = true; Publish(model, tab, row); state.Select(row.Id); ticket = Arm(state);
+            row.ReservationAllowed = true; Publish(model, tab, row); Select(state, row.Id); ticket = Arm(state);
             model.MarkPublicationFailure(tab);
             Check(!state.CanActivate(ticket) && Arm(state) == null, tab + ": failed publication blocks existing and fresh confirmations");
-            Publish(model, tab, Row(row.Id, target)); state.Select(row.Id); ticket = Arm(state);
-            Publish(model, tab, Row(row.Id, new object()));
+            Publish(model, tab, Reservable(row.Id, target)); Select(state, row.Id); ticket = Arm(state);
+            Publish(model, tab, Reservable(row.Id, new object()));
             Check(state.Selected == null && !state.CanActivate(ticket), tab + ": replacement behind the same row ID cannot inherit authority");
-            state.Select(row.Id); ticket = Arm(state); model.ResetContext(61);
+            Select(state, row.Id); ticket = Arm(state); model.ResetContext(61);
             Check(!state.CanActivate(ticket) && !model.Tab(tab).ExecutionFocus,
                 tab + ": scene replacement clears selected result and pending authority");
         }

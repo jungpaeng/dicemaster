@@ -352,7 +352,8 @@ static class Program
                 !title.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld),
             "delivered list captions must apply the same final display translation as detail labels without mutating published row data");
         var listDetailCalls = Calls(Method(renderer, "DrawListDetail")).ToArray();
-        Check(listDetailCalls.Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved") &&
+        Check(listDetailCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == "RowReserved") &&
+                Calls(Method(renderer, "RowReserved")).Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved") &&
                 Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr &&
                     i.Operand is string value && value.Contains("예약 중")),
             "actual rendered list captions must mark the real currently reserved target, including rows that are not selected");
@@ -390,8 +391,9 @@ static class Program
                     i.Operand is FieldReference field && field.DeclaringType.FullName == "DiceMaster.LogUI.LogConditionBranch" && field.Name == name)) &&
                 new[] { "BeginVertical", "EndVertical", "Space" }.All(name => Calls(conditionBlocks).Any(c =>
                     c.DeclaringType.FullName == "UnityEngine.GUILayout" && c.Name == name)) &&
-                !Calls(conditionBlocks).Any(c => new[] { "SafeButton", "Select", "Reserve", "Split" }.Contains(c.Name)),
-            "delivered condition branches must render source title/context/body in separate spaced read-only layout blocks without parsing line breaks");
+                Calls(conditionBlocks).Any(c => c.DeclaringType.FullName == renderer && c.Name == "SafeButton") &&
+                !Calls(conditionBlocks).Any(c => new[] { "Select", "Reserve", "Split" }.Contains(c.Name)),
+            "delivered condition branches must render full title/context/body in spaced blocks with identity-based selectable headings and no parsing or render-time reservation");
         Check(Method(bridge, "Publish").Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
                     field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "ConditionDetails") &&
                 Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.FullName == bridge && c.Name == "MapConditionDetails") &&
@@ -402,8 +404,8 @@ static class Program
                 .All(name => drawWindowCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == name)) &&
                 Calls(Method(renderer, "RowState")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_HasStoryReadState"),
             "actual renderer must connect choice comparison/split detail dispatch and retain the separate story-read-state boundary");
-        // Reservation authority is a one-shot operation on the selected list
-        // row. Detail text has no second focus or action control. Inspect the
+        // Reservation authority is one fresh operation on an event/mission
+        // row or the selected checkpoint's explicit detail branch. Inspect the
         // delivered call graph as well as the portable renderer behavior tests
         // so a disconnected helper cannot satisfy this build gate.
         var rendererType = Type(renderer);
@@ -415,17 +417,18 @@ static class Program
         Check(new[] { Method(renderer, "DrawListDetail"), armReservation, reserve }.All(method =>
                 Calls(method).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_SupportsReservation")),
             "actual reservation status, one-shot list arming and final activation must all consult reservation support for their tab");
-        Check(!rendererType.NestedTypes.Single(t => t.Name == "Area").Fields.Any(f => f.Name == "Detail") &&
+        Check(rendererType.NestedTypes.Single(t => t.Name == "Area").Fields.Any(f => f.Name == "ConditionDetails") &&
+                !rendererType.NestedTypes.Single(t => t.Name == "Area").Fields.Any(f => f.Name == "Detail") &&
                 !rendererType.Fields.Any(f => f.Name == "detailIndex") &&
                 !rendererType.Methods.Any(m => new[] { "EnterDetail", "get_CanFocusDetailControl" }.Contains(m.Name)),
-            "delivered renderer must remove the obsolete detail-focus area, index and action-entry path");
+            "delivered renderer adds a checkpoint branch area while preserving removal of the obsolete event/mission detail action path");
         Check(Calls(Method(renderer, "Handle")).Any(c => c.FullName == armReservation.FullName) &&
                 Calls(Method(renderer, "Handle")).Any(c => c.FullName == reserve.FullName) &&
                 Calls(safeButton).Any(c => c.FullName == armReservation.FullName),
             "actual list A/Enter and selected-row pointer down must connect to the same production one-shot arming boundary");
         var armingCalls = Calls(armReservation).ToArray();
         Check(armingCalls.Any(c => c.DeclaringType.FullName == tabState && c.Name == "get_PublicationFailed") &&
-                armingCalls.Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanReserve") &&
+                armingCalls.Any(c => c.DeclaringType.FullName == tabState && c.Name == "get_CanReserveSelected") &&
                 armReservation.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f &&
                     f.DeclaringType.FullName == tabState && f.Name == "ExecutionFocus"),
             "actual one-shot arming must check published reservation eligibility before granting model execution authority");
@@ -460,7 +463,7 @@ static class Program
                 !Calls(Method(renderer, "DrawListDetail")).Any(c => new[] { "Reserve", "BeginReservation" }.Contains(c.Name)) &&
                 !Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr &&
                     i.Operand is string value && value.StartsWith("reserve:", StringComparison.Ordinal)),
-            "actual UI must have one current-data toggle sink and no legacy blind reservation, detail action button or render-time activation");
+            "actual UI must have one current-data toggle sink and no legacy blind reservation, footer action button or render-time activation");
         var captureApi = Method(bridge, "TryCaptureReservation");
         var toggleApi = Method(bridge, "TryToggleReservation");
         Check(captureApi.ReturnType.FullName == "System.Boolean" && captureApi.Parameters.Count == 2 &&

@@ -796,6 +796,10 @@ namespace DiceMaster
             bool Toggle(object snapshot) => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryToggleReservation", context, tab, id, target, snapshot);
             bool Reserve() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, id, target);
             bool Reserved() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", tab, target);
+            object Branch(object row, string result = "1") => ((IList)Member(Member(row, "ConditionDetails"), "Branches"))
+                .Cast<object>().Single(branch => Member(branch, "Target") != null &&
+                    (string)Member(Member(branch, "Target"), "Result") == result);
+            object Target(object row) => IsSwitch() ? Member(Branch(row), "Target") : Member(row, "Target");
             void Prepare(string nextTab)
             {
                 tab = nextTab;
@@ -821,9 +825,18 @@ namespace DiceMaster
                 NewLua(Lua("O_checkpoint_" + sequence), "checkpoint-" + sequence); Tick(plugin, true);
                 context = (long)Member(LogModel, "ContextId");
                 object row = ModelRows(tab).Cast<object>().First(value => Member(value, "Target") != null);
-                id = (string)Member(row, "Id"); target = Member(row, "Target");
+                id = (string)Member(row, "Id"); target = Target(row);
                 Check((bool)Member(row, "CanReserve") && (bool)InstanceCall(LogTab(tab), "Select", id),
-                    tab + ": healthy published branch/event is selectable and reservable");
+                    tab + ": healthy published checkpoint/event is selectable");
+                if (IsSwitch())
+                {
+                    object[] unselected = { tab, null };
+                    Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", unselected) &&
+                        unselected[1] == null && !Reserve(),
+                        "Checkpoint selection alone cannot capture or reserve its first detail branch");
+                    Check((bool)InstanceCall(LogTab(tab), "SelectBranch", (string)Member(Branch(row), "Id")),
+                        "Explicit result selection in checkpoint details failed");
+                }
             }
 
             int conditions = Mortal.Core.ConditionResultData.Executions;
@@ -842,7 +855,7 @@ namespace DiceMaster
                     Invoke(store, "Peek", IsSwitch(), new Mortal.Story.CheckPointManager(), kind == "조건" ? "switch_one" : "fixture_position") == null,
                     kind + ": pending authority is scoped to the exact manager and checkpoint name");
                 Tick(plugin, true);
-                Check(ReferenceEquals(Member(ModelRows(tab).Cast<object>().Single(row => (string)Member(row, "Id") == id), "Target"), target),
+                Check(ReferenceEquals(Target(ModelRows(tab).Cast<object>().Single(row => (string)Member(row, "Id") == id)), target),
                     kind + ": unchanged refresh preserves published target identity");
                 object active = Capture();
                 Check(Toggle(active) && !Reserved() && Pending(IsSwitch()) == null, kind + ": same-target confirmation cancels once");
@@ -877,6 +890,35 @@ namespace DiceMaster
                 if (mode == "count") pool._count++; else pool._useCount = true;
                 Check(!Toggle(captured) && !Reserve(), "Condition branch rejects stale " + mode + " even before a UI refresh");
             }
+            Prepare("조건");
+            object parent = ModelRows("조건").Cast<object>().Single(row => (string)Member(row, "Id") == id);
+            object fallbackBranch = Branch(parent, "2"), fallbackTarget = Member(fallbackBranch, "Target");
+            object firstCapture = Capture();
+            Check((bool)InstanceCall(LogTab(tab), "SelectBranch", (string)Member(fallbackBranch, "Id")) && !Toggle(firstCapture),
+                "Changing the selected detail result invalidates the preceding confirmation under the same checkpoint ID");
+            target = fallbackTarget;
+            Check(ReferenceEquals(Member(target, "Target"), pool) && Toggle(Capture()) && Reserved() &&
+                (string)Member(Pending(true), "Result") == "2",
+                "Fallback detail reserves its explicit n+1 result without confusing pool identity with the first branch");
+            Check(Toggle(Capture()) && !Reserved(), "Fallback detail cancels its own pending reservation");
+            object fallbackCapture = Capture(); pool._items.Add(new Mortal.Core.ConditionResultItem());
+            Check(!Toggle(fallbackCapture) && !Reserve(),
+                "A fallback whose result index now denotes a real branch cannot reuse stale authority");
+            Prepare("조건"); object wrongBranch = Member(Branch(ModelRows("조건").Cast<object>().Single(row => (string)Member(row, "Id") == id), "2"), "Target");
+            object ownCapture = Capture();
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryToggleReservation", context, tab, id, wrongBranch, ownCapture),
+                "A different unselected result cannot borrow the selected parent's confirmation");
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, id + "/result/1", target) &&
+                !(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, id, pool),
+                "Flattened former IDs and checkpoint pool identities cannot act as nested reservation targets");
+            var foreignPool = new Mortal.Story.SwitchResultData { name = "switch_two", _count = 7,
+                _items = new List<Mortal.Core.ConditionResultItem> { new Mortal.Core.ConditionResultItem() } };
+            config.Items["switch_two"] = foreignPool; config._list.Add(foreignPool); Tick(plugin, true);
+            object foreignParent = ModelRows("조건").Cast<object>().Single(row => (string)Member(row, "RawId") == "switch_two");
+            object foreignTarget = Member(Branch(foreignParent), "Target");
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryToggleReservation", context, tab, id, foreignTarget, Capture()) &&
+                !(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, (string)Member(foreignParent, "Id"), target),
+                "Identically numbered results from another checkpoint cannot borrow selected-parent authority");
             Prepare("조건"); Check(Reserve(), "Persistence fixture reserves a condition"); object condition = Pending(true);
             plugin.currentTab = "이벤트"; Tick(plugin, true);
             object eventRow = ModelRows("이벤트")[0];
@@ -890,7 +932,7 @@ namespace DiceMaster
                 "Ordinary Lua compilation preserves next-checkpoint reservations");
             plugin.currentTab = "조건"; Tick(plugin, true);
             object conditionRow = ModelRows("조건").Cast<object>().First(row => Member(row, "Target") != null);
-            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "조건", Member(conditionRow, "Target")),
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "조건", Member(Branch(conditionRow), "Target")),
                 "Republished condition branch keeps its reservation marker after an ordinary Lua boundary");
             plugin.currentTab = "이벤트"; Tick(plugin, true);
             Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Member(ModelRows("이벤트")[0], "Target")),
@@ -1296,22 +1338,25 @@ namespace DiceMaster
             DataHelper.Ready = true; DataHelper.CurrentValue = 31; UnityEngine.Time.unscaledTime = 300;
             NewLua(Lua("O_condition_blocks"), "condition_blocks"); Tick(plugin);
             List<object> Rows(string raw) => ModelRows("조건").Cast<object>().Where(row => (string)Member(row, "RawId") == raw).ToList();
-            object Row(string raw, int result = 1) => Rows(raw).Single(row => Member(row, "Target") == null ||
-                (string)Member(Member(row, "Target"), "Result") == result.ToString());
+            object Row(string raw) => Rows(raw).Single();
             IList Branches(object details) => (IList)Member(details, "Branches");
             string Description(object branch) => (string)Member(branch, "Description");
             object originalRow = Row("switch_one"), original = Member(originalRow, "ConditionDetails");
-            IList originalBranches = Rows("switch_one").Select(row => Branches(Member(row, "ConditionDetails"))[0]).ToList();
-            Check(original != null && originalBranches.Count == 3 && Branches(original).Count == 1 && Branches(original).IsReadOnly &&
-                Rows("switch_one").All(row => (bool)Member(row, "CanReserve")) &&
-                Rows("switch_one").Select(row => (string)Member(row, "Id")).Distinct().Count() == 3,
-                "Actual helper branches were not independently selectable/reservable immutable rows");
+            IList originalBranches = Branches(original);
+            Check(original != null && Rows("switch_one").Count == 1 && originalBranches.Count == 3 && originalBranches.IsReadOnly &&
+                (bool)Member(originalRow, "CanReserve") && ModelRows("조건").Count == 2,
+                "Actual helper expanded checkpoint rows or omitted the immutable full detail branch set");
             Check((string)Member(original, "Hint") == "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.",
                 "Actual model lost the first-satisfied branch-order explanation");
             Check((string)Member(originalBranches[0], "Title") == "분기 1" &&
                 (string)Member(originalBranches[1], "Title") == "분기 2" &&
                 (string)Member(originalBranches[2], "Title") == "그 외 (분기 3)",
                 "Actual publication merged branch candidates or discarded their fallback identity");
+            Check(ReferenceEquals(Member(originalRow, "Target"), checkpoint) && originalBranches.Cast<object>().All(branch =>
+                (bool)Member(branch, "CanReserve") && !string.IsNullOrEmpty((string)Member(branch, "Id"))) &&
+                originalBranches.Cast<object>().Select(branch => (string)Member(branch, "Id")).Distinct().Count() == 3 &&
+                originalBranches.Cast<object>().Select(branch => (string)Member(Member(branch, "Target"), "Result")).SequenceEqual(new[] { "1", "2", "3" }),
+                "Checkpoint details lost opaque per-result identities or exposed branch candidates as parent rows");
             Check((string)Member(originalBranches[0], "Context") == "이 조건을 만족하면" &&
                 (string)Member(originalBranches[1], "Context") == "앞 분기가 모두 불충족일 때 검사" &&
                 (string)Member(originalBranches[2], "Context") == "위 분기가 모두 불충족일 때",
@@ -1322,35 +1367,67 @@ namespace DiceMaster
             Check((string)Member(original, "DescriptionFallback") == (string)Member(originalRow, "Description") &&
                 plugin.switchEntries[0].Description.Contains(Description(originalBranches[0])) &&
                 plugin.switchEntries[0].Description.Contains(Description(originalBranches[1])),
-                "Selected branch values or the complete same-capture compatibility description were lost");
+                "Full checkpoint values or the complete same-capture compatibility description were lost");
             Check(first._value1.Reads == 1 && first._value2.Reads == 1 && compound._value1.Reads == 1 &&
                 compound._value2.Reads == 1 && second._value1.Reads == 1 && second._value2.Reads == 1,
                 "Actual helper evaluated branch operands twice to create UI and plaintext views");
             object state = LogTab("조건");
             string id = (string)Member(originalRow, "Id");
             InstanceCall(state, "Select", id); state.GetType().GetField("DetailScroll").SetValue(state, 66f);
+            Check(InstanceCall(state, "BeginReservation", (object)null) == null && Member(state, "SelectedBranch") == null,
+                "Selecting a checkpoint created first-branch reservation authority without a detail choice");
+            string selectedBranchId = (string)Member(originalBranches[0], "Id");
+            Check((bool)InstanceCall(state, "SelectBranch", selectedBranchId), "Actual published detail result could not be selected");
+            state.GetType().GetField("ExecutionFocus").SetValue(state, true);
+            object ticket = InstanceCall(state, "BeginReservation", (object)null);
+            Check(ticket != null && (string)Member(ticket, "Id") == id && (string)Member(ticket, "BranchId") == selectedBranchId &&
+                ReferenceEquals(Member(ticket, "Target"), Member(originalBranches[0], "Target")),
+                "Actual selected-detail ticket was not bound to its checkpoint and opaque branch target");
             DataHelper.CurrentValue = 37; UnityEngine.Time.unscaledTime += .3f; Tick(plugin);
             object healthy = Member(Row("switch_one"), "ConditionDetails");
             Check((string)Member(state, "SelectedId") == id && (float)Member(state, "DetailScroll") == 66f &&
-                Description(Branches(healthy)[0]).Contains("(37)"),
+                Description(Branches(healthy)[0]).Contains("(37)") && (string)Member(state, "SelectedBranchId") == selectedBranchId &&
+                (bool)InstanceCall(state, "CanActivate", ticket),
                 "Actual healthy branch refresh lost the stable selection/reading scroll or kept old values");
             Check(Description(originalBranches[0]).Contains("(31)") && !Description(originalBranches[0]).Contains("(37)"),
                 "Later refresh mutated an already-published branch snapshot");
             second._value1.Throw = true; DataHelper.CurrentValue = 39; Tick(plugin, true);
             object failed = Row("switch_one"), retained = Member(failed, "ConditionDetails");
             Check(Member(failed, "RefreshState").ToString() == "RetainedFailure" && (bool)Member(failed, "HasLastGood") &&
-                Branches(retained).Count == 1 && Description(Branches(retained)[0]).Contains("(37)") &&
-                Description(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0]).Contains("(37)") &&
+                Branches(retained).Count == 3 && Description(Branches(retained)[0]).Contains("(37)") &&
+                Description(Branches(retained)[1]).Contains("(37)") &&
                 !Description(Branches(retained)[0]).Contains("(39)"),
                 "A later branch failure leaked partial current values instead of the complete last-good branch set");
             Check((string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus") &&
+                !(bool)InstanceCall(state, "CanActivate", ticket) && InstanceCall(state, "BeginReservation", (object)null) == null &&
                 Description(Branches(Member(Row("switch_two"), "ConditionDetails"))[0]).Contains("(39)"),
                 "Failed branch details lost readable selection or blocked a healthy sibling checkpoint");
             second._value1.Throw = false; Tick(plugin, true);
             Check(Member(Row("switch_one"), "RefreshState").ToString() == "Healthy" &&
-                Description(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0]).Contains("(39)") &&
+                Description(Branches(Member(Row("switch_one"), "ConditionDetails"))[1]).Contains("(39)") &&
                 (string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus"),
                 "Actual helper recovery did not replace retained branch values without reviving execution focus");
+            InstanceCall(state, "SelectBranch", selectedBranchId); state.GetType().GetField("ExecutionFocus").SetValue(state, true);
+            ticket = InstanceCall(state, "BeginReservation", (object)null);
+            object originalSecond = checkpoint._items[1];
+            checkpoint._items[1] = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { second } };
+            Tick(plugin, true);
+            Check((string)Member(state, "SelectedBranchId") == selectedBranchId && (bool)InstanceCall(state, "CanActivate", ticket),
+                "Replacing an unselected branch invalidated the unchanged explicitly chosen result");
+            checkpoint._items[1] = (Mortal.Core.ConditionResultItem)originalSecond;
+            object originalFirst = checkpoint._items[0];
+            checkpoint._items[0] = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { first, compound } };
+            Tick(plugin, true);
+            Check((string)Member(state, "SelectedId") == id && Member(state, "SelectedBranch") == null &&
+                (float)Member(state, "DetailScroll") == 66f && !(bool)InstanceCall(state, "CanActivate", ticket),
+                "Replacing the selected branch retained its old confirmation or reset checkpoint reading position");
+            checkpoint._items[0] = (Mortal.Core.ConditionResultItem)originalFirst; Tick(plugin, true);
+            Check(Member(state, "SelectedBranch") == null, "Reappearing branch silently restored a selected result");
+            InstanceCall(state, "SelectBranch", selectedBranchId); state.GetType().GetField("ExecutionFocus").SetValue(state, true);
+            ticket = InstanceCall(state, "BeginReservation", (object)null); checkpoint._count++; Tick(plugin, true);
+            Check((string)Member(state, "SelectedId") == id && Member(state, "SelectedBranch") == null &&
+                (float)Member(state, "DetailScroll") == 66f && !(bool)InstanceCall(state, "CanActivate", ticket),
+                "Switch count refresh retained branch authority or discarded readable checkpoint navigation");
             long context = (long)Member(LogModel, "ContextId");
             NewLua(Lua("O_condition_reset"), "condition_reset");
             Check((long)Member(LogModel, "ContextId") != context && ModelRows("조건").Count == 0 && Member(state, "Selected") == null,
@@ -1371,8 +1448,8 @@ namespace DiceMaster
             int countReads = first._value1.Reads + second._value1.Reads;
             Tick(plugin, true);
             object counted = Member(Row("switch_one"), "ConditionDetails");
-            Check(Rows("switch_one").Count == 2 && Branches(counted).Count == 1 &&
-                (string)Member(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0], "Title") == "그 외 (분기 2)" &&
+            Check(Rows("switch_one").Count == 1 && Branches(counted).Count == 2 &&
+                (string)Member(Branches(counted)[1], "Title") == "그 외 (분기 2)" &&
                 countReads == first._value1.Reads + second._value1.Reads,
                 "Count-based checkpoint did not expose count/fallback choices or evaluated the inactive condition route");
             checkpoint._useCount = false; checkpoint._items = null; Tick(plugin, true);
@@ -1385,9 +1462,9 @@ namespace DiceMaster
                 "Empty checkpoint did not expose its sole fallback branch without invented conditions");
             checkpoint._items.Add(new Mortal.Core.ConditionResultItem()); Tick(plugin, true);
             object emptyGroup = Member(Row("switch_one"), "ConditionDetails");
-            Check(Rows("switch_one").Count == 2 && Branches(emptyGroup).Count == 1 && Description(Branches(emptyGroup)[0]) ==
+            Check(Rows("switch_one").Count == 1 && Branches(emptyGroup).Count == 2 && Description(Branches(emptyGroup)[0]) ==
                 "등록된 조건이 없어 이 분기는 충족되지 않습니다." &&
-                (string)Member(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0], "Title") == "그 외 (분기 2)",
+                (string)Member(Branches(emptyGroup)[1], "Title") == "그 외 (분기 2)",
                 "Empty condition group acquired a true/unconditional meaning or changed the plaintext contract");
             NewLua(Lua("O_condition_removed").Replace("checkpointmanager.Switch(\"switch_one\")\n", ""), "condition_removed"); Tick(plugin);
             Check(!ModelRows("조건").Cast<object>().Any(row => (string)Member(row, "RawId") == "switch_one") &&

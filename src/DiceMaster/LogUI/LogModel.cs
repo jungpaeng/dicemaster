@@ -12,9 +12,13 @@ namespace DiceMaster.LogUI
     // localized operator text cannot establish the branch structure later.
     public sealed class LogConditionBranch
     {
-        public readonly string Title, Context, Description;
+        public readonly string Title, Context, Description, Id;
+        public readonly object Target;
+        public bool CanReserve { get { return Target != null; } }
         public LogConditionBranch(string title, string context, string description)
-        { Title = title ?? ""; Context = context ?? ""; Description = description ?? ""; }
+            : this(title, context, description, "", null) { }
+        public LogConditionBranch(string title, string context, string description, string id, object target)
+        { Title = title ?? ""; Context = context ?? ""; Description = description ?? ""; Id = id ?? ""; Target = target; }
     }
 
     public sealed class LogConditionDetails
@@ -93,15 +97,15 @@ namespace DiceMaster.LogUI
     public sealed class ReservationTicket
     {
         public readonly long ContextId;
-        public readonly string Tab, Id;
+        public readonly string Tab, Id, BranchId;
         public readonly object Target;
         // Opaque game-boundary state captured on the original confirmation.
         // The model carries it without reading game state or deciding whether
         // the action is a reservation or its cancellation.
         public readonly object ReservationState;
         internal readonly long SelectionVersion;
-        internal ReservationTicket(long contextId, string tab, string id, object target, long version, object reservationState)
-        { ContextId = contextId; Tab = tab; Id = id; Target = target; SelectionVersion = version; ReservationState = reservationState; }
+        internal ReservationTicket(long contextId, string tab, string id, object target, long version, object reservationState, string branchId = null)
+        { ContextId = contextId; Tab = tab; Id = id; Target = target; SelectionVersion = version; ReservationState = reservationState; BranchId = branchId; }
     }
 
     // Runtime-only navigation. No game API, config or save access belongs here.
@@ -111,6 +115,7 @@ namespace DiceMaster.LogUI
         public bool HasPublished { get; private set; }
         public bool PublicationFailed { get; private set; }
         public string SelectedId { get; private set; }
+        public string SelectedBranchId { get; private set; }
         public float ListScroll, DetailScroll;
         public bool ExecutionFocus;
         public bool SupportsReservation { get { return Snapshot.Tab == "조건" || Snapshot.Tab == "이벤트" || Snapshot.Tab == "미션"; } }
@@ -182,13 +187,55 @@ namespace DiceMaster.LogUI
             }
         }
 
+        public LogConditionBranch SelectedBranch
+        {
+            get
+            {
+                LogItem row = Selected;
+                if (Snapshot.Tab != "조건" || SelectedBranchId == null || row == null || row.ConditionDetails == null) return null;
+                foreach (LogConditionBranch branch in row.ConditionDetails.Branches)
+                    if (branch.Id == SelectedBranchId) return branch;
+                return null;
+            }
+        }
+
+        public object SelectedReservationTarget
+        {
+            get
+            {
+                if (Snapshot.Tab == "조건") return SelectedBranch == null ? null : SelectedBranch.Target;
+                return Selected == null ? null : Selected.Target;
+            }
+        }
+
+        public bool CanReserveSelected
+        { get { return Selected != null && Selected.CanReserve && SelectedReservationTarget != null && !PublicationFailed; } }
+
+        public bool SelectBranch(string id)
+        {
+            LogItem row = Selected;
+            if (Snapshot.Tab == "조건" && !string.IsNullOrEmpty(id) && row != null && row.ConditionDetails != null)
+                foreach (LogConditionBranch branch in row.ConditionDetails.Branches)
+                    if (branch.Id == id)
+                    {
+                        if (SelectedBranchId != id) CancelExecution();
+                        SelectedBranchId = id;
+                        return true;
+                    }
+            ClearBranchSelection();
+            return false;
+        }
+
+        public void ClearBranchSelection()
+        { SelectedBranchId = null; CancelExecution(); }
+
         public bool Select(string id)
         {
             foreach (LogItem row in VisibleRows)
                 if (row.Id == id)
                 {
                     if (!row.CanSelect) return false;
-                    if (SelectedId != id) { CancelExecution(); DetailScroll = 0; }
+                    if (SelectedId != id) { ClearBranchSelection(); DetailScroll = 0; }
                     SelectedId = id;
                     return true;
                 }
@@ -197,7 +244,7 @@ namespace DiceMaster.LogUI
         }
 
         public void ClearSelection()
-        { SelectedId = null; DetailScroll = 0; CancelExecution(); }
+        { SelectedId = null; DetailScroll = 0; ClearBranchSelection(); }
 
         public void CancelExecution()
         { ExecutionFocus = false; selectionVersion++; }
@@ -205,6 +252,7 @@ namespace DiceMaster.LogUI
         internal void Publish(LogSnapshot snapshot)
         {
             LogItem previous = Selected;
+            LogConditionBranch previousBranch = SelectedBranch;
             Snapshot = snapshot;
             visibleRows = null;
             HasPublished = true;
@@ -212,7 +260,13 @@ namespace DiceMaster.LogUI
             LogItem next = Selected;
             if (SelectedId != null && (next == null || previous != null && !ReferenceEquals(previous.Target, next.Target)))
                 ClearSelection();
-            else if (next != null && !next.CanReserve) CancelExecution();
+            else
+            {
+                LogConditionBranch nextBranch = SelectedBranch;
+                if (SelectedBranchId != null && (nextBranch == null || previousBranch != null &&
+                    !ReferenceEquals(previousBranch.Target, nextBranch.Target))) ClearBranchSelection();
+                if (next != null && !CanReserveSelected) CancelExecution();
+            }
         }
 
         internal void Reset(long contextId)
@@ -226,16 +280,17 @@ namespace DiceMaster.LogUI
         public ReservationTicket BeginReservation(object reservationState = null)
         {
             LogItem row = Selected;
-            if (!SupportsReservation || PublicationFailed || !ExecutionFocus || row == null || !row.CanReserve) return null;
-            return new ReservationTicket(Snapshot.ContextId, Snapshot.Tab, row.Id, row.Target, selectionVersion, reservationState);
+            if (!SupportsReservation || !ExecutionFocus || !CanReserveSelected) return null;
+            return new ReservationTicket(Snapshot.ContextId, Snapshot.Tab, row.Id, SelectedReservationTarget, selectionVersion,
+                reservationState, Snapshot.Tab == "조건" ? SelectedBranchId : null);
         }
 
         public bool CanActivate(ReservationTicket ticket)
         {
             LogItem row = Selected;
             return SupportsReservation && !PublicationFailed && ticket != null && ExecutionFocus && ticket.ContextId == Snapshot.ContextId && ticket.Tab == Snapshot.Tab &&
-                ticket.SelectionVersion == selectionVersion && row != null && row.CanReserve && row.Id == ticket.Id &&
-                ReferenceEquals(row.Target, ticket.Target);
+                ticket.SelectionVersion == selectionVersion && CanReserveSelected && row.Id == ticket.Id &&
+                (Snapshot.Tab != "조건" || SelectedBranchId == ticket.BranchId) && ReferenceEquals(SelectedReservationTarget, ticket.Target);
         }
 
         internal void MarkPublicationFailure()

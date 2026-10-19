@@ -570,57 +570,6 @@ internal static partial class Program
             scenario + ": list owns navigation and no durable reservation authority remains");
     }
 
-    private static void RendererReservableConditionDetails()
-    {
-        int attempts = LogBridge.Reservations;
-        object oldCondition = LogBridge.CurrentReservation("조건"), oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
-        bool popup = DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value;
-        object oldTarget = LogBridge.LastTarget;
-        try
-        {
-            DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value = false;
-            object selected = new object(), otherResult = new object(), eventTarget = new object(), missionTarget = new object();
-            var first = Item("switch-result-1", selected);
-            first.Text = "분기 1 · 결과 1";
-            first.ConditionDetails = new LogConditionDetails("앞 분기가 모두 불충족일 때 검사", new[] {
-                new LogConditionBranch("분기 2", "앞 분기가 모두 불충족일 때 검사", "A10005 = 0 | 랜덤값 <= 10")
-            });
-            var second = Item("switch-result-2", otherResult);
-            var model = new LogModel(); model.ResetContext(711); Publish(model, "조건", first, second);
-            var renderer = new LogRenderer(model, null, null); renderer.Handle(LogPadCommand.None);
-            renderer.Handle(LogPadCommand.NextTab); renderer.Handle(LogPadCommand.Activate);
-            Repaint(renderer);
-            var pane = GUILayout.ScrollViews[1];
-            Check(pane.Controls.Exists(control => !control.Button && control.Text == "A10005 = 0 | 랜덤값 <= 10")
-                && pane.Controls.Exists(control => !control.Button && control.Text == "앞 분기가 모두 불충족일 때 검사"),
-                "a reservable condition result retains its complete structured branch and priority context");
-            Check(pane.Controls.Exists(control => !control.Button && control.Text.Contains("조건을 무시하고 다음 해당 판정에 한 번 적용", StringComparison.Ordinal))
-                && pane.Controls.Exists(control => !control.Button && control.Text.StartsWith("조건 분기 결과 예약", StringComparison.Ordinal)),
-                "condition reservation clearly explains a one-use override rather than immediate game execution");
-            Check(LogBridge.Reservations == attempts && model.Tab("조건").SelectedId == first.Id,
-                "opening a result and its details never reserves it automatically");
-            LogBridge.SetReservation("조건", null); LogBridge.SetReservation("이벤트", eventTarget); LogBridge.SetReservation("미션", missionTarget);
-            renderer.Handle(LogPadCommand.Activate);
-            Check(LogBridge.Reservations == attempts + 1 && LogBridge.IsReserved("조건", selected)
-                && LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget)
-                && !DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value,
-                "a condition reservation works with its popup disabled and cannot replace event or mission reservations");
-            Repaint(renderer);
-            Check(GUILayout.ScrollViews[0].Controls.Exists(control => control.Button && control.Text.Contains(first.Id, StringComparison.Ordinal)
-                && control.Text.Contains("예약 중", StringComparison.Ordinal)), "the selected branch row displays its own reservation badge");
-            renderer.Handle(LogPadCommand.Activate);
-            Check(LogBridge.Reservations == attempts + 2 && LogBridge.CurrentReservation("조건") == null
-                && LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget),
-                "a new condition confirmation releases only the condition reservation");
-        }
-        finally
-        {
-            LogBridge.SetReservation("조건", oldCondition); LogBridge.SetReservation("이벤트", oldEvent); LogBridge.SetReservation("미션", oldMission);
-            DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value = popup;
-            LogBridge.Reservations = attempts; LogBridge.LastTarget = oldTarget;
-        }
-    }
-
     private static ReservationTicket ArmModelTicket(LogTabState state)
     { state.ExecutionFocus = true; return state.BeginReservation(); }
 
@@ -631,7 +580,7 @@ internal static partial class Program
         bool savedResult = LogBridge.ReservationResult;
         try
         {
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
             {
                 int attempts = LogBridge.Reservations;
                 object target = new object(); int closes = 0;
@@ -801,7 +750,7 @@ internal static partial class Program
         object oldCondition = LogBridge.CurrentReservation("조건"), oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
         try
         {
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
             {
                 LogBridge.SetReservation(tab, null);
                 object firstTarget = new object(), secondTarget = new object();
@@ -968,7 +917,7 @@ internal static partial class Program
         int attempts = LogBridge.Reservations;
         try
         {
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
             {
                 foreach (string action in new[] { "close", "tab", "tools" })
                 {
@@ -1140,7 +1089,7 @@ internal static partial class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
                 foreach (bool touch in new[] { false, true })
                 {
                     object firstTarget = new object(), secondTarget = new object();
@@ -1204,7 +1153,7 @@ internal static partial class Program
         try
         {
             GamepadBridge.PointerActivity = () => pointerActivities++;
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
             {
                 Func<string, bool> reserve = text => text.Contains("pointer-target", StringComparison.Ordinal);
                 foreach (int kind in new[] { 0, 1, 2, 3 })
@@ -1317,7 +1266,7 @@ internal static partial class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
                 foreach (string transition in new[] { "gamepad-stays", "gamepad-to-mouse", "mouse-pad-override", "unknown" })
                     foreach (PadState held in new[] {
                         new PadState { Buttons = PadButtons.A }, new PadState { Buttons = PadButtons.B },
@@ -1442,7 +1391,7 @@ internal static partial class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
                 foreach (string modeCase in new[] { "Gamepad", "KeyboardMouse", "Unknown", "Gamepad-to-mouse" })
                 {
                     GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
@@ -2043,6 +1992,9 @@ internal static partial class Program
                             Id = identity, RawId = raw, Title = titleFallback ? "  " : originalTitle,
                             Text = titleFallback ? originalTitle : "별도 본문", Description = "실제 상세 설명", Target = target
                         };
+                        if (tab == "조건") row.ConditionDetails = new LogConditionDetails("", new[] {
+                            new LogConditionBranch("분기 1", "조건", "결과", "1", target)
+                        });
                         var status = new LogItem
                         {
                             Id = "status", RawId = "P_" + results[result, 0] + "_9002<raw>",
@@ -2075,6 +2027,7 @@ internal static partial class Program
                             && row.Text == (titleFallback ? originalTitle : "별도 본문"),
                             scenario + ": localization cannot mutate publication fields, selected identity or target");
                         int before = LogBridge.Reservations;
+                        if (tab == "조건") renderer.Handle(LogPadCommand.Right);
                         renderer.Handle(LogPadCommand.Activate);
                         Check(LogBridge.Reservations == before + 1 && LogBridge.LastReservedContext == context
                                 && LogBridge.LastReservedTab == tab && LogBridge.LastReservedId == identity
@@ -2430,7 +2383,7 @@ internal static partial class Program
                     "pad can restore readable window/font defaults from pressure layout");
             }
 
-            foreach (string tab in new[] { "조건", "이벤트", "미션" })
+            foreach (string tab in new[] { "이벤트", "미션" })
             {
                 DiceMaster.Config.ConfigManager.LogWindowWidth.Value = 540;
                 DiceMaster.Config.ConfigManager.LogWindowHeight.Value = 440;

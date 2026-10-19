@@ -12,24 +12,26 @@ namespace DiceMaster.LogUI
     // never discover game rows, evaluate Lua or change a reservation themselves.
     public sealed class LogRenderer
     {
-        private enum Area { List, Tools, PopupSetting }
+        private enum Area { List, Tools, PopupSetting, ConditionDetails }
         private static readonly string[] Tabs = { "선택지", "조건", "이벤트", "미션" };
+        private const string ConditionListHint = "현재: 체크포인트 목록 · ↑↓ 항목 이동 / A · Enter · → 상세 분기 선택 / 목록 맨 위에서 ↑ 팝업 설정 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+        private const string ConditionDetailHint = "현재: 조건 상세 · ↑↓ 분기 이동 / A · Enter · 선택된 분기 다시 클릭·터치 예약·해제 / ← · B 체크포인트 목록 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구";
         private readonly LogModel model;
         private readonly Action refresh, close;
         private readonly Dictionary<string, Rect> rowRects = new Dictionary<string, Rect>(StringComparer.Ordinal);
         private readonly HashSet<KeyCode> heldKeys = new HashSet<KeyCode>();
         private Rect window;
         private Rect savedWindow;
-        private Area area;
+        private Area area, toolsReturnArea;
         private int currentTabIndex, toolIndex, renderedFont, chromeFont;
         private float toolScroll, lastSave;
         private bool ensureVisible, stylesReady, layoutInitialized;
         private long context = long.MinValue;
-        private string observedSelection, pointerIdentity;
+        private string observedSelection, observedBranch, pointerIdentity;
         private long pointerContext;
         private ReservationTicket pointerReservation;
         private Action pendingAction;
-        private GUIStyle textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle, statusStyle, boxStyle, windowStyle;
+        private GUIStyle textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle, branchStyle, statusStyle, boxStyle, windowStyle;
         private GUIStyle chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle;
         private bool releaseTextFocus;
         private LogSnapshot cachedSnapshot;
@@ -40,7 +42,8 @@ namespace DiceMaster.LogUI
         private Rect lastListViewport;
         private float lastListViewportHeight;
         private string lastMeasuredId, lastMeasuredTab;
-        private bool manualListScroll;
+        private bool manualListScroll, ensureBranchVisible;
+        private readonly Dictionary<string, Rect> branchRects = new Dictionary<string, Rect>(StringComparer.Ordinal);
         private float BodyHeight => layout == null ? Math.Max(80, window.height * .7f) : layout.Content.height;
         private float BodyWidth => layout == null ? window.width - 24 : layout.Content.width;
         public string InputHint { get; set; } = "";
@@ -51,6 +54,7 @@ namespace DiceMaster.LogUI
         private LogTabState State => model.Tab(CurrentTab);
         private bool IsChoiceTab => currentTabIndex == 0;
         private bool IsEventTab => currentTabIndex == 2;
+        private bool IsConditionTab => currentTabIndex == 1;
         private bool HasPopupSetting => currentTabIndex == 1 || IsEventTab;
         private bool HasStoryReadState => currentTabIndex < 2;
         private bool SupportsReservation => State.SupportsReservation;
@@ -145,7 +149,7 @@ namespace DiceMaster.LogUI
             {
                 context = model.ContextId;
                 ResetInputFocus();
-                observedSelection = null;
+                observedSelection = observedBranch = null;
                 GamepadBridge.CancelLogInput();
                 invalidated = true;
             }
@@ -156,14 +160,21 @@ namespace DiceMaster.LogUI
                 GamepadBridge.CancelLogInput();
                 invalidated = true;
             }
+            if (area == Area.ConditionDetails && observedBranch != null && State.SelectedBranchId == null)
+            {
+                ResetInputFocus();
+                GamepadBridge.CancelLogInput();
+                invalidated = true;
+            }
             observedSelection = selected;
+            observedBranch = State.SelectedBranchId;
             return invalidated;
         }
 
         private ReservationTicket ArmSelectedReservation()
         {
             CancelPending();
-            if (!SupportsReservation || State.PublicationFailed || State.Selected == null || !State.Selected.CanReserve)
+            if (!SupportsReservation || State.PublicationFailed || !State.CanReserveSelected)
                 return null;
             object reservationState;
             if (!LogBridge.TryCaptureReservation(CurrentTab, out reservationState)) return null;
@@ -175,7 +186,50 @@ namespace DiceMaster.LogUI
 
         private void ReturnFromTools()
         {
-            area = Area.List;
+            area = toolsReturnArea == Area.ConditionDetails && IsConditionTab && State.SelectedBranch != null ?
+                Area.ConditionDetails : Area.List;
+        }
+
+        private void EnterTools()
+        {
+            if (area == Area.Tools) return;
+            toolsReturnArea = area == Area.ConditionDetails ? area : Area.List;
+            area = Area.Tools; toolIndex = 0; ensureVisible = true;
+        }
+
+        private bool EnterConditionDetails()
+        {
+            if (!IsConditionTab || State.Selected == null || State.Selected.ConditionDetails == null) return false;
+            if (State.SelectedBranch == null)
+                foreach (LogConditionBranch branch in State.Selected.ConditionDetails.Branches)
+                    if (!string.IsNullOrEmpty(branch.Id) && State.SelectBranch(branch.Id)) break;
+            if (State.SelectedBranch == null) return false;
+            area = Area.ConditionDetails;
+            observedBranch = State.SelectedBranchId;
+            ensureBranchVisible = true;
+            return true;
+        }
+
+        private void MoveConditionBranch(int direction)
+        {
+            LogConditionDetails details = State.Selected?.ConditionDetails;
+            if (details == null) return;
+            int current = -1;
+            for (int index = 0; index < details.Branches.Count; index++)
+                if (details.Branches[index].Id == State.SelectedBranchId) { current = index; break; }
+            for (int index = current < 0 ? (direction > 0 ? 0 : details.Branches.Count - 1) : current + direction;
+                index >= 0 && index < details.Branches.Count; index += direction)
+                if (SelectBranch(details.Branches[index].Id)) return;
+        }
+
+        private bool SelectBranch(string id, bool follow = true)
+        {
+            if (string.IsNullOrEmpty(id) || !State.SelectBranch(id)) return false;
+            CancelPending();
+            area = Area.ConditionDetails;
+            observedBranch = State.SelectedBranchId;
+            ensureBranchVisible = follow;
+            return true;
         }
 
         public void Handle(LogPadCommand command)
@@ -195,13 +249,14 @@ namespace DiceMaster.LogUI
             if (command == LogPadCommand.Refresh) { CancelPending(); refresh?.Invoke(); return; }
             if (command == LogPadCommand.Tools)
             {
-                if (area != Area.Tools) { area = Area.Tools; toolIndex = 0; ensureVisible = true; }
+                EnterTools();
                 return;
             }
             if (command == LogPadCommand.Back)
             {
                 CancelPending();
                 if (area == Area.Tools) { ReturnFromTools(); return; }
+                if (area == Area.ConditionDetails) { area = Area.List; return; }
                 close?.Invoke();
                 return;
             }
@@ -222,6 +277,14 @@ namespace DiceMaster.LogUI
                 }
                 return;
             }
+            if (area == Area.ConditionDetails)
+            {
+                if (command == LogPadCommand.Left) area = Area.List;
+                else if (command == LogPadCommand.Up || command == LogPadCommand.Down)
+                    MoveConditionBranch(command == LogPadCommand.Down ? 1 : -1);
+                else if (command == LogPadCommand.Activate) Reserve(ArmSelectedReservation());
+                return;
+            }
             if (IsChoiceTab)
             {
                 // Every choice is already readable. There is no selection or
@@ -236,8 +299,8 @@ namespace DiceMaster.LogUI
                 }
                 return;
             }
-            // Details are always readable and have no focusable controls.
-            if (command == LogPadCommand.Left || command == LogPadCommand.Right) return;
+            if (command == LogPadCommand.Right) { EnterConditionDetails(); return; }
+            if (command == LogPadCommand.Left) return;
             IList<LogItem> rows = VisibleRows;
             if (command == LogPadCommand.Up || command == LogPadCommand.Down)
             {
@@ -265,7 +328,8 @@ namespace DiceMaster.LogUI
                     foreach (LogItem row in rows) if (row.CanSelect) { Select(row.Id); break; }
                     return;
                 }
-                if (SupportsReservation) Reserve(ArmSelectedReservation());
+                if (IsConditionTab) EnterConditionDetails();
+                else if (SupportsReservation) Reserve(ArmSelectedReservation());
             }
         }
 
@@ -279,7 +343,7 @@ namespace DiceMaster.LogUI
                 State.ListScroll = Math.Max(0, State.ListScroll + pixels);
                 if (value != 0) manualListScroll = true;
             }
-            else State.DetailScroll = Math.Max(0, State.DetailScroll + pixels);
+            else { State.DetailScroll = Math.Max(0, State.DetailScroll + pixels); if (value != 0) ensureBranchVisible = false; }
         }
 
         public void Draw()
@@ -323,6 +387,7 @@ namespace DiceMaster.LogUI
             buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = font, richText = true, wordWrap = true, padding = new RectOffset(6, 6, 6, 6) };
             buttonStyle.normal.textColor = Color.white;
             selectedStyle = new GUIStyle(buttonStyle) { fontStyle = FontStyle.Bold };
+            branchStyle = new GUIStyle(buttonStyle) { fontStyle = FontStyle.Bold };
             selectedStyle.normal.textColor = new Color(1f, .86f, .36f);
             boxStyle = new GUIStyle(GUI.skin.box) { padding = new RectOffset(6, 6, 5, 5) };
             windowStyle = new GUIStyle(GUI.skin.window) { fontSize = chromeFont, padding = new RectOffset(8, 8, chromeFont + 14, 8) };
@@ -334,7 +399,7 @@ namespace DiceMaster.LogUI
             // Our measured rectangles budget padding explicitly, so margins
             // must not make a supposedly fixed pane grow past its clip area.
             foreach (GUIStyle style in new[] { textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle,
-                statusStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle })
+                branchStyle, statusStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle })
             {
                 style.margin = new RectOffset(0, 0, 0, 0);
                 style.fixedWidth = style.fixedHeight = 0;
@@ -357,7 +422,7 @@ namespace DiceMaster.LogUI
             layout = LogLayout.Calculate(window, chromeFont,
                 TextHeight(summary, statusStyle, width),
                 string.IsNullOrEmpty(InputHint) ? 0 : TextHeight(InputHint, statusStyle, width),
-                TextHeight(Hint(), statusStyle, width), chromeFont + 14 + renderedFont + 24 + 10 + (renderedFont + 12) * 2);
+                HintHeight(width), chromeFont + 14 + renderedFont + 24 + 10 + (renderedFont + 12) * 2);
             GUILayout.BeginArea(layout.Tabs);
             GUILayout.BeginHorizontal();
             for (int index = 0; index < Tabs.Length; index++)
@@ -366,7 +431,7 @@ namespace DiceMaster.LogUI
                 bool active = area != Area.Tools && index == currentTabIndex;
                 SafeButton((active ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), active, chrome: true);
             }
-            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { area = Area.Tools; releaseTextFocus = true; ensureVisible = true; }, area == Area.Tools, chrome: true);
+            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { EnterTools(); releaseTextFocus = true; }, area == Area.Tools, chrome: true);
             SafeButton("닫기", "close", () => close?.Invoke(), chrome: true);
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
@@ -431,7 +496,12 @@ namespace DiceMaster.LogUI
             if (layout == null || !layout.CompactChrome) return;
             Label("문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary(), statusStyle);
             if (!string.IsNullOrEmpty(InputHint)) Label(InputHint, statusStyle);
-            Label(Hint(), statusStyle);
+            if (IsConditionTab && (area == Area.List || area == Area.ConditionDetails))
+            {
+                float width = Math.Max(1, BodyWidth - Math.Max(140, BodyWidth * .36f) - boxStyle.padding.horizontal);
+                Display.Label(Hint(), statusStyle, new[] { GUILayout.Height(HintHeight(width)) });
+            }
+            else Label(Hint(), statusStyle);
         }
 
         private void DrawChoices()
@@ -493,7 +563,7 @@ namespace DiceMaster.LogUI
                 bool selected = row.Id == State.SelectedId;
                 string state = RowState(row);
                 string caption = (selected && area == Area.List ? "▶ " : "") + Title(row) +
-                    (SupportsReservation && LogBridge.IsReserved(CurrentTab, row.Target) ? " (예약 중)" : "") +
+                    (RowReserved(row) ? " (예약 중)" : "") +
                     (string.IsNullOrEmpty(state) ? "" : "\n" + state);
                 if (!row.CanSelect) caption += "\n원본 ID: " + Escape(row.RawId);
                 bool enabled = GUI.enabled;
@@ -516,7 +586,7 @@ namespace DiceMaster.LogUI
             GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
             LogItem selectedRow = State.Selected;
             string detailTitle = CurrentTab == "조건" ? "조건 상세" : "상세";
-            Display.Label(detailTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
+            Display.Label((area == Area.ConditionDetails ? "▶ " : "") + detailTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
             Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, paneHeight - headingHeight - 10));
             State.DetailScroll = detail.y;
             DrawOverflowChrome();
@@ -533,7 +603,8 @@ namespace DiceMaster.LogUI
                     Label(WaitingExplanation(), statusStyle);
                 if (SupportsReservation)
                 {
-                    Label(ReservationStatus(selectedRow), statusStyle);
+                    if (IsConditionTab) Label("아래 상세에서 예약할 분기를 선택하세요. 목록에서는 체크포인트만 선택합니다.", statusStyle);
+                    else Label(ReservationStatus(selectedRow), statusStyle);
                     Label(CurrentTab == "미션" ?
                         "해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다." :
                         "조건을 무시하고 다음 해당 판정에 한 번 적용하도록 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
@@ -547,6 +618,7 @@ namespace DiceMaster.LogUI
                 else Label(selectedRow.Description, textStyle);
             }
             GUILayout.EndScrollView();
+            CompleteBranchScroll(GUILayoutUtility.GetLastRect());
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
         }
@@ -577,6 +649,7 @@ namespace DiceMaster.LogUI
 
         private void DrawConditionDetails(LogConditionDetails details)
         {
+            branchRects.Clear();
             float paneWidth = Math.Max(1, BodyWidth - Math.Max(140, BodyWidth * .36f) - boxStyle.padding.horizontal);
             float textWidth = Math.Max(1, paneWidth - boxStyle.padding.horizontal);
             if (!string.IsNullOrEmpty(details.Hint)) BoundedLabel(details.Hint, statusStyle, paneWidth);
@@ -585,20 +658,80 @@ namespace DiceMaster.LogUI
                 if (!string.IsNullOrEmpty(details.DescriptionFallback)) BoundedLabel(details.DescriptionFallback, textStyle, paneWidth);
                 return;
             }
+            float statusHeight = ConditionReservationStatusHeight(textWidth);
             bool first = true;
             foreach (LogConditionBranch branch in details.Branches)
             {
                 if (!first) GUILayout.Space(Math.Max(10, renderedFont * .6f));
                 first = false;
-                // Each alternative owns a real layout block. Wrapped text in
-                // one branch cannot look like a new alternative or merge into
-                // the next one; no text parsing or interactive focus is used.
+                // Keep complete branch context/body in its own wrapped block.
+                // Only its structured identity is an action target; localized
+                // text and visual line positions never establish a branch.
                 GUILayout.BeginVertical(boxStyle, GUILayout.MinWidth(1), GUILayout.MaxWidth(paneWidth), GUILayout.ExpandWidth(true));
-                BoundedLabel(branch.Title, titleStyle, textWidth);
+                if (string.IsNullOrEmpty(branch.Id)) BoundedLabel(branch.Title, titleStyle, textWidth);
+                else
+                {
+                    string id = branch.Id;
+                    bool selected = area == Area.ConditionDetails && State.SelectedBranchId == id;
+                    // Selection changes only color. Keep identical heading
+                    // text/font and a status block for every branch so the
+                    // next touch lands on the same physical heading.
+                    SafeButton(branch.Title, BranchIdentity(id), () => ActivateBranch(id), selected, maxWidth: textWidth);
+                    Display.Label(ConditionReservationStatus(branch), statusStyle, new[] {
+                        GUILayout.MinWidth(1), GUILayout.MaxWidth(textWidth), GUILayout.ExpandWidth(true), GUILayout.Height(statusHeight) });
+                }
                 if (!string.IsNullOrEmpty(branch.Context)) BoundedLabel(branch.Context, statusStyle, textWidth);
                 if (!string.IsNullOrEmpty(branch.Description)) BoundedLabel(branch.Description, textStyle, textWidth);
                 GUILayout.EndVertical();
+                if (!string.IsNullOrEmpty(branch.Id)) branchRects[branch.Id] = GUILayoutUtility.GetLastRect();
             }
+        }
+
+        private string BranchIdentity(string id) => "branch:" + State.SelectedId + ":" + id;
+
+        private void ActivateBranch(string id)
+        {
+            if (area != Area.ConditionDetails || State.SelectedBranchId != id) { SelectBranch(id, false); return; }
+            Reserve(pointerReservation);
+        }
+
+        private string ConditionReservationStatus(LogConditionBranch branch)
+        {
+            bool reserved = LogBridge.IsReserved(CurrentTab, branch.Target);
+            string state = reserved ? "활성화 (예약 중)" : "비활성화 (예약 없음)";
+            return "조건 분기 결과 예약 · " + state + "\n" +
+                (State.Selected != null && State.Selected.CanReserve && branch.CanReserve && !State.PublicationFailed ?
+                    reserved ? "예약 해제 가능" : "예약 가능" : "예약 변경 불가 · 최신 대상 확인 필요");
+        }
+
+        private float ConditionReservationStatusHeight(float width)
+        {
+            float height = 0;
+            foreach (string state in new[] { "활성화 (예약 중)", "비활성화 (예약 없음)" })
+                foreach (string action in new[] { "예약 해제 가능", "예약 가능", "예약 변경 불가 · 최신 대상 확인 필요" })
+                    height = Math.Max(height, TextHeight("조건 분기 결과 예약 · " + state + "\n" + action, statusStyle, width));
+            return height;
+        }
+
+        private bool RowReserved(LogItem row)
+        {
+            if (!SupportsReservation) return false;
+            if (!IsConditionTab) return LogBridge.IsReserved(CurrentTab, row.Target);
+            if (row.ConditionDetails != null)
+                foreach (LogConditionBranch branch in row.ConditionDetails.Branches)
+                    if (LogBridge.IsReserved(CurrentTab, branch.Target)) return true;
+            return false;
+        }
+
+        private void CompleteBranchScroll(Rect viewport)
+        {
+            if (Event.current.type != EventType.Repaint || area != Area.ConditionDetails || !ensureBranchVisible || viewport.height <= 0) return;
+            Rect selected;
+            if (State.SelectedBranchId == null || !branchRects.TryGetValue(State.SelectedBranchId, out selected)) return;
+            float bottom = selected.yMax;
+            foreach (Rect bounds in branchRects.Values) bottom = Math.Max(bottom, bounds.yMax);
+            State.DetailScroll = LogLayout.BringIntoView(State.DetailScroll, selected, viewport.height, bottom);
+            ensureBranchVisible = false;
         }
 
         private static void BoundedLabel(string text, GUIStyle style, float width)
@@ -710,7 +843,8 @@ namespace DiceMaster.LogUI
         private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false, float maxWidth = 0)
         {
             Event evt = Event.current;
-            GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
+            GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) :
+                highlighted ? selectedStyle : identity.StartsWith("branch:", StringComparison.Ordinal) ? branchStyle : buttonStyle;
             // MinHeight also forces maxHeight in Unity's word-wrap sizer. Let
             // rows measure their full wrapped caption at the final viewport
             // width, with no fixed height or permanent scrollbar gutter.
@@ -730,8 +864,9 @@ namespace DiceMaster.LogUI
                 pointerContext = model.ContextId;
                 GamepadBridge.NotifyPointerActivity();
                 CancelPending();
-                if (SupportsReservation && State.SelectedId != null && identity == "row:" + State.SelectedId)
-                    pointerReservation = ArmSelectedReservation();
+                bool selectedAction = IsConditionTab ? area == Area.ConditionDetails && State.SelectedBranchId != null && identity == BranchIdentity(State.SelectedBranchId) :
+                    State.SelectedId != null && identity == "row:" + State.SelectedId;
+                if (SupportsReservation && selectedAction) pointerReservation = ArmSelectedReservation();
             }
             if (!input.Clicked || !GUI.enabled) return;
             // Button order may change during refresh. Only its original context
@@ -752,7 +887,7 @@ namespace DiceMaster.LogUI
             finally
             {
                 CancelPending();
-                area = Area.List;
+                area = IsConditionTab && State.SelectedBranch != null ? Area.ConditionDetails : Area.List;
             }
         }
 
@@ -762,13 +897,13 @@ namespace DiceMaster.LogUI
             if (State.SelectedId != id) { Select(id); area = Area.List; return; }
             // Re-clicking a selected row uses only the authority captured on
             // pointer-down. A release never creates fresh action authority.
-            if (SupportsReservation) Reserve(pointerReservation);
+            if (!IsConditionTab && SupportsReservation) Reserve(pointerReservation);
         }
 
         private bool Select(string id)
         {
             if (!State.Select(id)) return false;
-            observedSelection = State.SelectedId; ensureVisible = true; manualListScroll = false; CancelPending();
+            observedSelection = State.SelectedId; observedBranch = State.SelectedBranchId; ensureVisible = true; manualListScroll = false; CancelPending();
             return true;
         }
 
@@ -780,6 +915,7 @@ namespace DiceMaster.LogUI
             releaseTextFocus = true;
             area = Area.List;
             observedSelection = State.SelectedId;
+            observedBranch = State.SelectedBranchId;
             cachedSnapshot = null;
             ensureVisible = true;
             TabChanged?.Invoke(CurrentTab);
@@ -854,11 +990,22 @@ namespace DiceMaster.LogUI
             return action + " · " + state + "\n예약 변경 불가 · " + reason;
         }
 
+        private float HintHeight(float width)
+        {
+            // Entering a branch by touch must not resize its scroll viewport
+            // or the compact reading header and clamp the current scroll.
+            if (IsConditionTab && (area == Area.List || area == Area.ConditionDetails))
+                return Math.Max(TextHeight(ConditionListHint, statusStyle, width), TextHeight(ConditionDetailHint, statusStyle, width));
+            return TextHeight(Hint(), statusStyle, width);
+        }
+
         private string Hint()
         {
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
             if (area == Area.PopupSetting) return "현재: 팝업 설정 · A / Enter 켜기·끄기 / ↓ 목록 / LB·RB 탭 / Y 도구 / B 닫기";
             if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (area == Area.ConditionDetails) return ConditionDetailHint;
+            if (IsConditionTab) return ConditionListHint;
             if (HasPopupSetting)
             {
                 string reservationAction = State.Selected == null ? "" : !State.Selected.CanReserve || State.PublicationFailed ? " / 예약 변경 불가" :
