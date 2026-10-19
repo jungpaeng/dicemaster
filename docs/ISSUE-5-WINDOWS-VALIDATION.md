@@ -2,7 +2,7 @@
 
 상태: **v1.0.6-alpha.2의 모든 항목 미실행 · 사용자 확인 대기**. 설치 ZIP·해시·고정 소스와 게시 결과는 [alpha.2 배포 안내](ISSUE-5-ALPHA2-RELEASE.md)를 따른다. 팝업·결과 직접 지정·A 확인·클릭/터치·화면 전환을 실제 Windows 게임에서 확인하기 위한 표다. 자동 대역 검사와 기존 v1.0.5 확인은 이 표의 실행 결과가 아니다. [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md)를 먼저 대조한다.
 
-이번 시험 자산은 `DiceMaster-v1.0.6-alpha.2.zip`이며 게시·식별값 기록 전이다. 배포 안내의 최종 DLL SHA-256과 실제 시험 파일을 대조한다. alpha.1의 공개 파일·당시 검사 이력은 [별도 배포 기록](ISSUE-5-ALPHA1-RELEASE.md)에 보존하며 alpha.2의 확인 결과로 사용하지 않는다.
+공개 시험 자산은 [DiceMaster-v1.0.6-alpha.2.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.2/DiceMaster-v1.0.6-alpha.2.zip)이며 소스·태그는 `e71020020b1b7f1938f22ff4a60d046c8bace839`, DLL SHA-256은 `da49e4c2b874849a9ecdb39e9e41981a90e0857819da2a91bc0c42c25bdb7c6f`다. 이 식별값과 실제 시험 파일을 대조한다. alpha.1의 공개 파일·당시 검사 이력은 [별도 배포 기록](ISSUE-5-ALPHA1-RELEASE.md)에 보존하며 alpha.2의 확인 결과로 사용하지 않는다.
 
 ## 선행 확인과 이번 대상
 

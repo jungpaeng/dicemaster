@@ -2,7 +2,7 @@
 
 alpha.1에서 나뉘어 있던 이벤트 팝업의 일반 진행과 조건 무시를 **A/Enter 확인 하나로 통일**하고, 로그 탭·목록·팝업 버튼의 클릭 처리 오류를 수정한다. 트랙패드와 마우스로 인식되는 모니터 터치에서 보고된 증상에 대응하는 시험판이다.
 
-**게시 준비 중 · 로컬 후보 검증 완료 · 고정 커밋 재빌드·공개 게시 대기**. 예정 자산은 `DiceMaster-v1.0.6-alpha.2.zip`이다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5로 유지한다. 새 DLL의 실제 Windows 게임·트랙패드·터치·Xbox/XInput 확인은 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 이슈 #5는 종료하지 않는다.
+**2026-10-20 01:02:17 KST에 [v1.0.6-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.2) prerelease를 게시했다.** **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.2/DiceMaster-v1.0.6-alpha.2.zip)**. 고정 소스·태그 `e71020020b1b7f1938f22ff4a60d046c8bace839`의 재빌드·14개 검사와 인증 없는 공개 페이지·다운로드의 CRC·두 파일·내부 바이트·SHA-256 검증을 통과했다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5로 유지한다. 새 DLL의 실제 Windows 게임·트랙패드·터치·Xbox/XInput 확인은 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 이슈 #5는 종료하지 않는다.
 
 ## alpha.1 이후 변경
 
@@ -24,7 +24,7 @@ alpha.1에서 나뉘어 있던 이벤트 팝업의 일반 진행과 조건 무�
 Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 필요하다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
-2. 게시 후 이 버전 Release의 Assets에서 **`DiceMaster-v1.0.6-alpha.2.zip`**을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
+2. 이 버전 Release의 Assets에서 **`DiceMaster-v1.0.6-alpha.2.zip`**을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
 3. 업데이트는 ZIP의 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
@@ -34,7 +34,7 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 
 ## 검증·알려진 제한
 
-전체 소스 후보와 기존 모드 DLL·Git·빌드 출력을 제외한 격리 소스 재빌드가 각각 14개 검사 프로그램을 통과했고 DLL·cfg·ZIP 바이트가 일치했다. 아래는 이번 후보의 결과이며 고정 커밋 재빌드·공개 다운로드 결과는 게시 단계에 보충한다.
+전체 소스 후보와 기존 모드 DLL·Git·빌드 출력을 제외한 격리 소스 재빌드가 각각 14개 검사 프로그램을 통과했고 DLL·cfg·ZIP 바이트가 일치했다. 같은 고정 소스 커밋의 재빌드에서도 14개 검사 프로그램을 통과했고 검토 DLL/cfg/ZIP과 동일 바이트였다. 공개 다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256도 대조했다. 아래는 이번 실행 결과다.
 
 | 확인 | 이번 결과 |
 | --- | --- |
@@ -42,8 +42,8 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 | Unity와 같은 버튼 누름 이벤트 소비·프레임 분리 누름/해제 회귀 | 공통 UI 2,654개 통과 · 기존 렌더러와 소비된 이벤트의 1px 모서리 대조 검사에서 결함 재현 |
 | A/Enter의 정상·명시 조건 무시·읽기 실패 차단과 자격 변경 회귀 | 팝업 503개 통과 · 표시한 일반 확인이 조건 무시로 자동 전환되지 않음 |
 | 포인터 전환/모드 변화 보존과 안전 경계 취소·대기 중 확정 폐기 | 실제 컨트롤러 소스와 팝업 검사 통과 · 배포 DLL 연결 83개 통과 |
-| 고정 커밋 `--scope prd5` 재빌드·검토 DLL/cfg/ZIP 일치 | 기록 전 |
-| 공개 태그·prerelease·Latest 보존·다운로드 CRC/두 파일/바이트·해시 | 기록 전 |
+| 고정 커밋 `--scope prd5` 재빌드·검토 DLL/cfg/ZIP 일치 | `e71020020b1b7f1938f22ff4a60d046c8bace839` · 기존 모드 DLL 0개에서 전체 재빌드·14개 프로그램 통과 · 검토 DLL/cfg/ZIP 동일 바이트 |
+| 공개 태그·prerelease·Latest 보존·다운로드 CRC/두 파일/바이트·해시 | 인증 없는 공개 페이지·다운로드 검증 통과 · Latest v1.0.5와 기존 25개 Release·태그·자산 보존 |
 | 실제 Windows 게임·트랙패드·마우스로 인식되는 터치·별도 터치 입력·Xbox/XInput | 미실행 · 사용자 확인 대기 |
 
 자동 검사는 관리 코드·명시적 Unity/게임/native 대역과 실제 참조 API의 경계를 확인한다. 실제 장치의 성공 여부·화면 배치·Unity 글꼴·Windows 성능 확인과 구분한다. 트랙패드 클릭·마우스 에뮬레이션 터치가 같은 마우스 경로를 쓰더라도, Unity에 별도 터치 이벤트로 전달되는 입력은 별도로 확인해야 한다.
@@ -80,10 +80,12 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 
 | 항목 | 이번 식별값 |
 | --- | --- |
-| 고정 소스 커밋·태그 | 기록 전 |
+| 고정 소스 커밋·태그 | [`e71020020b1b7f1938f22ff4a60d046c8bace839`](https://github.com/jungpaeng/dicemaster/commit/e71020020b1b7f1938f22ff4a60d046c8bace839) · `v1.0.6-alpha.2` |
 | `DiceMaster-v1.0.6-alpha.2.zip` 크기·SHA-256 | 258654바이트 · `7736cf3be9a6e986059d81af3e4fb9344ee4bb0ef9da1dfc95e5223034b2ac48` |
 | `DiceMaster.dll` 크기·SHA-256 | 613376바이트 · `da49e4c2b874849a9ecdb39e9e41981a90e0857819da2a91bc0c42c25bdb7c6f` |
 | `config/DiceMaster.cfg` 크기·SHA-256 | 11459바이트 · `66b34802ed57b53db7ad977e96e8e17ef4847149e08ac3f244788f0704d9aea7` |
-| 게시 시각·Release/asset ID | 기록 전 |
+| 게시 시각·Release/asset ID | 2026-10-20 01:02:17 KST (2026-10-19 16:02:17 UTC) · Release `417484069` · asset `656733547` |
 
-게시에는 `codex/prd5-prerelease` 작업 브랜치와 새 태그를 사용하고 기본 main을 직접 push하지 않는다. `prerelease=true`·`make_latest=false`와 Latest v1.0.5·기존 Release/태그/자산 보존을 확인한다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.2/`에 보존하며 공개 링크는 게시 후 확인한 절대 URL로 기록한다. 소스 태그와 게시 결과를 보충하는 문서 커밋은 구분한다.
+기존 `codex/prd5-prerelease` 작업 브랜치와 새 태그를 사용했고 기본 main은 변경하지 않았다. `draft=false`·`prerelease=true`·`make_latest=false`, Latest v1.0.5와 기존 25개 Release·태그·자산 보존을 확인했다. 이슈 #2 closed·#4 open·#5 open도 유지했다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.2/`의 `release-verification.json`, `build-manifest.json`, `public-release.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md` 등에 보존한다.
+
+이 문서는 게시 결과를 보충하는 후속 문서 커밋에 포함한다. 빌드 소스·태그 `e710200`과 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스의 문서는 게시 전 준비 상태를 포함하고 당시 검사·파일의 근거를 보존한다.
