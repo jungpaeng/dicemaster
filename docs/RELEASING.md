@@ -4,13 +4,13 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## PRD #5 — v1.0.6-alpha.9 배포 준비
+## PRD #5 — v1.0.6-alpha.9 prerelease
 
 사용자는 로컬 구현 커밋 `da1f362`·`360ca57`을 `origin/main`에 반영하고 README 갱신·새 prerelease를 지시했다. 공통 포인터 어댑터·명시적인 취소 정책을 포함하며 조작·설정·단일 net48 DLL은 유지한다. DLL은 alpha.8보다 512바이트 증가한 620,032바이트이고 리소스와 외부 assembly 참조는 동일하다. [alpha.9 변경·설치·측정·검증](ISSUE-5-ALPHA9-RELEASE.md)을 따른다.
 
 2026-10-20 사전 확인에서 alpha.9 Release·태그는 미사용이고 원격 main 계보와 push 권한을 확인했다. 기존 32개 Release·태그·자산, Latest 정식 v1.0.5와 이슈 #2 closed·#4 open·#5 open을 보존할 기준으로 보관했다. 전체 후보·격리 빌드 각각 14개 검사, 입력 179개·소스/리소스 73개와 동일 DLL/cfg/ZIP·검사 결과를 확인했다.
 
-이 준비 문서를 포함하는 소스 커밋을 고정한 뒤 `verify-preview-release.py --scope prd5`로 기존 모드 DLL 0개에서 재빌드하고 검토 파일·검사 결과를 대조한다. main·주석 태그 반영 후 `draft=false`·`prerelease=true`·`make_latest=false`로 게시하고 익명 공개 다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256과 기존 공개 상태 보존을 확인한다. 이 절의 고정 재빌드·push·게시는 아직 실행 전이며 실제 결과는 별도 문서 커밋에 보충한다. 실제 Windows·장치 확인과 이슈 #5 완료는 대기다.
+**2026-10-20 03:43:52 KST에 [alpha.9 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.9)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.9/DiceMaster-v1.0.6-alpha.9.zip). 두 구현 커밋과 README·준비 문서를 포함하는 고정 소스·태그 `af7bcd94ee1398717acec3066a0a907d588c49f9`를 main·주석 태그로 atomic push했다. 03:42:52 KST에 `verify-preview-release.py --scope prd5`가 기존 모드 DLL 0개에서 14개 프로그램을 통과했고 검토·격리 파일과 DLL/cfg/ZIP·전체 검사 결과가 일치했다. Release ID `417623770`·asset ID `657114332`, `draft=false`·`prerelease=true`·`make_latest=false`다. 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256과 기존 32개 Release·태그·자산, Latest v1.0.5, 이슈 #2 closed·#4 open·#5 open 보존을 확인했다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.9/`의 `release-verification.json`·`build-manifest.json`·`anonymous-verification.json`·`public-release.json`·`github-publication.json`·`tag-verification.json`·`source-document-links.json`·`release-body.md` 등에 보관한다. 고정 검사 영수증의 `published=false`는 게시 전 시점이다. 게시 결과 보충은 빌드 소스·태그·공개 자산을 바꾸지 않는 별도 main 문서 커밋이며 Release 본문은 그 고정 문서 커밋의 공개 절대 URL로 연결한다. 실제 Windows·장치 확인과 이슈 #5 완료는 대기다.
 
 ## PRD #5 — v1.0.6-alpha.8 prerelease
 

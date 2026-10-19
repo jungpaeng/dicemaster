@@ -1,10 +1,10 @@
 # 변경 이력
 
-## v1.0.6-alpha.9 배포 준비 — 2026-10-20
+## [v1.0.6-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.9) — 2026-10-20 (prerelease)
 
 - 로그창·이벤트 팝업의 네이티브 버튼 입력을 `ImGuiPointerButton`으로 공유합니다. 각 화면의 배치·선택·예약·실행 검증은 유지하고, 터치 변환과 이벤트 소비 상태 보존의 수정 지점을 한곳으로 모읍니다.
 - 팝업 입력의 초기화 사유와 효과를 `ModalInputResetPolicy`로 명시합니다. 자동 모드 관측·포인터 전환은 접수된 요청을 보존하고, 실제 패드·초점·로그 전환은 취소합니다. 기존 Lua 문맥 무효화와 확정 당시 후보·결과 검증을 유지합니다.
-- 기존 화면·조작·설정·단일 net48 DLL을 유지합니다. 전체·격리 소스 재빌드에서 각각 14개 검사 프로그램을 통과했고 DLL/cfg/ZIP과 결과가 일치합니다. DLL은 alpha.8보다 512바이트 증가한 620,032바이트이며 리소스는 동일합니다. 용량·메모리·입력 지연 개선을 주장하지 않습니다. [구조·측정 기록](docs/DEVELOPMENT.md#입력-경계-구조-정리) · [alpha.9 배포 준비](docs/ISSUE-5-ALPHA9-RELEASE.md). 고정 커밋 재빌드·게시와 새 DLL의 Windows 확인은 대기입니다.
+- 기존 화면·조작·설정·단일 net48 DLL을 유지합니다. 전체·격리 소스 재빌드에서 각각 14개 검사 프로그램을 통과했고 DLL/cfg/ZIP과 결과가 일치합니다. DLL은 alpha.8보다 512바이트 증가한 620,032바이트이며 리소스는 동일합니다. 용량·메모리·입력 지연 개선을 주장하지 않습니다. 2026-10-20 03:43:52 KST에 소스·태그 `af7bcd9`의 고정 재빌드·14개 검사와 공개 ZIP의 CRC·두 파일·바이트·해시 검증을 마치고 prerelease를 게시했습니다. 두 구현 커밋과 README를 `origin/main`에 반영했으며 기존 32개 Release·태그·자산과 Latest v1.0.5를 보존했습니다. [구조·측정 기록](docs/DEVELOPMENT.md#입력-경계-구조-정리) · [alpha.9 배포 기록](docs/ISSUE-5-ALPHA9-RELEASE.md). 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
 
 ## [v1.0.6-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8) — 2026-10-20 (prerelease)
 

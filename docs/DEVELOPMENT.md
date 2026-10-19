@@ -4,7 +4,7 @@
 
 ## 입력 경계 구조 정리
 
-alpha.8 이후 공통 포인터 처리와 입력 취소 정책을 단계별로 정리했고 v1.0.6-alpha.9 배포를 준비한다. 구현은 `da1f362`·`360ca57` 두 로컬 커밋이며 아래 검사·측정은 해당 소스 입력을 대상으로 한다. 게시용 소스 커밋은 이 준비 문서를 포함해 별도로 선정하고 고정 재빌드한다. 현재 공개 설치 파일은 아래 alpha.8 기록을 따른다. 단일 net48 DLL·기존 IMGUI·설정·조작·Lua 판정과 한 번 소비 검증을 유지한다.
+alpha.8 이후 공통 포인터 처리와 입력 취소 정책을 단계별로 정리해 v1.0.6-alpha.9로 게시했다. 구현 커밋 `da1f362`·`360ca57`과 준비 문서를 포함하는 고정 소스·태그는 `af7bcd94ee1398717acec3066a0a907d588c49f9`다. 아래 검사·측정은 해당 소스 입력을 대상으로 한다. [alpha.9 배포 기록](ISSUE-5-ALPHA9-RELEASE.md)에 공개 파일·검증 상태를 기록하며 단일 net48 DLL·기존 IMGUI·설정·조작·Lua 판정과 한 번 소비 검증을 유지한다.
 
 첫 단계는 `LogUI/ImGuiPointerButton` 추출이다. 각 Renderer가 기존 스타일·레이아웃 옵션으로 Rect를 확보하고, 어댑터가 실제 이벤트의 누름/해제 분류와 직접 터치의 네이티브 마우스 변환·`GUI.Button` 한 번 호출을 담당한다. `Used`는 보존하고 소비되지 않은 터치는 원래 타입으로 복구한다. `rawType`만 남은 Layout/Repaint/Used를 새 입력으로 해석하지 않는다.
 
@@ -37,13 +37,13 @@ alpha.8 이후 공통 포인터 처리와 입력 취소 정책을 단계별로 �
 
 최종 DLL에 테스트·Mono.Cecil 타입이나 참조가 없고 alpha.8과 내장 리소스 및 외부 assembly 참조가 동일하다. 정책을 표현하는 타입·메서드의 메타데이터 증가가 있으며 이번 리팩터링을 용량 절감으로 설명하지 않는다. 메모리·프레임 시간·입력 지연은 측정하지 않았다. 실제 Windows·물리 터치 확인도 별도이며 공개 alpha.8의 확인 상태를 새 개발 DLL에 승계하지 않는다. 영수증은 로컬 `artifacts/architecture-refactor/final-candidate/`·`final-clean/`·`policy-evidence/`에 보관한다.
 
-## PRD #5 — v1.0.6-alpha.9 배포 준비
+## PRD #5 — v1.0.6-alpha.9 prerelease
 
 사용자는 입력 경계를 정리한 두 로컬 커밋 `da1f362`·`360ca57`을 `origin/main`에 반영하고 README 갱신·새 prerelease를 진행하도록 지시했다. 공통 포인터 어댑터와 취소 정책의 두 단계만 포함하며 별도 요청 객체·전체 상태 머신·UI 프레임워크 전환은 수행하지 않았다. 조작·설정·지원 경로를 유지한다.
 
 전체 후보·격리 재빌드에서 각각 14개 프로그램, 179개 빌드 입력·73개 소스/리소스, 실제 후보 IL과 MoonSharp를 연결한 런타임 150개 시나리오·999개 단언을 확인했다. DLL은 620,032바이트로 alpha.8 대비 +512바이트이며 내장 리소스·외부 assembly 참조는 동일하다. 메모리·프레임 시간·입력 지연은 미측정이다. [alpha.9 변경·설치·검증 기록](ISSUE-5-ALPHA9-RELEASE.md)에 파일 식별값과 실제 검사 결과를 기록한다.
 
-2026-10-20 사전 확인에서 새 버전은 미사용이며 기존 32개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 확인했다. 고정 소스 커밋 재빌드·main/태그 반영·prerelease·익명 공개 다운로드 검증은 아직 실행 전이다. 새 DLL의 Windows·장치 확인도 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 alpha.8 사용자 성공 보고는 제공되지 않았다.
+**2026-10-20 03:43:52 KST에 [alpha.9 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.9)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.9/DiceMaster-v1.0.6-alpha.9.zip). 두 구현 커밋과 README를 포함한 소스·태그 `af7bcd94ee1398717acec3066a0a907d588c49f9`를 `origin/main`에 반영했다. 03:42:52 KST 고정 커밋 재빌드도 기존 모드 DLL 0개에서 14개 프로그램을 통과했고 후보·격리 빌드와 파일·전체 결과가 일치했다. 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256과 기존 32개 Release·태그·자산, Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open 보존을 확인했다. 새 DLL의 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 alpha.8 사용자 성공 보고는 제공되지 않았다. 게시 결과 보충은 빌드 소스·태그·공개 자산을 바꾸지 않는 별도 main 문서 커밋이며 고정 소스의 준비 문구와 아래 alpha.8은 당시 기록이다.
 
 ## PRD #5 — v1.0.6-alpha.8 prerelease
 

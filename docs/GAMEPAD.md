@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.6-alpha.9 배포 준비 — 클릭·터치 입력 처리 정리
+## v1.0.6-alpha.9 — 클릭·터치 입력 처리 정리
 
 로그창·이벤트 팝업의 네이티브 버튼·직접 터치 처리를 `ImGuiPointerButton`으로 공유하고 `ModalInputResetPolicy`로 초기화 사유·효과를 명시한다. 화면·조작·설정은 alpha.8과 같다. 첫 클릭·터치는 선택, 선택된 같은 행의 새 누름/해제는 진행이며 A/Enter 확인·B/Esc 무작위·하단 텍스트 안내를 유지한다. 터치만 사용하는 무작위 실행 UI는 없다.
 
 자동 모드 관측·포인터 전환은 유효한 누름·접수 요청을 보존하고 실제 패드·초점·로그 전환은 이전 확정을 취소한다. 팝업 대기 상태 전환은 입력을 초기화하되 접수된 확정을 취소하지 않는다. Lua 문맥 무효화·확정 후보/결과 검증·한 번 소비와 해제/중립 보호를 유지한다.
 
-전체 후보·격리 재빌드에서 각각 14개 검사 프로그램을 통과했다. 실제 후보 모드 관측·패드 프레임·정책 IL과 MoonSharp를 연결한 런타임 150개 시나리오·999개 단언, 팝업 1,576개·DLL 연결 90개 검사를 포함한다. DLL은 alpha.8보다 512바이트 증가했으며 성능·용량 개선으로 설명하지 않는다. 고정 커밋 재빌드·main/태그 반영·prerelease와 공개 ZIP 검증은 준비 중이다. [alpha.9 배포 기록](ISSUE-5-ALPHA9-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 아래 alpha.8과 이전 절은 당시 이력이다.
+전체 후보·격리 재빌드에서 각각 14개 검사 프로그램을 통과했다. 실제 후보 모드 관측·패드 프레임·정책 IL과 MoonSharp를 연결한 런타임 150개 시나리오·999개 단언, 팝업 1,576개·DLL 연결 90개 검사를 포함한다. DLL은 alpha.8보다 512바이트 증가했으며 성능·용량 개선으로 설명하지 않는다. **2026-10-20 03:43:52 KST에 [alpha.9 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.9)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.9/DiceMaster-v1.0.6-alpha.9.zip). 두 구현 커밋과 README를 포함한 소스·태그 `af7bcd9`를 `origin/main`에 반영했고 고정 재빌드도 14개 프로그램과 동일 파일·결과를 확인했다. 익명 공개 ZIP의 CRC·두 파일·바이트·해시 검증을 통과하고 기존 32개 Release·태그·자산과 Latest v1.0.5를 보존했다. 새 DLL의 실제 Windows·장치 확인은 대기다. [alpha.9 배포 기록](ISSUE-5-ALPHA9-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 게시 결과는 빌드 소스와 별도인 main 문서 커밋에 보충하며 아래 alpha.8과 이전 절은 당시 이력이다.
 
 ## v1.0.6-alpha.8 — 터치 재확인·텍스트 조작 안내
 

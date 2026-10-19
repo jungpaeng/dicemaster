@@ -2,7 +2,7 @@
 
 로그창과 이벤트 팝업의 클릭·터치 처리를 공유하고, 입력 전환 시 요청을 보존하거나 취소하는 경계를 명시한다. alpha.8의 화면·조작·설정은 유지하며 후속 입력 수정을 두 화면에 일관되게 적용하기 위한 내부 구조 정리다.
 
-**배포 준비 중이다.** 전체 후보·격리 소스 재빌드에서 각각 14개 검사 프로그램과 동일 DLL/cfg/ZIP·검사 결과를 확인했다. 이 문서를 포함하는 고정 소스 커밋 재빌드·main/태그 반영·prerelease·익명 공개 다운로드 검증은 아직 실행 전이다. 현재 공개 시험판은 [alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8)이며 [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5다. 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다.
+**2026-10-20 03:43:52 KST에 [v1.0.6-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.9) prerelease를 게시했다.** **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.9/DiceMaster-v1.0.6-alpha.9.zip)**. 두 구현 커밋과 README·준비 문서를 포함한 소스·태그 `af7bcd94ee1398717acec3066a0a907d588c49f9`의 고정 재빌드·14개 검사와 익명 공개 페이지·다운로드의 CRC·두 파일·내부 바이트·SHA-256 대조를 통과했다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5로 유지하며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다.
 
 ## alpha.8 이후 변경
 
@@ -30,10 +30,10 @@
 
 ## 설치·업데이트와 복구
 
-Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 필요하다. 게시 후 이 버전 Release의 Assets에서 `DiceMaster-v1.0.6-alpha.9.zip`을 사용한다. 현재는 새 자산이 게시 전이다.
+Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 필요하다. 이 버전 Release의 Assets에서 **`DiceMaster-v1.0.6-alpha.9.zip`**을 사용한다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
-2. 게시된 설치 ZIP을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
+2. 위 설치 ZIP을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
 3. 업데이트는 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
@@ -41,7 +41,7 @@ Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 �
 
 ## 검증·알려진 제한
 
-2026-10-20 03:36:14 KST의 전체 소스 후보와 03:36:13 KST의 격리 소스 재빌드가 각각 **14개 검사 프로그램**을 통과했다. SDK는 8.0.426이며 모드 컴파일은 오류 0개·기존 경고 7개다. 빌드 입력 179개·모드 소스/리소스 73개를 확인했고 격리 빌드는 기존 모드 DLL 0개에서 시작했다. 두 빌드의 DLL·cfg·ZIP 바이트와 전체 검사 결과가 일치하며 현재 179개 빌드 입력의 SHA-256도 후보 manifest와 일치한다. ZIP의 CRC·정확히 두 파일·내부 DLL/cfg 바이트·해시를 대조했다.
+2026-10-20 03:36:14 KST의 전체 소스 후보와 03:36:13 KST의 격리 소스 재빌드가 각각 **14개 검사 프로그램**을 통과했다. SDK는 8.0.426이며 모드 컴파일은 오류 0개·기존 경고 7개다. 빌드 입력 179개·모드 소스/리소스 73개를 확인했고 격리 빌드는 기존 모드 DLL 0개에서 시작했다. 두 빌드의 DLL·cfg·ZIP 바이트와 전체 검사 결과가 일치하며 현재 179개 빌드 입력의 SHA-256도 후보 manifest와 일치한다. ZIP의 CRC·정확히 두 파일·내부 DLL/cfg 바이트·해시를 대조했다. 03:42:52 KST에 소스 `af7bcd94ee1398717acec3066a0a907d588c49f9`의 고정 `--scope prd5` 재빌드도 기존 모드 DLL 0개에서 14개 프로그램을 통과했고 검토·격리 빌드와 동일 파일·전체 검사 결과였다. 게시 후 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256도 확인했다.
 
 런타임은 **실제 후보 DLL의 모드 관측·패드 프레임 적용·입력 초기화 메서드와 정책 enum/효과 타입/판정 IL**을 fixture에 복사하고 소스 팝업·Runtime·실제 MoonSharp Lua 재개를 연결한다. 정책을 대역 구현으로 바꿔 검사하지 않는다. 자동 모드 관측·포인터 전환의 접수 보존과 물리 패드·초점·로그 전환의 취소, 일반/명시 조건 무시/무작위의 결과 한 번 소비를 포함해 150개 시나리오·999개 단언을 확인했다.
 
@@ -54,9 +54,9 @@ Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 �
 | 실제 후보 정책·적용 IL → 팝업/Runtime → MoonSharp Lua 결과 한 번 소비 | 런타임 150개 시나리오·999개 단언 통과 |
 | 공통 포인터 처리·팝업 입력/표시·실제 후보 연결 | 어댑터 계약 38개 포함 팝업 1,576개 · DLL 연결 90개 통과 |
 | 기존 로그·미션·패드·주사위·미리보기·실제 참조 API | 아래 14개 프로그램 결과 |
-| 고정 커밋 `--scope prd5` 재빌드·검토 파일 일치 | 실행 전 |
-| main/태그 반영·prerelease·익명 공개 ZIP 검증 | 실행 전 |
-| 기존 32개 Release·태그·자산·Latest v1.0.5·이슈 상태 보존 | 사전 상태 보관 · 게시 후 재대조 예정 |
+| 고정 커밋 `--scope prd5` 재빌드·검토 파일 일치 | `af7bcd94ee1398717acec3066a0a907d588c49f9` · 기존 모드 DLL 0개에서 14개 프로그램 통과 · 동일 파일·검사 결과 |
+| main/주석 태그 반영·prerelease·익명 공개 ZIP 검증 | 완료 · 두 구현 커밋·README를 main에 포함 · CRC·두 파일·바이트·해시 대조 통과 |
+| 기존 32개 Release·태그·자산·Latest v1.0.5·이슈 상태 보존 | 보존 확인 · #2 closed·#4 open·#5 open |
 | 실제 Windows 게임·트랙패드·터치·Xbox/XInput | 미실행 · 사용자 확인 대기 |
 
 alpha.8의 실제 Windows 성공 보고는 제공되지 않았다. 이전 버전의 제한된 사용자 보고와 v1.0.5의 선행 확인을 이번 새 DLL의 장치 확인으로 승계하지 않는다. 실제 Windows 글꼴·배치·물리 입력·Steam Input 구성·다른 모드 조합과 성능은 별도 확인이다.
@@ -66,7 +66,7 @@ alpha.8의 실제 Windows 성공 보고는 제공되지 않았다. 이전 버전
 게임 초점·로그 닫힘 상태에서 패드 열기가 켜져 있으면 단독 L3/R3도 게임에 보내지 않는다. 원래 클릭 기능이 필요하면 `EnableGamepadLogOpen=false`로 바꾸고 남은 입력을 해제한다. [입력 지원 범위](GAMEPAD.md) · [구현 경계](ISSUE-5-IMPLEMENTATION.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md).
 
 <details>
-<summary>이번 전체 소스·격리 재빌드의 14개 자동 검사 결과</summary>
+<summary>이번 전체 소스·격리·고정 커밋 재빌드의 14개 자동 검사 결과</summary>
 
 | 프로그램 | 실제 결과 |
 | --- | --- |
@@ -85,7 +85,7 @@ alpha.8의 실제 Windows 성공 보고는 제공되지 않았다. 이전 버전
 | `EventSelectionRuntimeTests` | PASS: event execution runtime 999 assertions across 150 scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries) |
 | `EventPopupTests` | PASS: EventPopupTests: 1576 actual popup input/layout boundary checks; managed substitutes, not Windows Unity rendering. |
 
-전체 후보·격리 재빌드의 14개 결과 문자열이 일치한다. 고정 커밋 재빌드와 공개 파일 확인은 아직 실행 전이며 완료 후 해당 실행 결과와 다시 대조한다.
+전체 후보·격리·고정 커밋 재빌드의 14개 결과 문자열이 일치한다. 관리 대역과 실제 API 경계의 검사이며 실제 Windows 게임 실행으로 확대하지 않는다.
 
 </details>
 
@@ -104,12 +104,19 @@ alpha.8의 실제 Windows 성공 보고는 제공되지 않았다. 이전 버전
 
 ## 파일 확인·게시 기록
 
-| 파일 | 이번 검토 후보 크기·SHA-256 |
+| 파일 | 이번 공개 파일 크기·SHA-256 |
 | --- | --- |
-| `DiceMaster-v1.0.6-alpha.9.zip` 예정 | 261,940바이트 · `eed589dd5059774f1b9f7697bfc997953f3cedfdd3bdb0c2ad60d58dfbb865c8` |
+| `DiceMaster-v1.0.6-alpha.9.zip` | 261,940바이트 · `eed589dd5059774f1b9f7697bfc997953f3cedfdd3bdb0c2ad60d58dfbb865c8` |
 | `DiceMaster.dll` | 620,032바이트 · `7da12ec4b77d524e82f2bf8c62d4de6cf8e0fc74b83fb3cc6393619f8efc1d64` |
 | `config/DiceMaster.cfg` | 11,459바이트 · `66b34802ed57b53db7ad977e96e8e17ef4847149e08ac3f244788f0704d9aea7` |
 
-후보·격리 빌드와 로컬 ZIP의 CRC·두 파일·내부 바이트를 확인했다. 공개 이름으로 바꾸는 경우 재압축하지 않고 바이트·해시를 대조한다. 영수증은 로컬 `artifacts/architecture-refactor/final-candidate/build-manifest.json`·`refactor-verification.json`·`final-clean/clean-build.json`·`policy-evidence/`에 보관한다.
+후보·격리·고정 소스 재빌드와 공개 다운로드에서 일치한다. 로컬 `DiceMaster-source-candidate.zip`을 공개 이름으로 바꾸면서 재압축하지 않았고 CRC·두 파일·내부 바이트·SHA-256을 대조했다. 영수증은 로컬 `artifacts/architecture-refactor/final-candidate/build-manifest.json`·`refactor-verification.json`·`final-clean/clean-build.json`·`policy-evidence/`에 보관한다.
 
-구현 커밋은 `da1f3620d0df4c2ff6125887041a39b90646ef09`·`360ca5733adcca31b9acbf62adaf966856c9d6ba`이며 작업 전 원격 main은 `fd9f8180fcd46d8741a863cb2e18fa43be237d69`다. 이 준비 문서를 포함하는 게시용 고정 소스·태그와 실제 Release/asset ID·게시 시각은 아직 정하지 않았다. 사전 확인에서 새 버전은 미사용이고 기존 32개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 확인했다. 게시 후 이 기준과 다시 대조하고 실제 결과는 빌드 소스·태그·자산을 바꾸지 않는 별도 main 문서 커밋에 보충한다.
+| 게시 항목 | 이번 식별값 |
+| --- | --- |
+| 고정 소스 커밋·태그 | [`af7bcd94ee1398717acec3066a0a907d588c49f9`](https://github.com/jungpaeng/dicemaster/commit/af7bcd94ee1398717acec3066a0a907d588c49f9) · `v1.0.6-alpha.9` |
+| 게시 시각·Release/asset ID | 2026-10-20 03:43:52 KST (2026-10-19 18:43:52 UTC) · Release `417623770` · asset `657114332` |
+
+구현 커밋은 `da1f3620d0df4c2ff6125887041a39b90646ef09`·`360ca5733adcca31b9acbf62adaf966856c9d6ba`이며 작업 전 원격 main은 `fd9f8180fcd46d8741a863cb2e18fa43be237d69`다. 두 구현 커밋과 README·준비 문서를 포함한 검증 소스 `af7bcd94ee1398717acec3066a0a907d588c49f9`를 `origin/main`·주석 태그로 atomic push하고 `draft=false`·`prerelease=true`·`make_latest=false`로 게시했다. 기존 32개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다.
+
+게시 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.9/`의 `release-verification.json`·`build-manifest.json`·`anonymous-verification.json`·`public-release.json`·`github-publication.json`·`tag-verification.json`·`source-document-links.json`·`independent-anonymous-audit.json`·`release-body.md` 등에 보관한다. 별도로 인증 없이 공개 API·페이지·다운로드·주석 태그·main 계보를 읽어 Release/asset ID·두 구현 커밋 포함·파일 크기·CRC·해시·Latest와 기존 공개 상태 보존을 대조한 독립 확인도 통과했다. `release-verification.json`의 `published=false`는 게시 전 고정 커밋 검사 시점이며 실제 게시·익명 검증과 구분한다. 게시 결과 보충은 빌드 소스·태그·DLL/cfg/ZIP을 바꾸지 않는 별도 main 문서 커밋에 기록하고 Release 본문은 그 고정 문서 커밋의 공개 절대 URL로 연결한다.
