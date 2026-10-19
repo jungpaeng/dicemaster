@@ -150,7 +150,7 @@ public class DicePlugin : BaseUnityPlugin
 		// shared owner must finish consuming held input before returning it.
 		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow || EventSelectionRuntime.Waiting, Application.isFocused,
 			logInputMode, Time.unscaledTime, Paths.CachePath);
-		if (frame.ResetFocus) logRenderer.ResetInputFocus(frame.PreservePointerTransaction);
+		if (frame.ResetFocus) logRenderer.ResetInputFocus(frame.PreservePointerTransaction, frame.PreserveNavigationArea);
 		if (frame.ResetFocus)
 		{
 			eventPopup.ResetInput(frame.PreservePointerTransaction);
@@ -167,6 +167,7 @@ public class DicePlugin : BaseUnityPlugin
 		{
 			eventPopup.InputHint = GamepadBridge.LogHint().Replace("로그", "이벤트 선택");
 			eventPopup.Handle(frame.Command);
+			eventPopup.Scroll(frame.Scroll);
 		}
 		DicePatch.UpdateGamepad();
 		string gateWarning = GameActionGate.ConsumeWarning();

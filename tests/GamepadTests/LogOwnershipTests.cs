@@ -73,6 +73,7 @@ static class LogOwnershipTests
         string Command(object frame) => frameType.GetField("Command").GetValue(frame).ToString();
         bool ResetFocus(object frame) => (bool)frameType.GetField("ResetFocus").GetValue(frame);
         bool PreservePointer(object frame) => (bool)frameType.GetField("PreservePointerTransaction").GetValue(frame);
+        bool PreserveNavigation(object frame) => (bool)frameType.GetField("PreserveNavigationArea").GetValue(frame);
         int Owner() => (int)controllerType.GetProperty("Owner").GetValue(controller);
         const int A = 0x1000, B = 0x2000, X = 0x4000, Up = 1;
         Check(ResetFocus(Tick(0, A)), "Opening cancels focus");
@@ -111,7 +112,9 @@ static class LogOwnershipTests
         // Valid keyboard/mouse mode wins, but a new physical pad transition can
         // recover when game scheme updates stop because XInput is captured.
         Tick(4f, mode:"KeyboardMouse", slot:1);
-        Check(Command(Tick(4.1f, A, mode:"KeyboardMouse", slot:1)) == "None", "Mode change consumes first pad transition");
+        object physicalTakeover = Tick(4.1f, A, mode:"KeyboardMouse", slot:1);
+        Check(ResetFocus(physicalTakeover) && PreserveNavigation(physicalTakeover) && !PreservePointer(physicalTakeover)
+            && Command(physicalTakeover) == "None", "Frozen mouse scheme pad takeover preserves navigation, cancels clicks and consumes the first input");
         Tick(4.2f, mode:"KeyboardMouse", slot:1);
         Check(Command(Tick(4.3f, A, mode:"KeyboardMouse", slot:1)) == "Activate", "Frozen game scheme supports safe physical switch");
         controllerType.GetMethod("PointerActivity").Invoke(controller, null);
@@ -129,37 +132,38 @@ static class LogOwnershipTests
         for (int i = 0; i < 4; i++) states.SetValue(State(), i);
         pads[0] = pads[1] = true;
         object frame = Tick(10);
-        Check(ResetFocus(frame) && !PreservePointer(frame), "First ownership is a hard reset");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame), "First ownership is a hard reset");
         Tick(10.1f);
         void Pointer() => controllerType.GetMethod("PointerActivity").Invoke(controller, null);
         Pointer(); frame = Tick(10.2f, A);
-        Check(ResetFocus(frame) && PreservePointer(frame) && Command(frame) == "None",
+        Check(ResetFocus(frame) && PreservePointer(frame) && !PreserveNavigation(frame) && Command(frame) == "None",
             "Gamepad scheme pointer activity preserves click while consuming simultaneous A");
         Check(Command(Tick(10.3f, A)) == "None", "Pointer takeover consumes held pad A");
         Tick(10.4f);
         Check(Command(Tick(10.5f, A)) == "Activate", "New pad A after pointer takeover requires full neutral");
         Pointer(); frame = Tick(10.6f, A, mode:"KeyboardMouse");
-        Check(ResetFocus(frame) && PreservePointer(frame) && Command(frame) == "None",
+        Check(ResetFocus(frame) && PreservePointer(frame) && !PreserveNavigation(frame) && Command(frame) == "None",
             "Touch-caused game scheme transition preserves pointer transaction without pad activation");
         Check(Command(Tick(10.7f, A, mode:"KeyboardMouse")) == "None", "Mode transition consumes old A");
         frame = Tick(10.8f, mode:"Unknown");
-        Check(ResetFocus(frame) && PreservePointer(frame), "Temporary unknown scheme alone is a soft device reset");
+        Check(ResetFocus(frame) && PreservePointer(frame) && !PreserveNavigation(frame),
+            "Unknown scheme transition retains the established pointer and entry-barrier preservation path");
         Pointer(); frame = Tick(10.9f, B, focused:false);
-        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Alt-Tab wins over same-frame pointer takeover");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame) && Command(frame) == "None", "Alt-Tab wins over same-frame pointer takeover");
         frame = Tick(11, B);
-        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Focus return cannot revive an old click or held B");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame) && Command(frame) == "None", "Focus return cannot revive an old click or held B");
         Tick(11.1f); Pointer(); frame = Tick(11.2f, A, ready:false);
-        Check(ResetFocus(frame) && !PreservePointer(frame), "Lost capture readiness wins over pointer takeover");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame), "Lost capture readiness wins over pointer takeover");
         frame = Tick(11.3f, A);
-        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Capture recovery requires new pointer/pad input");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame) && Command(frame) == "None", "Capture recovery requires new pointer/pad input");
         Tick(11.4f); Pointer(); pads[0] = false; frame = Tick(11.5f);
-        Check(ResetFocus(frame) && !PreservePointer(frame), "Owner disconnect is a hard reset even with pointer activity");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame), "Owner disconnect is a hard reset even with pointer activity");
         pads[0] = true; Pointer(); frame = Tick(11.6f, A);
-        Check(ResetFocus(frame) && !PreservePointer(frame) && Command(frame) == "None", "Owner reconnect cannot retain a pending click");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame) && Command(frame) == "None", "Owner reconnect cannot retain a pending click");
         Tick(11.7f); controllerType.GetMethod("Cancel").Invoke(controller, null); Pointer(); frame = Tick(11.8f);
-        Check(ResetFocus(frame) && !PreservePointer(frame), "Explicit context/target cancellation cannot be softened by pointer activity");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame), "Explicit context/target cancellation cannot be softened by pointer activity");
         Pointer(); frame = Tick(11.9f, B, open:false);
-        Check(ResetFocus(frame) && !PreservePointer(frame), "Log closing always discards old pointer transactions");
+        Check(ResetFocus(frame) && !PreservePointer(frame) && !PreserveNavigation(frame), "Log closing always discards old pointer transactions");
         Type resolver = assembly.GetType("DiceMaster.Gamepad.GameInputModeResolver", true);
         string Mode(string scheme, bool active = true) => resolver.GetMethod("FromScheme").Invoke(null, new object[] { scheme, active }).ToString();
         Check(Mode(null) == "Unknown" && Mode("") == "Unknown" && Mode("unexpected") == "Unknown", "Unknown getter-zero states never imply mouse mode");

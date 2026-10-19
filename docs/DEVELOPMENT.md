@@ -2,6 +2,14 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## PRD #5 — v1.0.6-alpha.5 준비
+
+최신 `origin/main`의 `3a5ffdf85f5965623c6c585032086976515dd98a`를 기준으로 로그 도구의 선택 표시·장치 전환과 팝업 결과 설명을 수정한다. README·구현·검사를 main에 반영하고 새 prerelease를 게시하는 지시 범위다. 새 소스·회귀 검사·빌드 입력·패키지·게시 결과는 [alpha.5 배포 기록](ISSUE-5-ALPHA5-RELEASE.md)에 실제 완료 후 기록한다.
+
+도구가 열리면 목록 탭의 선택 표시를 끄고 도구만 표시한다. 물리 패드 재획득은 `Navigation` 초기화로 이전 확인·클릭 권한과 검색 입력 커서를 취소하고 해제·중립을 요구하면서 현재 도구 화면·선택·스크롤을 보존한다. 자동 scheme 변경과 실제 포인터 전환은 기존 `Pointer` 경로의 유효한 첫 누름을 보존한다. 실제 초점·문맥·차단 준비·소유자·연결·닫힘 경계는 계속 하드 초기화한다.
+
+팝업은 실제 결과 식별자로 기존 정적 분석기를 사용한다. 목록은 폭에 맞춰 줄이는 네 줄과 선택 전후 같은 높이를 유지하고, 선택 상세의 예상 결과·발동 조건은 독립 스크롤 영역에서 휠·오른쪽 스틱으로 읽는다. ↑↓는 행 이동이다. 보이는 팝업의 0.25초 갱신마다 최대 두 후보의 결과를 준비하고 같은 실제 행동·대상·결과의 성공값을 캐시하며 읽기 실패는 5초 뒤 재시도한다. OnGUI는 게시된 텍스트만 읽고 Lua·결과 실행을 호출하지 않는다. 준비 중·미지원·읽기 실패·분석상 효과 없음을 구분하고 설명 실패는 `CanSelect`·`CanForce`에 영향을 주지 않는다. 새 DLL의 Windows 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 alpha.4 후속 사용자 보고를 새 후보 통과로 승계하지 않는다. 아래 alpha.4의 검사·파일·게시 기록은 당시 이력이다.
+
 ## PRD #5 — v1.0.6-alpha.4 prerelease
 
 **2026-10-20 01:47:20 KST에 [v1.0.6-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.4) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.4/DiceMaster-v1.0.6-alpha.4.zip). 최신 `origin/main`의 `ea11afbda83433c58eeddc90cada3d021013bdda`에서 작업했고 README·검사·구현을 포함한 소스·태그 `bea9e87f8a9e138150fd6b70e2d17f0fcb92ccce`를 main에 반영했다. 전체·격리·고정 커밋 재빌드의 14개 검사와 검토 DLL/cfg/ZIP 동일 바이트·전체 검사 결과 일치를 확인했다. 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256 검증도 통과했다. [alpha.4 배포 기록](ISSUE-5-ALPHA4-RELEASE.md)에 상세 수치·파일·게시 식별값을 기록한다.

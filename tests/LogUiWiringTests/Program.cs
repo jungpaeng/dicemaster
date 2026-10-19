@@ -214,9 +214,17 @@ static class Program
             "actual plugin owns temporary cursor access during log visibility/focus and releases on disable/destruction");
         Check(update.Body.Instructions.Any(i => i.Operand is FieldReference field &&
                 field.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && field.Name == "PreservePointerTransaction") &&
+                update.Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                field.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && field.Name == "PreserveNavigationArea") &&
                 updateCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == "ResetInputFocus" &&
-                    c.Parameters.Count == 1 && c.Parameters[0].ParameterType.FullName == "System.Boolean"),
-            "actual TickLog frame reset reason reaches renderer instead of discarding every touch down/up transaction");
+                    c.Parameters.Count == 2 && c.Parameters.All(p => p.ParameterType.FullName == "System.Boolean")),
+            "actual TickLog frame carries distinct pointer and navigation preservation reasons to the renderer");
+        Check(updateCalls.Any(c => c.DeclaringType.FullName == popup && c.Name == "Scroll"),
+            "actual popup receives right-stick detail scrolling from Update");
+        const string resultPreview = "DiceMaster.EventSelection.EventResultPreview";
+        Check(Calls(Method(runtime, "Refresh")).Any(c => c.DeclaringType.FullName == resultPreview && c.Name == "Read") &&
+                !Calls(Method(popup, "Draw")).Any(c => c.DeclaringType.FullName == resultPreview || c.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser"),
+            "actual result text is prepared outside OnGUI and the popup only consumes prepared descriptions");
         Check(Calls(Method("DiceMaster.LogUI.GameActionGate", "ReleaseIfNeutral"))
                 .Any(c => c.DeclaringType.FullName == "UnityEngine.Input" && c.Name == "get_touchCount"),
             "actual gameplay release gate waits for touchscreen contact as well as held keyboard/mouse input");

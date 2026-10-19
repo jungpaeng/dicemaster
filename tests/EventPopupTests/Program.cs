@@ -16,6 +16,7 @@ namespace DiceMaster.EventSelection
     public sealed class EventCandidate
     {
         public string Id, Title, Result = "mock-result", State = "정상 발동 가능", Summary = "현재 조건 충족";
+        public string ResultSummary = "예상 효과 요약", ResultDetail = "예상 효과 상세";
         public bool CanSelect, CanForce;
         public object Target = new object();
     }
@@ -41,7 +42,7 @@ namespace DiceMaster.EventSelection
     }
 }
 
-internal static class Program
+internal static partial class Program
 {
     private static int checks;
     private static void Check(bool condition, string message)
@@ -134,6 +135,7 @@ internal static class Program
         RowReclickRegressions();
         PostReleaseTakeoverRegressions();
         SoftResetBarrierRegressions();
+        ResultPreviewUiRegressions();
         KeyboardContextualConfirmation();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })

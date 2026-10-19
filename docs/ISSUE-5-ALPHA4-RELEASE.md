@@ -109,3 +109,9 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.4/`의 `release-verification.json`, `build-manifest.json`, `anonymous-verification.json`, `github-publication.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 이후 실제 게시·익명 다운로드 검증과 구분한다.
 
 이 문서의 게시 결과 보충은 main의 별도 후속 문서 커밋에 포함한다. 빌드 소스·태그 `bea9e87`와 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스에 포함된 준비 문구는 당시 검사·게시 단계의 기록이다.
+
+## 2026-10-20 사용자 후속 확인
+
+사용자는 alpha.4에서 **대부분의 로그 터치 문제가 해결됐다**고 보고했다. 남은 항목으로 **도구를 열면 이전 목록 탭도 함께 선택 표시됨**, **터치로 도구를 연 뒤 스틱을 쓰면 이전 탭으로 돌아감**, **팝업에 결과 설명이 빠져 있음**을 보고했다. 이 기록은 해당 관찰의 제한된 확인이며 개별 시나리오 전체·설치 DLL 해시·장치별 환경이 추가 제공된 것은 아니다.
+
+이후 도구 선택 표시·입력 장치 전환 시 화면 유지·팝업 결과 설명의 수정과 새 후보 검증·배포는 [alpha.5 배포 기록](ISSUE-5-ALPHA5-RELEASE.md)에서 구분한다. 이 문서의 게시 파일·검사 수치·해시와 당시의 확인 대기 기록은 보존하며 사용자 보고를 새 DLL의 Windows 검증 완료로 승계하지 않는다.

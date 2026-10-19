@@ -50,6 +50,20 @@ namespace DiceMaster
 }
 namespace DiceMaster.EventSelection
 {
+    // Result-text preparation is a boundary here; actual reader/parser IL is
+    // executed separately by PreviewIntegrationTests.
+    public sealed class EventResultPreview
+    {
+        public readonly string Summary, Detail;
+        public readonly bool Retry;
+        public static readonly EventResultPreview Pending = new EventResultPreview("pending", true);
+        public static readonly EventResultPreview Unavailable = new EventResultPreview("unavailable", false);
+        public static readonly List<string> Reads = new List<string>();
+        public static Func<string, EventResultPreview> Reader;
+        public EventResultPreview(string text, bool retry = false) { Summary = Detail = text; Retry = retry; }
+        internal static EventResultPreview Read(string result)
+        { Reads.Add(result); return Reader == null ? new EventResultPreview("preview:" + result) : Reader(result); }
+    }
     public enum EventEligibilityReason { None, ConditionsNotMet, ZeroWeight, Random, Unsupported, ReadFailure }
     public sealed class EventEligibilitySnapshot
     {

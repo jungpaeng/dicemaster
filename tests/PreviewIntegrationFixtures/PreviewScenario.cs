@@ -11,7 +11,7 @@ namespace DiceMaster
 {
     // These scenarios invoke copied production IL. No parser, arithmetic engine,
     // Action or formatter implementation exists in the boundary fixture.
-    public static class PreviewScenario
+    public static partial class PreviewScenario
     {
         static readonly Assembly Self = typeof(PreviewScenario).Assembly;
         static int assertions, caseId;
@@ -654,7 +654,7 @@ namespace DiceMaster
             assertions += ParseCacheRegression.Run(); Console.WriteLine("PREVIEW bounded parse cache regression passed");
             assertions += TraversalRegression.Run(); Console.WriteLine("PREVIEW traversal regression passed");
             NamingSafety(); State(); Console.WriteLine("PREVIEW state-dependent estimates passed");
-            Cache(); LimitsAndRetry(); EventRetry(); Benchmark();
+            Cache(); LimitsAndRetry(); EventRetry(); EventResultPreviews(); Benchmark();
             Check(UnityEngine.Random.Calls == 0 && Mortal.Core.StatGroupVariable.OriginalReads == 0 && Mortal.Core.StatCompareItem.OriginalReads == 0, "Preview called original game RNG/evaluation chain");
             return assertions;
         }

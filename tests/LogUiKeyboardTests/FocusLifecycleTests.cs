@@ -144,7 +144,7 @@ internal static partial class Program
                 LogPadFrame frame = controller.Tick(true, true, true, LogInputMode.KeyboardMouse, .2, states, connected);
                 Check(frame.ResetFocus && frame.PreservePointerTransaction && Field(renderer, "pointerIdentity") == null,
                     "actual controller emits a late soft takeover after the complete " + action + " gesture");
-                renderer.ResetInputFocus(frame.PreservePointerTransaction);
+                renderer.ResetInputFocus(frame.PreservePointerTransaction, frame.PreserveNavigationArea);
                 renderer.Handle(frame.Command); renderer.Scroll(frame.Scroll);
                 Repaint(renderer);
                 if (action == "search")

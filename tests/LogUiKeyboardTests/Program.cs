@@ -30,6 +30,7 @@ internal static partial class Program
         RendererNativeConsumedCornerPress();
         RendererNonInputPassesPreservePointer();
         RendererExplicitFocusLifecycle();
+        RendererToolsDeviceTakeover();
         CursorOwnershipLifecycle();
         RendererListPointerSelectionTransactions();
         RendererPointerTakeoverTransactions();
@@ -1045,7 +1046,8 @@ internal static partial class Program
         // The fallback reproduces the old unconditional reset while this test
         // is introduced; the source API now takes preservePointerTransaction.
         MethodInfo reset = typeof(LogRenderer).GetMethod("ResetInputFocus");
-        reset.Invoke(renderer, reset.GetParameters().Length == 0 ? null : new object[] { true });
+        reset.Invoke(renderer, reset.GetParameters().Length == 0 ? null :
+            reset.GetParameters().Length == 1 ? new object[] { true } : new object[] { true, false });
     }
 
     private static Vector2 PointerTarget(LogRenderer renderer, Func<GUILayout.ControlRecord, bool> matches)
@@ -1282,7 +1284,7 @@ internal static partial class Program
                             LogPadFrame frame = controller.Tick(true, true, true, mode, time += .1, states, connected);
                             if (apply)
                             {
-                                if (frame.ResetFocus) renderer.ResetInputFocus(frame.PreservePointerTransaction);
+                                if (frame.ResetFocus) renderer.ResetInputFocus(frame.PreservePointerTransaction, frame.PreserveNavigationArea);
                                 renderer.Handle(frame.Command); renderer.Scroll(frame.Scroll);
                             }
                             return frame;
@@ -1367,7 +1369,7 @@ internal static partial class Program
                     LogInputMode.KeyboardMouse, .2, states, connected);
                 Check(hard.ResetFocus && !hard.PreservePointerTransaction && hard.Command == LogPadCommand.None && hard.Scroll == 0,
                     "hard " + boundary + " boundary wins when mode change and pointer activity happen in the same actual controller tick");
-                renderer.ResetInputFocus(hard.PreservePointerTransaction);
+                renderer.ResetInputFocus(hard.PreservePointerTransaction, hard.PreserveNavigationArea);
                 DrawPointer(renderer, EventType.TouchUp, EventType.TouchUp, point, reserve, consume: true);
                 Check(LogBridge.Reservations == attempts && Field(renderer, "pointerIdentity") == null && Field(renderer, "pointerReservation") == null,
                     "hard " + boundary + " lifecycle boundary prevents the old touch release from reserving");
@@ -1402,7 +1404,7 @@ internal static partial class Program
                     LogPadFrame UpdateAfterKeyboard()
                     {
                         LogPadFrame frame = controller.Tick(true, true, true, mode, time += .1, states, connected);
-                        if (frame.ResetFocus) renderer.ResetInputFocus(frame.PreservePointerTransaction);
+                        if (frame.ResetFocus) renderer.ResetInputFocus(frame.PreservePointerTransaction, frame.PreserveNavigationArea);
                         renderer.Handle(frame.Command); renderer.Scroll(frame.Scroll);
                         return frame;
                     }

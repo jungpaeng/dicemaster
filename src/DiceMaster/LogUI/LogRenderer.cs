@@ -100,7 +100,7 @@ namespace DiceMaster.LogUI
 
         private static float Finite(float value, float fallback) => float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
 
-        public void ResetInputFocus(bool preservePointerTransaction = false)
+        public void ResetInputFocus(bool preservePointerTransaction = false, bool preserveNavigationArea = false)
         {
             // A scheme change can be caused by the very touch/click being
             // handled. Its own down/up identity and ticket stay valid; pad
@@ -119,15 +119,20 @@ namespace DiceMaster.LogUI
             }
             model.CancelExecution();
             releaseTextFocus = true;
-            area = Area.List;
             pointerIdentity = null;
             pointerReservation = null;
             // Keep held keys latched across context/focus changes. A KeyDown
             // repeat must never become confirmation for the replacement target.
             LatchPhysicallyHeldKeys();
-            ensureVisible = true;
-            manualListScroll = false;
-            lastMeasuredId = null;
+            // Reacquiring a pad invalidates action authority and text entry,
+            // but it does not navigate out of the tools opened by a touch.
+            if (!preserveNavigationArea)
+            {
+                area = Area.List;
+                ensureVisible = true;
+                manualListScroll = false;
+                lastMeasuredId = null;
+            }
         }
 
         private bool Synchronize()
@@ -342,7 +347,8 @@ namespace DiceMaster.LogUI
             for (int index = 0; index < Tabs.Length; index++)
             {
                 int tabIndex = index;
-                SafeButton((index == currentTabIndex ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), index == currentTabIndex, chrome: true);
+                bool active = area == Area.List && index == currentTabIndex;
+                SafeButton((active ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), active, chrome: true);
             }
             SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { area = Area.Tools; releaseTextFocus = true; ensureVisible = true; }, area == Area.Tools, chrome: true);
             SafeButton("닫기", "close", () => close?.Invoke(), chrome: true);

@@ -59,7 +59,7 @@ internal static partial class Program
             Check(Event.current.type == EventType.Used && (string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch",
                 "native TextField consumption retains the search identity from its pre-consumption rectangle");
             LogPadFrame takeover = controller.Tick(true, true, true, LogInputMode.Gamepad, .2, padStates, connected);
-            if (takeover.ResetFocus) renderer.ResetInputFocus(takeover.PreservePointerTransaction);
+            if (takeover.ResetFocus) renderer.ResetInputFocus(takeover.PreservePointerTransaction, takeover.PreserveNavigationArea);
             DrawPointer(renderer, EventType.MouseUp, EventType.MouseUp, searchPoint); Repaint(renderer);
             Check(takeover.ResetFocus && takeover.PreservePointerTransaction && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
                 "actual controller mouse takeover preserves the event text caret across the next Update");
@@ -75,7 +75,7 @@ internal static partial class Program
                     pass + " with raw touch-up cannot cancel the search field's active pointer transaction");
             }
             LogPadFrame touchTakeover = controller.Tick(true, true, true, LogInputMode.Gamepad, .25, padStates, connected);
-            if (touchTakeover.ResetFocus) renderer.ResetInputFocus(touchTakeover.PreservePointerTransaction);
+            if (touchTakeover.ResetFocus) renderer.ResetInputFocus(touchTakeover.PreservePointerTransaction, touchTakeover.PreserveNavigationArea);
             renderer.Handle(touchTakeover.Command); renderer.Scroll(touchTakeover.Scroll);
             DrawPointer(renderer, EventType.TouchUp, EventType.TouchUp, searchPoint); Repaint(renderer);
             Check(touchTakeover.ResetFocus && touchTakeover.PreservePointerTransaction && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
@@ -83,7 +83,7 @@ internal static partial class Program
             GUILayout.TextFieldInput = previous => "특별한 설명";
             Repaint(renderer); GUILayout.TextFieldInput = null;
             LogPadFrame typing = controller.Tick(true, true, true, LogInputMode.Gamepad, .3, padStates, connected);
-            if (typing.ResetFocus) renderer.ResetInputFocus(typing.PreservePointerTransaction);
+            if (typing.ResetFocus) renderer.ResetInputFocus(typing.PreservePointerTransaction, typing.PreserveNavigationArea);
             Repaint(renderer);
             Check(!typing.ResetFocus && model.Tab("이벤트").SelectedId == null && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
                 "typing that filters out the selected row keeps the caret and never creates a hard pad reset");

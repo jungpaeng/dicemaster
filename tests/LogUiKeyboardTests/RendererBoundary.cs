@@ -116,7 +116,7 @@ namespace UnityEngine
         }
         public sealed class ControlRecord
         {
-            public string Text; public Rect Rect; public int FontSize; public bool Button, Enabled;
+            public string Text; public Rect Rect; public int FontSize; public FontStyle FontStyle; public bool Button, Enabled;
             public Rect WindowLocalRect, AncestorClip, VisibleRect;
         }
         // Observe actual styled vertical groups so branch blocks cannot be
@@ -351,7 +351,7 @@ namespace UnityEngine
         }
         private static void RecordControl(string text, GUIStyle style, bool button, Rect rect)
         {
-            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button, Enabled = GUI.enabled,
+            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, FontStyle = style.fontStyle, Button = button, Enabled = GUI.enabled,
                 WindowLocalRect = Offset(rect, Current.GuiOrigin), AncestorClip = Current.Clip };
             control.VisibleRect = Intersection(control.WindowLocalRect, control.AncestorClip);
             Controls.Add(control);

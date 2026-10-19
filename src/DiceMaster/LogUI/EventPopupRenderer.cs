@@ -22,15 +22,29 @@ namespace DiceMaster.LogUI
         private object primaryTarget;
         private bool primaryAvailable, primaryForce;
         private bool neutral = true, follow = true;
-        private float scroll, detailScroll;
+        private float scroll, detailScroll, maximumDetailScroll;
+        private string detailCandidate, detailResult;
+        private object detailTarget;
         private readonly HashSet<KeyCode> keys = new HashSet<KeyCode>();
         private readonly Dictionary<string, Rect> rowBounds = new Dictionary<string, Rect>();
         private readonly Dictionary<string, string> plainTitles = new Dictionary<string, string>(StringComparer.Ordinal);
+        private readonly Dictionary<LineKey, string> singleLines = new Dictionary<LineKey, string>();
         private static readonly Regex Markup = new Regex("<[^>]*>", RegexOptions.CultureInvariant);
         private GUIStyle text, button, highlighted, chrome, chromeButton, chromeSelected;
         private int font, chromeFont;
         private Action deferred;
         internal string InputHint = "";
+
+        private struct LineKey : IEquatable<LineKey>
+        {
+            internal readonly string Value;
+            internal readonly GUIStyle Style;
+            internal readonly float Width;
+            internal LineKey(string value, GUIStyle style, float width) { Value = value; Style = style; Width = width; }
+            public bool Equals(LineKey other) => Value == other.Value && ReferenceEquals(Style, other.Style) && Width == other.Width;
+            public override bool Equals(object other) => other is LineKey && Equals((LineKey)other);
+            public override int GetHashCode() => Value.GetHashCode() ^ Style.GetHashCode() ^ Width.GetHashCode();
+        }
 
         internal void ResetInput(bool preservePointerTransaction = false)
         {
@@ -59,7 +73,11 @@ namespace DiceMaster.LogUI
                 token = EventSelectionRuntime.Token;
                 selected = Random;
                 scroll = detailScroll = 0;
+                maximumDetailScroll = 0;
+                detailCandidate = detailResult = null;
+                detailTarget = null;
                 plainTitles.Clear();
+                singleLines.Clear();
                 ResetInput();
                 CapturePrimaryIntent();
                 follow = true;
@@ -131,6 +149,15 @@ namespace DiceMaster.LogUI
             else if (command == LogPadCommand.Activate) SubmitPrimary();
         }
 
+        internal void Scroll(float value)
+        {
+            Synchronize();
+            if (!EventSelectionRuntime.Waiting || !Application.isFocused || neutral
+                || float.IsNaN(value) || float.IsInfinity(value)) return;
+            detailScroll = Mathf.Clamp(detailScroll + value * 520f * Mathf.Clamp(Time.unscaledDeltaTime, 0, .1f),
+                0, maximumDetailScroll);
+        }
+
         private void Submit(bool force, bool random)
         {
             if (!EventSelectionRuntime.Waiting || token != EventSelectionRuntime.Token) return;
@@ -147,6 +174,7 @@ namespace DiceMaster.LogUI
         private void Styles(int body, int small)
         {
             if (text != null && body == font && small == chromeFont) return;
+            singleLines.Clear();
             font = body; chromeFont = small;
             text = new GUIStyle(GUI.skin.label) { fontSize = body, wordWrap = true, richText = false };
             button = new GUIStyle(GUI.skin.button) { fontSize = body, wordWrap = true, richText = false };
@@ -156,6 +184,11 @@ namespace DiceMaster.LogUI
             chromeButton = new GUIStyle(button) { fontSize = small };
             chromeSelected = new GUIStyle(chromeButton);
             chromeSelected.normal.textColor = Color.yellow;
+            foreach (GUIStyle style in new[] { text, button, highlighted, chrome, chromeButton, chromeSelected })
+            {
+                style.margin = new RectOffset(0, 0, 0, 0);
+                style.fixedWidth = style.fixedHeight = 0;
+            }
         }
 
         internal void Draw()
@@ -174,17 +207,20 @@ namespace DiceMaster.LogUI
             float margin = Math.Min(16 * LogLayout.ScreenScale(Screen.height), Screen.width * .02f);
             float width = Math.Min(Screen.width - margin * 2, Math.Max(360, Math.Min(680, Screen.width * .42f)));
             float inner = Math.Max(1, width - 24);
+            float contentWidth = Math.Max(1, inner - Math.Max(20,
+                GUI.skin.verticalScrollbar.fixedWidth + (GUI.skin.verticalScrollbar.margin?.left ?? 0)));
             float actionHeight = chromeButton.CalcHeight(new GUIContent("조건 무시하고 이번만 진행 [A / Enter]"), inner) + 6;
             float headingHeight = chrome.CalcHeight(new GUIContent("이번 행동의 이벤트 선택"), inner) + 8;
-            string hint = "클릭·터치로 선택 · 선택한 행을 다시 눌러 진행\n↑↓ 선택 · A/Enter 진행 · B/Esc 무작위 · Tab 로그";
-            if (!string.IsNullOrEmpty(InputHint)) hint += "\n" + InputHint;
+            string hint = "클릭·터치로 선택 · 다시 눌러 진행 · A/Enter 확인\n↑↓ 선택 · 오른쪽 스틱·휠로 결과 읽기 · B/Esc 무작위 · Tab 로그";
+            if (!string.IsNullOrEmpty(InputHint)) hint += "\n" + OneLine(InputHint, chrome, inner);
             float hintHeight = chrome.CalcHeight(new GUIContent(hint), inner) + 6;
-            float statusHeight = chrome.CalcHeight(new GUIContent(EventSelectionRuntime.Status ?? ""), inner);
-            float detailHeight = Math.Min(size * 3.5f + 8, Screen.height * .18f);
-            float controls = 24 + headingHeight + hintHeight + statusHeight + detailHeight + actionHeight * 2 + 20;
-            float listHeight = Math.Min(Screen.height * .34f, Math.Max(size * 2 + 24, EventSelectionRuntime.Candidates.Count * (size * 2 + 12)));
-            float height = Math.Min(Screen.height - margin * 2, controls + listHeight);
-            listHeight = Math.Max(1, height - controls);
+            string status = OneLine(EventSelectionRuntime.Status ?? "", chrome, inner);
+            float statusHeight = string.IsNullOrEmpty(status) ? 0 : chrome.CalcHeight(new GUIContent(status), inner);
+            float controls = 24 + headingHeight + hintHeight + statusHeight + actionHeight * 2 + 20;
+            float height = Math.Min(Screen.height - margin * 2, Math.Max(Screen.height * .8f, controls + size * 8 + 24));
+            float paneHeight = Math.Max(2, height - controls);
+            float listHeight = Math.Max(1, Math.Min(Screen.height * .34f, paneHeight * .45f));
+            float detailHeight = Math.Max(1, paneHeight - listHeight);
             Rect bounds = new Rect(margin, Screen.height - margin - height, width, height);
             HandleKeyboard();
             if (Event.current.type == EventType.Repaint) CapturePrimaryIntent();
@@ -195,13 +231,13 @@ namespace DiceMaster.LogUI
             rowBounds.Clear();
             Vector2 position = GUILayout.BeginScrollView(new Vector2(0, scroll), false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, GUILayout.Height(listHeight));
             scroll = position.y;
-            Row(Random, "무작위로 진행 · 원래 게임 판정", inner);
+            Row(Random, "무작위로 진행 · 원래 게임 판정", "원래 조건·가중치·난수로 판정", "결과를 지정하지 않습니다.", contentWidth);
             foreach (EventCandidate row in EventSelectionRuntime.Candidates)
             {
                 string title = row.Title ?? "";
                 if (!plainTitles.TryGetValue(title, out string plain))
                     plainTitles[title] = plain = Markup.Replace(title, "");
-                Row(row.Id, plain + "\n" + row.State, inner);
+                Row(row.Id, plain, row.State, row.ResultSummary, contentWidth);
             }
             Rect last = GUILayoutUtility.GetLastRect();
             GUILayout.EndScrollView();
@@ -211,12 +247,21 @@ namespace DiceMaster.LogUI
                 follow = false;
             }
             EventCandidate choice = Find(selected);
+            if (detailCandidate != selected || !ReferenceEquals(detailTarget, choice?.Target) || detailResult != choice?.Result)
+            {
+                detailCandidate = selected; detailTarget = choice?.Target; detailResult = choice?.Result;
+                detailScroll = 0;
+            }
+            string detailText = choice == null ? "지정 없이 게임의 조건·가중치·난수 판정으로 진행합니다."
+                : "예상 결과\n" + choice.ResultDetail + "\n\n발동 조건\n" + choice.Summary;
+            maximumDetailScroll = Math.Max(0, text.CalcHeight(new GUIContent(detailText), contentWidth) - detailHeight);
+            detailScroll = Mathf.Clamp(detailScroll, 0, maximumDetailScroll);
             Vector2 detail = GUILayout.BeginScrollView(new Vector2(0, detailScroll), false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, GUILayout.Height(detailHeight));
-            detailScroll = detail.y;
-            GUILayout.Label(choice == null ? "지정 없이 게임의 조건·가중치·난수 판정으로 진행합니다." : choice.Summary, text,
-                GUILayout.MinWidth(1), GUILayout.MaxWidth(inner - 20), GUILayout.ExpandWidth(true));
+            detailScroll = Mathf.Clamp(detail.y, 0, maximumDetailScroll);
+            GUILayout.Label(detailText, text,
+                GUILayout.MinWidth(1), GUILayout.MaxWidth(contentWidth), GUILayout.ExpandWidth(true));
             GUILayout.EndScrollView();
-            if (!string.IsNullOrEmpty(EventSelectionRuntime.Status)) GUILayout.Label(EventSelectionRuntime.Status, chrome);
+            if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, chrome);
             bool enabled = GUI.enabled;
             bool force = choice != null && choice.CanForce;
             GUI.enabled = enabled && (selected == Random || (choice != null && (choice.CanSelect || choice.CanForce)));
@@ -237,16 +282,46 @@ namespace DiceMaster.LogUI
             if (bounds.Contains(evt.mousePosition) && (evt.type == EventType.MouseDown || evt.type == EventType.MouseUp || evt.type == EventType.ScrollWheel)) evt.Use();
         }
 
-        private void Row(string id, string caption, float width)
+        private string OneLine(string value, GUIStyle style, float width)
         {
-            if (selected == id)
+            var key = new LineKey(value ?? "", style, width);
+            if (singleLines.TryGetValue(key, out string cached)) return cached;
+            string line = (value ?? "").Replace('\r', ' ').Replace('\n', ' ');
+            if (line.Length > 0 && style.CalcSize(new GUIContent(line)).x > width)
             {
-                string action = id == Random ? "무작위로 진행"
-                    : primaryAvailable ? primaryForce ? "조건 무시하고 이번만 진행" : "이 이벤트로 진행"
-                    : "진행 불가 · 대상/결과 확인 필요";
-                caption += "\n다시 클릭·터치: " + action;
+                int low = 0, high = Math.Min(line.Length, 160);
+                while (low < high)
+                {
+                    int middle = (low + high + 1) / 2;
+                    if (style.CalcSize(new GUIContent(line.Substring(0, middle) + "…")).x <= width) low = middle;
+                    else high = middle - 1;
+                }
+                // Avoid separating a UTF-16 surrogate pair when the visible
+                // text ends at an emoji or another supplementary character.
+                if (low > 0 && char.IsHighSurrogate(line[low - 1])) low--;
+                line = line.Substring(0, low) + "…";
             }
-            SafeButton((selected == id ? "▶ " : "") + caption, "row:" + id,
+            // Repeated native text measurements are unnecessary between GUI
+            // callbacks; the small cache belongs to this decision/font only.
+            if (singleLines.Count >= 512) singleLines.Clear();
+            singleLines[key] = line;
+            return line;
+        }
+
+        private void Row(string id, string title, string state, string result, float width)
+        {
+            string action = id == Random ? "무작위로 진행"
+                : primaryAvailable ? primaryForce ? "조건 무시하고 이번만 진행" : "이 이벤트로 진행"
+                : "진행 불가 · 대상/결과 확인 필요";
+            GUIStyle style = selected == id ? highlighted : button;
+            float lineWidth = Math.Max(1, width);
+            // Every row always owns the same four lines. Selection only changes
+            // their text/color, so the next touch can use the same screen point.
+            string caption = OneLine((selected == id ? "▶ " : "  ") + title, style, lineWidth)
+                + "\n" + OneLine(state, style, lineWidth)
+                + "\n" + OneLine(result, style, lineWidth)
+                + "\n" + OneLine(selected == id ? "다시 클릭·터치: " + action : "클릭·터치로 선택", style, lineWidth);
+            SafeButton(caption, "row:" + id,
                 () => {
                     if (selected == id)
                     {
@@ -255,7 +330,7 @@ namespace DiceMaster.LogUI
                         if (pointerRowConfirmation && pointerPrimaryAvailable) Submit(pointerPrimaryForce, id == Random);
                     }
                     else { selected = id; detailScroll = 0; CapturePrimaryIntent(); }
-                }, selected == id ? highlighted : button, width - 20);
+                }, style, width);
             rowBounds[id] = GUILayoutUtility.GetLastRect();
         }
 

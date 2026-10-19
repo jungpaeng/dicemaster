@@ -15,10 +15,13 @@ namespace DiceMaster.EventSelection
         public readonly string Id, Title, Result;
         public readonly object Target;
         public readonly EventEligibilitySnapshot Eligibility;
-        internal EventCandidate(string id, string title, string result, object target, EventEligibilitySnapshot eligibility)
-        { Id = id; Title = title; Result = result; Target = target; Eligibility = eligibility; }
+        private readonly EventResultPreview preview;
+        internal EventCandidate(string id, string title, string result, object target, EventEligibilitySnapshot eligibility, EventResultPreview preview = null)
+        { Id = id; Title = title; Result = result; Target = target; Eligibility = eligibility; this.preview = preview ?? EventResultPreview.Pending; }
         public string State => Eligibility.StatusText;
         public string Summary => Eligibility.Summary;
+        public string ResultSummary => preview.Summary;
+        public string ResultDetail => preview.Detail;
         public bool CanSelect => Eligibility.IsEligible && Eligibility.CanUseResult && !string.IsNullOrEmpty(Result);
         public bool CanForce => !Eligibility.IsEligible && Eligibility.CanUseResult && !string.IsNullOrEmpty(Result);
     }
@@ -50,6 +53,9 @@ namespace DiceMaster.EventSelection
             internal EventEligibilitySnapshot Snapshot;
             internal float RetryAt;
             internal string Result = "", Title = "이벤트 자료 읽기 실패";
+            internal string PreviewResult;
+            internal EventResultPreview Preview;
+            internal float PreviewRetryAt;
         }
         private sealed class ReferenceComparer : IEqualityComparer<object>
         {
@@ -168,7 +174,7 @@ namespace DiceMaster.EventSelection
             return string.IsNullOrEmpty(kind) ? "" : action.Prefix + "_" + kind;
         }
 
-        private static void Refresh(ActionContext action, float now, bool force = false)
+        private static void Refresh(ActionContext action, float now, bool force = false, int previewBudget = 0)
         {
             var eligible = new List<EventCandidate>();
             var remaining = new List<EventCandidate>();
@@ -204,8 +210,23 @@ namespace DiceMaster.EventSelection
                         Failure("candidate-result/" + id, error);
                     }
                 }
+                if (read.PreviewResult != read.Result || read.Preview == null)
+                {
+                    read.PreviewResult = read.Result;
+                    read.Preview = string.IsNullOrEmpty(read.Result) ? EventResultPreview.Unavailable : EventResultPreview.Pending;
+                    read.PreviewRetryAt = 0;
+                }
+                // Prepare at most two new/retrying definitions per visible
+                // Update; OnGUI only consumes immutable text. Successful
+                // definitions stay cached for this actual action/target/result.
+                if (previewBudget > 0 && !string.IsNullOrEmpty(read.Result) && now >= read.PreviewRetryAt)
+                {
+                    previewBudget--;
+                    read.Preview = EventResultPreview.Read(read.Result);
+                    read.PreviewRetryAt = read.Preview.Retry ? now + 5f : float.PositiveInfinity;
+                }
                 EventEligibilitySnapshot eligibility = read.Snapshot;
-                var candidate = new EventCandidate(id, read.Title, read.Result, target, eligibility);
+                var candidate = new EventCandidate(id, read.Title, read.Result, target, eligibility, read.Preview);
                 (candidate.CanSelect ? eligible : remaining).Add(candidate);
             }
             eligible.AddRange(remaining);
@@ -342,7 +363,7 @@ namespace DiceMaster.EventSelection
                 if (!IsEnabled()) { ReleaseRandom("setting-disabled"); return; }
                 if (!waiting || !displayVisible || now < current.NextRefresh) return;
                 current.NextRefresh = now + .25f;
-                Refresh(current, now);
+                Refresh(current, now, previewBudget: 2);
                 if (current.Pool.List.Count == 0 || candidates.Count == 0) ReleaseRandom("empty-candidates");
                 Recovered("display");
             }

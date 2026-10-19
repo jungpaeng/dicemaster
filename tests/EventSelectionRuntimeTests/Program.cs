@@ -22,6 +22,7 @@ internal static class Program
         EventSelectionRuntime.Invalidate("test");
         EventSelectionRuntime.Enabled = () => true;
         EventSelectionRuntime.WaitingChanged = null;
+        EventResultPreview.Reads.Clear(); EventResultPreview.Reader = null;
         Time.unscaledTime = 0;
         pool = new PositionResultData { name = "action", _scriptPrefix = "story" };
         pool.List.AddRange(targets);
@@ -137,6 +138,47 @@ internal static class Program
         EventSelectionRuntime.ContinueRandom(); Check(!Wait(), "input callback failure does not repeat execution");
         EventSelectionRuntime.WaitingChanged = null;
     }
+    private static void ResultPreviews()
+    {
+        var a = Event("a"); var b = Event("b", false); var c = Event("c");
+        Begin(a, b, c); Check(Wait(), "enter result preview scenario");
+        Check(EventResultPreview.Reads.Count == 0, "admission never reads result scripts inside the running Lua call");
+        EventSelectionRuntime.Tick(false, 1);
+        Check(EventResultPreview.Reads.Count == 0, "hidden popup does not prepare result descriptions");
+        EventSelectionRuntime.Tick(true, 1);
+        Check(EventResultPreview.Reads.Count == 2 && EventResultPreview.Reads.Contains("story_a") && EventResultPreview.Reads.Contains("story_b"),
+            "visible Update prepares at most two exact pool-prefix/result keys including blocked candidates");
+        Check(EventSelectionRuntime.Candidates[0].ResultDetail == "preview:story_a" && EventSelectionRuntime.Candidates[2].CanForce,
+            "result text is separate from eligibility and stable eligible-first order");
+        EventSelectionRuntime.Tick(true, 1.3f);
+        Check(EventResultPreview.Reads.Count == 3 && EventResultPreview.Reads[2] == "story_c", "next update completes the bounded preparation queue");
+        for (int i = 2; i < 12; i++) EventSelectionRuntime.Tick(true, i);
+        Check(EventResultPreview.Reads.Count == 3, "successful immutable result descriptions stay cached for the actual action");
+        var original = EventSelectionRuntime.Candidates[0];
+        a.ResultType = "replacement"; EventSelectionRuntime.Tick(true, 12);
+        Check(EventSelectionRuntime.Candidates[0].ResultDetail == "preview:story_replacement" && original.ResultDetail == "preview:story_a",
+            "result-key replacement invalidates text without mutating an older published candidate");
+        pool.List[0] = Event("new-target"); EventSelectionRuntime.Tick(true, 13);
+        Check(EventSelectionRuntime.Candidates[0].ResultDetail == "preview:story_new-target", "target replacement cannot reuse the old result preview");
+        Check(a.RealCalls + b.RealCalls + c.RealCalls == 0, "result display never invokes gameplay rate or RNG");
+
+        Begin(Event("retry"), Event("other")); Check(Wait(), "enter preview retry scenario");
+        bool failed = true;
+        EventResultPreview.Reader = key => new EventResultPreview(failed ? "partial read failure" : "recovered:" + key, failed);
+        EventSelectionRuntime.Tick(true, 0);
+        Check(EventSelectionRuntime.Candidates[0].CanSelect && EventSelectionRuntime.Candidates[0].ResultDetail == "partial read failure",
+            "preview failure keeps readable candidates selectable and preserves partial text");
+        EventSelectionRuntime.Tick(true, 4.75f);
+        Check(EventResultPreview.Reads.Count == 2, "failed result reads back off for five seconds");
+        failed = false; EventSelectionRuntime.Tick(true, 5);
+        Check(EventResultPreview.Reads.Count == 4 && EventSelectionRuntime.Candidates[0].ResultSummary == "recovered:story_retry", "failed preview recovers on a visible retry");
+        EventSelectionRuntime.Invalidate("load");
+        Check(EventSelectionRuntime.Candidates.Count == 0, "context invalidation drops all result descriptions");
+        Begin(Event("retry"), Event("other")); Check(Wait(), "next action has a fresh preview cache");
+        EventSelectionRuntime.Tick(true, 0);
+        Check(EventResultPreview.Reads.Count == 2, "new action prepares its own descriptions");
+    }
+
     private static void GateSyntax()
     {
         scenarios++;
@@ -233,7 +275,7 @@ internal static class Program
     }
     private static void Main()
     {
-        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); GateSyntax(); ActualLuaAndGuards();
+        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards();
         Console.WriteLine("PASS: event execution runtime " + assertions + " assertions across " + scenarios + " scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries)");
     }
 }

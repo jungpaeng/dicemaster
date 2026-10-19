@@ -18,9 +18,11 @@ namespace DiceMaster.Gamepad
         public LogPadCommand Command;
         public float Scroll;
         public bool ResetFocus;
-        // A device-mode transition still cancels pad input, but must not tear
-        // down a fresh pointer press owned by the open log.
+        // An actual pointer takeover keeps its fresh press through Update.
         public bool PreservePointerTransaction;
+        // A physical pad reacquisition cancels confirmations, but keeps the
+        // list/tools area. This never grants authority to an unfinished click.
+        public bool PreserveNavigationArea;
     }
 
     // Pure state machine: a fixed owner, fresh presses for actions, directional
@@ -28,8 +30,13 @@ namespace DiceMaster.Gamepad
     public sealed class LogPadController
     {
         private readonly PadStick stick = new PadStick();
+        // A real lifetime/owner boundary wins over same-frame input. Automatic
+        // scheme changes can be observed before their touch's OnGUI down, so
+        // they retain the established pointer/entry-barrier preservation path.
+        private enum ResetKind { None, Navigation, Pointer, Hard }
+        private ResetKind pendingReset;
         private int owner = -1;
-        private bool wasOpen, wasFocused, wasReady, ownerConnected, waiting = true, resetPending, hardResetPending;
+        private bool wasOpen, wasFocused, wasReady, ownerConnected, waiting = true;
         private bool padOverride, pointerPending, keyboardPending, padEntry;
         private int openingOwner = -1;
         private LogInputMode previousMode;
@@ -38,11 +45,11 @@ namespace DiceMaster.Gamepad
         public int Owner { get { return owner; } }
         public bool Waiting { get { return waiting; } }
         public bool PadMode { get { return previousMode != LogInputMode.KeyboardMouse || padOverride; } }
-        public void Cancel() => Cancel(false);
-        private void Cancel(bool preservePointerTransaction)
+        public void Cancel() => Cancel(ResetKind.Hard);
+        private void Cancel(ResetKind kind)
         {
-            waiting = true; resetPending = true;
-            if (!preservePointerTransaction) hardResetPending = true;
+            waiting = true;
+            if ((int)kind > (int)pendingReset) pendingReset = kind;
             previousButtons = previousDirection = 0; repeatAt = 0; stick.Reset();
         }
         public void PointerActivity() { pointerPending = true; }
@@ -78,7 +85,7 @@ namespace DiceMaster.Gamepad
             // other entry paths retain the existing device transition barrier.
             if (hardBoundary || (mode != previousMode && !padEntry))
             {
-                Cancel(!hardBoundary); padOverride = false;
+                Cancel(hardBoundary ? ResetKind.Hard : ResetKind.Pointer); padOverride = false;
                 if (hardBoundary) padEntry = false;
                 if (!open) { owner = -1; ownerConnected = false; }
             }
@@ -86,11 +93,11 @@ namespace DiceMaster.Gamepad
             {
                 // Consume held pad actions while a mouse/touch/key transaction
                 // takes over, including when the game's scheme stays Gamepad.
-                Cancel(true);
+                Cancel(ResetKind.Pointer);
                 // Keyboard commands already run synchronously in OnGUI. Do
                 // not erase the focus they just established in the next Update.
                 // An independent hard boundary must still discard that input.
-                if (keyboardPending && !hardResetPending) resetPending = false;
+                if (keyboardPending && pendingReset != ResetKind.Hard) pendingReset = ResetKind.None;
                 padEntry = padOverride = false; pointerPending = keyboardPending = false;
             }
             if (openingOwner >= 0)
@@ -113,9 +120,10 @@ namespace DiceMaster.Gamepad
             {
                 ownerConnected = connected[owner]; padEntry = padOverride = false; Cancel();
             }
-            frame.ResetFocus = resetPending;
-            frame.PreservePointerTransaction = resetPending && !hardResetPending;
-            resetPending = hardResetPending = false;
+            frame.ResetFocus = pendingReset != ResetKind.None;
+            frame.PreservePointerTransaction = pendingReset == ResetKind.Pointer;
+            frame.PreserveNavigationArea = pendingReset == ResetKind.Navigation;
+            pendingReset = ResetKind.None;
             if (!open || !focused || !ready || owner < 0 || !ownerConnected) return frame;
             PadState state = states[owner];
             if (waiting)
@@ -131,9 +139,10 @@ namespace DiceMaster.Gamepad
             {
                 if (!PadInputFilter.IsNeutral(state))
                 {
-                    padOverride = true; Cancel(); frame.ResetFocus = true;
+                    padOverride = true; Cancel(ResetKind.Navigation); frame.ResetFocus = true;
                     frame.PreservePointerTransaction = false;
-                    resetPending = hardResetPending = false;
+                    frame.PreserveNavigationArea = true;
+                    pendingReset = ResetKind.None;
                 }
                 return frame;
             }
