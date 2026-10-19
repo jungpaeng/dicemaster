@@ -35,6 +35,26 @@ static class Program
             }
         }
     }
+    // IMGUI actions are delegates stored for the end of the window draw. Their
+    // compiler-generated closure methods are part of the delivered UI wiring,
+    // too; following only direct methods on LogRenderer would miss them.
+    static IEnumerable<MethodDefinition> WithinTypeTree(MethodDefinition entry, IEnumerable<TypeDefinition> types)
+    {
+        var methods = types.Where(t => t.FullName == entry.DeclaringType.FullName ||
+                t.FullName.StartsWith(entry.DeclaringType.FullName + "/", StringComparison.Ordinal))
+            .SelectMany(t => t.Methods).ToDictionary(m => m.FullName);
+        var pending = new Stack<MethodDefinition>();
+        var visited = new HashSet<MethodDefinition>();
+        pending.Push(entry);
+        while (pending.Count > 0)
+        {
+            var method = pending.Pop();
+            if (!visited.Add(method)) continue;
+            yield return method;
+            foreach (var call in Calls(method))
+                if (methods.TryGetValue(call.FullName, out var target)) pending.Push(target);
+        }
+    }
     // Walk only the delivered Draw prefix up to layout initialization. Unknown
     // game/UI values take both branches; an unsupported instruction fails the
     // proof conservatively. This checks display guards without executing Unity
@@ -276,9 +296,82 @@ static class Program
                 .All(name => drawWindowCalls.Any(c => c.DeclaringType.FullName == renderer && c.Name == name)) &&
                 Calls(Method(renderer, "RowState")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_HasStoryReadState"),
             "actual renderer must connect choice comparison/split detail dispatch and retain the separate story-read-state boundary");
-        Check(new[] { "DrawListDetail", "Handle", "Reserve" }.All(name =>
-                Calls(Method(renderer, name)).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_SupportsReservation")),
-            "actual split detail, pad activation and final reservation entry must all consult reservation support for their tab");
+        // Reservation authority is a one-shot operation on the selected list
+        // row. Detail text has no second focus or action control. Inspect the
+        // delivered call graph as well as the portable renderer behavior tests
+        // so a disconnected helper cannot satisfy this build gate.
+        var rendererType = Type(renderer);
+        const string tabState = "DiceMaster.LogUI.LogTabState";
+        var armReservation = rendererType.Methods.Single(m => Calls(m).Any(c =>
+            c.DeclaringType.FullName == tabState && c.Name == "BeginReservation"));
+        var reserve = Method(renderer, "Reserve");
+        var safeButton = Method(renderer, "SafeButton");
+        Check(new[] { Method(renderer, "DrawListDetail"), armReservation, reserve }.All(method =>
+                Calls(method).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_SupportsReservation")),
+            "actual reservation status, one-shot list arming and final activation must all consult reservation support for their tab");
+        Check(!rendererType.NestedTypes.Single(t => t.Name == "Area").Fields.Any(f => f.Name == "Detail") &&
+                !rendererType.Fields.Any(f => f.Name == "detailIndex") &&
+                !rendererType.Methods.Any(m => new[] { "EnterDetail", "get_CanFocusDetailControl" }.Contains(m.Name)),
+            "delivered renderer must remove the obsolete detail-focus area, index and action-entry path");
+        Check(Calls(Method(renderer, "Handle")).Any(c => c.FullName == armReservation.FullName) &&
+                Calls(Method(renderer, "Handle")).Any(c => c.FullName == reserve.FullName) &&
+                Calls(safeButton).Any(c => c.FullName == armReservation.FullName),
+            "actual list A/Enter and selected-row pointer down must connect to the same production one-shot arming boundary");
+        var armingCalls = Calls(armReservation).ToArray();
+        Check(armingCalls.Any(c => c.DeclaringType.FullName == tabState && c.Name == "get_PublicationFailed") &&
+                armingCalls.Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanReserve") &&
+                armReservation.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f &&
+                    f.DeclaringType.FullName == tabState && f.Name == "ExecutionFocus"),
+            "actual one-shot arming must check published reservation eligibility before granting model execution authority");
+        var reserveCalls = Calls(reserve).ToArray();
+        int validateTicket = Array.FindIndex(reserveCalls, c => c.DeclaringType.FullName == tabState && c.Name == "CanActivate");
+        int tryReserve = Array.FindIndex(reserveCalls, c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve");
+        int cancelAfterReserve = Array.FindLastIndex(reserveCalls, c => c.DeclaringType.FullName == renderer && c.Name == "CancelPending");
+        Check(validateTicket >= 0 && tryReserve > validateTicket && cancelAfterReserve > tryReserve &&
+                reserve.Body.ExceptionHandlers.Any(handler => handler.HandlerType == ExceptionHandlerType.Finally &&
+                    reserve.Body.Instructions.SkipWhile(i => i != handler.HandlerStart).TakeWhile(i => i != handler.HandlerEnd)
+                        .Any(i => i.Operand is MethodReference c && c.DeclaringType.FullName == renderer && c.Name == "CancelPending")) &&
+                Calls(Method(renderer, "CancelPending")).Any(c => c.DeclaringType.FullName == tabState && c.Name == "CancelExecution") &&
+                !reserve.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f &&
+                    f.DeclaringType.FullName == tabState && f.Name == "ExecutionFocus"),
+            "actual final reservation must validate the original ticket, use current bridge validation and consume authority in a finally boundary without keeping detail focus");
+        var uiReservationEntries = uiMethods.Where(m => Calls(m).Any(c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve")).ToArray();
+        Check(uiReservationEntries.Length == 1 && uiReservationEntries[0].FullName == reserve.FullName &&
+                !Calls(Method(renderer, "DrawListDetail")).Any(c => new[] { "Reserve", "BeginReservation" }.Contains(c.Name)) &&
+                !Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr &&
+                    i.Operand is string value && value.StartsWith("reserve:", StringComparison.Ordinal)),
+            "actual UI must have one current-data reservation sink and no detail action button or render-time activation");
+        var reservationStatus = Method(renderer, "ReservationStatus");
+        Check(Calls(Method(renderer, "DrawListDetail")).Any(c => c.FullName == reservationStatus.FullName) &&
+                Calls(reservationStatus).Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved") &&
+                Calls(reservationStatus).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanReserve") &&
+                Calls(reservationStatus).Any(c => c.DeclaringType.FullName == tabState && c.Name == "get_PublicationFailed") &&
+                !WithinType(reservationStatus).SelectMany(Calls).Any(c => new[] { "TryReserve", "Reserve", "BeginReservation" }.Contains(c.Name)),
+            "actual read-only detail status must use real reservation state and current publication eligibility without creating an action");
+        var armCallers = types.Where(t => t.FullName == renderer || t.FullName.StartsWith(renderer + "/", StringComparison.Ordinal))
+            .SelectMany(t => t.Methods).Where(m => Calls(m).Any(c => c.FullName == armReservation.FullName)).ToArray();
+        Check(armCallers.Length == 2 && armCallers.All(m => m.FullName == safeButton.FullName || m.FullName == Method(renderer, "Handle").FullName),
+            "pointer release/deferred callbacks must never mint a fresh ticket; only explicit list commands and pointer down may arm");
+        var activateRow = Method(renderer, "ActivateRow");
+        Check(WithinTypeTree(Method(renderer, "DrawListDetail"), types).Any(m => m.FullName == activateRow.FullName) &&
+                Calls(activateRow).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Select") &&
+                Calls(activateRow).Any(c => c.FullName == reserve.FullName) &&
+                activateRow.Body.Instructions.Any(i => i.OpCode == OpCodes.Ldfld && i.Operand is FieldReference f &&
+                    f.DeclaringType.FullName == renderer && f.Name == "pointerReservation") &&
+                !Calls(activateRow).Any(c => c.FullName == armReservation.FullName || c.Name == "BeginReservation"),
+            "actual rendered row release callback must select a new row or consume the saved pointer ticket without rearming");
+        var pointerInstructions = safeButton.Body.Instructions.ToArray();
+        int pointerArm = Array.FindIndex(pointerInstructions, i => i.Operand is MethodReference c && c.FullName == armReservation.FullName);
+        int ticketStore = Array.FindIndex(pointerInstructions, pointerArm + 1, i => i.OpCode == OpCodes.Stfld &&
+            i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pointerReservation");
+        int deferredAction = Array.FindIndex(pointerInstructions, i => i.OpCode == OpCodes.Stfld &&
+            i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pendingAction");
+        Check(pointerArm >= 0 && ticketStore > pointerArm && deferredAction > ticketStore &&
+                Calls(safeButton).Any(c => c.DeclaringType.FullName == renderer && c.Name == "IsPointerPress") &&
+                Calls(safeButton).Any(c => c.DeclaringType.FullName == renderer && c.Name == "IsPointerRelease") &&
+                pointerInstructions.Any(i => i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pointerContext") &&
+                pointerInstructions.Any(i => i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pointerIdentity"),
+            "actual row pointer transaction must store its down-time ticket before deferring an identity/context-checked release action");
         Check(Type(plugin).Fields.Any(f => f.FieldType.FullName == renderer), "plugin retains renderer instance across frames");
         Check(Method(bridge, "Publish").Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
                 field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "IsStatusOnly") &&

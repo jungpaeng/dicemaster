@@ -12,7 +12,7 @@ namespace DiceMaster.LogUI
     // never discover game rows, evaluate Lua or change a reservation themselves.
     public sealed class LogRenderer
     {
-        private enum Area { List, Detail, Tools }
+        private enum Area { List, Tools }
         private static readonly string[] Tabs = { "선택지", "조건", "이벤트", "미션" };
         private readonly LogModel model;
         private readonly Action refresh, close;
@@ -20,8 +20,8 @@ namespace DiceMaster.LogUI
         private readonly HashSet<KeyCode> heldKeys = new HashSet<KeyCode>();
         private Rect window;
         private Rect savedWindow;
-        private Area area, previousArea;
-        private int currentTabIndex, toolIndex, detailIndex, renderedFont, chromeFont;
+        private Area area;
+        private int currentTabIndex, toolIndex, renderedFont, chromeFont;
         private float toolScroll, lastSave;
         private bool ensureVisible, stylesReady, layoutInitialized;
         private long context = long.MinValue;
@@ -51,8 +51,6 @@ namespace DiceMaster.LogUI
         private bool IsChoiceTab => currentTabIndex == 0;
         private bool HasStoryReadState => currentTabIndex < 2;
         private bool SupportsReservation => currentTabIndex >= 2;
-        private bool CanFocusDetailControl => SupportsReservation && State.Selected != null &&
-            State.Selected.CanReserve && !State.PublicationFailed;
         private float RowHeight => renderedFont * 2f + 14f;
         private float ChoiceGap => Math.Max(8, renderedFont * .6f);
 
@@ -110,7 +108,6 @@ namespace DiceMaster.LogUI
             }
             model.CancelExecution();
             area = Area.List;
-            detailIndex = 0;
             pointerIdentity = null;
             pointerReservation = null;
             // Keep held keys latched across context/focus changes. A KeyDown
@@ -139,46 +136,34 @@ namespace DiceMaster.LogUI
                 GamepadBridge.CancelLogInput();
                 invalidated = true;
             }
-            // Chrome pointer-down intentionally cancels action authority before
-            // its click transaction has finished.
-            bool actionFocusLost = !State.ExecutionFocus && pointerIdentity == null;
-            if (area == Area.Detail && (!CanFocusDetailControl || actionFocusLost))
-            {
-                ResetInputFocus();
-                GamepadBridge.CancelLogInput();
-                invalidated = true;
-            }
             observedSelection = selected;
             return invalidated;
         }
 
-        private bool EnterDetail()
+        private ReservationTicket ArmSelectedReservation()
         {
             CancelPending();
-            detailIndex = 0;
-            area = Area.List;
-            // The title and description are readable without taking focus.
-            // Only an enabled, published action is a detail navigation target.
-            if (!CanFocusDetailControl) return false;
-            area = Area.Detail;
-            detailIndex = 1;
+            if (!SupportsReservation || State.PublicationFailed || State.Selected == null || !State.Selected.CanReserve)
+                return null;
+            // The authority exists only for this fresh confirmation or the
+            // selected row's pointer-down/up transaction, never for a pane.
             State.ExecutionFocus = true;
-            LatchPhysicallyHeldKeys();
-            ensureVisible = true;
-            manualListScroll = false;
-            return true;
+            return State.BeginReservation();
         }
 
         private void ReturnFromTools()
         {
-            if (previousArea == Area.Detail) EnterDetail();
-            else { area = Area.List; detailIndex = 0; }
+            area = Area.List;
         }
 
         public void Handle(LogPadCommand command)
         {
             if (Synchronize()) return;
             if (command == LogPadCommand.None) return;
+            // A fresh key/pad command supersedes an unfinished mouse/touch
+            // press. Its later release cannot reserve the abandoned target.
+            pointerIdentity = null;
+            CancelPending();
             if (command == LogPadCommand.PreviousTab || command == LogPadCommand.NextTab)
             {
                 SwitchTab((currentTabIndex + (command == LogPadCommand.NextTab ? 1 : 3)) % 4);
@@ -187,14 +172,13 @@ namespace DiceMaster.LogUI
             if (command == LogPadCommand.Refresh) { CancelPending(); refresh?.Invoke(); return; }
             if (command == LogPadCommand.Tools)
             {
-                if (area != Area.Tools) { previousArea = area; area = Area.Tools; toolIndex = 0; ensureVisible = true; }
+                if (area != Area.Tools) { area = Area.Tools; toolIndex = 0; ensureVisible = true; }
                 return;
             }
             if (command == LogPadCommand.Back)
             {
                 CancelPending();
                 if (area == Area.Tools) { ReturnFromTools(); return; }
-                if (area == Area.Detail) { area = Area.List; detailIndex = 0; return; }
                 close?.Invoke();
                 return;
             }
@@ -219,26 +203,8 @@ namespace DiceMaster.LogUI
                 }
                 return;
             }
-            if (command == LogPadCommand.Left)
-            {
-                State.CancelExecution();
-                area = Area.List; detailIndex = 0; ensureVisible = true; manualListScroll = false;
-                return;
-            }
-            if (command == LogPadCommand.Right)
-            {
-                if (area == Area.Detail) return;
-                EnterDetail();
-                return;
-            }
-            if (area == Area.Detail && SupportsReservation)
-            {
-                // There is currently one actionable control. Up/down and a
-                // repeated right cannot move to a noninteractive title or arm
-                // a control again after its publication has invalidated it.
-                if (command == LogPadCommand.Activate && detailIndex == 1) Reserve(State.BeginReservation());
-                return;
-            }
+            // Details are always readable and have no focusable controls.
+            if (command == LogPadCommand.Left || command == LogPadCommand.Right) return;
             IList<LogItem> rows = State.Snapshot.Rows;
             if (command == LogPadCommand.Up || command == LogPadCommand.Down)
             {
@@ -261,7 +227,7 @@ namespace DiceMaster.LogUI
                     foreach (LogItem row in rows) if (row.CanSelect) { Select(row.Id); break; }
                     return;
                 }
-                EnterDetail();
+                Reserve(ArmSelectedReservation());
             }
         }
 
@@ -357,7 +323,7 @@ namespace DiceMaster.LogUI
                 int tabIndex = index;
                 SafeButton((index == currentTabIndex ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), index == currentTabIndex, chrome: true);
             }
-            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { if (area != Area.Tools) previousArea = area; area = Area.Tools; ensureVisible = true; }, area == Area.Tools, chrome: true);
+            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { area = Area.Tools; ensureVisible = true; }, area == Area.Tools, chrome: true);
             SafeButton("닫기", "close", () => close?.Invoke(), chrome: true);
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
@@ -452,7 +418,6 @@ namespace DiceMaster.LogUI
         {
             float headingHeight = chromeFont + 14;
             float listWidth = Math.Max(140, BodyWidth * .36f);
-            float reserveHeight = 0;
             GUILayout.BeginHorizontal(GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
             GUILayout.BeginVertical(GUILayout.Width(listWidth), GUILayout.Height(BodyHeight), GUILayout.ExpandHeight(true));
             string listTitle = SupportsReservation ? "목록" : "체크포인트";
@@ -487,7 +452,7 @@ namespace DiceMaster.LogUI
                 // when it appears IMGUI recomputes wrapping at the narrower
                 // width. Constrain the minimum too, so a long raw ID cannot
                 // force a hidden horizontal overflow.
-                SafeButton(caption, "row:" + row.Id, () => { if (Select(row.Id)) area = Area.List; },
+                SafeButton(caption, "row:" + row.Id, () => ActivateRow(row.Id),
                     selected && area == Area.List, maxWidth: listWidth);
                 GUI.enabled = enabled;
                 Rect rect = GUILayoutUtility.GetLastRect();
@@ -501,23 +466,7 @@ namespace DiceMaster.LogUI
             LogItem selectedRow = State.Selected;
             string detailTitle = SupportsReservation ? "상세" : "조건 상세";
             Display.Label(detailTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
-            bool reservable = SupportsReservation && selectedRow != null && selectedRow.CanReserve && !State.PublicationFailed;
-            if (SupportsReservation && selectedRow != null)
-            {
-                string label = CurrentTab == "이벤트" ? "이벤트 우선 예약" : "미션 조건 통과 예약";
-                if (LogBridge.IsReserved(CurrentTab, selectedRow.Target)) label += " · 예약 중";
-                bool enabled = GUI.enabled;
-                GUI.enabled = enabled && reservable;
-                bool focused = area == Area.Detail && detailIndex == 1 && State.ExecutionFocus && reservable;
-                string buttonLabel = (focused ? "▶ " : "") + label;
-                GUIStyle reserveStyle = focused ? chromeSelectedStyle : chromeButtonStyle;
-                float detailWidth = Math.Max(1, BodyWidth - listWidth - boxStyle.padding.left - boxStyle.padding.right);
-                reserveHeight = Math.Max(chromeFont + 24, reserveStyle.CalcHeight(new GUIContent(buttonLabel), detailWidth));
-                SafeButton(buttonLabel, "reserve:" + selectedRow.Id,
-                    () => Reserve(pointerReservation), focused, reserveHeight, chrome: true);
-                GUI.enabled = enabled;
-            }
-            Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, BodyHeight - headingHeight - (selectedRow == null ? 0 : reserveHeight) - 10));
+            Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, BodyHeight - headingHeight - 10));
             State.DetailScroll = detail.y;
             DrawOverflowChrome();
             if (selectedRow == null)
@@ -533,9 +482,9 @@ namespace DiceMaster.LogUI
                     Label(WaitingExplanation(), statusStyle);
                 if (SupportsReservation)
                 {
+                    Label(ReservationStatus(selectedRow), statusStyle);
                     Label(CurrentTab == "이벤트" ? "다음 해당 판정의 가중치를 높입니다. 즉시 발생하거나 지정 이벤트가 발생함을 보장하지 않습니다." :
                         "해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
-                    if (!reservable) Label("최신 조회 성공 상태의 대상만 예약할 수 있습니다.", statusStyle);
                 }
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
@@ -697,10 +646,9 @@ namespace DiceMaster.LogUI
                 pointerIdentity = identity;
                 pointerContext = model.ContextId;
                 GamepadBridge.NotifyPointerActivity();
-                State.CancelExecution();
-                if (SupportsReservation && identity.StartsWith("reserve:", StringComparison.Ordinal))
-                { area = Area.Detail; detailIndex = 1; State.ExecutionFocus = true; pointerReservation = State.BeginReservation(); }
-                else pointerReservation = null;
+                CancelPending();
+                if (SupportsReservation && State.SelectedId != null && identity == "row:" + State.SelectedId)
+                    pointerReservation = ArmSelectedReservation();
             }
             if (!pressed || !GUI.enabled) return;
             // Button order may change during refresh. Only its original context
@@ -713,21 +661,30 @@ namespace DiceMaster.LogUI
 
         private void Reserve(ReservationTicket ticket)
         {
-            if (!SupportsReservation || !State.CanActivate(ticket))
-            { CancelPending(); detailIndex = 0; area = Area.List; return; }
-            bool reserved = LogBridge.TryReserve(ticket.ContextId, ticket.Tab, ticket.Id, ticket.Target);
-            bool keepFocus = reserved && State.CanActivate(ticket);
-            State.CancelExecution();
-            detailIndex = keepFocus ? 1 : 0;
-            State.ExecutionFocus = keepFocus;
-            if (!keepFocus) area = Area.List;
-            pointerReservation = null;
+            try
+            {
+                if (SupportsReservation && State.CanActivate(ticket))
+                    LogBridge.TryReserve(ticket.ContextId, ticket.Tab, ticket.Id, ticket.Target);
+            }
+            finally
+            {
+                CancelPending();
+                area = Area.List;
+            }
+        }
+
+        private void ActivateRow(string id)
+        {
+            if (State.SelectedId != id) { Select(id); area = Area.List; return; }
+            // Re-clicking a selected row uses only the authority captured on
+            // pointer-down. A release never creates fresh action authority.
+            if (SupportsReservation) Reserve(pointerReservation);
         }
 
         private bool Select(string id)
         {
             if (!State.Select(id)) return false;
-            observedSelection = State.SelectedId; detailIndex = 0; ensureVisible = true; manualListScroll = false; CancelPending();
+            observedSelection = State.SelectedId; ensureVisible = true; manualListScroll = false; CancelPending();
             return true;
         }
 
@@ -737,7 +694,6 @@ namespace DiceMaster.LogUI
             CancelPending();
             currentTabIndex = index;
             area = Area.List;
-            detailIndex = 0;
             observedSelection = State.SelectedId;
             cachedSnapshot = null;
             ensureVisible = true;
@@ -791,15 +747,28 @@ namespace DiceMaster.LogUI
             return result;
         }
 
+        private string ReservationStatus(LogItem row)
+        {
+            string action = CurrentTab == "이벤트" ? "이벤트 우선 예약" : "미션 조건 통과 예약";
+            string state = LogBridge.IsReserved(CurrentTab, row.Target) ? "활성화 (예약 중)" : "비활성화 (예약 없음)";
+            if (row.CanReserve && !State.PublicationFailed)
+                return action + " · " + state + "\n예약 가능 · 목록에서 A / 선택된 항목 다시 클릭·터치";
+            string reason = State.PublicationFailed ? "게시 실패 · 최신 대상 확인 필요" :
+                row.IsStatusOnly ? "안내 항목" : row.Target == null ? "대상 없음" :
+                row.RefreshState == LogRefreshState.Waiting ? "설명 조회 대기" :
+                row.RefreshState == LogRefreshState.RetainedFailure ? "갱신 실패 · 이전 값" :
+                row.RefreshState == LogRefreshState.ReadFailure ? "조회 실패" : "최신 대상 확인 필요";
+            return action + " · " + state + "\n예약 불가 · " + reason;
+        }
+
         private string Hint()
         {
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
             if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
-            if (area == Area.Detail) return "현재: 예약 버튼 · A 예약 / 오른쪽 스틱 본문 / ←·B 목록 / Y 도구";
             if (State.Selected == null) return "현재: " + (SupportsReservation ? "목록" : "체크포인트 목록") + " · ↑↓ 항목 이동 / 오른쪽 스틱 목록 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!SupportsReservation) return "현재: 체크포인트 목록 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
-            if (!CanFocusDetailControl) return "현재: 목록 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
-            return "현재: 목록 · ↑↓ 이동 / A·→ 예약 버튼 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (!State.Selected.CanReserve || State.PublicationFailed) return "현재: 목록 · 예약 불가 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            return "현재: 목록 · ↑↓ 이동 / A 예약 · 선택된 항목 다시 클릭·터치 예약 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
         }
 
         private void CompleteListScroll(Rect viewport, float contentBottom)
@@ -810,7 +779,7 @@ namespace DiceMaster.LogUI
             if (State.SelectedId == null || !rowRects.TryGetValue(State.SelectedId, out selected)) return;
             bool changed = lastMeasuredId == State.SelectedId && lastMeasuredTab == CurrentTab &&
                 (selected != lastSelectedBounds || viewport.height != lastListViewportHeight);
-            if (ensureVisible || changed && (area == Area.List || !SupportsReservation && area == Area.Detail) && !manualListScroll)
+            if (ensureVisible || changed && area == Area.List && !manualListScroll)
             {
                 State.ListScroll = LogLayout.BringIntoView(State.ListScroll, selected, viewport.height, contentBottom);
                 ensureVisible = false;
