@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.6-alpha.5 — 도구 화면 유지·팝업 결과 설명 준비
+## v1.0.6-alpha.5 — 도구 화면 유지·팝업 결과 설명
 
 로그 도구를 열면 도구만 선택 표시한다. 터치 뒤 물리 패드를 다시 사용할 때 현재 도구 화면·선택·스크롤을 유지한다. 이때 이전 확인·클릭 권한과 검색 입력 커서는 취소하고 해제·중립 뒤 새 조작을 받는다. 자동 입력 모드 변경·실제 포인터 전환에서는 기존 유효 누름을 보존해 첫 터치를 버리지 않는다. 실제 초점·문맥·차단 준비·소유자·연결·닫힘 경계의 초기화는 유지한다.
 
 팝업 목록은 제목·발동 자격·결과 요약·조작 안내의 네 줄이며 선택 전후 같은 높이를 유지한다. 선택 항목의 예상 결과와 발동 조건은 목록과 별도 영역에서 휠·오른쪽 스틱으로 읽고 ↑↓는 행을 이동한다. 첫 클릭·터치는 선택, 선택된 행의 재클릭·터치는 표시된 진행 확인이며 진행 버튼·A/Enter와 B/Escape 무작위 조작을 유지한다. 준비 중·미지원·읽기 실패·확인된 효과 없음을 구분하고 실제 미래 결과 전체를 예측하지 않는다.
 
-현재 alpha.5는 구현·회귀 검사·고정 재빌드·게시 준비 단계다. [alpha.5 배포 기록](ISSUE-5-ALPHA5-RELEASE.md)에 완료 결과를 남기며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.4의 게시 당시 미확인과 후속 보고는 당시 이력이다.
+**2026-10-20 02:09:55 KST에 [alpha.5 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.5)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.5/DiceMaster-v1.0.6-alpha.5.zip). 소스·태그 `3f13872`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 다운로드의 CRC·두 파일·바이트·해시 검증을 통과했다. README·구현·검사는 main에 반영했으며 Latest v1.0.5를 유지한다. [alpha.5 배포 기록](ISSUE-5-ALPHA5-RELEASE.md)에 상세 결과를 기록하고 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.4의 게시 당시 미확인과 후속 보고는 당시 이력이다.
 
 ## v1.0.6-alpha.4 — 로그 탭 터치·팝업 두 번째 터치 보완
 

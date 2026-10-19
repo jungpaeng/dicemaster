@@ -2,7 +2,7 @@
 
 alpha.4에서 보고된 도구의 중복 선택 표시와 입력 장치를 바꿀 때 이전 탭으로 돌아가는 문제를 수정한다. 팝업에는 후보별 결과 요약과 선택 결과 상세를 추가해 발동 조건과 나누어 읽도록 한다.
 
-**전체 소스 후보·격리 재빌드와 회귀 검사는 완료했으며 고정 커밋 재빌드와 공개는 준비 중이다.** 대상은 `v1.0.6-alpha.5`, 설치 자산은 `DiceMaster-v1.0.6-alpha.5.zip`이다. 아래 최종 소스의 동작과 로컬 검사 결과를 기록하며 새 고정 커밋·재빌드·공개 파일 검증은 완료 후 보충한다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5로 유지하며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다.
+**2026-10-20 02:09:55 KST에 [v1.0.6-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.5) prerelease를 게시했다.** **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.5/DiceMaster-v1.0.6-alpha.5.zip)**. 소스·태그 `3f138728c109651533f25b5e7aee3f147a082d14`의 고정 재빌드·14개 검사와 익명 공개 페이지·다운로드의 CRC·두 파일·내부 바이트·SHA-256 대조를 통과했다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5로 유지하며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다.
 
 ## alpha.4 이후 변경
 
@@ -43,7 +43,7 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 
 ## 검증·알려진 제한
 
-2026-10-20 02:05:32 KST에 전체 소스 후보와 기존 모드 DLL·Git·이전 빌드 출력을 제외한 격리 소스 재빌드가 각각 14개 검사 프로그램을 통과했다. SDK는 8.0.426이며 모드 컴파일은 오류 0개·기존 경고 7개다. 빌드 입력 171개·모드 소스/리소스 70개를 확인했고 격리 빌드는 기존 `DiceMaster.dll` 0개에서 실행했다. 두 빌드의 DLL·cfg·ZIP 바이트와 전체 검사 결과가 일치한다. 새 고정 소스 커밋 재빌드와 공개 다운로드 검증은 아직 실행 전이다.
+2026-10-20 02:05:32 KST에 전체 소스 후보와 기존 모드 DLL·Git·이전 빌드 출력을 제외한 격리 소스 재빌드가 각각 14개 검사 프로그램을 통과했다. SDK는 8.0.426이며 모드 컴파일은 오류 0개·기존 경고 7개다. 빌드 입력 171개·모드 소스/리소스 70개를 확인했고 격리 빌드는 기존 `DiceMaster.dll` 0개에서 실행했다. 두 빌드의 DLL·cfg·ZIP 바이트와 전체 검사 결과가 일치한다. 같은 소스 커밋 `3f138728c109651533f25b5e7aee3f147a082d14`의 고정 재빌드도 기존 모드 DLL 0개에서 14개 프로그램을 통과했고 검토 후보·격리 빌드와 파일 바이트·전체 검사 결과가 일치했다. 게시 후 익명 공개 다운로드의 CRC·정확히 두 파일·내부 DLL/cfg·SHA-256을 대조했다.
 
 | 확인 | 이번 결과 |
 | --- | --- |
@@ -57,8 +57,8 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 | 결과 상세 독립 휠·오른쪽 스틱·긴 설명 끝 접근과 ↑↓ 행 이동 | 팝업 입력/배치 회귀 통과 · 실제 장치 스크롤은 확인 대기 |
 | 보이는 팝업 0.25초/최대 두 후보 준비·성공 캐시·실패 5초 재시도·숨김 준비 없음 | 실행 런타임 20개 시나리오·103개 단언 통과 |
 | Lua/게임 결과 미실행·준비 중/읽기 실패/미지원/효과 없음 구분·선택 가능 여부와 독립·기존 확정 보호 | 실제 후보 DLL 미리보기 1,479개·실행 런타임·팝업 회귀 통과 |
-| 고정 커밋 `--scope prd5` 재빌드·검토 DLL/cfg/ZIP 동일 바이트 | 고정 소스 확정·검증 후 기록 |
-| 공개 태그·prerelease·Latest 보존·익명 다운로드 CRC/두 파일/바이트·해시 | 게시·검증 후 기록 |
+| 고정 커밋 `--scope prd5` 재빌드·검토 DLL/cfg/ZIP 동일 바이트 | `3f138728c109651533f25b5e7aee3f147a082d14` · 기존 모드 DLL 0개에서 14개 프로그램 통과 · 검토/격리 빌드와 파일·검사 결과 일치 |
+| 공개 태그·prerelease·Latest 보존·익명 다운로드 CRC/두 파일/바이트·해시 | 검증 통과 · 기존 28개 Release·태그·자산과 Latest v1.0.5 보존 · main에 검증 소스 포함 |
 | 실제 Windows 게임·트랙패드·터치·Xbox/XInput | 미실행 · 사용자 확인 대기 |
 
 자동 검사는 관리 코드·명시적 Unity/게임/native 대역과 실제 참조 API 경계를 대상으로 한다. 실제 Windows 창·물리 장치·글꼴·화면 배치·성능을 실행한 근거와 구분한다. alpha.4의 제한된 사용자 보고는 [당시 후속 기록](ISSUE-5-ALPHA4-RELEASE.md#2026-10-20-사용자-후속-확인)에 보존하고 새 DLL의 Windows 통과로 승계하지 않는다.
@@ -68,7 +68,7 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 `EnableGamepadLogOpen=true`의 게임 초점·로그 닫힘 구간에서는 단독 L3/R3도 게임에 보내지 않는다. 원래 클릭 기능이 필요하면 옵션을 끄고 남은 입력을 해제한다. Steam Input 구성별 동작도 실제 환경에서 확인한다. [입력 지원 범위](GAMEPAD.md) · [구현 경계](ISSUE-5-IMPLEMENTATION.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md).
 
 <details>
-<summary>이번 전체 소스·격리 재빌드의 자동 검사 결과</summary>
+<summary>이번 전체 소스·격리·고정 커밋 재빌드의 자동 검사 결과</summary>
 
 | 프로그램 | 실제 결과 |
 | --- | --- |
@@ -87,7 +87,7 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 | `EventSelectionRuntimeTests` | PASS: event execution runtime 103 assertions across 20 scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries) |
 | `EventPopupTests` | PASS: EventPopupTests: 1287 actual popup input/layout boundary checks; managed substitutes, not Windows Unity rendering. |
 
-전체 후보와 격리 재빌드의 14개 검사 결과 문자열이 일치한다. 각 결과에 적힌 명시적 대역과 실제 API의 경계를 실제 Windows 게임 실행으로 확대해 해석하지 않는다.
+전체 후보·격리·고정 커밋 재빌드의 14개 검사 결과 문자열이 일치한다. 각 결과에 적힌 명시적 대역과 실제 API의 경계를 실제 Windows 게임 실행으로 확대해 해석하지 않는다.
 
 </details>
 
@@ -95,14 +95,16 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 
 | 항목 | 이번 식별값 |
 | --- | --- |
-| 고정 소스 커밋·태그 | 커밋 후 기록 · `v1.0.6-alpha.5` |
-| 검토 후보 ZIP 크기·SHA-256 | 260,791바이트 · `abca88f8e8f929844e02c8137825a40f0b6bad8515f4dfbeadeafa4496e1aece` |
-| 검토 후보 `DiceMaster.dll` 크기·SHA-256 | 617,984바이트 · `22d31266f4c85f64075e71422edc18795b19b2ce18dbf67d1a7333e4f62986bd` |
-| 검토 후보 `config/DiceMaster.cfg` 크기·SHA-256 | 11,459바이트 · `66b34802ed57b53db7ad977e96e8e17ef4847149e08ac3f244788f0704d9aea7` |
-| 게시 시각·Release/asset ID | 게시 후 기록 |
+| 고정 소스 커밋·태그 | [`3f138728c109651533f25b5e7aee3f147a082d14`](https://github.com/jungpaeng/dicemaster/commit/3f138728c109651533f25b5e7aee3f147a082d14) · `v1.0.6-alpha.5` |
+| `DiceMaster-v1.0.6-alpha.5.zip` 크기·SHA-256 | 260,791바이트 · `abca88f8e8f929844e02c8137825a40f0b6bad8515f4dfbeadeafa4496e1aece` |
+| `DiceMaster.dll` 크기·SHA-256 | 617,984바이트 · `22d31266f4c85f64075e71422edc18795b19b2ce18dbf67d1a7333e4f62986bd` |
+| `config/DiceMaster.cfg` 크기·SHA-256 | 11,459바이트 · `66b34802ed57b53db7ad977e96e8e17ef4847149e08ac3f244788f0704d9aea7` |
+| 게시 시각·Release/asset ID | 2026-10-20 02:09:55 KST (2026-10-19 17:09:55 UTC) · Release `417540991` · asset `656889735` |
 
-작업 시작 main은 `3a5ffdf85f5965623c6c585032086976515dd98a`다. 사용자 지시대로 README·구현·회귀 검사를 포함한 소스를 `origin/main`에 반영하고 검증한 소스에 새 태그를 만든다. 기존 Release·태그·자산과 Latest 정식 v1.0.5를 보존하며 이슈 #5는 새 DLL의 실제 확인 대기로 유지한다. 실제 게시·보존 결과는 완료 후 기록한다.
+작업 시작 main은 `3a5ffdf85f5965623c6c585032086976515dd98a`다. 사용자 지시대로 최신 `origin/main`에서 작업했고 README·구현·회귀 검사를 포함한 소스 `3f138728c109651533f25b5e7aee3f147a082d14`를 main에 반영했다. 새 태그는 검증 소스를 가리키며 `draft=false`·`prerelease=true`·`make_latest=false`로 게시했다. 기존 28개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다.
 
-위 식별값은 로컬 `artifacts/issue-5/alpha5-final-candidate/build-manifest.json`과 DLL·설치 ZIP에서 확인했고 `artifacts/issue-5/alpha5-final-clean/clean-build.json`의 격리 재빌드와 대조했다. 로컬 ZIP 이름은 `DiceMaster-source-candidate.zip`이다. 아직 새 고정 소스·공개 설치 파일의 검증값으로 취급하지 않으며 게시 단계에서 다시 대조한다.
+위 식별값은 로컬 검토 후보·격리 재빌드·고정 소스 재빌드와 공개 다운로드에서 모두 일치한다. 로컬 이름 `DiceMaster-source-candidate.zip`을 공개 이름 `DiceMaster-v1.0.6-alpha.5.zip`으로 바꾸면서 재압축하지 않았고 바이트·해시를 대조했다.
 
-영수증 경로는 로컬 `artifacts/releases/v1.0.6-alpha.5/`다. 고정 재빌드 영수증과 이후 게시·익명 다운로드 검증을 구분한다. 게시 결과를 보충하는 후속 문서 커밋은 main에 반영하며 빌드 소스·태그·설치 자산을 변경하지 않는다.
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.5/`의 `release-verification.json`, `build-manifest.json`, `anonymous-verification.json`, `github-publication.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 이후 실제 게시·익명 다운로드 검증과 구분한다.
+
+이 문서의 게시 결과 보충은 main의 별도 후속 문서 커밋에 포함한다. 빌드 소스·태그 `3f13872`와 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스에 포함된 준비 문구는 당시 검사·게시 단계의 기록이다.

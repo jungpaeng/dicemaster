@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.5 준비 · 실제 Windows·장치 확인 대기**. 최신 `origin/main`의 `3a5ffdf85f5965623c6c585032086976515dd98a`에서 도구 선택 표시·장치 전환 시 화면 유지·팝업 결과 설명을 구현한다. README·소스·검사를 main에 반영하고 새 prerelease를 게시하며 새 검사·소스·파일 식별값과 게시 결과는 [alpha.5 배포 안내](ISSUE-5-ALPHA5-RELEASE.md)에 완료 후 기록한다. 아래 동작·입력 절은 현재 후보 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.5 prerelease 게시 · 실제 Windows·장치 확인 대기**. 2026-10-20 02:09:55 KST에 소스·태그 `3f138728c109651533f25b5e7aee3f147a082d14`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 최신 main `3a5ffdf85f5965623c6c585032086976515dd98a`에서 도구 선택 표시·물리 패드 재획득 시 화면 유지·팝업 결과 설명을 구현했고 README·소스·검사를 main에 반영했다. [alpha.5 배포 안내](ISSUE-5-ALPHA5-RELEASE.md)에 검사·파일·게시 결과를 기록한다. 아래 동작·입력 절은 현재 alpha.5 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. 이번 후속 문서 커밋은 빌드 소스·태그·자산을 바꾸지 않고 고정 소스의 준비 문구와 구분한다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 alpha.4는 2026-10-20 01:47:20 KST에 소스·태그 `bea9e87f8a9e138150fd6b70e2d17f0fcb92ccce`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 이후 사용자는 대부분의 로그 터치 해결과 도구·목록 탭의 동시 선택 표시, 터치로 도구를 연 뒤 스틱을 쓰면 이전 탭으로 돌아감, 팝업 결과 설명 누락을 보고했다. 제한된 확인 범위와 당시 검사·파일·게시 결과는 [alpha.4 배포 안내](ISSUE-5-ALPHA4-RELEASE.md)에 보존한다.
 
