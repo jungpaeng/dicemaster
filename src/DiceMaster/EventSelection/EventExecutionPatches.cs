@@ -20,6 +20,7 @@ namespace DiceMaster.EventSelection
             internal bool Instrumented;
             internal bool Finalized;
             internal Script Interpreter;
+            internal Dictionary<int, EventSwitchSite> SwitchSites = new Dictionary<int, EventSwitchSite>();
         }
         private static readonly ConditionalWeakTable<Closure, ScriptContext> scripts = new ConditionalWeakTable<Closure, ScriptContext>();
         private static readonly List<ScriptContext> registrations = new List<ScriptContext>();
@@ -32,6 +33,8 @@ namespace DiceMaster.EventSelection
             harmony.PatchAll(typeof(LuaCoroutinePatch));
             harmony.PatchAll(typeof(PositionExecutionPatch));
             harmony.PatchAll(typeof(PositionResultPatch));
+            harmony.PatchAll(typeof(SwitchExecutionPatch));
+            harmony.PatchAll(typeof(SwitchResultPatch));
             installed = true;
         }
 
@@ -58,9 +61,10 @@ namespace DiceMaster.EventSelection
                 {
                     long token = EventSelectionRuntime.NewScript();
                     bool changed;
-                    string updated = EventLuaGate.Instrument(luaString, token, out changed);
+                    Dictionary<int, EventSwitchSite> switchSites;
+                    string updated = EventLuaGate.Instrument(luaString, token, out changed, out switchSites);
                     if (!changed) return;
-                    var context = new ScriptContext { Token = token, Epoch = EventSelectionRuntime.Epoch, Instrumented = true };
+                    var context = new ScriptContext { Token = token, Epoch = EventSelectionRuntime.Epoch, Instrumented = true, SwitchSites = switchSites };
                     // Bind before compiling so any unsupported interpreter or
                     // reserved-key collision keeps the original source intact.
                     __instance.InitEnvironment();
@@ -116,12 +120,20 @@ namespace DiceMaster.EventSelection
             interpreter.Globals[callbackKey] = DynValue.NewCallback((execution, arguments) =>
             {
                 Coroutine coroutine = execution.GetCallingCoroutine();
-                if (coroutine == null || coroutine.State == CoroutineState.Main || arguments.Count != 4 ||
+                if (coroutine == null || coroutine.State == CoroutineState.Main || arguments.Count != 5 ||
                     arguments[0].Type != DataType.String || arguments[1].Type != DataType.Number ||
                     arguments[2].Type != DataType.Number || arguments[3].Type != DataType.UserData ||
-                    !ReferenceEquals(arguments[3].UserData.Object, CheckPointManager.Instance)) return DynValue.False;
+                    !ReferenceEquals(arguments[3].UserData.Object, CheckPointManager.Instance) || arguments[4].Type != DataType.String) return DynValue.False;
                 long script = (long)arguments[1].Number;
                 if (script != context.Token) return DynValue.False;
+                if (arguments[4].String == "Switch")
+                {
+                    EventSwitchSite definition;
+                    if (!context.SwitchSites.TryGetValue((int)arguments[2].Number, out definition)) return DynValue.False;
+                    return DynValue.NewBoolean(EventSelectionRuntime.WaitSwitch(arguments[0].String, script,
+                        (int)arguments[2].Number, coroutine, context.Epoch, definition));
+                }
+                if (arguments[4].String != "Position") return DynValue.False;
                 return DynValue.NewBoolean(EventSelectionRuntime.Wait(arguments[0].String, script,
                     (int)arguments[2].Number, coroutine, context.Epoch));
             });
@@ -170,6 +182,29 @@ namespace DiceMaster.EventSelection
             {
                 EventSelectionRuntime.CompletePosition(__state, __exception);
                 return __exception;
+            }
+        }
+
+        [HarmonyPatch(typeof(CheckPointManager), nameof(CheckPointManager.Switch))]
+        private static class SwitchExecutionPatch
+        {
+            [HarmonyPrefix]
+            private static void Prefix(CheckPointManager __instance, string name, out EventSelectionRuntime.ActionContextHandle __state)
+            { __state = EventSelectionRuntime.BeginSwitch(__instance, name); }
+            [HarmonyFinalizer]
+            private static Exception Finalizer(Exception __exception, EventSelectionRuntime.ActionContextHandle __state)
+            { EventSelectionRuntime.CompletePosition(__state, __exception); return __exception; }
+        }
+
+        [HarmonyPatch(typeof(SwitchResultData), nameof(SwitchResultData.Execute))]
+        private static class SwitchResultPatch
+        {
+            [HarmonyPrefix]
+            private static bool Prefix(SwitchResultData __instance, ref int __result)
+            {
+                int result;
+                if (!EventSelectionRuntime.TryDirectSwitchResult(__instance, out result)) return true;
+                __result = result; return false;
             }
         }
 

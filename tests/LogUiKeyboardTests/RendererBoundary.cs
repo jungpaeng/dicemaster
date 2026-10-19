@@ -501,6 +501,7 @@ namespace DiceMaster.Config
         public static Element<int> LogFontSize = new Element<int>(20);
         public static Element<bool> EnableOptionInfo = new Element<bool>(true);
         public static Element<bool> EnableEventSelectionPopup = new Element<bool>(true);
+        public static Element<bool> EnableSwitchSelectionPopup = new Element<bool>(true);
         public static Element<UnityEngine.KeyCode> LogMenuToggleKey = new Element<UnityEngine.KeyCode>(UnityEngine.KeyCode.Tab);
     }
 }

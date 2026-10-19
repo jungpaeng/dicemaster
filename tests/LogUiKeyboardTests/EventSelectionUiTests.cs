@@ -8,168 +8,123 @@ using UnityEngine;
 
 internal static partial class Program
 {
-    private static void RendererEventSelectionQueryAndConfig()
+    private static void RendererPopupSettings()
     {
-        Rect saved = ConfiguredRect(); int savedFont = ConfigManager.LogFontSize.Value;
-        bool enabled = ConfigManager.EnableEventSelectionPopup.Value;
+        Rect saved = ConfiguredRect(); int font = ConfigManager.LogFontSize.Value;
+        bool events = ConfigManager.EnableEventSelectionPopup.Value, switches = ConfigManager.EnableSwitchSelectionPopup.Value;
         int attempts = LogBridge.Reservations;
         try
         {
             ConfigureLayout(new Rect(80, 80, 1200, 900), 24);
-            var model = new LogModel(); model.ResetContext(800);
-            LogItem blocked = Item("blocked", new object());
-            blocked.Title = "조건 부족 이벤트"; blocked.Description = "특별한 설명 검색어";
-            blocked.EventEligibility = new EventEligibilitySnapshot(EventEligibilityState.Ineligible,
-                EventEligibilityReason.ConditionsNotMet, 0, "능력치 조건이 부족합니다.");
-            LogItem eligible = Item("EVENT_RAW_42", new object());
-            eligible.Title = "가능한 이름";
-            eligible.EventEligibility = new EventEligibilitySnapshot(EventEligibilityState.Eligible,
-                EventEligibilityReason.None, 10, "현재 조건을 충족합니다.");
-            LogItem unknown = Item("unknown", new object());
-            unknown.EventEligibility = new EventEligibilitySnapshot(EventEligibilityState.Unknown,
-                EventEligibilityReason.Random, null, "난수 조건은 표시만으로 확정하지 않습니다.");
-            Publish(model, "이벤트", blocked, eligible, unknown);
-            int closes = 0, refreshes = 0;
-            var renderer = new LogRenderer(model, () => refreshes++, () => closes++);
-            renderer.Handle(LogPadCommand.None); renderer.Handle(LogPadCommand.NextTab); renderer.Handle(LogPadCommand.NextTab);
-            Repaint(renderer);
-            Check(model.Tab("이벤트").VisibleRows[0].Id == eligible.Id,
-                "event list starts with verified available candidates while retaining every candidate");
-            Check(GUILayout.Controls.Exists(control => control.Text.Contains("이벤트 검색", StringComparison.Ordinal))
-                && GUILayout.Controls.Exists(control => control.Text.Contains("전체 보기", StringComparison.Ordinal)),
-                "only the event pane exposes search and the default all-items filter");
-            renderer.Handle(LogPadCommand.Activate); renderer.Handle(LogPadCommand.Activate);
-            ClickRenderedButton(renderer, eligible.Title); ClickRenderedButton(renderer, eligible.Title);
-            Check(LogBridge.Reservations == attempts && !model.Tab("이벤트").ExecutionFocus,
-                "pad confirmation and repeated pointer confirmation on event rows never create reservations");
-            Repaint(renderer);
-            Check(GUILayout.ScrollViews[1].Controls.Exists(control => control.Text.Contains("실제 행동의 판정", StringComparison.Ordinal))
-                && !GUILayout.Controls.Exists(control => control.Text.Contains("이벤트 우선 예약", StringComparison.Ordinal)),
-                "event details explain the actual popup boundary and contain no legacy event reservation UI");
+            foreach (int tab in new[] { 1, 2 })
+                foreach (bool empty in new[] { false, true })
+                {
+                    var model = new LogModel(); model.ResetContext(800);
+                    var eligible = Item("eligible", new object());
+                    eligible.EventEligibility = new EventEligibilitySnapshot(EventEligibilityState.Eligible, EventEligibilityReason.None, 10, "조건 충족");
+                    var blocked = Item("blocked", new object());
+                    blocked.EventEligibility = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, 0, "조건 부족");
+                    string name = tab == 1 ? "조건" : "이벤트";
+                    Publish(model, name, empty ? Array.Empty<LogItem>() : new[] { eligible, blocked });
+                    // A retained old projection must not survive the removal
+                    // of its controls, including when the list is empty.
+                    model.Tab("이벤트").SearchQuery = "hidden-query";
+                    model.Tab("이벤트").AvailableOnly = true;
+                    int refreshes = 0, closes = 0;
+                    var renderer = new LogRenderer(model, () => refreshes++, () => closes++);
+                    renderer.Handle(LogPadCommand.None);
+                    for (int index = 0; index < tab; index++) renderer.Handle(LogPadCommand.NextTab);
+                    Repaint(renderer);
+                    var option = tab == 1 ? ConfigManager.EnableSwitchSelectionPopup : ConfigManager.EnableEventSelectionPopup;
+                    var other = tab == 1 ? ConfigManager.EnableEventSelectionPopup : ConfigManager.EnableSwitchSelectionPopup;
+                    string label = tab == 1 ? "조건 분기 선택 팝업:" : "이벤트 선택 팝업:";
+                    Check(model.Tab("이벤트").SearchQuery == "" && !model.Tab("이벤트").AvailableOnly,
+                        "removed event controls cannot leave an inherited hidden projection");
+                    Check(GUILayout.Controls.Exists(control => control.Button && control.Text.StartsWith(label, StringComparison.Ordinal))
+                        && !GUILayout.Controls.Exists(control => control.Text.Contains("검색", StringComparison.Ordinal)
+                            || control.Text.Contains("발동 가능한 항목만 보기", StringComparison.Ordinal)),
+                        name + ": direct popup setting remains visible even with empty rows; search/filter controls are absent");
+                    if (!empty)
+                        Check(GUILayout.ScrollViews[0].Controls.Exists(control => control.Text.Contains(blocked.Id, StringComparison.Ordinal)),
+                            "ineligible published rows remain readable without a filter");
 
-            var controller = new LogPadController();
-            var padStates = new PadState[4]; bool[] connected = { true, false, false, false };
-            controller.Tick(true, true, true, LogInputMode.Gamepad, 0, padStates, connected);
-            controller.Tick(true, true, true, LogInputMode.Gamepad, .1, padStates, connected);
-            GamepadBridge.PointerActivity = controller.PointerActivity;
-            GamepadBridge.KeyboardActivity = controller.KeyboardActivity;
-            GamepadBridge.Cancelled = controller.Cancel;
-            Vector2 searchPoint = PointerTarget(renderer, control => !control.Button && control.Text == "");
-            DrawPointer(renderer, EventType.MouseDown, EventType.MouseDown, searchPoint);
-            Check(Event.current.type == EventType.Used && (string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch",
-                "native TextField consumption retains the search identity from its pre-consumption rectangle");
-            LogPadFrame takeover = controller.Tick(true, true, true, LogInputMode.Gamepad, .2, padStates, connected);
-            if (takeover.ResetFocus) renderer.ResetInputFocus(takeover.PreservePointerTransaction, takeover.PreserveNavigationArea);
-            DrawPointer(renderer, EventType.MouseUp, EventType.MouseUp, searchPoint); Repaint(renderer);
-            Check(takeover.ResetFocus && takeover.PreservePointerTransaction && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
-                "actual controller mouse takeover preserves the event text caret across the next Update");
-            GUI.FocusControl(null);
-            DrawPointer(renderer, EventType.TouchDown, EventType.TouchDown, searchPoint);
-            Check(Event.current.type == EventType.Used && (string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch"
-                && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
-                "direct touch is adapted to the actual native TextField mouse boundary and focuses the search field");
-            foreach (EventType pass in new[] { EventType.Layout, EventType.Repaint, EventType.Ignore })
-            {
-                DrawPointer(renderer, pass, EventType.TouchUp, searchPoint);
-                Check((string)Field(renderer, "pointerIdentity") == "DiceMaster.EventSearch",
-                    pass + " with raw touch-up cannot cancel the search field's active pointer transaction");
-            }
-            LogPadFrame touchTakeover = controller.Tick(true, true, true, LogInputMode.Gamepad, .25, padStates, connected);
-            if (touchTakeover.ResetFocus) renderer.ResetInputFocus(touchTakeover.PreservePointerTransaction, touchTakeover.PreserveNavigationArea);
-            renderer.Handle(touchTakeover.Command); renderer.Scroll(touchTakeover.Scroll);
-            DrawPointer(renderer, EventType.TouchUp, EventType.TouchUp, searchPoint); Repaint(renderer);
-            Check(touchTakeover.ResetFocus && touchTakeover.PreservePointerTransaction && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
-                "actual controller Update between direct touch down/up retains the native search caret");
-            GUILayout.TextFieldInput = previous => "특별한 설명";
-            Repaint(renderer); GUILayout.TextFieldInput = null;
-            LogPadFrame typing = controller.Tick(true, true, true, LogInputMode.Gamepad, .3, padStates, connected);
-            if (typing.ResetFocus) renderer.ResetInputFocus(typing.PreservePointerTransaction, typing.PreserveNavigationArea);
-            Repaint(renderer);
-            Check(!typing.ResetFocus && model.Tab("이벤트").SelectedId == null && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
-                "typing that filters out the selected row keeps the caret and never creates a hard pad reset");
-            GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
-
-            foreach (string query in new[] { "가능한 이름", "event_raw_42", "특별한 설명" })
-            {
-                GUILayout.TextFieldInput = previous => query;
-                Repaint(renderer); GUILayout.TextFieldInput = null; Repaint(renderer);
-                Check(model.Tab("이벤트").SearchQuery == query && model.Tab("이벤트").VisibleRows.Count == 1,
-                    "event search matches the published name, case-insensitive raw identifier and full description: " + query);
-            }
-            Check(model.Tab("이벤트").VisibleRows[0].Id == blocked.Id,
-                "description search retains an ineligible item for inspection");
-            renderer.Handle(LogPadCommand.Activate); Repaint(renderer);
-            Check(GUILayout.ScrollViews[1].Controls.Exists(control => control.Text == blocked.Description)
-                && GUILayout.ScrollViews[1].Controls.Exists(control => control.Text.Contains("조건 미충족", StringComparison.Ordinal)),
-                "event inspection keeps the complete description and structured ineligibility reason");
-            renderer.Handle(LogPadCommand.NextTab); Repaint(renderer);
-            Check(!GUILayout.Controls.Exists(control => control.Text.Contains("이벤트 검색", StringComparison.Ordinal)),
-                "mission pane does not restore removed search controls");
-            renderer.Handle(LogPadCommand.PreviousTab);
-            Check(model.Tab("이벤트").SearchQuery == "특별한 설명", "tab changes retain the current event query in memory");
-            ClickRenderedButton(renderer, "발동 가능한 항목만 보기:");
-            Repaint(renderer);
-            Check(model.Tab("이벤트").AvailableOnly && model.Tab("이벤트").VisibleRows.Count == 0
-                && model.Tab("이벤트").SelectedId == null,
-                "mouse available-only filter removes hidden selection and does not treat unmet conditions as eligible");
-            Check(GUILayout.Controls.Exists(control => control.Text.Contains("검색·필터에 맞는 이벤트가 없습니다", StringComparison.Ordinal)),
-                "an empty filtered event list keeps recovery guidance visible");
-
-            renderer.Handle(LogPadCommand.Tools);
-            for (int index = 0; index < 19; index++) renderer.Handle(LogPadCommand.Down);
-            renderer.Handle(LogPadCommand.Activate); Repaint(renderer);
-            Check(model.Tab("이벤트").SearchQuery == "" && model.Tab("이벤트").AvailableOnly,
-                "pad can clear the event query without changing the availability filter");
-            renderer.Handle(LogPadCommand.Back); Repaint(renderer);
-            Check(model.Tab("이벤트").VisibleRows.Count == 1 && model.Tab("이벤트").VisibleRows[0].Id == eligible.Id,
-                "available-only navigation contains only fresh verified eligible events");
-
-            eligible.RefreshState = LogRefreshState.RetainedFailure;
-            eligible.RefreshStatus = "갱신 실패 · 이전 값";
-            Publish(model, "이벤트", blocked, eligible, unknown);
-            Repaint(renderer);
-            Check(model.Tab("이벤트").VisibleRows.Count == 0,
-                "a retained eligible explanation cannot keep a stale event in available-only results");
-            ClickRenderedButton(renderer, "발동 가능한 항목만 보기:");
-            model.Tab("이벤트").Select(eligible.Id); Repaint(renderer);
-            Check(GUILayout.ScrollViews[0].Controls.Exists(control => control.Text.Contains(eligible.Title, StringComparison.Ordinal)
-                && control.Text.Contains("판정 미확인", StringComparison.Ordinal) && !control.Text.Contains("정상 발동 가능", StringComparison.Ordinal))
-                && GUILayout.ScrollViews[1].Controls.Exists(control => control.Text.StartsWith("이전 조회 설명:", StringComparison.Ordinal)),
-                "retained event rows distinguish current unknown eligibility from their previous readable explanation");
-            eligible.RefreshState = LogRefreshState.Healthy; eligible.RefreshStatus = "";
-            Publish(model, "이벤트", blocked, eligible, unknown);
-            ClickRenderedButton(renderer, "발동 가능한 항목만 보기:");
-            model.MarkPublicationFailure("이벤트"); Repaint(renderer);
-            Check(model.Tab("이벤트").VisibleRows.Count == 0,
-                "publication failure removes cached availability claims while preserving all-view information");
-            Publish(model, "이벤트", blocked, eligible, unknown); Repaint(renderer);
-
-            GUI.FocusControl("DiceMaster.EventSearch");
-            TapKey(renderer, KeyCode.X); TapKey(renderer, KeyCode.Y); TapKey(renderer, KeyCode.Space);
-            Check(refreshes == 0 && Area(renderer) == "List" && LogBridge.Reservations == attempts,
-                "typing X, Y or space in event search cannot refresh, open tools or reserve");
-            TapKey(renderer, KeyCode.Escape);
-            Repaint(renderer);
-            Check(closes == 0 && GUI.GetNameOfFocusedControl() == null,
-                "Escape first exits event text entry without closing the log or advancing an event");
-
-            renderer.Handle(LogPadCommand.Tools);
-            for (int index = 0; index < 17; index++) renderer.Handle(LogPadCommand.Down);
-            int writes = ConfigManager.EnableEventSelectionPopup.Writes;
-            renderer.Handle(LogPadCommand.Activate); Repaint(renderer);
-            Check(ConfigManager.EnableEventSelectionPopup.Value != enabled && ConfigManager.EnableEventSelectionPopup.Writes == writes + 1,
-                "pad popup toggle writes the persistent ConfigElement exactly once");
-            ClickRenderedButton(renderer, "이벤트 선택 팝업 사용:");
-            Check(ConfigManager.EnableEventSelectionPopup.Value == enabled,
-                "mouse popup toggle uses the same persisted option as pad");
-            Check(LogBridge.Reservations == attempts, "event query, filter and option tools never invoke reservation execution");
+                    foreach (int kind in new[] { 0, 1, 2 })
+                    {
+                        bool before = option.Value, otherBefore = other.Value; int writes = option.Writes;
+                        var controller = new LogPadController(); var states = new PadState[4]; bool[] connected = { true, false, false, false };
+                        controller.Tick(true, true, true, LogInputMode.Gamepad, 0, states, connected);
+                        controller.Tick(true, true, true, LogInputMode.Gamepad, .1, states, connected);
+                        GamepadBridge.PointerActivity = controller.PointerActivity;
+                        Input.touchCount = kind == 0 ? 0 : 1;
+                        EventType down = kind == 2 ? EventType.TouchDown : EventType.MouseDown;
+                        EventType up = kind == 2 ? EventType.TouchUp : EventType.MouseUp;
+                        EventType rawDown = kind == 0 ? EventType.MouseDown : EventType.TouchDown;
+                        EventType rawUp = kind == 0 ? EventType.MouseUp : EventType.TouchUp;
+                        Vector2 point = PointerTarget(renderer, control => control.Button && control.Text.StartsWith(label, StringComparison.Ordinal));
+                        DrawPointer(renderer, down, rawDown, point);
+                        DrawPointer(renderer, EventType.Layout, rawUp, point);
+                        DrawPointer(renderer, EventType.Repaint, rawUp, point);
+                        SoftResetForPointer(renderer);
+                        DrawPointer(renderer, up, rawUp, point);
+                        Check(option.Value != before && option.Writes == writes + 1 && other.Value == otherBefore,
+                            name + " pointer form " + kind + ": a single native gesture persists only its own popup setting");
+                        DrawPointer(renderer, up, rawUp, point);
+                        Check(option.Writes == writes + 1 && Area(renderer) == "PopupSetting",
+                            "duplicate release cannot retoggle or move focus into the list");
+                        var soft = controller.Tick(true, true, true, LogInputMode.KeyboardMouse, .2, states, connected);
+                        if (soft.ResetFocus) renderer.ResetInputFocus(soft.PreservePointerTransaction, soft.PreserveNavigationArea);
+                        states[0] = new PadState { Buttons = PadButtons.A };
+                        var takeover = controller.Tick(true, true, true, LogInputMode.KeyboardMouse, .3, states, connected);
+                        if (takeover.ResetFocus) renderer.ResetInputFocus(takeover.PreservePointerTransaction, takeover.PreserveNavigationArea);
+                        renderer.Handle(takeover.Command);
+                        Check(takeover.ResetFocus && takeover.PreserveNavigationArea && takeover.Command == LogPadCommand.None
+                            && Area(renderer) == "PopupSetting" && option.Writes == writes + 1,
+                            "actual pad takeover after a completed touch keeps setting focus behind its neutral barrier");
+                        states[0] = default;
+                        controller.Tick(true, true, true, LogInputMode.KeyboardMouse, .4, states, connected);
+                        states[0] = new PadState { Buttons = PadButtons.A };
+                        renderer.Handle(controller.Tick(true, true, true, LogInputMode.KeyboardMouse, .5, states, connected).Command);
+                        Check(option.Value == before && option.Writes == writes + 2 && Area(renderer) == "PopupSetting",
+                            "fresh pad A after neutral activates the touched setting rather than a list row");
+                        GamepadBridge.PointerActivity = null;
+                        Repaint(renderer);
+                        Check(!GUILayout.ScrollViews[0].Controls.Exists(control => control.Text.StartsWith("▶ ", StringComparison.Ordinal))
+                            && GUILayout.Controls.FindAll(control => control.Text.StartsWith("● ", StringComparison.Ordinal)).Count == 1,
+                            "setting focus never marks a list row or tools as a second active selection");
+                        renderer.Handle(LogPadCommand.Down);
+                        Check(Area(renderer) == "List" && (empty || model.Tab(name).SelectedId == eligible.Id),
+                            "Down explicitly leaves the setting for its own list");
+                        renderer.Handle(LogPadCommand.Up);
+                        Check(Area(renderer) == "PopupSetting", "Up from the first/empty row reaches the tab setting");
+                    }
+                    if (!empty)
+                    {
+                        Publish(model, name, Array.Empty<LogItem>()); Repaint(renderer);
+                        Check(Area(renderer) == "PopupSetting" && model.Tab(name).SelectedId == null,
+                            "automatic removal of the selected row cannot move setting focus to a different action");
+                    }
+                    int keyboardWrites = option.Writes;
+                    TapKey(renderer, KeyCode.Return);
+                    Check(option.Writes == keyboardWrites + 1 && Area(renderer) == "PopupSetting",
+                        "keyboard Enter toggles only the focused setting");
+                    TapKey(renderer, KeyCode.X);
+                    Check(refreshes == 1 && Area(renderer) == "PopupSetting", "X refresh keeps tab-setting navigation");
+                    TapKey(renderer, KeyCode.Y); Repaint(renderer);
+                    Check(Area(renderer) == "Tools" && !GUILayout.Controls.Exists(control => control.Text.Contains("검색", StringComparison.Ordinal)
+                        || control.Text.Contains("발동 가능한 항목만 보기", StringComparison.Ordinal)),
+                        "tools retain popup options while removing search/filter actions");
+                    TapKey(renderer, KeyCode.Escape);
+                    Check(Area(renderer) == "List" && closes == 0, "B/Escape exits tools to the content area");
+                    TapKey(renderer, KeyCode.Escape);
+                    Check(closes == 1 && LogBridge.Reservations == attempts, "B/Escape closes without reserving or executing events");
+                }
         }
         finally
         {
-            ConfigManager.EnableEventSelectionPopup.Value = enabled;
-            GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
-            GUILayout.TextFieldInput = null; GUILayout.ButtonInput = null; GUI.FocusControl(null);
-            Input.Held.Clear(); ConfigureLayout(saved, savedFont);
+            ConfigManager.EnableEventSelectionPopup.Value = events; ConfigManager.EnableSwitchSelectionPopup.Value = switches;
+            GamepadBridge.PointerActivity = null;
+            Input.touchCount = 0; Input.Held.Clear(); GUILayout.ButtonInput = null; GUI.FocusControl(null);
+            ConfigureLayout(saved, font);
         }
     }
 }

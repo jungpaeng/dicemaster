@@ -66,6 +66,8 @@ public class DicePlugin : BaseUnityPlugin
 		ConfigManager.Init();
 		EventSelectionRuntime.Enabled = () => ConfigManager.GetConfigValue(ConfigManager.EnableOptionInfo)
 			&& ConfigManager.GetConfigValue(ConfigManager.EnableEventSelectionPopup);
+		EventSelectionRuntime.SwitchEnabled = () => ConfigManager.GetConfigValue(ConfigManager.EnableOptionInfo)
+			&& ConfigManager.GetConfigValue(ConfigManager.EnableSwitchSelectionPopup);
 		EventSelectionRuntime.WaitingChanged = waiting =>
 		{
 			ResetEventInput(ModalInputResetReason.PopupWaitingChanged);
@@ -160,7 +162,7 @@ public class DicePlugin : BaseUnityPlugin
 		}
 		else if (EventSelectionRuntime.Waiting && Application.isFocused)
 		{
-			eventPopup.InputHint = GamepadBridge.LogHint().Replace("로그", "이벤트 선택");
+			eventPopup.InputHint = GamepadBridge.LogHint().Replace("로그", EventSelectionRuntime.IsSwitch ? "조건 분기 선택" : "이벤트 선택");
 			eventPopup.Handle(frame.Command);
 			eventPopup.Scroll(frame.Scroll);
 		}

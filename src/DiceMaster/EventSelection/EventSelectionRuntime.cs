@@ -16,8 +16,9 @@ namespace DiceMaster.EventSelection
         public readonly object Target;
         public readonly EventEligibilitySnapshot Eligibility;
         private readonly EventResultPreview preview;
-        internal EventCandidate(string id, string title, string result, object target, EventEligibilitySnapshot eligibility, EventResultPreview preview = null)
-        { Id = id; Title = title; Result = result; Target = target; Eligibility = eligibility; this.preview = preview ?? EventResultPreview.Pending; }
+        internal readonly int Revision;
+        internal EventCandidate(string id, string title, string result, object target, EventEligibilitySnapshot eligibility, EventResultPreview preview = null, int revision = 0)
+        { Id = id; Title = title; Result = result; Target = target; Eligibility = eligibility; this.preview = preview ?? EventResultPreview.Pending; Revision = revision; }
         public string State => Eligibility.StatusText;
         public string Summary => Eligibility.Summary;
         public string ResultSummary => preview.Summary;
@@ -30,7 +31,7 @@ namespace DiceMaster.EventSelection
 
     // Single actual action owner. All calls are on the Unity/Lua main thread;
     // no render path executes the game and no request survives a context reset.
-    public static class EventSelectionRuntime
+    public static partial class EventSelectionRuntime
     {
         private sealed class ActionContext
         {
@@ -40,6 +41,13 @@ namespace DiceMaster.EventSelection
             internal CheckPointManager Manager;
             internal PositionResultConfig Config;
             internal PositionResultData Pool;
+            internal SwitchResultConfig SwitchConfig;
+            internal SwitchResultData SwitchPool;
+            internal EventSwitchSite SwitchSite;
+            internal bool SwitchUseCount;
+            internal int SwitchCount;
+            internal object SwitchDirectTarget;
+            internal int SwitchDirectResult;
             internal string Name, Prefix;
             internal readonly Dictionary<object, string> Identities = new Dictionary<object, string>(ReferenceComparer.Instance);
             internal readonly Dictionary<object, EligibilityRead> Reads = new Dictionary<object, EligibilityRead>(ReferenceComparer.Instance);
@@ -75,6 +83,10 @@ namespace DiceMaster.EventSelection
         private static bool waiting, displayVisible;
         private static readonly Dictionary<string, string> failures = new Dictionary<string, string>(StringComparer.Ordinal);
         public static Func<bool> Enabled;
+        public static Func<bool> SwitchEnabled;
+        public static bool IsSwitch => current != null && current.SwitchPool != null;
+        public static string PopupTitle => IsSwitch ? "이번 대화의 조건 분기 선택" : "이번 행동의 이벤트 선택";
+        public static string PrimaryNoun => IsSwitch ? "분기" : "이벤트";
         public static Action<bool> WaitingChanged;
         public static bool Waiting => waiting;
         public static long Token => current == null ? 0 : current.Token;
@@ -105,11 +117,12 @@ namespace DiceMaster.EventSelection
         private static void Log(string message)
         { try { DicePlugin.LogInfo("EventSelection " + message); } catch (Exception) { } }
 
-        private static bool IsEnabled()
+        private static bool IsEnabled(bool switchAction = false)
         {
             try
             {
-                bool enabled = Enabled != null && Enabled();
+                Func<bool> setting = switchAction ? SwitchEnabled : Enabled;
+                bool enabled = setting != null && setting();
                 Recovered("settings");
                 return enabled;
             }
@@ -155,6 +168,7 @@ namespace DiceMaster.EventSelection
 
         private static bool Valid(ActionContext action)
         {
+            if (action != null && action.SwitchPool != null) return ValidSwitch(action);
             if (action == null || action.Epoch != epoch || action.Manager == null || action.Pool == null ||
                 !ReferenceEquals(CheckPointManager.Instance, action.Manager)) return false;
             PositionResultConfig config;
@@ -179,6 +193,7 @@ namespace DiceMaster.EventSelection
 
         private static void Refresh(ActionContext action, float now, bool force = false, int previewBudget = 0)
         {
+            if (action.SwitchPool != null) { RefreshSwitch(action, now, previewBudget); return; }
             var eligible = new List<EventCandidate>();
             var remaining = new List<EventCandidate>();
             if (action.Pool.List == null) throw new InvalidOperationException("Missing candidate collection.");
@@ -241,7 +256,7 @@ namespace DiceMaster.EventSelection
         internal static bool Wait(string name, long script, int site, object coroutine, long scriptEpoch)
         {
             if (scriptEpoch != epoch) return true; // The enumerator guard disposes it before another resume.
-            if (current != null && (!ReferenceEquals(current.Coroutine, coroutine) || current.Script != script || current.Site != site))
+            if (current != null && (!ReferenceEquals(current.Coroutine, coroutine) || current.Script != script || current.Site != site || current.SwitchPool != null))
             {
                 Log("pass-through reason=concurrent-action");
                 return false;
@@ -298,6 +313,7 @@ namespace DiceMaster.EventSelection
 
         private static bool PrepareSelection(ActionContext action)
         {
+            if (action.SwitchPool != null) return PrepareSwitchSelection(action);
             string selected = action.SelectedId;
             EventCandidate confirmed = action.SelectedCandidate;
             action.SelectedId = null;
@@ -343,6 +359,7 @@ namespace DiceMaster.EventSelection
         {
             if (current == null || current.Consumed || current.Released) return;
             current.SelectedId = null; current.SelectedCandidate = null; current.DirectResult = null; current.DirectTarget = null;
+            current.SwitchDirectTarget = null; current.SwitchDirectResult = 0;
             current.Released = true;
             Log("release token=" + current.Token + " mode=random reason=" + reason);
             SetWaiting(false);
@@ -372,11 +389,11 @@ namespace DiceMaster.EventSelection
             try
             {
                 if (!Valid(current)) { Invalidate("후보 또는 게임 문맥 변경"); return; }
-                if (!IsEnabled()) { ReleaseRandom("setting-disabled"); return; }
+                if (!IsEnabled(current.SwitchPool != null)) { ReleaseRandom("setting-disabled"); return; }
                 if (!waiting || !displayVisible || now < current.NextRefresh) return;
                 current.NextRefresh = now + .25f;
                 Refresh(current, now, previewBudget: 2);
-                if (current.Pool.List.Count == 0 || candidates.Count == 0) ReleaseRandom("empty-candidates");
+                if ((current.SwitchPool == null && current.Pool.List.Count == 0) || candidates.Count == 0) ReleaseRandom("empty-candidates");
                 Recovered("display");
             }
             catch (Exception error)
@@ -390,7 +407,7 @@ namespace DiceMaster.EventSelection
         internal static ActionContextHandle BeginPosition(CheckPointManager manager, string name)
         {
             ActionContext action = current;
-            if (action == null || !action.Permit || action.Executing || !ReferenceEquals(manager, action.Manager) || action.Name != name)
+            if (action == null || action.SwitchPool != null || !action.Permit || action.Executing || !ReferenceEquals(manager, action.Manager) || action.Name != name)
                 return null;
             action.Permit = false;
             action.Executing = true;

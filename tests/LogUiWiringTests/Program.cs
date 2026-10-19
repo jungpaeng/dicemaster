@@ -317,23 +317,22 @@ static class Program
                     Method("DiceMaster.LogUI.LogTabState", name).Body.Instructions.Any(i =>
                         i.OpCode == OpCodes.Ldstr && (string)i.Operand == "이벤트")),
             "event query/filter state must be guarded by the event tab and must not restore the old screen keyboard");
-        var eventControls = Method(renderer, "DrawEventControls");
-        Check(Calls(eventControls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUI" && c.Name == "TextField") &&
-                Calls(eventControls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUILayoutUtility" && c.Name == "GetRect") &&
-                Calls(Method(renderer, "DrawListDetail")).Any(c => c.FullName == eventControls.FullName) &&
-                Calls(Method(renderer, "DrawListDetail")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "get_IsEventTab") &&
-                !new[] { "DrawChoices", "DrawConditionDetails" }.SelectMany(name => Calls(Method(renderer, name)))
-                    .Any(c => c.FullName == eventControls.FullName),
-            "event list dispatch must own native text search; choice and condition views must not gain search UI");
-        Check(!WithinType(eventControls).SelectMany(Calls).Any(c => new[] { "GetRate", "GetResult", "Check", "Execute", "Parse" }.Contains(c.Name)) &&
+        var popupSetting = Method(renderer, "DrawPopupSetting");
+        Check(Calls(Method(renderer, "DrawListDetail")).Any(c => c.FullName == popupSetting.FullName) &&
+                Calls(popupSetting).Any(c => c.DeclaringType.FullName == renderer && c.Name == "SafeButton") &&
+                !Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == "UnityEngine.GUI" && c.Name == "TextField") &&
+                !Type(renderer).Methods.Any(m => new[] { "DrawEventControls", "ToggleEventFilter", "SetEventQuery" }.Contains(m.Name)),
+            "condition/event panes must expose the native pointer-safe popup button and remove search/filter controls and actions");
+        Check(!WithinType(popupSetting).SelectMany(Calls).Any(c => new[] { "GetRate", "GetResult", "Check", "Execute", "Parse" }.Contains(c.Name)) &&
                 Calls(Method(renderer, "get_VisibleRows")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogTabState" && c.Name == "get_VisibleRows"),
-            "event search/filter consumes only published rows and cannot evaluate or execute game decisions");
-        Check(Calls(Method(renderer, "ToolLabel")).Any(c => c.Name == "get_Value" && c.DeclaringType.Namespace == "DiceMaster.Config") &&
-                new[] { "ToolLabel", "ActivateTool" }.All(name => Method(renderer, name).Body.Instructions.Any(i =>
-                    i.Operand is FieldReference field && field.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && field.Name == "EnableEventSelectionPopup")) &&
-                configRegistration.Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == "EnableEventSelectionPopup") &&
+            "tab popup settings consume only published rows and cannot evaluate or execute game decisions");
+        Check(new[] { "EnableEventSelectionPopup", "EnableSwitchSelectionPopup" }.All(option =>
+                new[] { "PopupSettingLabel", "TogglePopupSetting", "ToolLabel", "ActivateTool" }.All(name =>
+                    Method(renderer, name).Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                        field.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && field.Name == option)) &&
+                configRegistration.Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == option)) &&
                 Calls(Method("DiceMaster.Config.ConfigElement`1", "SetValue")).Any(c => c.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && c.Name == "SaveConfig"),
-            "mouse/pad popup tool must use the registered BepInEx option and its existing persistent SaveConfig path");
+            "tab and tool popup settings must use both registered BepInEx options through the existing persistent SaveConfig path");
         Check(Method(renderer, "get_SupportsReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldc_I4_3) &&
                 Method("DiceMaster.LogUI.LogTabState", "BeginReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == "미션"),
             "renderer and model must keep reservation authority restricted to missions");

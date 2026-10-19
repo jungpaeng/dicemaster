@@ -26,6 +26,9 @@ namespace DiceMaster.EventSelection
     public static class EventSelectionRuntime
     {
         public static bool Waiting = true;
+        public static bool IsSwitch;
+        public static string PopupTitle => IsSwitch ? "이번 대화의 조건 분기 선택" : "이번 행동의 이벤트 선택";
+        public static string PrimaryNoun => IsSwitch ? "분기" : "이벤트";
         public static long Token = 1;
         public static IList<EventCandidate> Candidates = new List<EventCandidate>();
         public static string Status = "현재 판정";
@@ -54,6 +57,7 @@ internal static partial class Program
     {
         EventSelectionRuntime.Token++;
         EventSelectionRuntime.Waiting = true;
+        EventSelectionRuntime.IsSwitch = false;
         EventSelectionRuntime.Commands = EventSelectionRuntime.Attempts = 0;
         EventSelectionRuntime.Selected = null;
         EventSelectionRuntime.Random = EventSelectionRuntime.Forced = false;
@@ -144,6 +148,7 @@ internal static partial class Program
         RichResultUiRegressions();
         CandidateOnlyRegressions();
         KeyboardContextualConfirmation();
+        SwitchPopupRegressions();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
         foreach (int font in new[] { 12, 20, 64 })

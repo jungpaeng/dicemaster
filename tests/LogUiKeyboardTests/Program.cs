@@ -19,7 +19,7 @@ internal static partial class Program
         RendererNativeWindowBounds();
         RendererNavigation();
         RendererWithoutSearch();
-        RendererEventSelectionQueryAndConfig();
+        RendererPopupSettings();
         RendererMissionStatusRows();
         RendererWaitingStatusExplanation();
         RendererDirectListReservations();
@@ -275,6 +275,8 @@ internal static partial class Program
                     || control.Text.Contains("자판", StringComparison.Ordinal) || control.Text == "패드 입력" || control.Text == "지우기"),
                     tab + ": content has no search field, screen keyboard or search action");
                 float heading = tab == "선택지" ? 0 : (int)Field(renderer, "chromeFont") + 14;
+                if (tab == "조건")
+                    heading += GUILayout.Controls.Find(control => control.Button && control.Text.StartsWith("조건 분기 선택 팝업:", StringComparison.Ordinal)).Rect.height + 8;
                 Check(Math.Abs(GUILayout.ScrollViews[0].Viewport.height - layout.Content.height + heading) < .01f,
                     tab + ": the list uses the full body except its own visible heading");
                 for (int index = 0; index < rows.Length; index++) renderer.Handle(LogPadCommand.Down);
@@ -284,8 +286,8 @@ internal static partial class Program
                 renderer.Handle(LogPadCommand.Tools);
                 Repaint(renderer);
                 var tools = GUILayout.ScrollViews[0].Controls.FindAll(control => control.Button);
-                Check(tools.Count == 20 && !tools.Exists(control => control.Text.Contains("자판", StringComparison.Ordinal)),
-                    tab + ": tools expose twenty actions including event configuration and filter, with no screen keyboard");
+                Check(tools.Count == 19 && !tools.Exists(control => control.Text.Contains("자판", StringComparison.Ordinal)),
+                    tab + ": tools expose nineteen actions including event and condition popup settings, with no screen keyboard");
                 Check(tools[0].Text.Contains("게임 데이터 새로고침", StringComparison.Ordinal)
                     && tools[11].Text.Contains("기본값 복구", StringComparison.Ordinal)
                     && tools[12].Text.Contains("패드 소유자", StringComparison.Ordinal)

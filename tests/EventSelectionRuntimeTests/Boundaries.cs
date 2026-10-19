@@ -2,9 +2,56 @@ using System;
 using System.Collections.Generic;
 
 namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
-namespace Mortal.Core { }
+namespace Mortal.Core {
+    public sealed class ConditionResultItem { public bool Value, Random, Broken; public int DisplayReads, GameplayReads; public Func<bool> Actual; }
+    public sealed class ValueCompareItem { public int _compareOp, _value; }
+}
+namespace DiceMaster.LiveLog
+{
+    public sealed class RandomDisplayValueException : InvalidOperationException { }
+    public sealed class UnsupportedDisplayStatException : InvalidOperationException { }
+    public static class SafeDisplayEvaluation
+    {
+        public static bool CheckCondition(object value)
+        {
+            var condition = (Mortal.Core.ConditionResultItem)value;
+            condition.DisplayReads++;
+            if (condition.Broken) throw new InvalidOperationException("bad condition");
+            if (condition.Random) throw new RandomDisplayValueException();
+            return condition.Value;
+        }
+    }
+}
 namespace Mortal.Story
 {
+    public sealed class SwitchResultData
+    {
+        public string name;
+        public bool _useCount;
+        public int _count, OriginalCalls;
+        public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>();
+        public List<Mortal.Core.ValueCompareItem> _countItems = new List<Mortal.Core.ValueCompareItem>();
+        public int Execute()
+        {
+            int result;
+            if (DiceMaster.EventSelection.EventSelectionRuntime.TryDirectSwitchResult(this, out result)) return result;
+            OriginalCalls++; _count++;
+            if (_useCount)
+            {
+                for (int index = 0; index < _countItems.Count; index++)
+                { var item = _countItems[index]; bool pass = item._compareOp switch { 0 => _count == item._value, 1 => _count != item._value, 2 => _count < item._value, 3 => _count <= item._value, 4 => _count > item._value, 5 => _count >= item._value, _ => throw new Exception("op") }; if (pass) return index + 1; }
+                return _countItems.Count + 1;
+            }
+            for (int index = 0; index < _items.Count; index++)
+            { var item = _items[index]; item.GameplayReads++; if (item.Actual == null ? item.Value : item.Actual()) return index + 1; }
+            return _items.Count + 1;
+        }
+    }
+    public sealed class SwitchResultConfig
+    {
+        public Dictionary<string, SwitchResultData> Items = new Dictionary<string, SwitchResultData>();
+        public SwitchResultData GetData(string name) { Items.TryGetValue(name, out var result); return result; }
+    }
     public sealed class PositionEventData
     {
         public string name, ResultType;
@@ -25,6 +72,19 @@ namespace Mortal.Story
     {
         public static CheckPointManager Instance;
         public PositionResultConfig _position;
+        public SwitchResultConfig[] _switchList;
+        public int SwitchCalls;
+        public int Switch(string name)
+        {
+            SwitchCalls++;
+            var handle = DiceMaster.EventSelection.EventSelectionRuntime.BeginSwitch(this, name);
+            try
+            {
+                foreach (var config in _switchList) { var pool = config.GetData(name); if (pool != null) return pool.Execute(); }
+                return 0;
+            }
+            finally { DiceMaster.EventSelection.EventSelectionRuntime.CompletePosition(handle, null); }
+        }
         public int OriginalCalls, PositionCalls;
         public string Position(string name)
         {
@@ -41,6 +101,8 @@ namespace Mortal.Story
 }
 namespace DiceMaster
 {
+    public static class DataHelper
+    { public static string ExtractConditions(Mortal.Core.ConditionResultItem item, out bool period) { period = false; return item.Random ? "A10005 = 0 | 랜덤값0_30 <= 10" : "fixture condition"; } }
     public sealed class DicePlugin
     {
         internal Gamepad.LogInputMode eventInputMode = Gamepad.LogInputMode.Unknown;
@@ -78,14 +140,20 @@ namespace DiceMaster.EventSelection
         public static readonly List<string> Reads = new List<string>();
         public static Func<string, EventResultPreview> Reader;
         public EventResultPreview(string text, bool retry = false) { Summary = Detail = text; Retry = retry; }
+        internal static EventResultPreview ReadSwitchBody(string sourceName, string body) => new EventResultPreview("switch:" + body);
         internal static EventResultPreview Read(string result)
         { Reads.Add(result); return Reader == null ? new EventResultPreview("preview:" + result) : Reader(result); }
     }
+    public enum EventEligibilityState { Unknown, Eligible, Ineligible }
     public enum EventEligibilityReason { None, ConditionsNotMet, ZeroWeight, Random, Unsupported, ReadFailure }
     public sealed class EventEligibilitySnapshot
     {
         public bool IsEligible, CanUseResult;
         public EventEligibilityReason Reason;
+        public EventEligibilityState State;
+        public EventEligibilitySnapshot() { }
+        public EventEligibilitySnapshot(EventEligibilityState state, EventEligibilityReason reason, int? rate, string summary, bool canUseResult = true)
+        { State = state; IsEligible = state == EventEligibilityState.Eligible; Reason = reason; Summary = summary; CanUseResult = canUseResult; }
         public string StatusText = "state", Summary = "summary";
         public static EventEligibilitySnapshot Unreadable(string summary = "unreadable")
             => new EventEligibilitySnapshot { CanUseResult = false, Reason = EventEligibilityReason.ReadFailure, Summary = summary };

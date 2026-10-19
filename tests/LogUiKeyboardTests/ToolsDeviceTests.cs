@@ -151,7 +151,7 @@ internal static partial class Program
                 var session = new ToolSession(2, before); session.Enter("touch");
                 session.Renderer.Handle(LogPadCommand.Down); Repaint(session.Renderer);
                 SetField(session.Renderer, "toolScroll", 89.5f);
-                GUI.FocusControl("DiceMaster.EventSearch"); GUI.FocusCalls.Clear();
+                GUI.FocusControl("ExternalTextControl"); GUI.FocusCalls.Clear();
                 session.Mode = after;
                 LogPadFrame frame = session.Tick(new PadState { Buttons = PadButtons.A, LeftY = -32767, RightY = 32767 });
                 Check(frame.ResetFocus && !frame.PreserveNavigationArea && frame.PreservePointerTransaction
@@ -161,7 +161,7 @@ internal static partial class Program
                     && (float)Field(session.Renderer, "toolScroll") == 89.5f && session.Refreshes == 0,
                     "device-mode transition retains the current tool and its scroll without performing the held action");
                 Repaint(session.Renderer);
-                Check(GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
+                Check(GUI.GetNameOfFocusedControl() == "ExternalTextControl",
                     "automatic mode detection before a fresh OnGUI press does not introduce a new text or pointer barrier");
                 NoFocusRelease("automatic device mode transition retains its established focus lifecycle");
                 Check(session.Tick(new PadState { Buttons = PadButtons.A }).Command == LogPadCommand.None,
@@ -177,7 +177,7 @@ internal static partial class Program
         DrawPointer(renderer, EventType.TouchDown, EventType.TouchDown, point);
         session.Tick(default);
         Check(Field(renderer, "pointerIdentity") != null, "real pointer transaction exists before physical pad reacquisition");
-        GUI.FocusControl("DiceMaster.EventSearch"); GUI.FocusCalls.Clear();
+        GUI.FocusControl("ExternalTextControl"); GUI.FocusCalls.Clear();
         LogPadFrame frame = session.Tick(new PadState { Buttons = PadButtons.A });
         Check(frame.PreserveNavigationArea && !frame.PreservePointerTransaction && Area(renderer) == "Tools"
             && Field(renderer, "pointerIdentity") == null && Field(renderer, "pointerReservation") == null,

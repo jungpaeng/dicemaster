@@ -8,6 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.cs" Link="EventSelectionRuntime.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.Switch.cs" Link="EventSelectionRuntime.Switch.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventSwitchSite.cs" Link="EventSwitchSite.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventLuaGate.cs" Link="EventLuaGate.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventExecutionPatches.cs" Link="EventExecutionPatches.cs" />
     <Compile Include="../../src/DiceMaster/LiveLog/PreviewSyntax.cs" Link="PreviewSyntax.cs" />

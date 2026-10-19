@@ -212,7 +212,8 @@ namespace DiceMaster.LogUI
             float contentWidth = Math.Max(1, inner - Math.Max(20,
                 GUI.skin.verticalScrollbar.fixedWidth + (GUI.skin.verticalScrollbar.margin?.left ?? 0)));
             float actionHeight = chrome.CalcHeight(new GUIContent("[A / Enter] 조건 무시하고 이번만 진행"), inner) + 6;
-            float headingHeight = chrome.CalcHeight(new GUIContent("이번 행동의 이벤트 선택"), inner) + 8;
+            string heading = EventSelectionRuntime.PopupTitle;
+            float headingHeight = chrome.CalcHeight(new GUIContent(heading), inner) + 8;
             string hint = "↑↓ 선택 · 오른쪽 스틱·휠로 결과 읽기 · Tab 로그";
             if (!string.IsNullOrEmpty(InputHint)) hint += "\n" + OneLine(InputHint, chrome, inner);
             float hintHeight = chrome.CalcHeight(new GUIContent(hint), inner) + 6;
@@ -229,7 +230,7 @@ namespace DiceMaster.LogUI
             deferred = null;
             GUI.Box(bounds, "");
             GUILayout.BeginArea(new Rect(bounds.x + 12, bounds.y + 12, inner, Math.Max(1, bounds.height - 24)));
-            GUILayout.Label("이번 행동의 이벤트 선택", chrome);
+            GUILayout.Label(heading, chrome);
             rowBounds.Clear();
             Vector2 position = GUILayout.BeginScrollView(new Vector2(0, scroll), false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, GUILayout.Height(listHeight));
             scroll = position.y;
@@ -253,11 +254,14 @@ namespace DiceMaster.LogUI
                 detailCandidate = selected; detailTarget = choice?.Target; detailResult = choice?.Result;
                 detailScroll = 0;
             }
-            const string selectionExplanation = "이벤트를 선택하면 예상 결과와 발동 조건을 확인할 수 있습니다.";
+            string selectionExplanation = EventSelectionRuntime.IsSwitch
+                ? "분기를 선택하면 예상 결과와 분기 조건을 확인할 수 있습니다."
+                : "이벤트를 선택하면 예상 결과와 발동 조건을 확인할 수 있습니다.";
+            string conditionHeading = EventSelectionRuntime.IsSwitch ? "분기 조건" : "발동 조건";
             float detailContentHeight = choice == null ? text.CalcHeight(new GUIContent(selectionExplanation), contentWidth)
                 : text.CalcHeight(new GUIContent("예상 결과"), contentWidth)
                     + text.CalcHeight(new GUIContent(EventResultPreview.PlainText(choice.ResultDetailRich)), contentWidth)
-                    + text.CalcHeight(new GUIContent("발동 조건"), contentWidth)
+                    + text.CalcHeight(new GUIContent(conditionHeading), contentWidth)
                     + text.CalcHeight(new GUIContent(choice.Summary), contentWidth) + 16;
             maximumDetailScroll = Math.Max(0, detailContentHeight - detailHeight);
             detailScroll = Mathf.Clamp(detailScroll, 0, maximumDetailScroll);
@@ -269,19 +273,19 @@ namespace DiceMaster.LogUI
                 DetailLabel("예상 결과", text, contentWidth);
                 DetailLabel(choice.ResultDetailRich, resultText, contentWidth);
                 GUILayout.Space(8);
-                DetailLabel("발동 조건", text, contentWidth);
+                DetailLabel(conditionHeading, text, contentWidth);
                 DetailLabel(choice.Summary, text, contentWidth);
                 GUILayout.Space(8);
             }
             GUILayout.EndScrollView();
             if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, chrome);
             bool force = choice != null && choice.CanForce;
-            string caption = choice == null ? "[A / Enter] 이벤트를 선택하세요"
+            string caption = choice == null ? "[A / Enter] " + EventSelectionRuntime.PrimaryNoun + "를 선택하세요"
                 : force ? "[A / Enter] 조건 무시하고 이번만 진행"
-                : choice.CanSelect ? "[A / Enter] 이 이벤트로 진행"
+                : choice.CanSelect ? "[A / Enter] 이 " + EventSelectionRuntime.PrimaryNoun + "로 진행"
                 : "[A / Enter] 진행 불가 · 대상/결과 확인 필요";
             GUILayout.Label(caption, chrome);
-            GUILayout.Label("[B / Esc] 무작위로 진행", chrome);
+            GUILayout.Label(EventSelectionRuntime.IsSwitch ? "[B / Esc] 원래 판정으로 진행" : "[B / Esc] 무작위로 진행", chrome);
             GUILayout.Label(hint, chrome);
             GUILayout.EndArea();
             Action action = deferred; deferred = null;

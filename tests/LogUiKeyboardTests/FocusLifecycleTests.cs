@@ -19,7 +19,7 @@ internal static partial class Program
                     foreach (int kind in new[] { 0, 1, 2 })
                         FocusLifecyclePointerCase(tab, tools, kind);
             FocusLifecycleLateControllerTakeover();
-            FocusLifecycleSearchIntent();
+            FocusLifecyclePopupSettingIntent();
         }
         finally
         {
@@ -111,7 +111,7 @@ internal static partial class Program
 
     private static void FocusLifecycleLateControllerTakeover()
     {
-        foreach (string action in new[] { "search", "tools" })
+        foreach (string action in new[] { "setting", "tools" })
             foreach (int kind in new[] { 0, 1, 2 })
             {
                 LogModel model; var renderer = FocusLifecycleRenderer(2, null, out model);
@@ -126,9 +126,9 @@ internal static partial class Program
                 EventType rawDown = kind == 0 ? EventType.MouseDown : EventType.TouchDown;
                 EventType rawUp = kind == 0 ? EventType.MouseUp : EventType.TouchUp;
                 Input.touchCount = kind == 0 ? 0 : 1;
-                Vector2 search = PointerTarget(renderer, control => !control.Button && control.Text == "");
-                DrawPointer(renderer, down, rawDown, search);
-                DrawPointer(renderer, up, rawUp, search);
+                Vector2 setting = PointerTarget(renderer, control => control.Button && control.Text.StartsWith("이벤트 선택 팝업:", StringComparison.Ordinal));
+                DrawPointer(renderer, down, rawDown, setting);
+                DrawPointer(renderer, up, rawUp, setting);
                 GUI.FocusCalls.Clear();
                 if (action == "tools")
                 {
@@ -137,7 +137,7 @@ internal static partial class Program
                     DrawPointer(renderer, EventType.Layout, rawUp, tool);
                     DrawPointer(renderer, EventType.Repaint, rawUp, tool);
                     DrawPointer(renderer, up, rawUp, tool);
-                    NoFocusRelease("search-to-tools pointer gesture does not clear focus before its release");
+                    NoFocusRelease("setting-to-tools pointer gesture does not clear focus before its release");
                 }
                 // Both events arrive before the next Update. The soft reset
                 // is delivered only after pointerIdentity was cleared by up.
@@ -147,52 +147,50 @@ internal static partial class Program
                 renderer.ResetInputFocus(frame.PreservePointerTransaction, frame.PreserveNavigationArea);
                 renderer.Handle(frame.Command); renderer.Scroll(frame.Scroll);
                 Repaint(renderer);
-                if (action == "search")
+                if (action == "setting")
                 {
-                    Check(GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch" && Area(renderer) == "List",
-                        "late controller takeover keeps the newly focused search caret");
-                    NoFocusRelease("late search takeover does not queue a focus release after up");
+                    Check(GUI.GetNameOfFocusedControl() == null && Area(renderer) == "PopupSetting",
+                        "late controller takeover keeps the touched popup setting selected");
+                    NoFocusRelease("late setting takeover does not queue a focus release after up");
                 }
                 else
                 {
                     Check(Area(renderer) == "Tools" && GUI.GetNameOfFocusedControl() == null,
-                        "late controller takeover preserves pointer-opened tools and completes its explicit search-focus exit");
-                    OneLayoutFocusRelease("pointer search-to-tools transition");
+                        "late controller takeover preserves pointer-opened tools and completes its explicit focus transition");
+                    OneLayoutFocusRelease("pointer setting-to-tools transition");
                 }
                 GUI.FocusCalls.Clear();
                 renderer.ResetInputFocus(); Repaint(renderer); Repaint(renderer);
                 Check(Area(renderer) == "List" && GUI.GetNameOfFocusedControl() == null,
-                    "hard reset still returns to list and clears the old search caret");
+                    "hard reset still returns to list and clears stale native focus");
                 OneLayoutFocusRelease("hard focus/context reset");
                 GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
             }
     }
 
-    private static void FocusLifecycleSearchIntent()
+    private static void FocusLifecyclePopupSettingIntent()
     {
-        LogModel model; var renderer = FocusLifecycleRenderer(2, null, out model);
-        Vector2 search = PointerTarget(renderer, control => !control.Button && control.Text == "");
-        renderer.ResetInputFocus(); GUI.FocusCalls.Clear();
-        // A fresh field press can precede the Layout requested by opening or
-        // resetting the log. It intentionally chooses a new text focus.
-        DrawPointer(renderer, EventType.TouchDown, EventType.TouchDown, search);
-        DrawPointer(renderer, EventType.Layout, EventType.TouchUp, search);
-        DrawPointer(renderer, EventType.Repaint, EventType.TouchUp, search);
-        DrawPointer(renderer, EventType.TouchUp, EventType.TouchUp, search);
-        Repaint(renderer); Repaint(renderer);
-        Check(GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
-            "fresh search press supersedes an older queued focus release even before its first Layout");
-        NoFocusRelease("new search focus survives down/layout/repaint/up and subsequent idle frames");
-        GUI.FocusCalls.Clear();
-        GUILayout.TextFieldInput = previous => "focus";
-        Repaint(renderer); GUILayout.TextFieldInput = null; Repaint(renderer);
-        Check(model.Tab("이벤트").SearchQuery == "focus" && GUI.GetNameOfFocusedControl() == "DiceMaster.EventSearch",
-            "search typing and publication filtering retain the caret");
-        NoFocusRelease("typing does not enqueue a focus release");
-        TapKey(renderer, KeyCode.Escape);
-        NoFocusRelease("search Escape queues its explicit exit until a safe Layout");
-        Repaint(renderer); Repaint(renderer);
-        Check(GUI.GetNameOfFocusedControl() == null, "search Escape exits text entry on its next Layout");
-        OneLayoutFocusRelease("explicit search Escape");
+        bool enabled = ConfigManager.EnableEventSelectionPopup.Value;
+        try
+        {
+            LogModel model; var renderer = FocusLifecycleRenderer(2, null, out model);
+            Vector2 setting = PointerTarget(renderer, control => control.Button && control.Text.StartsWith("이벤트 선택 팝업:", StringComparison.Ordinal));
+            renderer.ResetInputFocus(); GUI.FocusCalls.Clear();
+            DrawPointer(renderer, EventType.TouchDown, EventType.TouchDown, setting);
+            DrawPointer(renderer, EventType.Layout, EventType.TouchUp, setting);
+            DrawPointer(renderer, EventType.Repaint, EventType.TouchUp, setting);
+            DrawPointer(renderer, EventType.TouchUp, EventType.TouchUp, setting);
+            NoFocusRelease("an older queued focus release waits through the setting's complete native gesture");
+            Check(ConfigManager.EnableEventSelectionPopup.Value != enabled && Area(renderer) == "PopupSetting",
+                "fresh setting press is accepted before the opening reset's next Layout");
+            Repaint(renderer); Repaint(renderer);
+            OneLayoutFocusRelease("opening reset completes after the setting gesture");
+            GUI.FocusCalls.Clear();
+            renderer.Handle(LogPadCommand.Activate); Repaint(renderer);
+            Check(ConfigManager.EnableEventSelectionPopup.Value == enabled && Area(renderer) == "PopupSetting",
+                "fresh pad activation uses the touched setting instead of a row");
+            OneLayoutFocusRelease("explicit pad command exits old native focus on Layout");
+        }
+        finally { ConfigManager.EnableEventSelectionPopup.Value = enabled; }
     }
 }
