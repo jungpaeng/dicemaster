@@ -31,11 +31,7 @@ internal static class PopupExecutionRegression
         {
             Plugin.RunModeChange(Mode);
             LogPadFrame frame = Controller.Tick(true, Application.isFocused, true, Mode, ++Clock, States, Connected);
-            if (frame.ResetFocus)
-            {
-                Popup.ResetInput(frame.PreservePointerTransaction);
-                if (!frame.PreservePointerTransaction) EventSelectionRuntime.CancelConfirmation();
-            }
+            Plugin.RunPadReset(frame);
             Popup.UpdateInput();
             Popup.Handle(frame.Command);
         }
@@ -119,6 +115,35 @@ internal static class PopupExecutionRegression
             (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp),
             (EventType.TouchDown, EventType.TouchUp, EventType.TouchDown, EventType.TouchUp)
         };
+        var activePressBoundaries = new[] {
+            (ModalInputResetReason.AutomaticInputModeObserved, true),
+            (ModalInputResetReason.PointerTakeover, true),
+            (ModalInputResetReason.PhysicalPadTakeover, false),
+            (ModalInputResetReason.ControllerBoundary, false),
+            (ModalInputResetReason.LogVisibilityChanged, false),
+            (ModalInputResetReason.ApplicationFocusChanged, false),
+            (ModalInputResetReason.PopupWaitingChanged, false)
+        };
+        foreach (var pair in pairs)
+        foreach (var boundary in activePressBoundaries)
+        {
+            scenarios++;
+            Session session = Start(false); Select(session, pair);
+            Press(session, pair, Point(session), () => session.Plugin.RunReset(boundary.Item1));
+            DynValue result = session.Coroutine.Coroutine.Resume();
+            if (!boundary.Item2)
+            {
+                check(EventSelectionRuntime.Waiting && session.Manager.PositionCalls == 0,
+                    "hard pointer reset discards the unfinished down/up transaction: " + pair + " " + boundary.Item1);
+                session.Update(); session.Update();
+                Press(session, pair, Point(session));
+                result = session.Coroutine.Coroutine.Resume();
+            }
+            check(result.String == "story_touch_target" && session.Coroutine.Coroutine.State == CoroutineState.Dead &&
+                    session.Manager.PositionCalls == 1 && session.Manager.OriginalCalls == 0,
+                "candidate reset policy preserves only deliberate active pointer transactions: " + pair + " " + boundary.Item1);
+        }
+
         foreach (var pair in pairs)
         foreach (bool force in new[] { false, true })
         foreach (LogInputMode mode in new[] { LogInputMode.KeyboardMouse, LogInputMode.Unknown })
@@ -149,7 +174,7 @@ internal static class PopupExecutionRegression
             scenarios++;
             Session session = Start(false); Select(session, pair);
             Press(session, pair, Point(session));
-            EventSelectionRuntime.CancelConfirmation(); session.Popup.ResetInput();
+            session.Plugin.RunReset(ModalInputResetReason.ApplicationFocusChanged);
             session.Coroutine.Coroutine.Resume();
             check(EventSelectionRuntime.Waiting && session.Manager.PositionCalls == 0,
                 "a real hard cancellation still discards a completed pointer confirmation");

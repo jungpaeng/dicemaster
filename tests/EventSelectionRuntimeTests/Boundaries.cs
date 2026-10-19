@@ -48,8 +48,14 @@ namespace DiceMaster
         internal readonly LogUI.EventPopupRenderer eventPopup = new LogUI.EventPopupRenderer();
         public static void LogInfo(string value) { }
         internal void RunModeChange(Gamepad.LogInputMode mode) => ObserveEventInputMode(mode);
+        internal void RunReset(LogUI.ModalInputResetReason reason) => ResetEventInput(reason);
+        internal void RunPadReset(Gamepad.LogPadFrame frame) => ResetEventPadInput(frame);
         private void ObserveEventInputMode(Gamepad.LogInputMode mode)
             => throw new InvalidOperationException("Actual candidate input-mode observer IL was not installed.");
+        private void ResetEventInput(LogUI.ModalInputResetReason reason)
+            => throw new InvalidOperationException("Actual candidate reset policy application IL was not installed.");
+        private void ResetEventPadInput(Gamepad.LogPadFrame frame)
+            => throw new InvalidOperationException("Actual candidate pad reset boundary IL was not installed.");
     }
     public sealed class PositionEventCache
     {

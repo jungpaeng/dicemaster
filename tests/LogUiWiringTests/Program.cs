@@ -18,6 +18,16 @@ static class Program
     { foreach (var type in types) { yield return type; foreach (var child in All(type.NestedTypes)) yield return child; } }
     static IEnumerable<MethodReference> Calls(MethodDefinition method) => method.HasBody
         ? method.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>() : Enumerable.Empty<MethodReference>();
+    static int? IntegerConstant(Instruction instruction)
+    {
+        while (instruction?.OpCode == OpCodes.Nop) instruction = instruction.Previous;
+        if (instruction == null) return null;
+        if (instruction.OpCode == OpCodes.Ldc_I4_M1) return -1;
+        if (instruction.OpCode.Code >= Code.Ldc_I4_0 && instruction.OpCode.Code <= Code.Ldc_I4_8)
+            return (int)instruction.OpCode.Code - (int)Code.Ldc_I4_0;
+        return instruction.OpCode == OpCodes.Ldc_I4 || instruction.OpCode == OpCodes.Ldc_I4_S
+            ? Convert.ToInt32(instruction.Operand) : null;
+    }
     static IEnumerable<MethodDefinition> WithinType(MethodDefinition entry)
     {
         var pending = new Stack<MethodDefinition>();
@@ -158,14 +168,21 @@ static class Program
         Check(updateCalls.Any(c => c.Name == "GetKeyDown"), "keyboard open entry point retained");
         Check(Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Draw"), "actual OnGUI calls replacement renderer");
         const string runtime = "DiceMaster.EventSelection.EventSelectionRuntime", popup = "DiceMaster.LogUI.EventPopupRenderer";
+        const string resetPolicy = "DiceMaster.LogUI.ModalInputResetPolicy", resetEffects = "DiceMaster.LogUI.ModalInputReset";
+        bool SuppliesResetReason(MethodDefinition caller, string reason)
+        {
+            int value = Convert.ToInt32(Type("DiceMaster.LogUI.ModalInputResetReason").Fields.Single(field => field.Name == reason).Constant);
+            return caller.Body.Instructions.Any(instruction => instruction.Operand is MethodReference called &&
+                called.DeclaringType.FullName == plugin && called.Name == "ResetEventInput" && IntegerConstant(instruction.Previous) == value);
+        }
         Check(Calls(Method(plugin, "Awake")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "Install") &&
                 updateCalls.Any(c => c.DeclaringType.FullName == runtime && c.Name == "Tick") &&
                 Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == popup && c.Name == "Draw"),
             "delivered runtime installation, visible refresh and popup rendering must be connected to the actual plugin");
-        Check(new[] { "SetLogOpen", "OnApplicationFocus" }.All(name =>
-                Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation")) &&
+        Check(SuppliesResetReason(Method(plugin, "SetLogOpen"), "LogVisibilityChanged") &&
+                SuppliesResetReason(Method(plugin, "OnApplicationFocus"), "ApplicationFocusChanged") &&
                 updateCalls.Any(c => c.DeclaringType.FullName == plugin && c.Name == "ObserveEventInputMode"),
-            "log and focus transitions cancel queued confirmations while Update continues observing automatic scheme changes");
+            "actual log/focus callbacks must supply their hard boundary reasons while Update continues observing automatic scheme changes");
         Check(Calls(Method(pad, "SetModalCapture")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput" && c.Name == "set_LogActive") &&
                 Calls(Method(pad, "SetModalCapture")).Any(c => c.Name == "RequireNeutral") &&
                 types.Where(t => t.FullName == plugin || t.FullName.StartsWith(plugin + "/", StringComparison.Ordinal))
@@ -175,37 +192,30 @@ static class Program
                 Calls(Method(popup, "Submit")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "ContinueRandom") &&
                 !Type(popup).Methods.SelectMany(Calls).Any(c => c.DeclaringType.Namespace.StartsWith("Mortal.", StringComparison.Ordinal)),
             "popup explicit commands must queue requests in the runtime without invoking game event methods from rendering");
-        Instruction BeforeCall(MethodDefinition owner, MethodReference called)
-        {
-            var instruction = owner.Body.Instructions.Single(i => i.Operand is MethodReference reference && reference.FullName == called.FullName);
-            instruction = instruction.Previous;
-            while (instruction != null && instruction.OpCode == OpCodes.Nop) instruction = instruction.Previous;
-            return instruction;
-        }
-        var popupFrameReset = updateCalls.Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
-        Check(popupFrameReset.Parameters.Count == 1 && popupFrameReset.Parameters[0].ParameterType.FullName == "System.Boolean" &&
-                BeforeCall(update, popupFrameReset)?.Operand is FieldReference resetReason &&
-                resetReason.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && resetReason.Name == "PreservePointerTransaction",
-            "actual popup frame reset must forward the controller's pointer preservation flag, not erase every down/up transaction");
+        var applyReset = Method(plugin, "ResetEventInput");
+        var padReset = Method(plugin, "ResetEventPadInput");
+        Check(updateCalls.Any(c => c.DeclaringType.FullName == plugin && c.Name == padReset.Name) &&
+                Calls(padReset).Any(c => c.DeclaringType.FullName == resetPolicy && c.Name == "FromPadFrame") &&
+                padReset.Body.Instructions.Any(i => i.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && field.Name == "ResetFocus"),
+            "actual Update must forward controller frames through the guarded reset-reason translation");
+        Check(Calls(applyReset).Any(c => c.DeclaringType.FullName == resetPolicy && c.Name == "For") &&
+                Calls(applyReset).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation") &&
+                Calls(applyReset).Any(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput") &&
+                new[] { "CancelConfirmation", "PreservePointerTransaction" }.All(name => applyReset.Body.Instructions.Any(i =>
+                    i.Operand is FieldReference field && field.DeclaringType.FullName == resetEffects && field.Name == name)),
+            "the actual plugin applies both cancellation and pointer preservation from the pure policy tested against candidate IL");
         var observeMode = Method(plugin, "ObserveEventInputMode");
-        var popupModeReset = Calls(observeMode).Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
-        Check(BeforeCall(observeMode, popupModeReset)?.OpCode == OpCodes.Ldc_I4_1 &&
+        Check(SuppliesResetReason(observeMode, "AutomaticInputModeObserved") &&
                 !Calls(observeMode).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation"),
-            "automatic scheme observation preserves accepted result requests and a valid active pointer transaction until Lua revalidation");
-        var frameCancel = update.Body.Instructions.Single(i => i.Operand is MethodReference call &&
-            call.DeclaringType.FullName == runtime && call.Name == "CancelConfirmation");
-        var preserveGuard = frameCancel.Previous;
-        while (preserveGuard?.OpCode == OpCodes.Nop) preserveGuard = preserveGuard.Previous;
-        Check(preserveGuard != null && (preserveGuard.OpCode == OpCodes.Brtrue || preserveGuard.OpCode == OpCodes.Brtrue_S) &&
-                preserveGuard.Operand is Instruction afterCancel && afterCancel.Offset > frameCancel.Offset &&
-                preserveGuard.Previous?.Operand is FieldReference preserved &&
-                preserved.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && preserved.Name == "PreservePointerTransaction",
-            "physical pad reset boundaries retain confirmation cancellation independently of automatic input-mode observations");
-        Check(new[] { "SetLogOpen", "OnApplicationFocus" }.All(name => {
-                var method = Method(plugin, name);
-                var reset = Calls(method).Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
-                return BeforeCall(method, reset)?.OpCode == OpCodes.Ldc_I4_0;
-            }), "actual log/focus boundaries hard-reset the popup instead of carrying a stale press into another context");
+            "automatic scheme observation supplies its preserving reason without an independent hard cancellation");
+        Check(WithinTypeTree(Method(plugin, "Awake"), types).Any(method => SuppliesResetReason(method, "PopupWaitingChanged")),
+            "actual waiting-state callback uses its pointer-only reset rather than cancelling the newly admitted or released flow");
+        Check(new[] { "OnDisable", "OnDestroy" }.All(name => Calls(Method(plugin, name)).Any(call =>
+                    call.DeclaringType.FullName == runtime && call.Name == "Invalidate")) &&
+                !Calls(Method(plugin, "SynchronizeLogContext")).Any(call => call.DeclaringType.FullName == runtime ||
+                    call.DeclaringType.FullName == plugin && call.Name == "ResetEventInput"),
+            "runtime context and shutdown invalidation stay separate from input reset policy");
         foreach (string owner in new[] { renderer, popup })
         {
             var buttonCalls = Calls(Method(owner, "SafeButton")).ToArray();

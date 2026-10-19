@@ -68,7 +68,7 @@ public class DicePlugin : BaseUnityPlugin
 			&& ConfigManager.GetConfigValue(ConfigManager.EnableEventSelectionPopup);
 		EventSelectionRuntime.WaitingChanged = waiting =>
 		{
-			eventPopup.ResetInput();
+			ResetEventInput(ModalInputResetReason.PopupWaitingChanged);
 			GamepadBridge.SetModalCapture(showLogWindow || waiting, Application.isFocused, Paths.CachePath);
 			GameActionGate.SetLogState(showLogWindow || waiting, Application.isFocused);
 		};
@@ -111,7 +111,7 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void SetLogOpen(bool open, int padOwner = -1)
 	{
-		EventSelectionRuntime.CancelConfirmation();
+		ResetEventInput(ModalInputResetReason.LogVisibilityChanged);
 		showLogWindow = open;
 		logInputMode = GameInputModeResolver.Resolve();
 		logCursor.SetActive((open || EventSelectionRuntime.Waiting) && Application.isFocused, logInputMode);
@@ -119,7 +119,6 @@ public class DicePlugin : BaseUnityPlugin
 		EnsureLogRenderer();
 		logRenderer.ResetInputFocus();
 		GamepadBridge.CancelLogInput();
-		eventPopup.ResetInput();
 		if (open && padOwner >= 0) GamepadBridge.BeginPadLog(padOwner);
 	}
 
@@ -151,11 +150,7 @@ public class DicePlugin : BaseUnityPlugin
 		LogPadFrame frame = GamepadBridge.TickLog(showLogWindow || EventSelectionRuntime.Waiting, Application.isFocused,
 			logInputMode, Time.unscaledTime, Paths.CachePath);
 		if (frame.ResetFocus) logRenderer.ResetInputFocus(frame.PreservePointerTransaction, frame.PreserveNavigationArea);
-		if (frame.ResetFocus)
-		{
-			eventPopup.ResetInput(frame.PreservePointerTransaction);
-			if (!frame.PreservePointerTransaction) EventSelectionRuntime.CancelConfirmation();
-		}
+		ResetEventPadInput(frame);
 		eventPopup.UpdateInput();
 		if (showLogWindow && Application.isFocused)
 		{
@@ -182,10 +177,22 @@ public class DicePlugin : BaseUnityPlugin
 		// Focus, log/context and physical pad-owner changes still cancel it.
 		if (eventInputModeKnown && eventInputMode != mode && EventSelectionRuntime.Waiting)
 		{
-			eventPopup.ResetInput(true);
+			ResetEventInput(ModalInputResetReason.AutomaticInputModeObserved);
 		}
 		eventInputMode = mode;
 		eventInputModeKnown = true;
+	}
+
+	private void ResetEventPadInput(LogPadFrame frame)
+	{
+		if (frame.ResetFocus) ResetEventInput(ModalInputResetPolicy.FromPadFrame(frame));
+	}
+
+	private void ResetEventInput(ModalInputResetReason reason)
+	{
+		ModalInputReset reset = ModalInputResetPolicy.For(reason);
+		if (reset.CancelConfirmation) EventSelectionRuntime.CancelConfirmation();
+		eventPopup.ResetInput(reset.PreservePointerTransaction);
 	}
 
 	private void SynchronizeLogContext()
@@ -210,13 +217,12 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void OnApplicationFocus(bool focused)
 	{
-		EventSelectionRuntime.CancelConfirmation();
+		ResetEventInput(ModalInputResetReason.ApplicationFocusChanged);
 		logCursor.SetActive((showLogWindow || EventSelectionRuntime.Waiting) && focused, logInputMode);
 		GameActionGate.SetLogState(showLogWindow || EventSelectionRuntime.Waiting, focused);
 		if (!focused) GamepadBridge.SuspendLogOpener();
 		GamepadBridge.CancelPadEntry();
 		logRenderer?.ResetInputFocus();
-		eventPopup.ResetInput();
 		GamepadBridge.CancelLogInput();
 	}
 

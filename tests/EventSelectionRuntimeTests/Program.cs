@@ -4,6 +4,7 @@ using System.Reflection;
 using DiceMaster;
 using DiceMaster.EventSelection;
 using DiceMaster.Gamepad;
+using DiceMaster.LogUI;
 using MoonSharp.Interpreter;
 using Mortal.Story;
 using UnityEngine;
@@ -371,9 +372,85 @@ internal static class Program
                 "the newly confirmed replacement result executes once without original condition/RNG calls");
         }
     }
+
+    private static void ResetBoundaryRequests(Action<DicePlugin> apply, bool cancelled, string boundary)
+    {
+        foreach (string request in new[] { "normal", "force", "random" })
+        {
+            Begin(Event("target", request != "force"), Event("other"));
+            var plugin = new DicePlugin();
+            Engine("return checkpointmanager.Position(\"action\")", out DynValue co);
+            co.Coroutine.Resume();
+            EventCandidate target = null;
+            foreach (EventCandidate candidate in EventSelectionRuntime.Candidates)
+                if (candidate.Title == "target") target = candidate;
+            Check(target != null && EventSelectionRuntime.Waiting, boundary + ": actual Lua waits before " + request);
+            Action confirm = () => {
+                if (request == "random") EventSelectionRuntime.ContinueRandom();
+                else Check(EventSelectionRuntime.Select(target.Id, request == "force"), boundary + ": explicit " + request + " accepted");
+            };
+            confirm();
+            string acceptedStatus = EventSelectionRuntime.Status;
+            apply(plugin);
+            bool statusPreserved = EventSelectionRuntime.Status == acceptedStatus;
+            DynValue result = co.Coroutine.Resume();
+            if (cancelled)
+            {
+                Check(EventSelectionRuntime.Waiting && co.Coroutine.State == CoroutineState.Suspended &&
+                        CheckPointManager.Instance.PositionCalls == 0 && CheckPointManager.Instance.OriginalCalls == 0,
+                    boundary + ": hard boundary discards " + request + " before the game call");
+                Check(!statusPreserved && EventSelectionRuntime.Status.Contains("다시 확인"), boundary + ": cancellation feedback replaces processing status");
+                confirm();
+                result = co.Coroutine.Resume();
+            }
+            else Check(statusPreserved, boundary + ": preserving boundary retains the accepted " + request + " status");
+            Check(co.Coroutine.State == CoroutineState.Dead && !EventSelectionRuntime.Waiting &&
+                    CheckPointManager.Instance.PositionCalls == 1 &&
+                    CheckPointManager.Instance.OriginalCalls == (request == "random" ? 1 : 0) &&
+                    result.String == (request == "random" ? "original" : "story_target"),
+                boundary + ": the first surviving or freshly confirmed " + request + " executes exactly once");
+        }
+    }
+
+    private static void ModalResetPolicyBoundaries()
+    {
+        var decisions = new[] {
+            (ModalInputResetReason.AutomaticInputModeObserved, true, false),
+            (ModalInputResetReason.PointerTakeover, true, false),
+            (ModalInputResetReason.PhysicalPadTakeover, false, true),
+            (ModalInputResetReason.ControllerBoundary, false, true),
+            (ModalInputResetReason.LogVisibilityChanged, false, true),
+            (ModalInputResetReason.ApplicationFocusChanged, false, true),
+            (ModalInputResetReason.PopupWaitingChanged, false, false)
+        };
+        Check(decisions.Length == Enum.GetValues(typeof(ModalInputResetReason)).Length, "every production reset reason has an explicit expected decision");
+        foreach (var decision in decisions)
+        {
+            ModalInputReset actual = ModalInputResetPolicy.For(decision.Item1);
+            Check(actual.PreservePointerTransaction == decision.Item2 && actual.CancelConfirmation == decision.Item3,
+                "candidate IL decision table: " + decision.Item1);
+            ResetBoundaryRequests(plugin => plugin.RunReset(decision.Item1), decision.Item3, decision.Item1.ToString());
+        }
+        bool rejected = false;
+        try { ModalInputResetPolicy.For((ModalInputResetReason)int.MaxValue); }
+        catch (ArgumentOutOfRangeException) { rejected = true; }
+        Check(rejected, "unknown reset reasons cannot silently default to a preserving or destructive effect");
+        foreach (bool resetFocus in new[] { false, true })
+        foreach (bool preservePointer in new[] { false, true })
+        foreach (bool preserveNavigation in new[] { false, true })
+        {
+            var frame = new LogPadFrame { ResetFocus = resetFocus, PreservePointerTransaction = preservePointer, PreserveNavigationArea = preserveNavigation };
+            if (resetFocus)
+                Check(ModalInputResetPolicy.FromPadFrame(frame) == (preservePointer ? ModalInputResetReason.PointerTakeover :
+                        preserveNavigation ? ModalInputResetReason.PhysicalPadTakeover : ModalInputResetReason.ControllerBoundary),
+                    "candidate frame translation preserves pointer precedence and distinguishes physical pad reacquisition");
+            ResetBoundaryRequests(plugin => plugin.RunPadReset(frame), resetFocus && !preservePointer,
+                "pad frame reset=" + resetFocus + ", pointer=" + preservePointer + ", navigation=" + preserveNavigation);
+        }
+    }
     public static void Run()
     {
-        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards(); HardCancellationBeforeLuaContinuation(); DelayedSchemeObservation(); RefreshCannotReplaceConfirmation();
+        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards(); HardCancellationBeforeLuaContinuation(); DelayedSchemeObservation(); RefreshCannotReplaceConfirmation(); ModalResetPolicyBoundaries();
         scenarios += PopupExecutionRegression.Run(Check);
         Console.WriteLine("PASS: event execution runtime " + assertions + " assertions across " + scenarios + " scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries)");
     }
