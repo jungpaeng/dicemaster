@@ -40,6 +40,39 @@ namespace DiceMaster.LiveLog
         private static readonly HashSet<string> failedPublications = new HashSet<string>(StringComparer.Ordinal);
         public static int AnalysisCount;
 
+        private sealed class ReservationSlot
+        {
+            public object Target;
+            public long Revision;
+            public bool Observed;
+        }
+
+        // Opaque authority captured when a physical confirmation begins. The
+        // original intent is derived from this slot, never from release-time UI.
+        private sealed class ReservationSnapshot
+        {
+            public readonly long ContextId, Revision;
+            public readonly string Tab;
+            public readonly object Target;
+            public ReservationSnapshot(long contextId, string tab, object target, long revision)
+            { ContextId = contextId; Tab = tab; Target = target; Revision = revision; }
+        }
+
+        private sealed class MissionEntryMutation
+        {
+            public readonly object Manager, Target, Previous;
+            public readonly IDictionary Entries;
+            public readonly string Key;
+            public readonly bool HadPrevious;
+            public MissionEntryMutation(object manager, IDictionary entries, string key, object target, bool hadPrevious, object previous)
+            { Manager = manager; Entries = entries; Key = key; Target = target; HadPrevious = hadPrevious; Previous = previous; }
+        }
+
+        private static readonly ReservationSlot eventReservation = new ReservationSlot();
+        private static readonly ReservationSlot missionReservation = new ReservationSlot();
+        private static MissionEntryMutation missionEntryMutation;
+        private static object canceledMissionTarget;
+
         private sealed class EventSource
         {
             public IList Entries;
@@ -249,6 +282,7 @@ namespace DiceMaster.LiveLog
                 ResetCore();
                 Write(Patch(), "_lastLuaString", null); Write(Patch(), "_lastFriendlyName", null);
                 Write(Patch(), "TargetEvent", null); Write(Patch(), "TargetMission", null);
+                NotifyReservationChanged("이벤트"); NotifyReservationChanged("미션");
             });
             return token;
         }
@@ -300,6 +334,10 @@ namespace DiceMaster.LiveLog
         private static void ResetCore()
         {
             Model.ResetContext(checked(++contextId));
+            // A new game context owns its own active mission state. Never roll
+            // a prior context's dictionary back while invalidating UI requests.
+            missionEntryMutation = null;
+            canceledMissionTarget = null;
             publishedValues.Clear();
             failedPublications.Clear();
             identities.Clear(); nextIdentity = 0;
@@ -342,6 +380,7 @@ namespace DiceMaster.LiveLog
             Write(Patch(), "_lastFriendlyName", name);
             // Preserve the original real-Lua boundary's event request semantics.
             Write(Patch(), "TargetEvent", null);
+            NotifyReservationChanged("이벤트");
             AdvanceSourceClock((float)Read(TypeFor("UnityEngine.Time"), "unscaledTime"));
             if (Enabled()) Analyze();
         }
@@ -743,17 +782,132 @@ namespace DiceMaster.LiveLog
         // Publication identity and live membership are both required; no Lua,
         // display evaluation or execution method is called to validate a target.
         public static bool TryReserve(long expectedContext, string tab, string id, object target)
+        { return ChangeReservation(expectedContext, tab, id, target, null, false); }
+
+        private static ReservationSlot Slot(string tab)
+        { return tab == "이벤트" ? eventReservation : tab == "미션" ? missionReservation : null; }
+
+        private static string ReservationField(string tab)
+        { return tab == "이벤트" ? "TargetEvent" : "TargetMission"; }
+
+        private static object ObserveReservation(string tab)
+        {
+            ReservationSlot slot = Slot(tab);
+            object raw;
+            try { raw = Read(Patch(), ReservationField(tab)); }
+            catch
+            {
+                slot.Revision = checked(slot.Revision + 1);
+                slot.Observed = false;
+                if (tab == "미션") missionEntryMutation = null;
+                throw;
+            }
+            if (!slot.Observed || !ReferenceEquals(slot.Target, raw))
+            {
+                slot.Revision = checked(slot.Revision + 1);
+                slot.Target = raw; slot.Observed = true;
+                if (tab == "미션" && missionEntryMutation != null && !ReferenceEquals(missionEntryMutation.Target, raw))
+                    missionEntryMutation = null;
+            }
+            return raw;
+        }
+
+        // The actual one-use game postfixes notify even when a target is later
+        // reinserted before UI polling. That ABA cycle must invalidate a press.
+        // Notification cannot replace or escape an original game's result.
+        public static void NotifyReservationChanged(string tab)
+        {
+            ReservationSlot slot = Slot(tab);
+            if (slot == null) return;
+            try
+            {
+                slot.Revision = checked(slot.Revision + 1);
+                slot.Target = Read(Patch(), ReservationField(tab));
+                slot.Observed = true;
+                if (tab == "미션" && missionEntryMutation != null && !ReferenceEquals(missionEntryMutation.Target, slot.Target))
+                    missionEntryMutation = null;
+            }
+            catch
+            {
+                slot.Observed = false;
+                if (tab == "미션") missionEntryMutation = null;
+            }
+        }
+
+        public static bool TryCaptureReservation(string tab, out object snapshot)
+        {
+            object captured = null;
+            RunBoundary("reservation-capture", () => {
+                ReservationSlot slot = Slot(tab);
+                if (slot == null || !lifecycle.IsReady) return;
+                object raw = ObserveReservation(tab);
+                captured = new ReservationSnapshot(contextId, tab, raw, slot.Revision);
+            });
+            snapshot = captured;
+            return captured != null;
+        }
+
+        public static bool TryToggleReservation(long expectedContext, string tab, string id, object target, object snapshot)
+        {
+            ReservationSnapshot captured = snapshot as ReservationSnapshot;
+            if (captured == null) return false;
+            return ChangeReservation(expectedContext, tab, id, target, captured, true);
+        }
+
+        // Position clicks retain their existing auto-selection except for the
+        // exact mission explicitly canceled in this context. Describing that
+        // candidate must not silently recreate the one-use override.
+        public static bool ShouldAutoReserveMission(object target)
+        { return target != null && !ReferenceEquals(canceledMissionTarget, target); }
+
+        private static void RestoreOwnedMissionEntry(object manager)
+        {
+            MissionEntryMutation mutation = missionEntryMutation;
+            missionEntryMutation = null;
+            if (mutation == null || !ReferenceEquals(mutation.Manager, manager)) return;
+            IDictionary current = Read(manager, "ActiveSubMissions") as IDictionary;
+            // Undo only an untouched write made by this pending reservation.
+            // A rebuilt game dictionary, replacement value or consumed check
+            // belongs to the game and must never be removed or resurrected.
+            if (!ReferenceEquals(current, mutation.Entries) || !current.Contains(mutation.Key) ||
+                !ReferenceEquals(current[mutation.Key], mutation.Target)) return;
+            if (mutation.HadPrevious) current[mutation.Key] = mutation.Previous;
+            else current.Remove(mutation.Key);
+        }
+
+        private static void SetMissionEntry(object manager, string key, object target)
+        {
+            IDictionary active = Read(manager, "ActiveSubMissions") as IDictionary;
+            if (active == null) return;
+            if (missionEntryMutation != null && ReferenceEquals(missionEntryMutation.Manager, manager) &&
+                ReferenceEquals(missionEntryMutation.Entries, active) && missionEntryMutation.Key == key &&
+                ReferenceEquals(missionEntryMutation.Target, target) && active.Contains(key) && ReferenceEquals(active[key], target))
+                return;
+            RestoreOwnedMissionEntry(manager);
+            bool existed = active.Contains(key);
+            object previous = existed ? active[key] : null;
+            if (existed && ReferenceEquals(previous, target)) return;
+            active[key] = target;
+            missionEntryMutation = new MissionEntryMutation(manager, active, key, target, existed, previous);
+        }
+
+        private static bool ChangeReservation(long expectedContext, string tab, string id, object target, ReservationSnapshot snapshot, bool toggle)
         {
             bool reserved = false;
             RunBoundary("reserve", () => {
                 if (expectedContext != contextId || !lifecycle.IsReady || !Enabled() || owner == null || target == null ||
-                    failedPublications.Contains(tab) || !(bool)Read(owner, "showLogWindow") || (string)Read(owner, "currentTab") != tab) return;
+                    Slot(tab) == null || failedPublications.Contains(tab) || !(bool)Read(owner, "showLogWindow") || (string)Read(owner, "currentTab") != tab) return;
                 Type unityObject = TypeFor("UnityEngine.Object");
                 if (unityObject.IsInstanceOfType(target) && (bool)Call(unityObject, "op_Equality", target, null)) return;
-                LogItem selected = Model.Tab(tab).Selected;
-                if (selected == null || selected.Id != id || !selected.CanReserve || !ReferenceEquals(selected.Target, target)) return;
+                LogTabState state = Model.Tab(tab);
+                LogItem selected = state.Selected;
+                if (state.PublicationFailed || selected == null || selected.Id != id || !selected.CanReserve || !ReferenceEquals(selected.Target, target)) return;
                 Dictionary<string, Value> values; Value value;
                 if (!publishedValues.TryGetValue(tab, out values) || !values.TryGetValue(id, out value) || !ReferenceEquals(value.Data, target)) return;
+                object currentReservation = ObserveReservation(tab);
+                if (toggle && (snapshot.ContextId != expectedContext || snapshot.Tab != tab || snapshot.Revision != Slot(tab).Revision ||
+                    !ReferenceEquals(snapshot.Target, currentReservation))) return;
+                bool cancel = toggle && ReferenceEquals(snapshot.Target, target);
                 if (tab == "이벤트")
                 {
                     IList definitions = (IList)Read(Read(RequireManager("Mortal.Story.CheckPointManager"), "_position"), "List");
@@ -763,7 +917,8 @@ namespace DiceMaster.LiveLog
                             foreach (object candidate in (IList)Read(position, "List"))
                                 if (ReferenceEquals(candidate, target)) present = true;
                     if (!present) return;
-                    Write(Patch(), "TargetEvent", target);
+                    Write(Patch(), "TargetEvent", cancel ? null : target);
+                    NotifyReservationChanged(tab);
                     reserved = true;
                 }
                 else if (tab == "미션")
@@ -777,9 +932,11 @@ namespace DiceMaster.LiveLog
                     foreach (object candidate in (IList)Read(value.Source, "_missions"))
                         if (ReferenceEquals(candidate, target)) present = true;
                     if (!present) return;
-                    IDictionary active = Read(manager, "ActiveSubMissions") as IDictionary;
-                    if (active != null) active[value.Key] = target;
-                    Write(Patch(), "TargetMission", target);
+                    if (cancel) RestoreOwnedMissionEntry(manager);
+                    else SetMissionEntry(manager, value.Key, target);
+                    Write(Patch(), "TargetMission", cancel ? null : target);
+                    canceledMissionTarget = cancel ? target : null;
+                    NotifyReservationChanged(tab);
                     reserved = true;
                 }
             });
@@ -789,7 +946,7 @@ namespace DiceMaster.LiveLog
         public static bool IsReserved(string tab, object target)
         {
             if (target == null || (tab != "이벤트" && tab != "미션")) return false;
-            try { return ReferenceEquals(Read(Patch(), tab == "이벤트" ? "TargetEvent" : "TargetMission"), target); }
+            try { return ReferenceEquals(ObserveReservation(tab), target); }
             catch (Exception) { return false; }
         }
     }

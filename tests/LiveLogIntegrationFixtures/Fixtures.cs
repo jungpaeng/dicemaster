@@ -230,7 +230,16 @@ namespace DiceMaster
             public static string TranslateLabel(string value) => Translate(value);
         }
     }
-    public static class Probe { public static int ParserEntries; }
+    public static class Probe
+    {
+        public static int ParserEntries;
+        public static bool FailReservationReads;
+        public static void BeforeRead(string name)
+        {
+            if (FailReservationReads && (name == "TargetEvent" || name == "TargetMission"))
+                throw new InvalidOperationException("fixture reservation field read failure");
+        }
+    }
     public enum StoryReadState { NoStory, Unread, Read }
     public class DicePlugin : UnityEngine.Object
     {
@@ -275,6 +284,7 @@ namespace DiceMaster
         public static bool Ready = true;
         public static object LiveMissionFilter;
         public static object EmptyMission;
+        public static bool ReturnFilteredMissionStage;
         public static string FailingCheckpoint;
         public static Func<string, object> PreviewScriptReader;
         public static object ReadPreviewScriptBoundary(string name)
@@ -314,6 +324,8 @@ namespace DiceMaster
             // The actual bridge/refresh IL must distinguish that from failure.
             if (EmptyMission != null && ReferenceEquals(LiveMissionFilter, EmptyMission))
                 return new Dictionary<Mortal.Core.MissionCheckData, (string, string)>();
+            if (ReturnFilteredMissionStage && LiveMissionFilter is Mortal.Core.MissionData mission)
+                return new Dictionary<Mortal.Core.MissionCheckData, (string, string)> { [mission.Stage] = (mission.name, "current=" + CurrentValue) };
             return new Dictionary<Mortal.Core.MissionCheckData, (string, string)> { [Scenario.Mission] = ("fixture mission", "current=" + CurrentValue) };
         }
         public static string ExtractConditions(Mortal.Core.ConditionResultItem value, out bool inPeriod) => throw new InvalidOperationException("Actual condition helper IL not installed");
@@ -501,6 +513,205 @@ namespace DiceMaster
             return assertions - before;
         }
 
+        // Actual delivered bridge + model + one-use consume postfix IL. Only
+        // the surrounding Unity objects and game containers are boundaries.
+        public static int RunReservationToggles()
+        {
+            int before = assertions;
+            DicePlugin plugin = null;
+            Mortal.Story.PositionDefinition position = null;
+            Mortal.Core.MissionData mission = null;
+            Mortal.Core.MissionManagerData manager = null;
+            string tab = null, id = null;
+            long context = 0;
+            object target = null;
+            int setup = 0;
+            void Prepare(string nextTab)
+            {
+                tab = nextTab;
+                plugin = new DicePlugin { showLogWindow = true, currentTab = tab }; DicePlugin.Instance = plugin;
+                Config.ConfigManager.EnableOptionInfo.Value = true;
+                DataHelper.Ready = true; DataHelper.FailingCheckpoint = null; DataHelper.EmptyMission = null;
+                DataHelper.ReturnFilteredMissionStage = false;
+                Probe.FailReservationReads = false;
+                PositionEventCache.ThrowDescription = false; EmbeddedTranslations.Display.Throw = false;
+                Event.Destroyed = Mission.Destroyed = false;
+                OptionInfoPatch.TargetEvent = null; OptionInfoPatch.TargetMission = null;
+                position = new Mortal.Story.PositionDefinition { name = "fixture_position" };
+                position.List.Add(Event);
+                var positions = new Mortal.Story.PositionCollection(); positions.List.Add(position);
+                Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager { _position = positions };
+                mission = new Mortal.Core.MissionData { name = "toggle_mission", Stage = Mission, CurrentKey = Mission.Key };
+                var missions = new Mortal.Core.MissionCollection(); missions.List.Clear(); missions.List.Add(mission);
+                manager = new Mortal.Core.MissionManagerData { _subMissions = missions };
+                Mortal.Core.MissionManagerData.Instance = manager;
+                UnityEngine.Time.unscaledTime = 2000 + ++setup;
+                NewLua(Lua("O_toggle_" + setup), "toggle-" + setup); Tick(plugin, true);
+                context = (long)Member(LogModel, "ContextId");
+                object row = ModelRows(tab)[0]; id = (string)Member(row, "Id"); target = Member(row, "Target");
+                Check((bool)Member(row, "CanReserve") && (bool)InstanceCall(LogTab(tab), "Select", id), "Toggle fixture publishes/selects a healthy actual target");
+            }
+            object Capture(string captureTab = null)
+            {
+                object[] arguments = { captureTab ?? tab, null };
+                Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", arguments) && arguments[1] != null,
+                    "Actual reservation capture returns opaque state");
+                return arguments[1];
+            }
+            bool Toggle(object snapshot) => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryToggleReservation", context, tab, id, target, snapshot);
+            bool Reserved() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", tab, target);
+            bool Reserve() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, id, target);
+            void SetSlot(object value)
+            {
+                if (tab == "이벤트") OptionInfoPatch.TargetEvent = (Mortal.Story.PositionEventData)value;
+                else OptionInfoPatch.TargetMission = (Mortal.Core.MissionCheckData)value;
+                Invoke("DiceMaster.LiveLog.LogBridge", "NotifyReservationChanged", tab);
+            }
+            void Consume()
+            {
+                object[] arguments = { target, tab == "이벤트" ? (object)0 : false };
+                Invoke("DiceMaster.OptionInfoPatch", tab == "이벤트" ? "PositionEventData_GetRate_Postfix" : "MissionCheckData_Postfix", arguments);
+                Check(tab == "이벤트" ? (int)arguments[1] == 99999 : (bool)arguments[1], "Actual consume postfix keeps the existing forced outcome");
+                Check(!Reserved(), "Actual consume postfix clears the real pending slot");
+            }
+
+            foreach (string kind in new[] { "이벤트", "미션" })
+            {
+                Prepare(kind);
+                object empty = Capture();
+                Check(Toggle(empty) && Reserved(), "Fresh empty-slot confirmation reserves once");
+                Check(!Toggle(empty) && Reserved(), "Consumed capture cannot toggle a second time");
+                object active = Capture();
+                Check(Toggle(active) && !Reserved(), "Fresh same-target confirmation cancels its pending reservation");
+                Check(!Toggle(active) && !Reserved(), "Repeated cancel capture cannot create a new reservation");
+                Check(Reserve() && Reserve() && Reserved(), "Legacy TryReserve remains reserve-only and compatible");
+                active = Capture(); Consume();
+                Check(!Toggle(active) && !Reserved(), "Consumed reservation rejects old cancel intent without reserving again");
+                Check(Reserve(), "Same target can be explicitly reserved after real consumption");
+                Check(!Toggle(active) && Reserved(), "Same-object consumed/re-reserved ABA cycle rejects the old snapshot");
+                object beforeRepeat = Capture();
+                Check(Reserve() && !Toggle(beforeRepeat) && Reserved(), "Even same-target reserve-only changes advance the revision");
+                object other = kind == "이벤트" ? (object)new Mortal.Story.PositionEventData() : new Mortal.Core.MissionCheckData();
+                object cancelBeforeOther = Capture(); SetSlot(other);
+                Check(!Toggle(cancelBeforeOther) && !Reserved(), "Old cancellation cannot clear another reservation");
+                object reserveBeforeOther = Capture(); SetSlot(null);
+                Check(!Toggle(reserveBeforeOther) && !Reserved(), "Old reserve intent rejects a changed nonselected slot");
+                Check(!Toggle(new object()), "A caller cannot forge an opaque snapshot");
+                object wrongTab = Capture(kind == "이벤트" ? "미션" : "이벤트");
+                Check(!Toggle(wrongTab), "A snapshot cannot cross tabs");
+                object[] unsupported = { "조건", new object() };
+                Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", unsupported) && unsupported[1] == null,
+                    "Unsupported capture fails closed instead of looking like an empty slot");
+                object healthy = Capture(); Tick(plugin, true);
+                Check(Toggle(healthy) && Reserved(), "Healthy same-target publication preserves a fresh slot capture");
+                foreach (string failedRead in new[] { "status", "capture", "notification" })
+                {
+                    Prepare(kind); Check(Reserve(), "Read failure fixture starts with the same pending target"); active = Capture();
+                    Probe.FailReservationReads = true;
+                    try
+                    {
+                        if (failedRead == "status") Check(!Reserved(), "Failed status read does not claim a current reservation");
+                        else if (failedRead == "capture")
+                        {
+                            object[] failure = { tab, new object() };
+                            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", failure) && failure[1] == null,
+                                "Read failure cannot be captured as an empty reservation");
+                        }
+                        else Invoke("DiceMaster.LiveLog.LogBridge", "NotifyReservationChanged", tab);
+                    }
+                    finally { Probe.FailReservationReads = false; }
+                    Check(!Toggle(active) && Reserved(), "Observed " + failedRead + " read failure invalidates old capture after same-target recovery");
+                }
+                foreach (string invalidation in new[] { "publication", "waiting", "unselected", "closed", "tab", "removed", "destroyed", "context" })
+                {
+                    Prepare(kind); Check(Reserve(), "Invalidation fixture starts reserved"); active = Capture();
+                    if (invalidation == "publication") InstanceCall(LogModel, "MarkPublicationFailure", tab);
+                    else if (invalidation == "waiting")
+                    {
+                        object row = ModelRows(tab)[0];
+                        row.GetType().GetField("RefreshState").SetValue(row, Enum.Parse(row.GetType().GetField("RefreshState").FieldType, "Waiting"));
+                    }
+                    else if (invalidation == "unselected") InstanceCall(LogTab(tab), "ClearSelection");
+                    else if (invalidation == "closed") plugin.showLogWindow = false;
+                    else if (invalidation == "tab") plugin.currentTab = "선택지";
+                    else if (invalidation == "removed")
+                    {
+                        if (kind == "이벤트") position.List.Clear();
+                        else ((Mortal.Core.MissionCollection)manager._subMissions).List.Clear();
+                    }
+                    else if (invalidation == "destroyed") ((UnityEngine.Object)target).Destroyed = true;
+                    else NewLua(Lua("O_toggle_replaced"), "toggle-replaced");
+                    Check(!Toggle(active), "Stale actual cancellation rejected after " + kind + "/" + invalidation);
+                }
+            }
+
+            Prepare("미션");
+            var original = manager.ActiveSubMissions;
+            Check(Reserve() && original.Count == 1, "Mission reserve retains its existing active-entry injection");
+            string key = original.Keys.Single();
+            Check(Toggle(Capture()) && original.Count == 0 && !Reserved(), "Cancel removes only its own unchanged absent-to-present injection");
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "ShouldAutoReserveMission", target) &&
+                (bool)Invoke("DiceMaster.LiveLog.LogBridge", "ShouldAutoReserveMission", new Mortal.Core.MissionCheckData()),
+                "Explicit cancel suppresses only that mission's automatic re-reservation");
+            Check(Reserve() && (bool)Invoke("DiceMaster.LiveLog.LogBridge", "ShouldAutoReserveMission", target),
+                "A new explicit reserve clears cancellation suppression");
+            Check(Toggle(Capture()), "Mission can be canceled again after a new reserve");
+            object canceled = target;
+            NewLua(Lua("O_after_cancel"), "after-cancel");
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "ShouldAutoReserveMission", canceled), "New context clears only runtime cancellation suppression");
+
+            Prepare("미션"); Check(Reserve(), "Derive the existing mission display key"); key = manager.ActiveSubMissions.Keys.Single();
+            Check(Toggle(Capture()), "Return to an empty active dictionary");
+            manager.ActiveSubMissions[key] = Mission;
+            Check(Reserve() && Toggle(Capture()) && ReferenceEquals(manager.ActiveSubMissions[key], Mission),
+                "A naturally active same-target mission is never owned or removed by cancellation");
+
+            Prepare("미션"); Check(Reserve(), "Derive replacement test key"); key = manager.ActiveSubMissions.Keys.Single();
+            Check(Toggle(Capture()), "Clear only owned setup injection");
+            var previous = new Mortal.Core.MissionCheckData { name = "prior_game_value" };
+            manager.ActiveSubMissions[key] = previous;
+            Check(Reserve() && ReferenceEquals(manager.ActiveSubMissions[key], Mission), "Reserve preserves legacy same-key replacement behavior");
+            Check(Toggle(Capture()) && ReferenceEquals(manager.ActiveSubMissions[key], previous),
+                "Cancel restores a prior value only while the same dictionary/key/value still contains our write");
+
+            foreach (string changed in new[] { "dictionary", "value", "consumed", "context" })
+            {
+                Prepare("미션"); Check(Reserve(), "Owned-state invalidation starts reserved");
+                original = manager.ActiveSubMissions; key = original.Keys.Single();
+                if (changed == "dictionary") manager.ActiveSubMissions = new Dictionary<string, Mortal.Core.MissionCheckData> { [key] = Mission };
+                else if (changed == "value") original[key] = previous;
+                else if (changed == "consumed") { Consume(); SetSlot(Mission); }
+                else { NewLua(Lua("O_owned_context"), "owned-context"); Tick(plugin, true); context = (long)Member(LogModel, "ContextId"); id = (string)Member(ModelRows(tab)[0], "Id"); InstanceCall(LogTab(tab), "Select", id); }
+                Check(Toggle(Capture()) && !Reserved(), "Current reservation can still be canceled after ownership change " + changed);
+                Check(changed == "value" ? ReferenceEquals(original[key], previous) : ReferenceEquals(manager.ActiveSubMissions[key], Mission),
+                    "Cancellation never rewinds game-owned state after " + changed);
+            }
+
+            Prepare("미션");
+            DataHelper.ReturnFilteredMissionStage = true;
+            var nextStage = new Mortal.Core.MissionCheckData { name = "other_pending_stage", Key = "other_stage" };
+            var nextMission = new Mortal.Core.MissionData { name = "other_pending_mission", Stage = nextStage, CurrentKey = nextStage.Key };
+            ((Mortal.Core.MissionCollection)manager._subMissions).List.Add(nextMission);
+            Tick(plugin, true);
+            object firstMission = ModelRows(tab).Cast<object>().Single(row => ReferenceEquals(Member(row, "Target"), Mission));
+            id = (string)Member(firstMission, "Id"); target = Mission; InstanceCall(LogTab(tab), "Select", id);
+            Check(Reserve() && manager.ActiveSubMissions.Count == 1, "First selected mission owns its injected entry");
+            object nextRow = ModelRows(tab).Cast<object>().Single(row => ReferenceEquals(Member(row, "Target"), nextStage));
+            id = (string)Member(nextRow, "Id"); target = nextStage; InstanceCall(LogTab(tab), "Select", id);
+            Check(Toggle(Capture()) && manager.ActiveSubMissions.Count == 1 && ReferenceEquals(manager.ActiveSubMissions.Values.Single(), nextStage),
+                "Selecting and reserving another mission rolls back only the first unchanged owned injection");
+            Check(Toggle(Capture()) && manager.ActiveSubMissions.Count == 0,
+                "Canceling the replacement reservation removes only its own injection");
+            Prepare("미션");
+            object beforeBlocked = Capture();
+            long token = TransitionPrefix("SaveSystem_LoadGameData");
+            object[] blocked = { "미션", null };
+            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", blocked) && blocked[1] == null && !Toggle(beforeBlocked),
+                "Unready transition rejects capture and mutation without treating failure as an empty reservation");
+            TransitionFinalizer("SaveSystem_LoadGameData", null, token);
+            return assertions - before;
+        }
+
         // Run the delivered bridge, refresh engine, snapshot ordering and model
         // together. Only the game helper's value/absence boundary is a fixture.
         static void CheckMissionStatusPublications()
@@ -543,7 +754,7 @@ namespace DiceMaster
                 Check((bool)InstanceCall(state, "Select", firstId), "Readable actual mission must remain selectable");
                 state.GetType().GetField("DetailScroll").SetValue(state, 37f);
                 state.GetType().GetField("ExecutionFocus").SetValue(state, true);
-                object ticket = InstanceCall(state, "BeginReservation");
+                object ticket = InstanceCall(state, "BeginReservation", (object)null);
                 foreach (object status in new[] { rows[2], rows[3] })
                 {
                     string statusId = (string)Member(status, "Id");
@@ -568,12 +779,12 @@ namespace DiceMaster
                 Check(rows.Cast<object>().All(row => !(bool)Member(row, "IsStatusOnly") && (bool)Member(row, "CanSelect")),
                     "Successful actual mission recovery must remove status-only classification");
                 Check(Member(state, "Selected") == null && !(bool)Member(state, "ExecutionFocus") &&
-                    InstanceCall(state, "BeginReservation") == null,
+                    InstanceCall(state, "BeginReservation", (object)null) == null,
                     "Status-only recovery must not automatically select or arm any mission");
 
                 InstanceCall(state, "Select", firstId);
                 state.GetType().GetField("ExecutionFocus").SetValue(state, true);
-                ticket = InstanceCall(state, "BeginReservation");
+                ticket = InstanceCall(state, "BeginReservation", (object)null);
                 first.CurrentKey = "";
                 UnityEngine.Time.unscaledTime = 202;
                 Tick(plugin, true);

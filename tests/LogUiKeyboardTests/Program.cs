@@ -22,6 +22,7 @@ internal static class Program
         RendererMissionStatusRows();
         RendererWaitingStatusExplanation();
         RendererDirectListReservations();
+        RendererReservationToggleState();
         RendererListChromePointerTransactions();
         CursorOwnershipLifecycle();
         RendererListPointerSelectionTransactions();
@@ -191,9 +192,11 @@ internal static class Program
         Check(model.Tab("이벤트").SelectedId == "event1" && !model.Tab("이벤트").ExecutionFocus,
             "up returns list selection to the previous event after a reservation");
         renderer.Handle(LogPadCommand.Activate);
-        Check(LogBridge.Reservations == 2 && ReferenceEquals(LogBridge.LastTarget, target), "new A directly reserves the latest selected target");
+        Check(LogBridge.Reservations == 2 && ReferenceEquals(LogBridge.LastTarget, target) && !LogBridge.IsReserved("이벤트", target),
+            "a fresh A on the reserved selected event releases that reservation");
         renderer.Handle(LogPadCommand.Activate);
-        Check(LogBridge.Reservations == 3 && !model.Tab("이벤트").ExecutionFocus, "a separate fresh A can reserve again with no persistent action focus");
+        Check(LogBridge.Reservations == 3 && !model.Tab("이벤트").ExecutionFocus && LogBridge.IsReserved("이벤트", target),
+            "a separate fresh A can reserve again after release with no persistent action focus");
         renderer.Handle(LogPadCommand.Left);
         renderer.Scroll(1);
         Check(model.Tab("이벤트").DetailScroll > 0 && model.Tab("이벤트").ListScroll == 0, "right stick scrolls selected detail while list owns focus");
@@ -552,10 +555,11 @@ internal static class Program
         Repaint(renderer);
         Check(GUILayout.LiteralLabels.Contains("상세") && !GUILayout.LiteralLabels.Contains("▶ 상세"), scenario + ": detail heading remains plain text");
         Check(!GUILayout.ScrollViews[1].Controls.Exists(control => control.Button), scenario + ": detail status and body contain no focusable controls");
-        Check(GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button
-            && control.Text.Contains(enabled ? "예약 가능" : "예약 불가", StringComparison.Ordinal)),
-            scenario + ": noninteractive status exposes current reservation eligibility inside the detail body");
         bool reserved = LogBridge.IsReserved(tab, model.Tab(tab).Selected?.Target);
+        string expectedAction = enabled ? (reserved ? "예약 해제 가능" : "예약 가능") : "예약 변경 불가";
+        Check(GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button
+            && control.Text.Contains(expectedAction, StringComparison.Ordinal)),
+            scenario + ": noninteractive status exposes current reserve/release eligibility inside the detail body");
         Check(GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && control.Text.Contains(reserved ? "활성화 (예약 중)" : "비활성화 (예약 없음)", StringComparison.Ordinal)),
             scenario + ": noninteractive activation status reflects the actual bridge reservation rather than current selection");
         Check(!model.Tab(tab).ExecutionFocus && model.Tab(tab).BeginReservation() == null && Area(renderer) == "List",
@@ -599,8 +603,9 @@ internal static class Program
                 Check(LogBridge.Reservations == attempts, "list directions do not reserve");
                 ReservationTicket consumed = ArmModelTicket(model.Tab(tab));
                 renderer.Handle(LogPadCommand.Activate); attempts++;
-                Check(LogBridge.Reservations == attempts && ReferenceEquals(LogBridge.LastTarget, target) && !model.Tab(tab).CanActivate(consumed),
-                    "direct action cancels older authority, reserves once, and consumes its own authority");
+                Check(LogBridge.Reservations == attempts && ReferenceEquals(LogBridge.LastTarget, target) && !model.Tab(tab).CanActivate(consumed)
+                    && !LogBridge.IsReserved(tab, target),
+                    "direct action cancels older authority, releases the selected reservation once, and consumes its own authority");
                 AssertReservationStatus(renderer, model, tab, true, tab + " repeated fresh A is a one-shot reservation");
                 renderer.Handle(LogPadCommand.Back);
                 Check(closes == 1 && model.Tab(tab).SelectedId == "focused-target" && LogBridge.Reservations == attempts,
@@ -617,7 +622,7 @@ internal static class Program
                 model.MarkPublicationFailure(tab);
                 renderer.Handle(LogPadCommand.Activate);
                 AssertReservationStatus(renderer, model, tab, false, tab + " failed publication blocks direct A");
-                Check(LogBridge.Reservations == attempts, "publication failure cannot forward confirmation");
+                Check(LogBridge.Reservations == attempts && LogBridge.IsReserved(tab, target), "publication failure cannot forward confirmation or release an existing reservation");
                 Publish(model, tab, Item("focused-target", target));
                 AssertReservationStatus(renderer, model, tab, true, tab + " healthy publication only updates status");
                 Check(LogBridge.Reservations == attempts, "recovery never reserves automatically");
@@ -706,7 +711,7 @@ internal static class Program
                 Check(LogBridge.Reservations == attempts, "held Enter cannot repeat a direct reservation");
                 ReleaseKey(keyRenderer, KeyCode.Return);
                 PressKey(keyRenderer, KeyCode.Space); attempts++; PressKey(keyRenderer, KeyCode.Space);
-                Check(LogBridge.Reservations == attempts, "fresh Space reserves once while held repeat is suppressed");
+                Check(LogBridge.Reservations == attempts, "fresh Space toggles the reservation once while held repeat is suppressed");
                 ReleaseKey(keyRenderer, KeyCode.Space);
                 PressKey(keyRenderer, KeyCode.Return); attempts++;
                 keyModel.ResetContext(704); Publish(keyModel, tab, Item("held-context-replacement", new object()));
@@ -721,6 +726,185 @@ internal static class Program
         {
             Input.Held.Clear(); LogBridge.Reservations = savedAttempts; LogBridge.LastTarget = savedTarget;
             LogBridge.ReservationResult = savedResult; LogBridge.DuringReservation = null;
+        }
+    }
+
+    private static void AssertRowReservation(LogRenderer renderer, LogModel model, string tab, string id, bool reserved, string scenario)
+    {
+        Repaint(renderer);
+        GUILayout.ControlRecord row = GUILayout.ScrollViews[0].Controls.Find(control => control.Button && control.Text.Contains(id, StringComparison.Ordinal));
+        Check(row != null && row.Text.Contains("예약 중", StringComparison.Ordinal) == reserved,
+            scenario + ": list row exposes current reservation state independently of its selection");
+        Check(row.Text.StartsWith("▶ ", StringComparison.Ordinal) == (model.Tab(tab).SelectedId == id),
+            scenario + ": the selection marker remains independent of the reservation badge");
+    }
+
+    private static void RendererReservationToggleState()
+    {
+        int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
+        bool savedReadable = LogBridge.ReservationReadable, savedResult = LogBridge.ReservationResult;
+        object oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
+        try
+        {
+            foreach (string tab in new[] { "이벤트", "미션" })
+            {
+                LogBridge.SetReservation(tab, null);
+                object firstTarget = new object(), secondTarget = new object();
+                var model = new LogModel();
+                var renderer = PointerReservationRenderer(model, tab, firstTarget);
+                Publish(model, tab, Item("pointer-target", firstTarget), Item("toggle-second", secondTarget));
+                int attempts = LogBridge.Reservations;
+                AssertRowReservation(renderer, model, tab, "pointer-target", false, tab + " selected with no reservation");
+                renderer.Handle(LogPadCommand.Activate);
+                Check(LogBridge.Reservations == ++attempts && LogBridge.IsReserved(tab, firstTarget) && !model.Tab(tab).ExecutionFocus,
+                    "fresh A reserves the selected item once");
+                AssertRowReservation(renderer, model, tab, "pointer-target", true, tab + " first A reserved");
+                renderer.Handle(LogPadCommand.Down);
+                AssertRowReservation(renderer, model, tab, "pointer-target", true, tab + " reservation remains on the unselected first row");
+                AssertRowReservation(renderer, model, tab, "toggle-second", false, tab + " second row is selected but not reserved");
+                AssertReservationStatus(renderer, model, tab, true, tab + " unreserved second row detail");
+                Check(LogBridge.Reservations == attempts && LogBridge.IsReserved(tab, firstTarget),
+                    "selection changes never mutate the current reservation");
+                renderer.Handle(LogPadCommand.Activate);
+                Check(LogBridge.Reservations == ++attempts && LogBridge.IsReserved(tab, secondTarget) && !LogBridge.IsReserved(tab, firstTarget),
+                    "A on another selected row replaces only this tab's reservation");
+                AssertRowReservation(renderer, model, tab, "pointer-target", false, tab + " old reservation replaced");
+                AssertRowReservation(renderer, model, tab, "toggle-second", true, tab + " replacement reservation shown");
+                renderer.Handle(LogPadCommand.Activate);
+                Check(LogBridge.Reservations == ++attempts && LogBridge.CurrentReservation(tab) == null && model.Tab(tab).SelectedId == "toggle-second",
+                    "fresh A on the reserved row releases the reservation while keeping list selection");
+                AssertRowReservation(renderer, model, tab, "toggle-second", false, tab + " A release badge removed");
+
+                foreach (KeyCode key in new[] { KeyCode.Return, KeyCode.Space, KeyCode.KeypadEnter })
+                {
+                    PressKey(renderer, key); attempts++;
+                    Check(LogBridge.Reservations == attempts && LogBridge.IsReserved(tab, secondTarget), "fresh keyboard confirm reserves the selected row");
+                    PressKey(renderer, key);
+                    Check(LogBridge.Reservations == attempts && LogBridge.IsReserved(tab, secondTarget), "held keyboard repeat cannot immediately release a new reservation");
+                    ReleaseKey(renderer, key); PressKey(renderer, key); attempts++;
+                    Check(LogBridge.Reservations == attempts && LogBridge.CurrentReservation(tab) == null,
+                        "a new keyboard press releases the selected reservation exactly once");
+                    PressKey(renderer, key);
+                    Check(LogBridge.Reservations == attempts && LogBridge.CurrentReservation(tab) == null,
+                        "held release-confirm cannot reserve again");
+                    ReleaseKey(renderer, key);
+                }
+                foreach (bool touch in new[] { false, true })
+                {
+                    EventType down = touch ? EventType.TouchDown : EventType.MouseDown, up = touch ? EventType.TouchUp : EventType.MouseUp;
+                    Func<string, bool> matches = text => text.Contains("toggle-second", StringComparison.Ordinal);
+                    Vector2 point = PointerTarget(renderer, control => control.Button && matches(control.Text));
+                    foreach (bool reservedAfter in new[] { true, false })
+                    {
+                        DrawPointer(renderer, down, down, point);
+                        Check(Field(renderer, "pointerReservation") != null, "selected row press captures one immutable reservation-state snapshot");
+                        SoftResetForPointer(renderer);
+                        DrawPointer(renderer, up, up, point, matches, consume: true); attempts++;
+                        Check(LogBridge.Reservations == attempts && LogBridge.IsReserved(tab, secondTarget) == reservedAfter && !model.Tab(tab).ExecutionFocus,
+                            "a new accepted selected-row click/touch toggles once using its original press snapshot");
+                        DrawPointer(renderer, up, up, point, matches, consume: true);
+                        Check(LogBridge.Reservations == attempts && LogBridge.IsReserved(tab, secondTarget) == reservedAfter,
+                            "repeated mouse/touch release cannot toggle again");
+                    }
+                }
+
+                LogBridge.SetReservation(tab, secondTarget);
+                model.Tab(tab).ClearSelection(); renderer.ResetInputFocus(); renderer.Handle(LogPadCommand.None);
+                renderer.Handle(LogPadCommand.Activate);
+                Check(LogBridge.Reservations == attempts && model.Tab(tab).SelectedId == "pointer-target" && LogBridge.IsReserved(tab, secondTarget),
+                    "first A with no selection selects the first readable row and leaves an existing reservation untouched");
+                AssertRowReservation(renderer, model, tab, "toggle-second", true, tab + " existing unselected reservation retained");
+                LogBridge.SetReservation(tab, null); Repaint(renderer);
+                AssertRowReservation(renderer, model, tab, "toggle-second", false, tab + " game consumer cleared reservation");
+                Check(LogBridge.Reservations == attempts && model.Tab(tab).SelectedId == "pointer-target",
+                    "consumer changes update the badge without moving selection or firing an action");
+                LogBridge.SetReservation(tab, firstTarget); LogBridge.ReservationReadable = false;
+                renderer.Handle(LogPadCommand.Activate);
+                Check(LogBridge.Reservations == attempts && ReferenceEquals(LogBridge.CurrentReservation(tab), firstTarget) && !model.Tab(tab).ExecutionFocus,
+                    "unreadable reservation state refuses both reserve and release without guessing intent");
+                foreach (bool touch in new[] { false, true })
+                {
+                    Func<string, bool> first = text => text.Contains("pointer-target", StringComparison.Ordinal);
+                    Vector2 point = PointerTarget(renderer, control => control.Button && first(control.Text));
+                    EventType down = touch ? EventType.TouchDown : EventType.MouseDown, up = touch ? EventType.TouchUp : EventType.MouseUp;
+                    DrawPointer(renderer, down, down, point);
+                    Check(Field(renderer, "pointerReservation") == null, "pointer press refuses to guess a toggle intent while reservation capture is unavailable");
+                    LogBridge.ReservationReadable = true;
+                    DrawPointer(renderer, up, up, point, first, consume: true);
+                    Check(LogBridge.Reservations == attempts && ReferenceEquals(LogBridge.CurrentReservation(tab), firstTarget),
+                        "query recovery before release cannot create a ticket that was unavailable on pointer-down");
+                    LogBridge.ReservationReadable = false;
+                }
+                LogBridge.ReservationReadable = true;
+
+                foreach (bool touch in new[] { false, true })
+                    foreach (string change in new[] { "consume", "replace", "observed-same-target-write", "consume-and-reinsert-same-target", "became-selected-reservation", "query-failure", "observed-query-failure-recovered" })
+                    {
+                        LogBridge.SetReservation(tab, change == "became-selected-reservation" ? null : firstTarget);
+                        Func<string, bool> first = text => text.Contains("pointer-target", StringComparison.Ordinal);
+                        Vector2 point = PointerTarget(renderer, control => control.Button && first(control.Text));
+                        EventType down = touch ? EventType.TouchDown : EventType.MouseDown, up = touch ? EventType.TouchUp : EventType.MouseUp;
+                        DrawPointer(renderer, down, down, point);
+                        object snapshotTicket = Field(renderer, "pointerReservation");
+                        Check(snapshotTicket != null, "pointer transaction begins with current selected-target authority and reservation snapshot");
+                        object afterChange = change == "consume" ? null : change == "replace" ? secondTarget : firstTarget;
+                        if (change == "observed-query-failure-recovered")
+                        {
+                            LogBridge.ReservationReadable = false;
+                            if (touch)
+                            {
+                                object failedSnapshot;
+                                Check(!LogBridge.TryCaptureReservation(tab, out failedSnapshot) && failedSnapshot == null,
+                                    "an intermediate failed capture invalidates older successful reservation snapshots");
+                            }
+                            else
+                            {
+                                Repaint(renderer);
+                                Check(!LogBridge.IsReserved(tab, firstTarget), "a failed IsReserved draw observation cannot claim the slot is reserved");
+                            }
+                            LogBridge.ReservationReadable = true;
+                        }
+                        else if (change == "query-failure") LogBridge.ReservationReadable = false;
+                        else
+                        {
+                            if (change == "consume-and-reinsert-same-target") LogBridge.SetReservation(tab, null);
+                            LogBridge.SetReservation(tab, afterChange);
+                        }
+                        SoftResetForPointer(renderer); Repaint(renderer);
+                        DrawPointer(renderer, up, up, point, first, consume: true); attempts++;
+                        Check(LogBridge.Reservations == attempts && ReferenceEquals(LogBridge.CurrentReservation(tab), afterChange) && !model.Tab(tab).ExecutionFocus,
+                            "stale pointer snapshot is refused after " + change + "; release never reverses its captured reserve/release intent");
+                        DrawPointer(renderer, up, up, point, first, consume: true);
+                        Check(LogBridge.Reservations == attempts && ReferenceEquals(LogBridge.CurrentReservation(tab), afterChange),
+                            "failed stale release cannot be retried without a new press");
+                        LogBridge.ReservationReadable = true;
+                        renderer.Handle(LogPadCommand.Activate); attempts++;
+                        Check(LogBridge.Reservations == attempts && (ReferenceEquals(afterChange, firstTarget)
+                            ? LogBridge.CurrentReservation(tab) == null : LogBridge.IsReserved(tab, firstTarget)),
+                            "a later fresh A captures the new reservation state and performs exactly the currently intended operation");
+                    }
+            }
+
+            object eventTarget = new object(), missionTarget = new object();
+            LogBridge.SetReservation("이벤트", null); LogBridge.SetReservation("미션", null);
+            var eventModel = new LogModel(); var eventRenderer = PointerReservationRenderer(eventModel, "이벤트", eventTarget);
+            var missionModel = new LogModel(); var missionRenderer = PointerReservationRenderer(missionModel, "미션", missionTarget);
+            eventRenderer.Handle(LogPadCommand.Activate); missionRenderer.Handle(LogPadCommand.Activate);
+            Check(LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget),
+                "event and mission reservations coexist in independent game slots");
+            eventRenderer.Handle(LogPadCommand.Activate);
+            Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.IsReserved("미션", missionTarget),
+                "releasing an event cannot erase the mission reservation");
+            missionRenderer.Handle(LogPadCommand.Activate);
+            Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.CurrentReservation("미션") == null,
+                "releasing the mission affects only its own slot");
+        }
+        finally
+        {
+            LogBridge.SetReservation("이벤트", oldEvent); LogBridge.SetReservation("미션", oldMission);
+            LogBridge.Reservations = savedAttempts; LogBridge.LastTarget = savedTarget;
+            LogBridge.ReservationReadable = savedReadable; LogBridge.ReservationResult = savedResult; LogBridge.DuringReservation = null;
+            GUILayout.ButtonInput = null; GUILayout.ConsumeButtonEvent = false; Input.Held.Clear();
         }
     }
 
@@ -1138,8 +1322,8 @@ internal static class Program
                             Tick(default); fresh = Tick(new PadState { Buttons = PadButtons.A });
                         }
                         Check(fresh.Command == LogPadCommand.Activate, "actual controller accepts a new pad press only after complete release/neutral");
-                        Check(LogBridge.Reservations == attempts + 2 && !model.Tab(tab).ExecutionFocus && Area(renderer) == "List",
-                            "after safe takeover and full neutral, a new pad A reserves the still-selected original target once");
+                        Check(LogBridge.Reservations == attempts + 2 && !model.Tab(tab).ExecutionFocus && Area(renderer) == "List" && !LogBridge.IsReserved(tab, target),
+                            "after safe takeover and full neutral, a new pad A releases the still-selected original reservation once");
 
                         int afterPad = LogBridge.Reservations;
                         foreach (string pointerAction in new[] { "row", "tools", "close" })
@@ -1156,8 +1340,8 @@ internal static class Program
                                 : pointerAction == "tools" ? Area(renderer) == "Tools" : closes == 1,
                                 "actual controller integrated pointer release completes " + pointerAction);
                             if (pointerAction == "row") afterPad++;
-                            Check(LogBridge.Reservations == afterPad && !model.Tab(tab).ExecutionFocus,
-                                "a fresh click on the selected row reserves once; chrome and held pad input never reserve");
+                            Check(LogBridge.Reservations == afterPad && !model.Tab(tab).ExecutionFocus && LogBridge.IsReserved(tab, target),
+                                "a fresh click reserves the selected row again; chrome and held pad input preserve that reservation");
                         }
                     }
 
@@ -1225,13 +1409,13 @@ internal static class Program
                     TapKey(renderer, KeyCode.Return);
                     if (modeCase == "Gamepad-to-mouse") mode = LogInputMode.KeyboardMouse;
                     LogPadFrame entered = UpdateAfterKeyboard();
-                    Check(Area(renderer) == "List" && !model.Tab(tab).ExecutionFocus && LogBridge.Reservations == attempts + 1,
+                    Check(Area(renderer) == "List" && !model.Tab(tab).ExecutionFocus && LogBridge.Reservations == attempts + 1 && LogBridge.IsReserved(tab, target),
                         "actual controller Update after mouse movement preserves a completed one-shot keyboard reservation");
                     Check(!entered.ResetFocus && entered.Command == LogPadCommand.None,
                         "already-synchronous keyboard command absorbs only its pending soft mode/pad reset");
                     TapKey(renderer, KeyCode.Return); UpdateAfterKeyboard();
-                    Check(LogBridge.Reservations == attempts + 2 && ReferenceEquals(LogBridge.LastTarget, target) && !model.Tab(tab).ExecutionFocus,
-                        "a separate fresh keyboard confirmation reserves again across actual controller Updates");
+                    Check(LogBridge.Reservations == attempts + 2 && ReferenceEquals(LogBridge.LastTarget, target) && !model.Tab(tab).ExecutionFocus && !LogBridge.IsReserved(tab, target),
+                        "a separate fresh keyboard confirmation releases once across actual controller Updates");
 
                     Func<string, bool> reserve = text => text.Contains("pointer-target", StringComparison.Ordinal);
                     Vector2 point = PointerTarget(renderer, control => control.Button && reserve(control.Text));
@@ -2197,11 +2381,10 @@ internal static class Program
                 var reservationModel = new LogModel(); reservationModel.ResetContext(203);
                 LogItem reservationItem = Item("reserved-target", new object());
                 Publish(reservationModel, tab, reservationItem);
-                LogBridge.LastTarget = reservationItem.Target;
+                LogBridge.SetReservation(tab, reservationItem.Target);
                 var reservationRenderer = new LogRenderer(reservationModel, null, null);
                 reservationRenderer.Handle(LogPadCommand.None);
                 for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) reservationRenderer.Handle(LogPadCommand.NextTab);
-                reservationRenderer.Handle(LogPadCommand.Activate);
                 reservationRenderer.Handle(LogPadCommand.Activate);
                 reservationRenderer.Handle(LogPadCommand.Down);
                 Repaint(reservationRenderer); Repaint(reservationRenderer);
@@ -2209,7 +2392,7 @@ internal static class Program
                 GUILayout.ControlRecord status = detailPane.Controls.Find(control => !control.Button && control.Text.Contains("활성화 (예약 중)", StringComparison.Ordinal));
                 var reservationLayout = (LogLayout)Field(reservationRenderer, "layout");
                 var boxStyle = (GUIStyle)Field(reservationRenderer, "boxStyle");
-                Check(status != null && status.Text.Contains("예약 가능", StringComparison.Ordinal), "selected " + tab + " has a noninteractive reserved/eligible status inside its detail scroll");
+                Check(status != null && status.Text.Contains("예약 해제 가능", StringComparison.Ordinal), "selected " + tab + " has a noninteractive reserved/releasable status inside its detail scroll");
                 Check(!GUILayout.Controls.Exists(control => control.Button && control.Text.Contains(tab == "이벤트" ? "이벤트 우선 예약" : "미션 조건 통과 예약", StringComparison.Ordinal)),
                     "there is no separate detail reservation control to steal vertical room or focus");
                 Check(status.FontSize == ((GUIStyle)Field(reservationRenderer, "statusStyle")).fontSize

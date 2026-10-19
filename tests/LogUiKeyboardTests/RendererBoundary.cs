@@ -429,20 +429,87 @@ namespace DiceMaster.LiveLog
 {
     public static class LogBridge
     {
+        // Action attempts include both reservation and release. LastTarget is
+        // an API observation, not the source of current reservation state.
         public static int Reservations;
         public static object LastTarget;
         public static long LastReservedContext;
         public static string LastReservedTab, LastReservedId;
-        public static bool ReservationResult = true;
+        public static bool ReservationResult = true, ReservationReadable = true;
         public static Action DuringReservation;
-        public static bool IsReserved(string tab, object target) => target != null && ReferenceEquals(target, LastTarget);
+        private sealed class Slot { internal object Target; internal long Revision; internal bool Observed; }
+        private sealed class Snapshot
+        {
+            internal readonly string Tab; internal readonly object Target; internal readonly long Revision;
+            internal Snapshot(string tab, object target, long revision) { Tab = tab; Target = target; Revision = revision; }
+        }
+        private static readonly Dictionary<string, Slot> Slots = new Dictionary<string, Slot>(StringComparer.Ordinal);
+        private static Slot ReservationSlot(string tab)
+        {
+            Slot slot;
+            if (!Slots.TryGetValue(tab, out slot)) Slots.Add(tab, slot = new Slot());
+            return slot;
+        }
+        public static object CurrentReservation(string tab) => ReservationSlot(tab).Target;
+        // Simulate an observed game consumer or an external reservation write.
+        // Same-reference writes here are known changes, not an unobserved ABA.
+        public static void SetReservation(string tab, object target)
+        { Slot slot = ReservationSlot(tab); slot.Target = target; NotifyReservationChanged(tab); }
+        public static void NotifyReservationChanged(string tab)
+        { Slot slot = ReservationSlot(tab); slot.Revision++; slot.Observed = ReservationReadable; }
+        private static Slot ObserveReservation(string tab)
+        {
+            Slot slot = ReservationSlot(tab);
+            if (!ReservationReadable)
+            {
+                slot.Revision++; slot.Observed = false;
+                throw new InvalidOperationException("synthetic reservation slot read failure");
+            }
+            if (!slot.Observed) { slot.Revision++; slot.Observed = true; }
+            return slot;
+        }
+        public static bool IsReserved(string tab, object target)
+        {
+            if (target == null || tab != "이벤트" && tab != "미션") return false;
+            try { return ReferenceEquals(target, ObserveReservation(tab).Target); }
+            catch (InvalidOperationException) { return false; }
+        }
+        public static bool TryCaptureReservation(string tab, out object snapshot)
+        {
+            snapshot = null;
+            if (tab != "이벤트" && tab != "미션") return false;
+            try
+            {
+                Slot slot = ObserveReservation(tab);
+                snapshot = new Snapshot(tab, slot.Target, slot.Revision);
+                return true;
+            }
+            catch (InvalidOperationException) { return false; }
+        }
+        public static bool TryToggleReservation(long context, string tab, string id, object target, object reservationState)
+        {
+            Reservations++;
+            LastReservedContext = context; LastReservedTab = tab; LastReservedId = id;
+            Snapshot snapshot = reservationState as Snapshot;
+            Slot slot = null;
+            try { slot = ObserveReservation(tab); } catch (InvalidOperationException) { }
+            bool accepted = slot != null && ReservationResult && target != null && snapshot != null && snapshot.Tab == tab
+                && snapshot.Revision == slot.Revision && ReferenceEquals(snapshot.Target, slot.Target);
+            if (accepted)
+            {
+                SetReservation(tab, ReferenceEquals(snapshot.Target, target) ? null : target);
+                LastTarget = target;
+            }
+            DuringReservation?.Invoke();
+            return accepted;
+        }
         public static bool TryReserve(long context, string tab, string id, object target)
         {
             Reservations++;
             LastReservedContext = context; LastReservedTab = tab; LastReservedId = id;
-            if (ReservationResult) LastTarget = target;
+            if (ReservationReadable && ReservationResult) { SetReservation(tab, target); LastTarget = target; }
             DuringReservation?.Invoke();
-            return ReservationResult;
+            return ReservationReadable && ReservationResult;
         }
     }
 }

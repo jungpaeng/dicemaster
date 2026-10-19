@@ -30,10 +30,16 @@ static class Program
         events.ListScroll = 140; events.DetailScroll = 230;
         var ticket = Arm(events);
         Check(ticket != null && events.CanActivate(ticket), "Fresh selected target could not be armed");
+        Check(ticket.ReservationState == null, "Legacy arming manufactured game reservation state");
+        object reservationState = new object();
+        ticket = events.BeginReservation(reservationState);
+        Check(ReferenceEquals(ticket.ReservationState, reservationState) && events.CanActivate(ticket),
+            "Action ticket did not carry the original opaque reservation state");
         Publish(model, "이벤트", Row("b", other, "바뀐 제목"), Row("a", target, "번역 변경"));
         Check(events.SelectedId == "a" && events.Selected.Title == "번역 변경", "Reorder/title must not change selected identity");
         Check(events.ListScroll == 140 && events.DetailScroll == 230, "Warm publication reset list/detail scroll");
         Check(events.CanActivate(ticket), "Healthy same-target refresh wrongly invalidated ticket");
+        Check(ReferenceEquals(ticket.ReservationState, reservationState), "Healthy publication replaced the original game-boundary snapshot");
         model.MarkPublicationFailure("이벤트");
         Check(events.PublicationFailed && !events.CanActivate(ticket) && events.BeginReservation() == null, "Publication failure retained executable stale view");
         Publish(model, "이벤트", Row("b", other), Row("a", target));

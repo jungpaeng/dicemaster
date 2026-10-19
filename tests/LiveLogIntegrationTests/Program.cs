@@ -98,6 +98,14 @@ static class LiveLogIntegrationTests
         foreach (var ret in conditionTarget.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToArray())
             conditionIl.InsertBefore(ret, Instruction.Create(OpCodes.Castclass, conditionTarget.ReturnType));
         PreviewFixtureBoundary.Install(target);
+        // Inject failure only at the external field-read boundary. The
+        // delivered Observe/Capture/Toggle/revision bodies stay unchanged, so
+        // same-slot recovery must invalidate their original authority itself.
+        var readBoundary = target.GetType("DiceMaster.LiveLog.LogBridge").Methods.Single(method => method.Name == "Read");
+        var readIl = readBoundary.Body.GetILProcessor();
+        var readFirst = readBoundary.Body.Instructions[0];
+        readIl.InsertBefore(readFirst, Instruction.Create(OpCodes.Ldarg_1));
+        readIl.InsertBefore(readFirst, Instruction.Create(OpCodes.Call, target.GetType("DiceMaster.Probe").Methods.Single(method => method.Name == "BeforeRead")));
         var probe = target.GetType("DiceMaster.Probe").Fields.Single(field => field.Name == "ParserEntries");
         foreach (var method in target.GetType("DiceMaster.LuaParse.LuaParser").Methods.Where(method => method.Name.StartsWith("Extract") && method.HasBody))
         {
@@ -127,6 +135,18 @@ static class LiveLogIntegrationTests
             patchTarget.Methods.Add(installed);
             Install(hook, installed);
         }
+        // Exercise real one-use consumption together with the bridge revision
+        // protocol. The fixtures provide game objects, never replacement
+        // implementations of the reservation or consume/clear behavior.
+        foreach (string name in new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix" })
+        {
+            var hook = patchSource.Methods.Single(method => method.Name == name);
+            var installed = new MethodDefinition(hook.Name, hook.Attributes, Type(hook.ReturnType));
+            foreach (var parameter in hook.Parameters)
+                installed.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, Type(parameter.ParameterType)));
+            patchTarget.Methods.Add(installed);
+            Install(hook, installed);
+        }
         foreach (string helper in new[] { "ColorizeKeyByStoryReadState", "NormalizeCheckpointKey" })
             Install(module.GetType("DiceMaster.DicePlugin").Methods.Single(method => method.Name == helper),
                 target.GetType("DiceMaster.DicePlugin").Methods.Single(method => method.Name == helper));
@@ -137,6 +157,7 @@ static class LiveLogIntegrationTests
         int assertions = Run(output, "Run");
         assertions += Run(output, "RunLifecycle");
         if (target.GetType("DiceMaster.LogUI.LogModel") != null) assertions += Run(output, "RunLogModel");
+        assertions += Run(output, "RunReservationToggles");
         var helperSource = module.GetType("DiceMaster.DataHelper");
         var helperTarget = target.GetType("DiceMaster.DataHelper");
         foreach (var method in helperSource.Methods.Where(method => method.Name == "GetMissions" || method.Name == "ExtractConditions" || method.Name == "IsValidMission" || method.Name == "ParseSwitchCheckpoint" || method.Name == "DescribeSwitchCheckpoint"))

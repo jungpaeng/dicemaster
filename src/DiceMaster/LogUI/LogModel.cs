@@ -83,9 +83,13 @@ namespace DiceMaster.LogUI
         public readonly long ContextId;
         public readonly string Tab, Id;
         public readonly object Target;
+        // Opaque game-boundary state captured on the original confirmation.
+        // The model carries it without reading game state or deciding whether
+        // the action is a reservation or its cancellation.
+        public readonly object ReservationState;
         internal readonly long SelectionVersion;
-        internal ReservationTicket(long contextId, string tab, string id, object target, long version)
-        { ContextId = contextId; Tab = tab; Id = id; Target = target; SelectionVersion = version; }
+        internal ReservationTicket(long contextId, string tab, string id, object target, long version, object reservationState)
+        { ContextId = contextId; Tab = tab; Id = id; Target = target; SelectionVersion = version; ReservationState = reservationState; }
     }
 
     // Runtime-only navigation. No game API, config or save access belongs here.
@@ -151,11 +155,11 @@ namespace DiceMaster.LogUI
             ClearSelection(); ListScroll = DetailScroll = 0;
         }
 
-        public ReservationTicket BeginReservation()
+        public ReservationTicket BeginReservation(object reservationState = null)
         {
             LogItem row = Selected;
             if (PublicationFailed || !ExecutionFocus || row == null || !row.CanReserve) return null;
-            return new ReservationTicket(Snapshot.ContextId, Snapshot.Tab, row.Id, row.Target, selectionVersion);
+            return new ReservationTicket(Snapshot.ContextId, Snapshot.Tab, row.Id, row.Target, selectionVersion, reservationState);
         }
 
         public bool CanActivate(ReservationTicket ticket)

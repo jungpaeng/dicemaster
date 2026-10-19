@@ -133,26 +133,32 @@ internal static class OptionInfoPatch
 			}
 		}
 		PrintToNarrativeLog(stringBuilder.ToString());
-		if (TargetMission == null && TryGetMissionKeyForPosition(text, out var missionKey) && MissionManagerData.Instance != null)
+		MissionCheckData missionForDescription = TargetMission;
+		if (missionForDescription == null && TryGetMissionKeyForPosition(text, out var missionKey) && MissionManagerData.Instance != null)
 		{
 			SubMissionsData fieldValue2 = MissionManagerData.Instance.GetFieldValue<SubMissionsData>("_subMissions");
 			MissionData missionData = ((fieldValue2 != null) ? fieldValue2.Get(missionKey) : null);
 			if (missionData != null)
 			{
-				TargetMission = missionData.GetByKey(missionData.CurrentKey);
+				missionForDescription = missionData.GetByKey(missionData.CurrentKey);
+				if (LogBridge.ShouldAutoReserveMission(missionForDescription))
+				{
+					TargetMission = missionForDescription;
+					LogBridge.NotifyReservationChanged("미션");
+				}
 			}
 		}
-		if (TargetMission != null && TargetMission.name != null)
+		if (missionForDescription != null && missionForDescription.name != null)
 		{
-			string key = "Mission/Name/" + TargetMission.name;
+			string key = "Mission/Name/" + missionForDescription.name;
 			LocalizationManager instance = LocalizationManager.Instance;
 			object obj = ((!(instance == null)) ? instance.LocaleResolver?.GetString(key) : null);
 			if (obj == null)
 			{
-				obj = TargetMission.name;
+				obj = missionForDescription.name;
 			}
 			string text2 = (string)obj;
-			LogCheckpoint(GetLocalizedSystemText("System/Log/MissionConditionsLabel", "미션 조건: ") + text2, TargetMission.GetFieldValue<ConditionResultItem[]>("_conditions"));
+			LogCheckpoint(GetLocalizedSystemText("System/Log/MissionConditionsLabel", "미션 조건: ") + text2, missionForDescription.GetFieldValue<ConditionResultItem[]>("_conditions"));
 		}
 	}
 
@@ -206,6 +212,7 @@ internal static class OptionInfoPatch
 		{
 			__result = 99999;
 			TargetEvent = null;
+			LogBridge.NotifyReservationChanged("이벤트");
 		}
 	}
 
@@ -217,6 +224,7 @@ internal static class OptionInfoPatch
 		{
 			__result = true;
 			TargetMission = null;
+			LogBridge.NotifyReservationChanged("미션");
 		}
 	}
 

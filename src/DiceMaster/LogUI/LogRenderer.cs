@@ -145,10 +145,12 @@ namespace DiceMaster.LogUI
             CancelPending();
             if (!SupportsReservation || State.PublicationFailed || State.Selected == null || !State.Selected.CanReserve)
                 return null;
+            object reservationState;
+            if (!LogBridge.TryCaptureReservation(CurrentTab, out reservationState)) return null;
             // The authority exists only for this fresh confirmation or the
             // selected row's pointer-down/up transaction, never for a pane.
             State.ExecutionFocus = true;
-            return State.BeginReservation();
+            return State.BeginReservation(reservationState);
         }
 
         private void ReturnFromTools()
@@ -443,6 +445,7 @@ namespace DiceMaster.LogUI
                 bool selected = row.Id == State.SelectedId;
                 string state = RowState(row);
                 string caption = (selected ? "▶ " : "") + Title(row) +
+                    (SupportsReservation && LogBridge.IsReserved(CurrentTab, row.Target) ? " (예약 중)" : "") +
                     (string.IsNullOrEmpty(state) ? "" : "\n" + state);
                 if (!row.CanSelect) caption += "\n원본 ID: " + Escape(row.RawId);
                 bool enabled = GUI.enabled;
@@ -664,7 +667,7 @@ namespace DiceMaster.LogUI
             try
             {
                 if (SupportsReservation && State.CanActivate(ticket))
-                    LogBridge.TryReserve(ticket.ContextId, ticket.Tab, ticket.Id, ticket.Target);
+                    LogBridge.TryToggleReservation(ticket.ContextId, ticket.Tab, ticket.Id, ticket.Target, ticket.ReservationState);
             }
             finally
             {
@@ -750,15 +753,17 @@ namespace DiceMaster.LogUI
         private string ReservationStatus(LogItem row)
         {
             string action = CurrentTab == "이벤트" ? "이벤트 우선 예약" : "미션 조건 통과 예약";
-            string state = LogBridge.IsReserved(CurrentTab, row.Target) ? "활성화 (예약 중)" : "비활성화 (예약 없음)";
+            bool reserved = LogBridge.IsReserved(CurrentTab, row.Target);
+            string state = reserved ? "활성화 (예약 중)" : "비활성화 (예약 없음)";
             if (row.CanReserve && !State.PublicationFailed)
-                return action + " · " + state + "\n예약 가능 · 목록에서 A / 선택된 항목 다시 클릭·터치";
+                return action + " · " + state + "\n" + (reserved ? "예약 해제 가능" : "예약 가능") +
+                    " · 목록에서 A / 선택된 항목 다시 클릭·터치";
             string reason = State.PublicationFailed ? "게시 실패 · 최신 대상 확인 필요" :
                 row.IsStatusOnly ? "안내 항목" : row.Target == null ? "대상 없음" :
                 row.RefreshState == LogRefreshState.Waiting ? "설명 조회 대기" :
                 row.RefreshState == LogRefreshState.RetainedFailure ? "갱신 실패 · 이전 값" :
                 row.RefreshState == LogRefreshState.ReadFailure ? "조회 실패" : "최신 대상 확인 필요";
-            return action + " · " + state + "\n예약 불가 · " + reason;
+            return action + " · " + state + "\n예약 변경 불가 · " + reason;
         }
 
         private string Hint()
@@ -767,8 +772,9 @@ namespace DiceMaster.LogUI
             if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (State.Selected == null) return "현재: " + (SupportsReservation ? "목록" : "체크포인트 목록") + " · ↑↓ 항목 이동 / 오른쪽 스틱 목록 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!SupportsReservation) return "현재: 체크포인트 목록 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
-            if (!State.Selected.CanReserve || State.PublicationFailed) return "현재: 목록 · 예약 불가 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
-            return "현재: 목록 · ↑↓ 이동 / A 예약 · 선택된 항목 다시 클릭·터치 예약 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (!State.Selected.CanReserve || State.PublicationFailed) return "현재: 목록 · 예약 변경 불가 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            string action = LogBridge.IsReserved(CurrentTab, State.Selected.Target) ? "예약 해제" : "예약";
+            return "현재: 목록 · ↑↓ 이동 / A " + action + " · 선택된 항목 다시 클릭·터치 " + action + " / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
         }
 
         private void CompleteListScroll(Rect viewport, float contentBottom)

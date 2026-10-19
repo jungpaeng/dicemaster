@@ -250,6 +250,10 @@ static class Program
                 !title.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld),
             "delivered list captions must apply the same final display translation as detail labels without mutating published row data");
         var listDetailCalls = Calls(Method(renderer, "DrawListDetail")).ToArray();
+        Check(listDetailCalls.Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved") &&
+                Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr &&
+                    i.Operand is string value && value.Contains("예약 중")),
+            "actual rendered list captions must mark the real currently reserved target, including rows that are not selected");
         int detailTitle = Array.FindLastIndex(listDetailCalls, c => c.DeclaringType.FullName == renderer && c.Name == "Title");
         var detailHeadingSink = listDetailCalls.Skip(detailTitle + 1).First(c => c.Name == "Label" &&
             new[] { renderer, display, "UnityEngine.GUILayout" }.Contains(c.DeclaringType.FullName));
@@ -323,35 +327,70 @@ static class Program
                 armReservation.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f &&
                     f.DeclaringType.FullName == tabState && f.Name == "ExecutionFocus"),
             "actual one-shot arming must check published reservation eligibility before granting model execution authority");
+        int captureReservation = Array.FindIndex(armingCalls, c => c.DeclaringType.FullName == bridge && c.Name == "TryCaptureReservation");
+        int beginReservation = Array.FindIndex(armingCalls, c => c.DeclaringType.FullName == tabState && c.Name == "BeginReservation");
+        Check(captureReservation >= 0 && beginReservation > captureReservation &&
+                armingCalls[beginReservation].Parameters.Count == 1 &&
+                armingCalls[beginReservation].Parameters[0].ParameterType.FullName == "System.Object",
+            "actual confirmation/pointer-down must capture the reservation slot before constructing a ticket with the opaque snapshot");
+        var ticketType = Type("DiceMaster.LogUI.ReservationTicket");
+        Check(ticketType.Fields.Any(f => f.Name == "ReservationState" && f.IsInitOnly && f.FieldType.FullName == "System.Object") &&
+                ticketType.Methods.Where(m => m.IsConstructor).SelectMany(m => m.Body.Instructions).Any(i =>
+                    i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f && f.Name == "ReservationState"),
+            "delivered reservation tickets must retain an immutable snapshot across delayed pointer release");
         var reserveCalls = Calls(reserve).ToArray();
         int validateTicket = Array.FindIndex(reserveCalls, c => c.DeclaringType.FullName == tabState && c.Name == "CanActivate");
-        int tryReserve = Array.FindIndex(reserveCalls, c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve");
+        int tryReserve = Array.FindIndex(reserveCalls, c => c.DeclaringType.FullName == bridge && c.Name == "TryToggleReservation");
         int cancelAfterReserve = Array.FindLastIndex(reserveCalls, c => c.DeclaringType.FullName == renderer && c.Name == "CancelPending");
         Check(validateTicket >= 0 && tryReserve > validateTicket && cancelAfterReserve > tryReserve &&
                 reserve.Body.ExceptionHandlers.Any(handler => handler.HandlerType == ExceptionHandlerType.Finally &&
                     reserve.Body.Instructions.SkipWhile(i => i != handler.HandlerStart).TakeWhile(i => i != handler.HandlerEnd)
                         .Any(i => i.Operand is MethodReference c && c.DeclaringType.FullName == renderer && c.Name == "CancelPending")) &&
                 Calls(Method(renderer, "CancelPending")).Any(c => c.DeclaringType.FullName == tabState && c.Name == "CancelExecution") &&
+                reserve.Body.Instructions.Any(i => i.OpCode == OpCodes.Ldfld && i.Operand is FieldReference f &&
+                    f.DeclaringType.FullName == ticketType.FullName && f.Name == "ReservationState") &&
                 !reserve.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f &&
                     f.DeclaringType.FullName == tabState && f.Name == "ExecutionFocus"),
-            "actual final reservation must validate the original ticket, use current bridge validation and consume authority in a finally boundary without keeping detail focus");
-        var uiReservationEntries = uiMethods.Where(m => Calls(m).Any(c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve")).ToArray();
+            "actual final toggle must validate the original ticket and captured slot through the current bridge, then consume authority in a finally boundary");
+        var uiReservationEntries = uiMethods.Where(m => Calls(m).Any(c => c.DeclaringType.FullName == bridge &&
+            new[] { "TryReserve", "TryToggleReservation" }.Contains(c.Name))).ToArray();
         Check(uiReservationEntries.Length == 1 && uiReservationEntries[0].FullName == reserve.FullName &&
                 !Calls(Method(renderer, "DrawListDetail")).Any(c => new[] { "Reserve", "BeginReservation" }.Contains(c.Name)) &&
                 !Method(renderer, "DrawListDetail").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr &&
                     i.Operand is string value && value.StartsWith("reserve:", StringComparison.Ordinal)),
-            "actual UI must have one current-data reservation sink and no detail action button or render-time activation");
+            "actual UI must have one current-data toggle sink and no legacy blind reservation, detail action button or render-time activation");
+        var captureApi = Method(bridge, "TryCaptureReservation");
+        var toggleApi = Method(bridge, "TryToggleReservation");
+        Check(captureApi.ReturnType.FullName == "System.Boolean" && captureApi.Parameters.Count == 2 &&
+                captureApi.Parameters[1].ParameterType.FullName == "System.Object&" &&
+                toggleApi.ReturnType.FullName == "System.Boolean" && toggleApi.Parameters.Count == 5 &&
+                toggleApi.Parameters[^1].ParameterType.FullName == "System.Object" &&
+                Method(bridge, "TryReserve").Parameters.Count == 4 &&
+                Method(bridge, "TryReserve").ReturnType.FullName == "System.Boolean",
+            "delivered bridge must distinguish failed capture from an empty slot, accept an opaque toggle snapshot and retain the legacy reservation API");
+        Check(new[] { "PositionEventData_GetRate_Postfix", "MissionCheckData_Postfix", "PositionController_OnPositionClick_Prefix" }
+                .All(name => Calls(Method("DiceMaster.OptionInfoPatch", name)).Any(c =>
+                    c.DeclaringType.FullName == bridge && c.Name == "NotifyReservationChanged")),
+            "actual game event/mission consumption and automatic mission assignment must invalidate captured reservation revisions");
+        Check(Calls(Method("DiceMaster.OptionInfoPatch", "PositionController_OnPositionClick_Prefix")).Any(c =>
+                c.DeclaringType.FullName == bridge && c.Name == "ShouldAutoReserveMission"),
+            "actual location-click automatic mission assignment must respect an explicit cancellation in the current context");
         var reservationStatus = Method(renderer, "ReservationStatus");
         Check(Calls(Method(renderer, "DrawListDetail")).Any(c => c.FullName == reservationStatus.FullName) &&
                 Calls(reservationStatus).Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved") &&
                 Calls(reservationStatus).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanReserve") &&
                 Calls(reservationStatus).Any(c => c.DeclaringType.FullName == tabState && c.Name == "get_PublicationFailed") &&
-                !WithinType(reservationStatus).SelectMany(Calls).Any(c => new[] { "TryReserve", "Reserve", "BeginReservation" }.Contains(c.Name)),
+                !WithinType(reservationStatus).SelectMany(Calls).Any(c => new[] { "TryReserve", "TryToggleReservation", "Reserve", "BeginReservation" }.Contains(c.Name)),
             "actual read-only detail status must use real reservation state and current publication eligibility without creating an action");
         var armCallers = types.Where(t => t.FullName == renderer || t.FullName.StartsWith(renderer + "/", StringComparison.Ordinal))
             .SelectMany(t => t.Methods).Where(m => Calls(m).Any(c => c.FullName == armReservation.FullName)).ToArray();
         Check(armCallers.Length == 2 && armCallers.All(m => m.FullName == safeButton.FullName || m.FullName == Method(renderer, "Handle").FullName),
             "pointer release/deferred callbacks must never mint a fresh ticket; only explicit list commands and pointer down may arm");
+        var captureCallers = types.Where(t => t.FullName == renderer || t.FullName.StartsWith(renderer + "/", StringComparison.Ordinal))
+            .SelectMany(t => t.Methods).Where(m => Calls(m).Any(c => c.FullName == captureApi.FullName)).ToArray();
+        Check(captureCallers.Length == 1 && captureCallers[0].FullName == armReservation.FullName &&
+                !Calls(reserve).Any(c => c.FullName == captureApi.FullName || c.DeclaringType.FullName == bridge && c.Name == "IsReserved"),
+            "release/deferred/final activation must use the original reservation intent rather than recapturing or flipping it from current display state");
         var activateRow = Method(renderer, "ActivateRow");
         Check(WithinTypeTree(Method(renderer, "DrawListDetail"), types).Any(m => m.FullName == activateRow.FullName) &&
                 Calls(activateRow).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Select") &&
@@ -383,7 +422,7 @@ static class Program
                 Calls(Method("DiceMaster.LogUI.LogTabState", name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && c.Name == "get_CanSelect")),
             "actual input/rendering and model selection must share the status-only selection guard");
         Check(Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.Namespace == "DiceMaster.LogUI" && c.Name == "Publish"), "actual data publication reaches structured UI model");
-        Check(Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == bridge && c.Name == "TryReserve"), "renderer reservation uses current bridge validation");
+        Check(Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == bridge && c.Name == "TryToggleReservation"), "renderer toggle uses current bridge validation");
         Check(Type(renderer).Methods.SelectMany(Calls).Any(c => c.DeclaringType.FullName == bridge && c.Name == "IsReserved"), "reservation display reads actual reservation source");
         Check(types.SelectMany(t => t.Methods).Where(m => m.HasBody).SelectMany(m => m.Body.Instructions)
             .Count(i => i.OpCode == OpCodes.Newobj && i.Operand is MethodReference c && c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput") == 1,
