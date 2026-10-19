@@ -5,9 +5,9 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
-## v1.0.5 정식 Release 준비
+## v1.0.5 정식 Release
 
-지금까지의 로그 창 개편·Xbox/XInput 탐색·한국어 표시·목록 예약 표시와 해제를 **정식 v1.0.5**로 반영합니다. 검증된 alpha.9의 동일 DLL·cfg·ZIP을 승격하고 새 태그의 빌드 입력 153개·소스 63개 일치를 확인합니다. 코드 변경·재빌드·검사 재실행·재압축은 하지 않습니다. [전체 변경·설치·SHA-256·복구·Windows 확인](docs/ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 정식 게시·Latest 지정 결과는 확인 후 기록하며, 실제 Windows 확인과 이슈 #4 완료는 별도로 대기합니다.
+**2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip). 로그 창 개편·Xbox/XInput 탐색·한국어 표시·목록 예약 표시와 해제를 모두 반영합니다. 정식 태그 `8886309e2a7248fa13544f81546e3c4795ff9611`의 입력 153개·소스 63개가 고정 재빌드·12개 검사와 공개 다운로드 검증을 통과한 alpha.9와 같고, DLL/cfg/ZIP도 동일 바이트입니다. 이번 승격은 새 빌드·검사 실행이나 Windows 확인 완료를 뜻하지 않습니다. [전체 변경·SHA-256·설치/복구·Windows 확인](docs/ISSUE-4-STABLE-RELEASE.md)을 따르며 기존 cfg를 보존해 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 별도로 대기합니다. 아래 prerelease 기록·파일은 보존합니다.
 
 ## PRD #4 — v1.0.5-alpha.9 prerelease
 

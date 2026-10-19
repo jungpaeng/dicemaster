@@ -1,12 +1,12 @@
 # DiceMaster v1.0.5 — 로그 창 개편·패드 탐색·예약 토글
 
-사용자의 Release 반영 지시에 따라 v1.0.5-alpha.1~alpha.9의 PRD #4 후속을 **정식 Release v1.0.5로 게시하고 Latest로 지정할 예정**이다. 코드·설정 변경 없이 기존에 검증한 alpha.9 파일을 그대로 승격한다. 새 소스 태그의 빌드 입력 동일성과 설치 파일 바이트·공개 다운로드를 확인하며, 실제 커밋·게시 시각·Release/asset ID·Latest 결과는 확인 후 기록한다. 기존 Release·태그·자산은 수정하거나 삭제하지 않는다.
+**2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)은 고정 재빌드·12개 검사와 공개 다운로드 검증을 통과한 alpha.9의 DLL·cfg·ZIP과 동일한 바이트입니다. 정식 소스·태그 `8886309e2a7248fa13544f81546e3c4795ff9611`의 Git 입력 153개·생산 소스 63개도 alpha.9와 같음을 확인했습니다. 재빌드·검사 재실행·재압축 없이 파일을 승격했으며 정식 공개 다운로드·태그·Latest와 기존 배포 보존을 검증했습니다.
 
 **정식 배포 채널 지정과 기능·이슈 완료는 별개다.** 사용자의 게시 지시를 실제 Windows 검증 완료 근거로 취급하지 않는다. 에이전트는 게임을 설치하거나 실행하지 않았으며, 이번 DLL의 실제 패드 탐색·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기다. 자동 검사·정식 게시만으로 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)를 닫지 않는다. 선행 이슈 #2 closed·이슈 #4 open을 유지한다.
 
 ## v1.0.4 이후 최종 동작
 
-| 영역 | v1.0.5에 반영할 동작 |
+| 영역 | v1.0.5 동작 |
 | --- | --- |
 | 창·글자·내용 영역 | 1920×1200 기준 기본 창 872×960px·본문 20px. 다른 해상도에서 기본 창과 글자를 비례 계산하며 사용자 지정 배치는 보존한다. 제목·탭·안내를 제외한 남은 영역을 목록·본문이 사용한다. |
 | 네 탭 | 선택지·조건·이벤트·미션 유지. 선택지는 간격을 둔 읽기 전용 본문, 조건은 목록과 구조화된 분기 설명, 이벤트·미션은 목록과 읽기 전용 상세다. 접기·검색창·검색 자판은 없다. |
@@ -51,9 +51,9 @@
 
 ## 기존 자동 검증과 동일 파일 승격
 
-정식 게시의 비교 기준은 [v1.0.5-alpha.9](ISSUE-4-ALPHA9-RELEASE.md)의 소스 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`다. 아래는 그 버전의 고정 재빌드와 공개 설치 ZIP에서 확인한 바이트이며 **v1.0.5 정식 게시 검증 결과는 아직 아니다.**
+정식 게시의 비교 기준은 [v1.0.5-alpha.9](ISSUE-4-ALPHA9-RELEASE.md)의 소스 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`다. 아래는 alpha.9의 고정 재빌드와 공개 설치 ZIP을 출처로 동일 파일 승격을 확인한 값이며, v1.0.5 공개 설치 파일도 같은 바이트·해시다.
 
-| 비교 기준 파일 | 크기 | alpha.9 SHA-256 |
+| 비교 기준 파일 | 크기 | alpha.9·v1.0.5 동일 SHA-256 |
 | --- | ---: | --- |
 | `DiceMaster.dll` | 585,728바이트 | `39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339` |
 | 설치 ZIP | 246,335바이트 | `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04` |
@@ -78,14 +78,14 @@ alpha.9는 고정 커밋의 전체 소스 컴파일 오류 0개·기존 경고 7
 
 alpha.9의 입력 153개·생산 소스 63개, 읽기 전용 외부 참조 15개와 ZIP CRC·정확히 두 파일·내부 바이트/해시·독립 감사를 확인했다. Unity·게임 데이터·Win32/XInput 경계는 검사 대역이므로 실제 게임·물리 장치·후킹·화면 검증으로 확대하지 않는다. 게임 소스·DLL을 저장소나 설치 ZIP에 포함하지 않는다. 현재 DiceMaster는 전체 C# 소스를 빌드하며 과거 DLL 패치 산출물을 정식 구현의 기준으로 삼지 않는다.
 
-v1.0.5는 **재빌드·검사 재실행·재압축 없이 alpha.9의 동일 DLL/cfg/ZIP을 승격**한다. 새 정식 태그가 가리킬 소스 커밋의 입력 153개·생산 소스 63개를 Git 스냅샷에서 읽어 alpha.9와 비교한다. 파일의 바이트·크기·SHA-256도 대조해 기존 검증의 출처와 동일성을 확인한다. 기존 빌드 검증기·정책은 수정하지 않는다.
+v1.0.5는 **재빌드·검사 재실행·재압축 없이 alpha.9의 동일 DLL/cfg/ZIP을 승격**한다. 새 정식 태그 소스 커밋의 입력 153개·생산 소스 63개를 Git 스냅샷에서 읽어 alpha.9와 비교한다. 파일의 바이트·크기·SHA-256도 대조해 기존 검증의 출처와 동일성을 확인한다. 기존 빌드 검증기·정책은 수정하지 않는다.
 
-확인 후 `draft=false`·`prerelease=false`인 새 Release로 게시하고 `make_latest=true`로 지정할 예정이다. 공개 페이지·태그 커밋·인증 없는 설치 ZIP의 SHA-256·CRC·내부 바이트와 Latest가 실제 v1.0.5인지 검증한다. 출처 alpha.9·사용자의 게시 지시·원래 검사 기록 재사용·입력/파일 동일성과 게시 메타데이터를 `promotion-verification.json` 등에 기록한다. 사용자의 게시 지시는 Windows 확인 근거로 쓰지 않는다. 이전 alpha와 정식 Release·태그·자산은 그대로 보존한다. 이 절차는 검증된 배포 파일의 승격·게시 검증이며 새 빌드·새 검사 실행이나 Windows 기능 확인을 뜻하지 않는다.
+`draft=false`·`prerelease=false`·`make_latest=true`로 게시했다. 공개 페이지·태그 커밋·인증 없는 설치 ZIP의 SHA-256·CRC·내부 바이트와 실제 Latest v1.0.5를 확인했다. 출처 alpha.9·사용자의 게시 지시·원래 검사 기록 재사용·입력/파일 동일성과 게시 메타데이터를 `artifacts/releases/v1.0.5/`의 `promotion-verification.json`과 공개 검증 영수증에 기록했다. 사용자의 게시 지시는 Windows 확인 근거로 쓰지 않는다. 이전 alpha와 정식 Release·태그·자산은 그대로 보존한다. 이 절차는 검증된 배포 파일의 승격·게시 검증이며 새 빌드·새 검사 실행이나 Windows 기능 확인을 뜻하지 않는다.
 
 ## 적용·복구
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 게임 폴더 밖에 백업한다. 기존 버전과 DLL 해시를 기록한다.
-2. 게시 후 Assets의 **`DiceMaster-v1.0.5.zip`**을 임시 폴더에 푼다. GitHub 자동 `Source code` 압축 파일과 구분하고 실제 게시 파일의 SHA-256을 확인한다.
+2. Assets의 **`DiceMaster-v1.0.5.zip`**을 임시 폴더에 푼다. GitHub 자동 `Source code` 압축 파일과 구분하고 실제 게시 파일의 SHA-256을 확인한다.
 3. **`plugins/DiceMaster/DiceMaster.dll`만** 같은 게임 경로로 교체해 기존 cfg를 보존한다. v1.0.4에서 올라오면 새 로그 설정은 기존 BepInEx cfg에 추가된다. cfg 전체를 덮어써 기존 키·글자·배치를 초기화할 필요는 없다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. [alpha.9](ISSUE-4-ALPHA9-RELEASE.md)는 이번 로그 UI·패드·예약 토글을 포함한 이전 비교 기준이다. 정식 [v1.0.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.4)로 복구하면 PRD #2 분석을 포함한 당시 버전으로 돌아가며 이번 로그 GUI·로그 패드 탐색·L3/R3 열기·목록 예약 토글은 제공하지 않는다. 이전 기본 배치까지 되돌리려면 백업 cfg도 복원한다.
 
@@ -110,3 +110,11 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 8. [현재 예약·입력 12단계](ISSUE-4-RESERVATION-TOGGLE.md#windows-확인표)를 따른다. [기존 전체 회귀표](ISSUE-4-WINDOWS-VALIDATION.md)의 제거된 검색·자판·접기·상세 예약 버튼·패드 열기 없음·취소 없음 항목은 당시 버전의 기록으로 구분한다.
 
 사용자의 실제 패드 탐색·스크롤·버튼 조작과 주요 회귀 확인을 받은 후 이슈 완료 여부를 결정한다. 정식 Release/Latest 게시 결과와 이 완료 판단은 별도로 기록한다.
+
+## 실제 승격·게시·공개 다운로드 검증
+
+2026-10-19 23:59:15 KST 게시. 소스·태그 커밋 `8886309e2a7248fa13544f81546e3c4795ff9611`, Release `417427722`·asset `656586246`, `draft=false`·`prerelease=false`·`make_latest=true`입니다. 검증 출처인 alpha.9 소스는 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`이며 두 Git 커밋의 빌드 입력 153개·생산 소스 63개가 모두 일치합니다. DLL/cfg/ZIP은 원래 alpha.9 고정 재빌드와 공개 다운로드 파일까지 동일합니다. 독립 감사도 이 출처와 입력·바이트 일치를 확인했습니다. 기존 12개 검사를 재실행하거나 결과를 새 검증 실행으로 바꾸지 않았습니다.
+
+인증 없이 내려받은 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)의 SHA-256은 `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04`, DLL은 `39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. ZIP CRC·정확히 두 파일·내부 바이트가 일치하고 Latest는 실제 v1.0.5 Release ID와 같습니다. 기존 23개 Release·23개 태그·자산과 정식 v1.0.4를 보존했고 이슈 #2 closed·#4 open을 유지했습니다.
+
+영수증은 `artifacts/releases/v1.0.5/`에 보존합니다. 게시 결과 문서의 후속 커밋은 소스 태그나 설치 자산을 바꾸지 않습니다. **사용자의 정식 게시 지시는 Windows 기능 확인 완료를 뜻하지 않으며 실제 패드·스크롤·버튼·터치와 주요 회귀 확인은 대기입니다.**

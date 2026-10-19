@@ -1,10 +1,14 @@
 # 소스 기반 Release와 게시 이력
 
-## v1.0.5 정식 승격 준비
+## v1.0.5 정식 Release·Latest 게시
 
-사용자의 “지금까지 작업한 내용을 release로 반영해” 지시에 따라 PRD #4 alpha.1~alpha.9의 최종 결과를 새 정식 v1.0.5와 Latest로 게시합니다. 기존 alpha.9의 검증된 DLL·cfg·ZIP을 그대로 승격하며 기존 Release·태그·자산은 보존합니다. 새 태그의 빌드 입력 153개·생산 소스 63개와 alpha.9의 동일성, ZIP 바이트·SHA-256·CRC·두 파일을 확인합니다.
+사용자의 “지금까지 작업한 내용을 release로 반영해” 지시에 따라 **2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)은 alpha.1~alpha.9에서 반영한 로그 GUI·Xbox/XInput 탐색·한국어 표시·예약 표시/해제를 포함합니다. 소스·태그 `8886309e2a7248fa13544f81546e3c4795ff9611`, Release ID `417427722`·asset ID `656586246`, `draft=false`·`prerelease=false`·`make_latest=true`입니다. [전체 변경·설치·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다.
 
-이번 승격은 새 코드·빌드·검사 실행을 포함하지 않습니다. alpha.9의 고정 재빌드·12개 검사와 공개 다운로드 검증을 출처로 연결하고 별도 `promotion-verification.json`을 작성합니다. [정식 변경·설치·해시·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 사용자 게시 지시를 Windows 확인 완료로 해석하지 않으며 이슈 #2 closed·#4 open을 유지합니다. 실제 게시 시각·소스 태그·Release/asset ID·Latest·익명 다운로드와 기존 23개 Release/태그 보존 결과는 확인 후 기록합니다.
+이번 정식 전환은 문서 6개만 커밋했으며 `.agents/`·`skills-lock.json`은 제외했습니다. Git 스냅샷의 입력 153개·소스 63개와 DLL/cfg/ZIP이 고정 재빌드·12개 검사·익명 다운로드를 검증한 alpha.9와 동일합니다. 재빌드·검사 재실행·재압축 없이 같은 파일을 승격했으며 원래 alpha.9 검사 기록을 새 실행으로 표현하지 않습니다. 독립 감사도 동일 입력·바이트와 기존 검증의 출처를 확인했습니다.
+
+DLL은 585,728바이트·`39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339`, cfg는 11,175바이트·`bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`, ZIP은 246,335바이트·`98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04`입니다. 공개 페이지와 ZIP을 인증 없이 확인해 SHA-256·CRC·정확히 두 파일·내부 바이트를 검증했습니다. 기존 23개 Release·23개 태그·자산을 보존했고 이전 정식 v1.0.4는 복구용으로 유지합니다. Latest만 v1.0.5로 바뀌었으며 이슈 #2 closed·#4 open은 유지합니다.
+
+영수증은 `artifacts/releases/v1.0.5/`의 `promotion-verification.json`, `origin-alpha9-*`, `independent-audit.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md` 등에 보존합니다. 게시 결과 문서의 후속 커밋은 소스 태그·설치 자산을 바꾸지 않습니다. **정식 게시 지시는 Windows 확인 완료를 뜻하지 않으며 에이전트는 게임을 설치하거나 실행하지 않았습니다. 실제 패드·스크롤·버튼·터치와 이슈 #4 완료는 사용자 확인 대기입니다.**
 
 ## PRD #4 alpha.9 목록 예약 표시·해제 게시
 

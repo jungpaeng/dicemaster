@@ -8,11 +8,11 @@
 
 ## PRD #4 후보와 prerelease
 
-### v1.0.5 정식 승격 준비
+### v1.0.5 정식 게시·동일 파일 승격 검증
 
-사용자의 Release 반영 지시에 따라 alpha.9의 전체 로그 후속을 정식 v1.0.5로 승격합니다. 현재 빌드 입력 153개·생산 소스 63개는 alpha.9의 고정 재빌드 소스 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`와 동일합니다. 새 소스 태그 커밋의 Git 입력도 대조하고 기존 DLL/cfg/ZIP을 바이트 그대로 복사합니다. ZIP 이름만 `DiceMaster-v1.0.5.zip`으로 바꾸며 재압축하지 않습니다.
+**2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** 정식 태그 `8886309e2a7248fa13544f81546e3c4795ff9611`의 Git 입력 153개·생산 소스 63개가 alpha.9의 고정 재빌드 소스 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`와 동일함을 확인했습니다. 기존 DLL/cfg/ZIP을 바이트 그대로 복사해 ZIP 이름만 `DiceMaster-v1.0.5.zip`으로 바꿨습니다. 재빌드·검사 재실행·재압축은 하지 않았으며 기존 12개 검사 결과는 alpha.9 실행 기록으로 구분합니다.
 
-기존 12개 검사와 익명 공개 다운로드 검증은 alpha.9에서 실행한 기록으로 구분하고 이번에 재실행한 것으로 표현하지 않습니다. 과거 PRD #3 동등성 검증기·정책을 변경하거나 Windows 확인을 만들어내지 않습니다. [정식 승격·설치·SHA-256·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따르며 새 `promotion-verification.json`과 공개 게시 영수증을 `artifacts/releases/v1.0.5/`에 보존합니다. 실제 게시/Latest 결과는 확인 후 기록하고 이슈 #4는 사용자 Windows 확인까지 open을 유지합니다.
+공개 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)의 SHA-256은 `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04`, DLL은 `39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. 인증 없는 다운로드의 CRC·정확히 두 파일·내부 바이트와 실제 Latest v1.0.5를 확인했습니다. 원래 검증 영수증을 변경하지 않고 `artifacts/releases/v1.0.5/`의 `promotion-verification.json`, 원본 `origin-alpha9-*` 영수증과 독립 감사·공개 게시 기록으로 동일성을 연결합니다. [정식 변경·설치·해시·복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 사용자 게시 지시는 Windows 검증 완료 근거로 쓰지 않으며 실제 Windows 확인·이슈 #4 완료는 별도로 대기합니다. 과거 PRD #3 동등성 검증기·정책과 이전 모든 배포는 보존합니다.
 
 ### v1.0.5-alpha.9 게시·고정 커밋 재빌드 검증
 

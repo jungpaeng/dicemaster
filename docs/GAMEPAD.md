@@ -2,11 +2,11 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.5 정식 Release 준비
+## v1.0.5 정식 Release
 
 alpha.9의 최종 조작을 동일 파일로 정식 v1.0.5에 반영합니다. 같은 패드의 L3/R3 겹침 열기, LB/RB 탭·↑↓ 목록·오른쪽 스틱 상세·Y 도구·X 새로고침·B 닫기, 선택된 항목의 새 A 예약/해제를 유지합니다. 선택 없는 첫 A는 선택만 하며 예약 행의 `(예약 중)` 표시는 선택과 독립적입니다. 마우스·키보드·터치와 전체 해제/중립 보호도 유지합니다.
 
-[전체 변경·제약·설치/복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 정식/Latest 게시는 사용자 지시에 따른 배포 채널 변경이며 실제 Windows 확인 완료나 이슈 #4 종료를 뜻하지 않습니다. 새 코드·검사 실행 없이 원래 alpha.9 검증과 동일 입력/바이트를 근거로 승격합니다. 게시 결과는 확인 후 기록하며 아래 prerelease 설명은 각 버전의 이력으로 보존합니다.
+**2026-10-19 23:59:15 KST에 정식 [v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5)를 게시하고 Latest로 지정했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip)은 alpha.9와 같은 바이트이며 공개 다운로드의 SHA-256·CRC·내부 바이트를 확인했습니다. [전체 변경·제약·설치/복구·Windows 확인](ISSUE-4-STABLE-RELEASE.md)을 따릅니다. 정식/Latest 게시는 사용자 지시에 따른 배포 채널 변경이며 실제 Windows 확인 완료나 이슈 #4 종료를 뜻하지 않습니다. 새 코드·검사 실행 없이 원래 alpha.9 검증과 동일 입력/바이트를 근거로 승격했습니다. 아래 prerelease 설명은 각 버전의 이력으로 보존합니다.
 
 ## alpha.9 — 예약 표시와 해제
 
