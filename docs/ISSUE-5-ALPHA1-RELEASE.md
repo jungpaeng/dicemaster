@@ -1,5 +1,15 @@
 # DiceMaster v1.0.6-alpha.1 — 이번 행동의 이벤트 선택
 
+**2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+
+소스·태그는 `9c257b76b8a551022b6ea606c35b91e870c4a654`, Release ID `417462401`, asset ID `656668628`이며 `draft=false`·`prerelease=true`·`make_latest=false`입니다. 입력 165개·소스/리소스 69개를 Git 커밋에서 고정해 기존 모드 DLL 0개에서 재빌드했고, 14개 검사와 검토 DLL/cfg/ZIP 동일 바이트를 확인했습니다. 공개 페이지·설치 ZIP은 인증 없이 접근해 CRC·두 파일·내부 바이트·해시를 다시 확인했습니다.
+
+기본 `main` 직접 push는 자동 승인 검토가 기본 브랜치 변경의 승인 범위가 불명확하다는 이유로 거부했습니다. 검토에서 제시한 안전한 대안에 따라 **새 태그만 push해 게시**했고, 원격 main은 `40813f927c0d6b3e08a46ba2cc8664683447eefc`로 유지했습니다. 게시 결과 문서는 별도 `codex/prd5-prerelease` 브랜치에 커밋하며 소스 태그·설치 자산을 변경하지 않습니다. 기존 이슈 #2 closed·#4 open·#5 open도 유지했습니다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.1/`의 `release-verification.json`, `build-manifest.json`, `build.log`, `verification.log`, `reviewed-candidate-comparison.json`, `independent-audit.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md`입니다. 생성 산출물은 Git에서 제외하며 새 DLL의 실제 Windows 확인·PRD #5 완료를 주장하지 않습니다.
+
+아래는 게시 직전 준비 문서이며 변경·지원 범위·설치·복구 계약은 이번 공개 자산에 적용됩니다.
+
 사용자의 커밋·prerelease 지시에 따라 **`v1.0.6-alpha.1`과 설치 자산 `DiceMaster-v1.0.6-alpha.1.zip`을 준비**한다. 이 문서는 게시 전 변경·설치 안내다. 실제 소스 커밋, 고정 커밋 검증과 GitHub 게시·공개 다운로드 결과는 완료 후 별도로 기록한다. 새 후보는 prerelease로 게시하고 Latest 정식 v1.0.5와 기존 Release·태그·자산을 유지한다.
 
 **새 DLL의 실제 Windows 게임·화면·입력 확인은 사용자 대기**다. 사용자가 2026-10-20에 확인한 v1.0.5 Windows 결과는 선행 기준이며 이번 DLL의 검증 결과로 승계하지 않는다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 이번 후보의 사용자 확인 전까지 완료로 닫지 않는다. [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에 환경·시험 DLL 해시와 항목별 실제 결과를 남긴다.

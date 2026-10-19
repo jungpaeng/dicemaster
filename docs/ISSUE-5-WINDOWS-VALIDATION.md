@@ -2,6 +2,8 @@
 
 상태: **v1.0.6-alpha.1의 모든 항목 미실행 · 사용자 확인 대기**. 설치 ZIP·해시·고정 소스와 게시 결과는 [배포 안내](ISSUE-5-ALPHA1-RELEASE.md)를 따른다. 이번 로컬 후보의 팝업·결과 직접 지정·조건 무시·화면 전환을 실제 Windows 게임에서 확인하기 위한 표다. 자동 대역 검사와 기존 v1.0.5 확인은 이 표의 실행 결과가 아니다. [구현·지원 범위·후보 생성](ISSUE-5-IMPLEMENTATION.md)을 먼저 대조한다.
 
+공개 시험 자산: [DiceMaster-v1.0.6-alpha.1.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip), DLL SHA-256 `fc2baea75bf1d1bb856411af49c4485c19f3369e77f573524dd2da56733a789c`. 실제 시험에 사용한 파일을 이 식별값과 대조한다.
+
 ## 선행 확인과 이번 대상
 
 2026-10-20 Asia/Seoul에 사용자가 “v1.0.5에서 Windows 확인 완료”라고 답했다. 선행 기준 v1.0.5의 소스·태그는 `8886309e2a7248fa13544f81546e3c4795ff9611`이며 이번 시작 HEAD는 `40813f9`다. 사용자 환경과 개별 항목 결과는 제공되지 않았다. 이 확인은 PRD #4 선행 조건의 근거이며 **이번 PRD #5 후보의 실제 게임 검증은 아니다.**

@@ -2,7 +2,11 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #5 — v1.0.6-alpha.1 prerelease 준비
+## PRD #5 — v1.0.6-alpha.1 prerelease
+
+**2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+
+아래 준비 절차는 게시 직전 기록입니다. 최종 식별·설치·복구·확인 범위는 [배포 기록](ISSUE-5-ALPHA1-RELEASE.md)를 따릅니다.
 
 2026-10-20 사용자의 “v1.0.5에서 Windows 확인 완료”를 선행 기준으로, 현재 구현의 커밋·prerelease 게시 지시를 받았습니다. 대상은 `v1.0.6-alpha.1`, 설치 자산은 `DiceMaster-v1.0.6-alpha.1.zip`입니다. [변경·지원 경로·해시·설치/복구](ISSUE-5-ALPHA1-RELEASE.md), [구현 당시 기록](ISSUE-5-IMPLEMENTATION.md), [새 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 구분합니다. Latest 정식 v1.0.5를 유지하고 이슈 #5는 종료하지 않습니다.
 

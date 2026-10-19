@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.1 prerelease 준비 · 실제 Windows 확인 대기**. 사용자의 커밋·prerelease 지시에 따라 고정 커밋 재빌드·게시를 진행한다. [배포 안내](ISSUE-5-ALPHA1-RELEASE.md)를 따르며, [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)의 새 이벤트 실행 방식은 사용자 확인 전까지 완료로 취급하거나 이슈를 닫지 않는다. [이번 후보 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.1 prerelease 게시 · 실제 Windows 확인 대기**. 2026-10-20 00:32:06 KST에 고정 커밋 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 재빌드·14개 검사·공개 다운로드 검증을 마치고 게시했다. [배포 안내](ISSUE-5-ALPHA1-RELEASE.md)를 따르며, [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)의 새 이벤트 실행 방식은 사용자 확인 전까지 완료로 취급하거나 이슈를 닫지 않는다. [이번 후보 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 ## 구현 시작 기준
 

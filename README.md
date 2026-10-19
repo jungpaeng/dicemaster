@@ -5,7 +5,11 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
-## PRD #5 — v1.0.6-alpha.1 prerelease 준비
+## PRD #5 — v1.0.6-alpha.1 prerelease
+
+**2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+
+아래 준비 절차는 게시 직전 기록입니다. 최종 식별·설치·복구·확인 범위는 [배포 기록](docs/ISSUE-5-ALPHA1-RELEASE.md)를 따릅니다.
 
 이벤트 사전 예약·99999 가중치 보정을 제거하고, 지원하는 실제 판정 직전에 좌측 하단 팝업에서 **일반 지정 / 조건 무시하고 이번만 지정 / 무작위**를 고릅니다. 조건 무시는 이번 발동 자격만 우회하며 능력치·호감도를 미리 바꾸지 않습니다. 미션 예약과 주사위 기능은 유지합니다.
 

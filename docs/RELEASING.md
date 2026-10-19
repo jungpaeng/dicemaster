@@ -1,6 +1,10 @@
 # 소스 기반 Release와 게시 이력
 
-## PRD #5 — v1.0.6-alpha.1 prerelease 준비
+## PRD #5 — v1.0.6-alpha.1 prerelease
+
+**2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+
+아래 준비 절차는 게시 직전 기록입니다. 최종 식별·설치·복구·확인 범위는 [배포 기록](ISSUE-5-ALPHA1-RELEASE.md)을 따릅니다.
 
 2026-10-20 사용자가 현재 PRD #5 구현의 커밋·prerelease 게시를 지시했습니다. 대상은 `v1.0.6-alpha.1`, 자산은 `DiceMaster-v1.0.6-alpha.1.zip`이며 [변경·지원 한계·설치·복구·SHA-256](ISSUE-5-ALPHA1-RELEASE.md)을 게시 설명으로 사용합니다. 이번 행동의 일반·명시 조건 무시·무작위 선택 팝업과 이벤트 예약/99999 보정 제거, 미션·주사위 유지가 범위입니다. 기본 ON 설정·로그 도구 저장·상위 설정, 이벤트만 검색/필터, 공유 입력 해제·중립과 제한된 Lua 지원 경로를 함께 안내합니다.
 

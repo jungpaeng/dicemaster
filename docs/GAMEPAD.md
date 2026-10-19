@@ -2,7 +2,11 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## PRD #5 — v1.0.6-alpha.1 준비 · 작은 이벤트 팝업
+## PRD #5 — v1.0.6-alpha.1 · 작은 이벤트 팝업
+
+**2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+
+아래 준비 절차는 게시 직전 기록입니다. 최종 식별·설치·복구·확인 범위는 [배포 기록](ISSUE-5-ALPHA1-RELEASE.md)을 따릅니다.
 
 실제 지원 판정 직전에만 팝업이 입력을 소유합니다. **↑↓·왼쪽 스틱 이동, A 일반/무작위 행 진행, X 명시 조건 무시, B 무작위**를 사용합니다. 키보드는 ↑↓ / Enter / Shift+Enter / Esc이며, 마우스는 행을 선택한 뒤 진행 버튼으로 확정합니다. 새 행동의 기본 초점은 무작위입니다.
 
