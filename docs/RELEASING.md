@@ -10,6 +10,8 @@
 
 사전 원격 main은 `656b493ab73cb1d1f36f1ebf00d02bbddb4cb33a`로 로컬 기준과 같고 기존 Release·태그는 각각 33개다. Latest 정식 v1.0.5와 기존 자산을 보존하고 새 버전만 `prerelease=true`·`make_latest=false`로 게시한다. 전체 후보의 14개 검사 통과 뒤 고정 커밋을 별도 소스 스냅샷에서 재빌드하고, 게시 후 익명 다운로드의 바이트·해시를 대조한다. 이 문단은 게시 전 준비 기록이며 결과는 후속 기록에 남긴다.
 
+**2026-10-20 04:15:46 KST에 [alpha.10 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.10)를 게시했다.** 소스·태그 `df627348e3aa099a087389642d04f7ac4b0a845c`의 고정 재빌드·14개 검사와 검토 후보의 180개 입력·DLL/cfg/ZIP·전체 검사 결과 일치를 확인했다. Release `417652240`·asset `657185876`, `draft=false`·`prerelease=true`이며 익명 공개 ZIP의 CRC·두 파일·내부 바이트·SHA-256 대조를 통과했다. 기존 33개 Release·태그·자산과 Latest v1.0.5·이슈 상태를 보존했다. 게시 결과 문서 보충은 별도 main 커밋이며 고정 소스·태그·자산을 변경하지 않는다. [상세 결과·남은 한계](ISSUE-5-ALPHA10-RELEASE.md)를 따른다.
+
 ## PRD #5 — v1.0.6-alpha.9 prerelease
 
 사용자는 로컬 구현 커밋 `da1f362`·`360ca57`을 `origin/main`에 반영하고 README 갱신·새 prerelease를 지시했다. 공통 포인터 어댑터·명시적인 취소 정책을 포함하며 조작·설정·단일 net48 DLL은 유지한다. DLL은 alpha.8보다 512바이트 증가한 620,032바이트이고 리소스와 외부 assembly 참조는 동일하다. [alpha.9 변경·설치·측정·검증](ISSUE-5-ALPHA9-RELEASE.md)을 따른다.

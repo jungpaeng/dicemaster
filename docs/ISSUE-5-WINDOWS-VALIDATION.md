@@ -1,8 +1,8 @@
 # PRD #5 — 실제 Windows 확인표
 
-상태: **v1.0.6-alpha.10 게시 준비 · 새 DLL의 모든 항목 미실행 · 사용자 확인 대기**. 설치 파일·해시·게시 상태는 [alpha.10 배포 기록](ISSUE-5-ALPHA10-RELEASE.md)을 따른다. alpha.9 이후 실제 능력치 참조에 따른 공통 조건 이름 표시를 보완하며 팝업·입력 조작·설정은 유지한다. 이전 자동 검사·사용자 보고를 새 DLL의 실행 결과로 승계하지 않는다. [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md)를 먼저 대조한다.
+상태: **v1.0.6-alpha.10 게시 · 새 DLL의 모든 항목 미실행 · 사용자 확인 대기**. 설치 파일·해시·게시 상태는 [alpha.10 배포 기록](ISSUE-5-ALPHA10-RELEASE.md)을 따른다. alpha.9 이후 실제 능력치 참조에 따른 공통 조건 이름 표시를 보완하며 팝업·입력 조작·설정은 유지한다. 이전 자동 검사·사용자 보고를 새 DLL의 실행 결과로 승계하지 않는다. [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md)를 먼저 대조한다.
 
-alpha.10 시험 파일은 `DiceMaster-v1.0.6-alpha.10.zip`이며 DLL은 621,056바이트·SHA-256 `c2a413032c23e532083143c1bccc4292f62d837caf83e35ac9a27d7de6d8a1c1`이다. 전체 후보의 14개 검사 프로그램을 통과했으며 아래 alpha.9 공개 파일·검사 기록은 당시 이력이다.
+alpha.10 시험 파일은 [DiceMaster-v1.0.6-alpha.10.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.10/DiceMaster-v1.0.6-alpha.10.zip)이며 소스·태그는 `df627348e3aa099a087389642d04f7ac4b0a845c`, DLL은 621,056바이트·SHA-256 `c2a413032c23e532083143c1bccc4292f62d837caf83e35ac9a27d7de6d8a1c1`이다. 전체 후보·고정 커밋 재빌드에서 각각 14개 검사 프로그램을 통과했고 2026-10-20 04:15:46 KST 게시 후 익명 공개 ZIP의 CRC·두 파일·바이트·해시를 대조했다. 아래 alpha.9 공개 파일·검사 기록은 당시 이력이다.
 
 ## alpha.10 조건 이름 표시 추가 확인
 
