@@ -1,5 +1,9 @@
 # 소스 기반 Release와 게시 이력
 
+[Release 작성 가이드](RELEASE-WRITING.md) · [사용자 안내](../README.md) · [소스 빌드·검증](SOURCE-BUILD.md)
+
+제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
+
 ## PRD #5 — v1.0.6-alpha.1 prerelease
 
 **2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
