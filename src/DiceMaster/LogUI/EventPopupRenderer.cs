@@ -363,25 +363,13 @@ namespace DiceMaster.LogUI
         private void SafeButton(string caption, string identity, Action action, GUIStyle style, float width = 0)
         {
             Event evt = Event.current;
-            bool down = evt.type == EventType.MouseDown || evt.type == EventType.TouchDown;
-            bool up = evt.type == EventType.MouseUp || evt.type == EventType.TouchUp;
             var content = new GUIContent(caption);
             // GUI.Button consumes MouseDown/Up. GetLastRect after that would
             // return a dummy Used-event rectangle and lose the transaction.
             Rect rect = GUILayoutUtility.GetRect(content, style, GUILayout.MinWidth(1),
                 GUILayout.MaxWidth(width > 0 ? width : Screen.width), GUILayout.ExpandWidth(true));
-            // Native IMGUI buttons accept mouse phases only. Some window/input
-            // paths deliver a direct touch phase instead of mouse emulation.
-            // Keep Unity's own clipped hit test/capture, adapting only this call.
-            EventType inputType = evt.type;
-            bool translateTouch = inputType == EventType.TouchDown || inputType == EventType.TouchUp || inputType == EventType.TouchMove;
-            if (inputType == EventType.TouchDown) evt.type = EventType.MouseDown;
-            else if (inputType == EventType.TouchUp) evt.type = EventType.MouseUp;
-            else if (inputType == EventType.TouchMove) evt.type = EventType.MouseDrag;
-            bool clicked;
-            try { clicked = GUI.Button(rect, content, style); }
-            finally { if (translateTouch && evt.type != EventType.Used) evt.type = inputType; }
-            if (down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled && !neutral)
+            ImGuiPointerButton.Result input = ImGuiPointerButton.Draw(rect, content, style);
+            if (input.Down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled && !neutral)
             {
                 pointerControl = identity; pointerToken = token;
                 pointerSelection = selected;
@@ -394,7 +382,7 @@ namespace DiceMaster.LogUI
                     && ReferenceEquals(primaryTarget, pointerTarget) && primaryResult == pointerResult;
                 GamepadBridge.NotifyPointerActivity();
             }
-            if (clicked && up && GUI.enabled && !neutral && pointerControl == identity && PointerValid())
+            if (input.Clicked && input.Up && GUI.enabled && !neutral && pointerControl == identity && PointerValid())
                 deferred = action;
         }
 

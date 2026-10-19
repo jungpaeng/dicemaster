@@ -145,6 +145,7 @@ python3 build/build-source.py --references '<읽기 전용 참조 루트>'
 DLL·설치 ZIP·검사 기록은 `artifacts/source-candidate/`에 생성됩니다. 게임 소스·게임 DLL을 저장소나 배포물에 추가하지 않습니다.
 
 - [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
+- [입력 경계 구조 정리](docs/DEVELOPMENT.md#입력-경계-구조-정리) — alpha.8 이후 개발 소스의 변경·검증 기록
 - [Release 작성 가이드](docs/RELEASE-WRITING.md) · [배포 절차·게시 기록](docs/RELEASING.md)
 - [변경 이력](CHANGELOG.md) · [README 개편 전 기록](docs/history/README-2026-10-20.md)
 

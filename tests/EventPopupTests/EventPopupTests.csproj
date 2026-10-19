@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="../LogUiKeyboardTests/RendererBoundary.cs" Link="RendererBoundary.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/EventPopupRenderer.cs" Link="EventPopupRenderer.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/ImGuiPointerButton.cs" Link="ImGuiPointerButton.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogRenderer.cs" Link="LogRenderer.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />

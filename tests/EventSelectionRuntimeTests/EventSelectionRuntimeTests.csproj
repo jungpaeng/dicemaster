@@ -13,6 +13,7 @@
     <Compile Include="../../src/DiceMaster/LiveLog/PreviewSyntax.cs" Link="PreviewSyntax.cs" />
     <Compile Include="../LogUiKeyboardTests/RendererBoundary.cs" Link="RendererBoundary.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/EventPopupRenderer.cs" Link="EventPopupRenderer.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/ImGuiPointerButton.cs" Link="ImGuiPointerButton.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
     <Compile Include="../../src/DiceMaster/Gamepad/LogPadController.cs" Link="LogPadController.cs" />
     <Compile Include="../../src/DiceMaster/Gamepad/PadController.cs" Link="PadController.cs" />

@@ -210,11 +210,19 @@ static class Program
         {
             var buttonCalls = Calls(Method(owner, "SafeButton")).ToArray();
             int rectangle = Array.FindIndex(buttonCalls, call => call.DeclaringType.FullName == "UnityEngine.GUILayoutUtility" && call.Name == "GetRect");
-            int unityButton = Array.FindIndex(buttonCalls, call => call.DeclaringType.FullName == "UnityEngine.GUI" && call.Name == "Button");
-            Check(rectangle >= 0 && unityButton > rectangle && !buttonCalls.Any(call =>
+            int sharedButton = Array.FindIndex(buttonCalls, call => call.DeclaringType.FullName == "DiceMaster.LogUI.ImGuiPointerButton" && call.Name == "Draw");
+            Check(rectangle >= 0 && sharedButton > rectangle && !buttonCalls.Any(call =>
                     call.DeclaringType.FullName == "UnityEngine.GUILayout" && call.Name == "Button"),
-                "actual " + owner + " must allocate and retain its hit rectangle before Unity consumes the button event");
+                "actual " + owner + " must retain its hit rectangle and delegate native event handling to the shared pointer adapter");
         }
+        Check(Calls(Method("DiceMaster.LogUI.ImGuiPointerButton", "Draw")).Count(call =>
+                call.DeclaringType.FullName == "UnityEngine.GUI" && call.Name == "Button") == 1,
+            "the shared pointer adapter must use one native GUI.Button call for capture and clipped hit testing");
+        Check(Calls(Method("DiceMaster.LogUI.ImGuiPointerButton", "Draw")).Any(call =>
+                call.DeclaringType.FullName == "UnityEngine.Event" && call.Name == "get_type") &&
+                !Calls(Method("DiceMaster.LogUI.ImGuiPointerButton", "Draw")).Any(call =>
+                    call.DeclaringType.FullName == "UnityEngine.Event" && call.Name == "get_rawType"),
+            "the shared pointer adapter must classify only the effective event so stale rawType never creates a fresh press/release");
         const string cursor = "DiceMaster.LogUI.LogCursorScope";
         Check(new[] { "SetLogOpen", "Update", "OnGUI", "OnApplicationFocus" }.All(name =>
                 Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == cursor && c.Name == "SetActive")) &&
@@ -492,8 +500,8 @@ static class Program
         int deferredAction = Array.FindIndex(pointerInstructions, i => i.OpCode == OpCodes.Stfld &&
             i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pendingAction");
         Check(pointerArm >= 0 && ticketStore > pointerArm && deferredAction > ticketStore &&
-                Calls(safeButton).Any(c => c.DeclaringType.FullName == renderer && c.Name == "IsPointerPress") &&
-                Calls(safeButton).Any(c => c.DeclaringType.FullName == renderer && c.Name == "IsPointerRelease") &&
+                new[] { "Down", "Up" }.All(name => pointerInstructions.Any(i => i.Operand is FieldReference f &&
+                    f.DeclaringType.FullName == "DiceMaster.LogUI.ImGuiPointerButton/Result" && f.Name == name)) &&
                 pointerInstructions.Any(i => i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pointerContext") &&
                 pointerInstructions.Any(i => i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pointerIdentity"),
             "actual row pointer transaction must store its down-time ticket before deferring an identity/context-checked release action");

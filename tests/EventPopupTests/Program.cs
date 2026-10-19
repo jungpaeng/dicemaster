@@ -79,6 +79,7 @@ internal static partial class Program
     { Draw(popup, EventType.KeyDown, key, shift); Draw(popup, EventType.KeyUp, key); }
     private static void Main()
     {
+        PointerButtonAdapterContracts();
         var popup = Start();
         popup.Handle(LogPadCommand.Activate);
         Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0, "Unselected A cannot silently choose the original random decision");

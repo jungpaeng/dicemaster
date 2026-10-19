@@ -742,12 +742,6 @@ namespace DiceMaster.LogUI
         private void SafeButton(string label, string identity, Action action, bool highlighted = false, float height = 0, bool chrome = false, float maxWidth = 0)
         {
             Event evt = Event.current;
-            // Classify the callback's effective event before Button consumes
-            // it. rawType can retain a physical press/release during layout,
-            // repaint or a filtered window callback; none is fresh input.
-            // Translated touch is already an effective mouse event here.
-            bool down = IsPointerPress(evt.type);
-            bool up = IsPointerRelease(evt.type);
             GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
             // MinHeight also forces maxHeight in Unity's word-wrap sizer. Let
             // rows measure their full wrapped caption at the final viewport
@@ -761,23 +755,8 @@ namespace DiceMaster.LogUI
                 GUILayoutUtility.GetRect(content, style, GUILayout.MinWidth(1), GUILayout.MaxWidth(maxWidth), GUILayout.ExpandWidth(true)) :
                 height > 0 ? GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true), GUILayout.Height(height)) :
                 GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true));
-            // Unity's native Button handles mouse phases only. Some screens
-            // deliver direct touch instead of an effective mouse event inside
-            // a native window. Normalize only real touch input for the native
-            // button so its hit-test clipping and mouse capture stay in charge.
-            EventType originalType = evt.type;
-            bool translateTouch = originalType == EventType.TouchDown || originalType == EventType.TouchUp || originalType == EventType.TouchMove;
-            if (translateTouch)
-                evt.type = NativePointerType(originalType);
-            bool pressed;
-            try { pressed = GUI.Button(rect, content, style); }
-            finally
-            {
-                // Retain native consumption; otherwise let later controls see
-                // the same touch event rather than a manufactured mouse phase.
-                if (translateTouch && evt.type != EventType.Used) evt.type = originalType;
-            }
-            if (down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled)
+            ImGuiPointerButton.Result input = ImGuiPointerButton.Draw(rect, content, style);
+            if (input.Down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled)
             {
                 pointerIdentity = identity;
                 pointerContext = model.ContextId;
@@ -786,10 +765,10 @@ namespace DiceMaster.LogUI
                 if (SupportsReservation && State.SelectedId != null && identity == "row:" + State.SelectedId)
                     pointerReservation = ArmSelectedReservation();
             }
-            if (!pressed || !GUI.enabled) return;
+            if (!input.Clicked || !GUI.enabled) return;
             // Button order may change during refresh. Only its original context
             // and stable control identity may consume a physical mouse release.
-            if (!up || pointerIdentity != identity || pointerContext != model.ContextId) return;
+            if (!input.Up || pointerIdentity != identity || pointerContext != model.ContextId) return;
             // Mutate after GUI.Window finishes, so changing tabs or
             // tool actions cannot invalidate its current layout tree.
             pendingAction = action;
