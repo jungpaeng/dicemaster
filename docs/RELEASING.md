@@ -4,6 +4,14 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## PRD #5 — v1.0.6-alpha.4 prerelease 준비
+
+사용자는 조사한 두 터치 문제의 수정·회귀 검사·커밋·`origin/main` 반영·README 갱신·새 prerelease 게시를 지시했다. 최신 main `ea11afbda83433c58eeddc90cada3d021013bdda`를 시작점으로 사용한다. 로그 포커스 해제와 팝업 첫 선택 이후의 늦은 입력 초기화가 범위이며 [alpha.4 변경·설치·복구·검증 기록](ISSUE-5-ALPHA4-RELEASE.md)을 따른다.
+
+대상은 `v1.0.6-alpha.4`, 설치 ZIP은 `DiceMaster-v1.0.6-alpha.4.zip`이다. 전체 소스·격리 소스·고정 소스 커밋의 자동 검사를 완료하고 검토 DLL/cfg/ZIP 바이트를 대조한 뒤 main·새 태그를 반영한다. `draft=false`·`prerelease=true`·`make_latest=false`로 게시하고 익명 공개 페이지·다운로드의 CRC·두 파일·바이트·SHA-256과 태그를 다시 확인한다. 이 절의 검사·게시 수치와 원격 ID는 실제 단계가 끝난 뒤 기록한다.
+
+영수증 경로는 `artifacts/releases/v1.0.6-alpha.4/`다. 기존 Release·태그·자산과 Latest v1.0.5를 보존하며 새 DLL의 실제 Windows·장치 확인 전에는 이슈 #5를 완료로 닫지 않는다. alpha.3의 사용자 보고는 [당시 후속 기록](ISSUE-5-ALPHA3-RELEASE.md#2026-10-20-사용자-후속-확인)에 한정하며 새 후보 통과로 승계하지 않는다. 아래 alpha.3의 빌드·게시 수치와 이력은 보존한다.
+
 ## PRD #5 — v1.0.6-alpha.3 prerelease
 
 사용자의 전체 로그 터치 수정·팝업 선택 행 재클릭/터치 진행 요청에 따라 **2026-10-20 01:23:02 KST에 [v1.0.6-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.3/DiceMaster-v1.0.6-alpha.3.zip). 최신 `origin/main`을 기준으로 구현·검사·README를 main에 반영했으며 소스·태그는 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`다. Release ID `417499227`·asset ID `656778224`, `draft=false`·`prerelease=true`·`make_latest=false`다. [변경·설치·복구·검증 상태](ISSUE-5-ALPHA3-RELEASE.md)를 따른다.

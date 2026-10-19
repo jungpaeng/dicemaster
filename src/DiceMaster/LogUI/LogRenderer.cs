@@ -106,8 +106,14 @@ namespace DiceMaster.LogUI
             // handled. Its own down/up identity and ticket stay valid; pad
             // authority was already canceled on pointer-down. Hard lifecycle
             // boundaries and invalid targets never take this path.
-            if (preservePointerTransaction && pointerIdentity != null)
+            if (preservePointerTransaction)
             {
+                // Update can observe the takeover after the accepted release
+                // already completed. It still must not clear a newly focused
+                // search caret or move the user out of the tools they opened.
+                // Cancel only pad authority when there is no active press.
+                if (pointerIdentity == null)
+                { model.CancelExecution(); pointerReservation = null; }
                 LatchPhysicallyHeldKeys();
                 return;
             }
@@ -320,7 +326,10 @@ namespace DiceMaster.LogUI
 
         private void DrawWindow(int id)
         {
-            if (releaseTextFocus || !IsEventTab || area != Area.List)
+            // Focus changes belong to explicit transitions, not to the tab's
+            // continuous draw callbacks. In particular, do not touch native
+            // focus between an accepted pointer down and its matching release.
+            if (releaseTextFocus && pointerIdentity == null && Event.current.type == EventType.Layout)
             { GUI.FocusControl(null); releaseTextFocus = false; }
             string summary = "문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary();
             float width = Math.Max(1, window.width - Math.Max(8, chromeFont * .55f) * 2);
@@ -335,7 +344,7 @@ namespace DiceMaster.LogUI
                 int tabIndex = index;
                 SafeButton((index == currentTabIndex ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), index == currentTabIndex, chrome: true);
             }
-            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { area = Area.Tools; ensureVisible = true; }, area == Area.Tools, chrome: true);
+            SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { area = Area.Tools; releaseTextFocus = true; ensureVisible = true; }, area == Area.Tools, chrome: true);
             SafeButton("닫기", "close", () => close?.Invoke(), chrome: true);
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
@@ -552,6 +561,9 @@ namespace DiceMaster.LogUI
                 // selected-row press preserves its down/up transaction.
                 pointerIdentity = EventSearchControl;
                 pointerContext = model.ContextId;
+                // This fresh, explicit text-field press supersedes any older
+                // queued focus release, including one from opening the log.
+                releaseTextFocus = false;
                 GamepadBridge.NotifyPointerActivity();
                 CancelPending();
             }
@@ -956,7 +968,7 @@ namespace DiceMaster.LogUI
             {
                 GamepadBridge.NotifyKeyboardActivity();
                 if (evt.keyCode == KeyCode.Escape || evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
-                { GUI.FocusControl(null); heldKeys.Add(evt.keyCode); evt.Use(); }
+                { releaseTextFocus = true; heldKeys.Add(evt.keyCode); evt.Use(); }
                 // Text entry (including X, Y, space and arrows) belongs to the
                 // search field, never to a reservation or global log command.
                 return;

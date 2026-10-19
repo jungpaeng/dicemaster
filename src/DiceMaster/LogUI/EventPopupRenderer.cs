@@ -34,7 +34,11 @@ namespace DiceMaster.LogUI
 
         internal void ResetInput(bool preservePointerTransaction = false)
         {
-            if (preservePointerTransaction && PointerValid()) return;
+            // Pointer takeover can arrive in Update after its up already
+            // completed selection. Do not require an extra neutral frame then:
+            // the next fresh press must remain usable. Preserve any existing
+            // entry/confirmation barrier; invalid active presses still cancel.
+            if (preservePointerTransaction && (pointerControl == null || PointerValid())) return;
             neutral = true;
             pointerControl = null;
             keys.Clear();

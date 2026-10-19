@@ -58,7 +58,7 @@ internal static class Program
             new EventCandidate { Id = "blocked", Title = "미충족 후보", State = "발동 불가 · 조건 미충족", CanForce = true },
             new EventCandidate { Id = "broken", Title = "읽기 실패 후보" }
         };
-        Input.Held.Clear(); Application.isFocused = true; Input.touchCount = 0;
+        Input.Held.Clear(); Application.isFocused = true; Input.touchCount = 0; Input.PointerSampleActive = false;
         Screen.width = 1920; Screen.height = 1080;
         DiceMaster.Config.ConfigManager.LogFontSize.Value = 20;
         GUILayout.ResetPointerCapture(); GUILayout.ButtonInput = null;
@@ -132,6 +132,8 @@ internal static class Program
 
         PointerRegressions();
         RowReclickRegressions();
+        PostReleaseTakeoverRegressions();
+        SoftResetBarrierRegressions();
         KeyboardContextualConfirmation();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
@@ -180,6 +182,115 @@ internal static class Program
                     && EventSelectionRuntime.Forced == (candidate == "blocked"),
                 key + " shift=" + shift + " must use the contextual A semantics for " + candidate);
         }
+    }
+
+    private static void PostReleaseTakeoverRegressions()
+    {
+        var identity = typeof(EventPopupRenderer).GetField("pointerControl", BindingFlags.Instance | BindingFlags.NonPublic);
+        var eventPairs = new[] {
+            (EventType.MouseDown, EventType.MouseUp, EventType.MouseDown, EventType.MouseUp),
+            (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp),
+            (EventType.TouchDown, EventType.TouchUp, EventType.TouchDown, EventType.TouchUp)
+        };
+        foreach (var pair in eventPairs)
+        foreach (string candidate in new[] { "eligible", "blocked" })
+        foreach (bool padConnected in new[] { false, true })
+        {
+            var popup = Start();
+            var controller = new LogPadController(); var states = new PadState[4];
+            bool[] connected = { padConnected, false, false, false };
+            LogInputMode mode = padConnected ? LogInputMode.Gamepad : LogInputMode.KeyboardMouse;
+            double time = 0;
+            LogPadFrame Tick(PadState state)
+            {
+                states[0] = state;
+                LogPadFrame frame = controller.Tick(true, true, true, mode, time += .1, states, connected);
+                if (frame.ResetFocus) popup.ResetInput(frame.PreservePointerTransaction);
+                popup.UpdateInput(); popup.Handle(frame.Command);
+                return frame;
+            }
+            Tick(default); Tick(default);
+            GamepadBridge.PointerActivity = controller.PointerActivity;
+            Vector2 point = Point(popup, text => RowCaption(text, candidate));
+            // A touch may still be sampled in its Ended frame; a mouse's next
+            // down may already be sampled before its queued OnGUI callback.
+            // Neither requires an empty-input Update between two fresh taps.
+            bool touch = pair.Item3 == EventType.TouchDown;
+            Input.touchCount = touch ? 1 : 0;
+            Input.PointerSampleActive = !touch;
+            Pointer(popup, pair.Item1, pair.Item3, point);
+            Pointer(popup, pair.Item2, pair.Item4, point);
+            Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                pair + " first tap only selects before delayed pointer takeover; pad=" + padConnected);
+
+            // The first down's activity is processed only after its up has
+            // cleared pointerControl. This ordering was absent from Click().
+            PadState held = new PadState { Buttons = PadButtons.A };
+            LogPadFrame takeover = Tick(held);
+            Check(takeover.ResetFocus && takeover.PreservePointerTransaction
+                && takeover.Command == LogPadCommand.None && takeover.Scroll == 0,
+                "Post-up takeover consumes held pad input even without a connected pad: " + pair + " pad=" + padConnected);
+
+            // Reuse the original screen point. Do not repaint/recenter or
+            // provide a zero-input Update to accidentally unlock the popup.
+            Pointer(popup, pair.Item1, pair.Item3, point);
+            Check((string)identity.GetValue(popup) == "row:" + candidate,
+                pair + " the next fresh tap captures the selected row without a neutral gap");
+            Pointer(popup, pair.Item2, pair.Item4, point);
+            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == candidate
+                && EventSelectionRuntime.Forced == (candidate == "blocked"),
+                pair + " exactly the second tap executes the presented action; pad=" + padConnected);
+            Pointer(popup, pair.Item2, pair.Item4, point);
+            Check(EventSelectionRuntime.Commands == 1,
+                "Duplicate release after the second tap cannot execute again: " + pair);
+            LogPadFrame submitted = Tick(held);
+            Check(submitted.Command == LogPadCommand.None && submitted.Scroll == 0 && EventSelectionRuntime.Commands == 1,
+                "Delayed pointer takeover after Submit cannot replay held A: " + pair);
+            Key(popup, KeyCode.Return);
+            Check(EventSelectionRuntime.Commands == 1,
+                "A soft takeover after Submit retains the existing neutral barrier: " + pair);
+        }
+        Input.PointerSampleActive = false; Input.touchCount = 0;
+        GamepadBridge.PointerActivity = null;
+    }
+
+    private static void SoftResetBarrierRegressions()
+    {
+        var neutral = typeof(EventPopupRenderer).GetField("neutral", BindingFlags.Instance | BindingFlags.NonPublic);
+        var identity = typeof(EventPopupRenderer).GetField("pointerControl", BindingFlags.Instance | BindingFlags.NonPublic);
+        var popup = Start();
+        popup.ResetInput();
+        Check((bool)neutral.GetValue(popup), "Hard reset starts the entry neutral barrier");
+        popup.ResetInput(true);
+        Check((bool)neutral.GetValue(popup), "Soft takeover cannot clear an existing hard entry barrier");
+        Input.Held.Add(KeyCode.Return); popup.UpdateInput();
+        Check((bool)neutral.GetValue(popup), "Held Enter keeps the entry barrier after a soft takeover");
+        Input.Held.Clear(); popup.UpdateInput();
+        Check(!(bool)neutral.GetValue(popup), "An actual neutral input sample releases the entry barrier");
+        popup.Handle(LogPadCommand.Down); popup.Handle(LogPadCommand.Activate);
+        Check((bool)neutral.GetValue(popup), "Submit starts its own neutral barrier");
+        popup.ResetInput(true);
+        Check((bool)neutral.GetValue(popup), "Soft takeover cannot clear the Submit barrier");
+
+        foreach (string boundary in new[] { "focus", "token", "target", "result" })
+        {
+            popup = Start();
+            Click(popup, text => RowCaption(text, "eligible"));
+            Vector2 point = Point(popup, text => RowCaption(text, "eligible"));
+            Input.touchCount = 1;
+            Pointer(popup, EventType.TouchDown, EventType.TouchDown, point);
+            Check(identity.GetValue(popup) != null, "Touch is captured before hard invalidation: " + boundary);
+            if (boundary == "focus") popup.ResetInput();
+            else if (boundary == "token") { EventSelectionRuntime.Token++; popup.UpdateInput(); }
+            else if (boundary == "target") { EventSelectionRuntime.Candidates[0].Target = new object(); popup.ResetInput(true); }
+            else { EventSelectionRuntime.Candidates[0].Result = "changed-result"; popup.ResetInput(true); }
+            Check(identity.GetValue(popup) == null && (bool)neutral.GetValue(popup),
+                "Hard boundary or invalid active target cancels touch and starts a neutral barrier: " + boundary);
+            Pointer(popup, EventType.TouchUp, EventType.TouchUp, point);
+            Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
+                "The stale touch release after invalidation cannot execute: " + boundary);
+        }
+        Input.touchCount = 0;
     }
 
     private static bool RowCaption(string text, string id) => text.Contains(id == "eligible" ? "정상 후보"

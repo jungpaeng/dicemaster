@@ -149,6 +149,7 @@ internal static partial class Program
             Check(refreshes == 0 && Area(renderer) == "List" && LogBridge.Reservations == attempts,
                 "typing X, Y or space in event search cannot refresh, open tools or reserve");
             TapKey(renderer, KeyCode.Escape);
+            Repaint(renderer);
             Check(closes == 0 && GUI.GetNameOfFocusedControl() == null,
                 "Escape first exits event text entry without closing the log or advancing an event");
 

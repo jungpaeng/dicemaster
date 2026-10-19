@@ -73,8 +73,20 @@ namespace UnityEngine
     {
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
         private static string focusedControl;
+        public sealed class FocusCall
+        {
+            public string Name;
+            public EventType Type, RawType;
+        }
+        // Record the renderer's focus lifecycle without inventing native
+        // FocusKeyboardControl side effects on mouse/touch capture.
+        public static readonly List<FocusCall> FocusCalls = new List<FocusCall>();
         public static string NextControlName;
-        public static void FocusControl(string name) { focusedControl = name; }
+        public static void FocusControl(string name)
+        {
+            FocusCalls.Add(new FocusCall { Name = name, Type = Event.current.type, RawType = Event.current.rawType });
+            focusedControl = name;
+        }
         public static string GetNameOfFocusedControl() => focusedControl;
         public static void SetNextControlName(string name) { NextControlName = name; }
         public static void Box(Rect rect, string text) { }
@@ -436,7 +448,7 @@ namespace UnityEngine
         public static int Clamp(int value, int min, int max) => Math.Max(min, Math.Min(max, value));
         public static float Clamp(float value, float min, float max) => Math.Max(min, Math.Min(max, value));
     }
-    public static class Input { public static readonly HashSet<KeyCode> Held = new HashSet<KeyCode>(); public static bool GetKey(KeyCode key) => Held.Contains(key); public static bool anyKey => Held.Count > 0; public static int touchCount; }
+    public static class Input { public static readonly HashSet<KeyCode> Held = new HashSet<KeyCode>(); public static bool GetKey(KeyCode key) => Held.Contains(key); public static bool PointerSampleActive; public static bool anyKey => Held.Count > 0 || PointerSampleActive; public static int touchCount; }
     public sealed class Event
     {
         public static Event current = new Event(); public EventType type = EventType.Layout, rawType = EventType.Layout;

@@ -29,6 +29,7 @@ internal static partial class Program
         RendererNativePointerTransactions();
         RendererNativeConsumedCornerPress();
         RendererNonInputPassesPreservePointer();
+        RendererExplicitFocusLifecycle();
         CursorOwnershipLifecycle();
         RendererListPointerSelectionTransactions();
         RendererPointerTakeoverTransactions();

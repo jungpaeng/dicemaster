@@ -2,6 +2,14 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## PRD #5 — v1.0.6-alpha.4 준비
+
+최신 `origin/main`의 `ea11afbda83433c58eeddc90cada3d021013bdda`에서 로그의 탭별 터치 차이와 팝업의 추가 터치 문제를 수정하고 README·검사·구현을 main에 반영한다. [alpha.4 배포 기록](ISSUE-5-ALPHA4-RELEASE.md)에 검증한 소스·검사·설치 파일·게시 결과를 확정한 뒤 기록한다. 현재는 준비 단계이며 이전 alpha.3의 통과 수치·파일 해시를 새 후보 결과로 쓰지 않는다.
+
+로그는 이벤트 외 탭의 매 콜백 `GUI.FocusControl(null)`을 제거하고 탭·도구·키보드 경계의 해제 요청을 안전한 화면 갱신에서 한 번 처리한다. 진행 중인 포인터 누름·해제를 해제 요청 때문에 끊지 않는다. 실제 Windows에서 이 경로가 탭별 터치 실패의 직접 원인이었는지는 새 장치 확인이 필요하다.
+
+팝업은 실제 `LogPadController` 소스를 연결한 재현 순서에서 첫 터치 해제 후 늦은 포인터 전환이 `ResetInput(true)`을 호출해 다음 입력을 막는 경로를 수정한다. 소프트 초기화는 유효한 누름과 이미 해제된 중립 상태를 보존한다. 잘못된 누름·초점 상실·새 진입·토큰/대상/결과 교체 같은 안전 경계에서는 계속 취소하고 해제·중립을 기다린다. 실제 장치 확인 범위는 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에 별도로 기록한다.
+
 ## PRD #5 — v1.0.6-alpha.3 prerelease
 
 **2026-10-20 01:23:02 KST에 [v1.0.6-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.3/DiceMaster-v1.0.6-alpha.3.zip). 최신 `origin/main`을 기준으로 구현·검사·README를 반영했으며 소스·태그는 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`다. 전체·격리·고정 커밋 재빌드에서 각각 14개 검사 프로그램과 검토 DLL/cfg/ZIP 동일 바이트를 확인했다. 공통 UI 2,743개·팝업 981개·후보 DLL 연결 83개를 포함하며, 인증 없는 공개 페이지·다운로드의 CRC·두 파일·내부 바이트·SHA-256도 통과했다. [alpha.3 배포 기록](ISSUE-5-ALPHA3-RELEASE.md)에 파일·게시 식별값을 기록한다.
