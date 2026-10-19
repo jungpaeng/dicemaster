@@ -6,7 +6,6 @@ namespace UnityEngine
 {
     public class Object
     {
-        public string name { get; set; }
         public static Object Found;
         public static bool operator ==(Object a, Object b) => ReferenceEquals(a, b);
         public static bool operator !=(Object a, Object b) => !ReferenceEquals(a, b);
@@ -101,7 +100,7 @@ namespace DiceMaster
         private static string GetLocalizedSystemText(string key, string defaultValue) => defaultValue;
     }
     // The mapper's optional dynamic flag-name lookup remains a game boundary.
-    public static partial class DataHelper { public static string GetFlagName(string id) => id; }
+    public static class DataHelper { public static string GetFlagName(string id) => id; }
     public class DicePlugin
     {
         public static DicePlugin Instance { get; set; } = new DicePlugin();
@@ -110,8 +109,6 @@ namespace DiceMaster
     }
     public static class ReflectionExtensions
     {
-        public static T GetFieldValue<T>(this object instance, string fieldname) =>
-            (T)instance.GetType().GetField(fieldname).GetValue(instance);
         public static void SetPrivateField(this object instance, string fieldname, object value) =>
             instance.GetType().GetField(fieldname).SetValue(instance, value);
     }

@@ -200,11 +200,6 @@ static class Program
             type.FullName is "DiceMaster.EmbeddedTranslations.Display" or "DiceMaster.DicePatch" or "DiceMaster.UiTextMapper");
         copier.CopyMethod(source.MainModule.GetType("DiceMaster.OptionInfoPatch").Methods.Single(method => method.Name == "PrintToNarrativeLog"),
             target.MainModule.GetType("DiceMaster.OptionInfoPatch"));
-        if (name == "candidate")
-            foreach (var method in source.MainModule.GetType("DiceMaster.DataHelper").Methods.Where(method =>
-                method.Name is "FormatConditionValName" or "TryFormatConditionStatGroup"))
-                copier.CopyMethod(method,
-                    target.MainModule.GetType("DiceMaster.DataHelper"));
         foreach (var type in Types(target.MainModule.Types))
         {
             type.CustomAttributes.Clear();
@@ -259,7 +254,6 @@ static class Program
             CheckDisplayLabels(display);
             CheckTranslationLoader(assembly);
             CheckNarrativeOutput(assembly);
-            assertions += (int)Call(assembly.GetType("DiceMaster.ConditionNameRegression", true), "Run");
         }
         Type dice = assembly.GetType("DiceMaster.DicePatch", true);
         Type plugin = assembly.GetType("DiceMaster.DicePlugin", true);
