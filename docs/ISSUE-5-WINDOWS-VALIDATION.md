@@ -1,8 +1,8 @@
 # PRD #5 — 실제 Windows 확인표
 
-상태: **v1.0.6-alpha.8 게시 · 이번 DLL의 모든 항목 미실행 · 사용자 확인 대기**. 설치 파일·해시·고정 소스와 게시 결과는 [alpha.8 배포 안내](ISSUE-5-ALPHA8-RELEASE.md)를 따른다. 팝업·결과 직접 지정·A 확인·클릭/터치·화면 전환을 실제 Windows 게임에서 확인하기 위한 표다. 자동 대역 검사와 이전 버전의 제한된 확인은 이 표의 실행 결과가 아니다. [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md)를 먼저 대조한다.
+상태: **v1.0.6-alpha.9 배포 준비 · 이번 DLL의 모든 항목 미실행 · 사용자 확인 대기**. 설치 파일·해시·고정 소스와 게시 상태는 [alpha.9 배포 기록](ISSUE-5-ALPHA9-RELEASE.md)을 따른다. 팝업·결과 직접 지정·A 확인·클릭/터치·화면 전환을 실제 Windows 게임에서 확인하기 위한 표다. 공통 포인터 처리·취소 정책 정리 후 조작·설정은 alpha.8과 같지만 이전 자동 검사·사용자 보고를 새 DLL의 실행 결과로 승계하지 않는다. [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md)를 먼저 대조한다.
 
-공개 시험 자산은 [DiceMaster-v1.0.6-alpha.8.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.8/DiceMaster-v1.0.6-alpha.8.zip)이며 소스·태그는 `7d79363bc33dffac80d453fe6a945a6e3edeb513`, DLL SHA-256은 `884a278ccacb1119696e00bb66140dcc900206909d3dba105f9cdbb677bbe53a`다. 2026-10-20 03:18:58 KST 게시 후 공개 ZIP의 CRC·두 파일·바이트·해시를 대조했다. 이전 alpha.7의 파일·결과를 이번 항목의 통과 근거로 사용하지 않는다.
+이번 후보 DLL은 620,032바이트·SHA-256 `7da12ec4b77d524e82f2bf8c62d4de6cf8e0fc74b83fb3cc6393619f8efc1d64`이며 전체·격리 재빌드 각각 14개 프로그램을 통과했다. alpha.9 고정 소스·태그·공개 파일은 게시 후 기록한다. 현재 공개 설치 파일은 [alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8)이며 당시 파일·게시 검증은 [alpha.8 배포 기록](ISSUE-5-ALPHA8-RELEASE.md)에 보존한다. alpha.8의 실제 Windows 성공 보고는 제공되지 않았고 이번 새 DLL도 미실행이다.
 
 2026-10-20 사용자는 alpha.2에서 **팝업 터치 행 선택 성공 / 전체 로그 탭·목록 터치 실패**를 보고했다. 실제 파일 해시·게임/로더/Windows 버전·장치별 입력 단계는 제공되지 않았다. 이는 보고된 항목의 제한된 후속 확인이며 새 alpha.3이나 결과 확정·조건 무시·패드의 통과 근거가 아니다. [alpha.2 게시 당시 파일·자동 검사·사용자 후속](ISSUE-5-ALPHA2-RELEASE.md#2026-10-20-사용자-후속-확인)을 별도로 보존한다.
 
