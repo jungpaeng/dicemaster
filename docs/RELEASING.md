@@ -4,13 +4,15 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## 대화 중 조건 분기 선택 — v1.0.6-alpha.11 prerelease 준비
+## 대화 중 조건 분기 선택 — v1.0.6-alpha.11 prerelease
 
-사용자의 테스트용 prerelease 요청에 따라 조건 분기 선택·탭별 팝업 설정을 새 시험판으로 준비한다. 구현 커밋 `3e051b8`과 조건명 처리 원복 `0b3e758`을 함께 포함한다. README는 alpha.11의 현재 사용법으로 통합하고 정식 Latest v1.0.5는 유지한다. [alpha.11 변경·설치·지원 범위](ISSUE-5-ALPHA11-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md).
+사용자의 테스트용 prerelease 요청에 따라 **2026-10-20 05:13:44 KST에 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.11)을 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip). 구현 `3e051b8`과 조건명 원복 `0b3e758` 및 README·배포 준비 문서를 포함한 고정 소스·주석 태그는 `abc621eff772597972c6da61694b0fd589389d8d`이며 `origin/main`에 반영했다. [변경·설치·지원 범위·검사](ISSUE-5-ALPHA11-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md).
 
-게시 전 원격 main·새 버전의 미사용 여부·기존 Release/태그/자산·Latest·이슈 상태를 대조한다. 이번 후보의 전체 소스 빌드와 14개 검사 프로그램을 통과했다. 다음으로 고정 커밋을 별도 소스 스냅샷에서 재빌드해 입력·DLL/cfg/ZIP·전체 검사 결과를 비교한다. 최종 파일 크기·해시·소스 SHA와 실행 결과는 alpha.11 배포 기록에 기입한다. 새 버전만 `prerelease=true`·`make_latest=false`로 게시하고 익명 공개 다운로드를 검증한다. 이 문단은 게시 전 계획이며 실제 게시·검증 완료 기록이 아니다.
+후보 전체 소스 빌드와 고정 커밋의 별도 소스 스냅샷 재빌드에서 각각 14개 검사 프로그램을 통과했다. 고정 검사는 05:13:01 KST에 기존 모드 DLL 0개에서 완료했고 검토 후보의 185개 입력·DLL/cfg/ZIP 바이트·전체 검사 결과와 일치했다. Release `417702109`·asset `657322364`, `draft=false`·`prerelease=true`·`make_latest=false`다. 게시 후 익명 공개 페이지·다운로드에서 CRC·정확히 두 파일·내부 바이트·SHA-256을 대조했다.
 
-alpha.10의 참조 기반 이름 처리와 전용 모의 검사는 사용자 후속 보고에 따라 alpha.9 방식으로 원복했다. 해당 내부 ID의 실제 참조 값과 원인은 미확인이며 이 원복으로 표시 문제를 해결했다고 주장하지 않는다. 기존 alpha.10 공개 Release·태그·자산은 변경하지 않는다. [후속 보고·원복 범위](ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)를 따른다.
+사전 원격 main `db8006e486b1e393ece295c63a0942b30b1ef989`와 기존 34개 Release·태그·자산을 보관하고 게시 후 보존을 확인했다. Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open도 유지했다. 조건명 원복은 실제 내부 ID 표시 문제 해결을 뜻하지 않으며 기존 alpha.10 공개 파일은 변경하지 않았다. [원복 근거](ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)를 따른다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.11/`의 `release-verification.json`·`build-manifest.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 고정 검사 영수증의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 시점이며 위 게시 결과와 구분한다. 이 결과 보충은 별도 main 문서 커밋이며 빌드 소스·태그·공개 자산을 변경하지 않는다. 새 DLL의 실제 Windows·장치 확인과 이슈 #5 완료는 대기다.
 
 ## 조건 로그 능력치 이름 — v1.0.6-alpha.10 prerelease
 

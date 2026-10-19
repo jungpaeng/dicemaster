@@ -1,6 +1,6 @@
 # v1.0.6-alpha.11 — 대화 중 조건 분기 선택
 
-상태: **게시 준비 중 · 새 DLL의 실제 Windows·장치 확인 대기**. 이 문서는 이번 시험판의 변경·지원 범위와 배포 검증을 구분한다. 이번 후보의 파일 크기·해시와 자동 검사 결과는 아래에 기록하며 고정 소스 재빌드·게시 결과는 완료 후 보충한다.
+상태: **2026-10-20 05:13:44 KST prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. 이 문서는 이번 시험판의 변경·지원 범위와 배포 검증을 구분한다. 소스·주석 태그는 `abc621eff772597972c6da61694b0fd589389d8d`이며 후보·고정 재빌드·익명 공개 파일의 바이트·해시를 대조했다.
 
 **[이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.11) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)
 
@@ -60,7 +60,7 @@ Xbox/XInput 패드, 마우스·트랙패드, 마우스로 인식되는 모니터
 
 ## 자동 검사·배포 대조
 
-2026-10-20 .NET SDK 8.0.426으로 이번 후보의 전체 소스를 빌드하고 **14개 검사 프로그램**을 통과했다. 빌드 입력 185개의 해시를 대조했다. 다음 고정 커밋의 별도 소스 스냅샷 재빌드에서 입력·DLL/cfg/ZIP 바이트·전체 검사 결과를 비교하며 이 단계는 아직 대기다.
+2026-10-20 .NET SDK 8.0.426으로 이번 후보의 전체 소스를 빌드하고 **14개 검사 프로그램**을 통과했다. 빌드 입력 185개의 해시를 대조했다. 고정 소스 `abc621eff772597972c6da61694b0fd589389d8d`를 기존 모드 DLL 0개인 별도 소스 스냅샷에서 재빌드해 05:13:01 KST에 같은 14개 검사 프로그램을 다시 통과했다. 검토 후보와 185개 입력·DLL/cfg/ZIP 바이트·전체 검사 결과가 일치했다.
 
 | 검사 프로그램 | 이번 후보 결과 |
 | --- | --- |
@@ -83,7 +83,7 @@ Xbox/XInput 패드, 마우스·트랙패드, 마우스로 인식되는 모니터
 
 통과한 회귀 범위는 직접 리터럴 Switch 식별과 지원 밖 원래 진행, 실제 MoonSharp 중단·재개와 1회 실행, 직접 지정의 실행 횟수·난수/조건 우회, B/Esc 원래 판정, 상태 변화 시 재확인, 두 설정의 독립성과 저장, 빈 목록 설정, 터치 후 패드 설정 탐색, 기존 이벤트·미션·주사위·포인터 입력이다. 실제 게임 Lua의 `Ch_3_6_4_002`에서 두 결과가 각각 바둑·만남 주사위 경로로 매핑되는지도 실행 없이 대조한다.
 
-게시 시 고정 소스·주석 태그와 설치 ZIP을 연결하고 `prerelease=true`·`make_latest=false`로 새 버전만 게시한다. 게시 후 익명 다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256을 대조한다. Latest 정식 v1.0.5와 기존 Release·태그·자산 및 이슈 상태를 보존한다.
+고정 소스·주석 태그와 설치 ZIP을 연결해 `prerelease=true`·`make_latest=false`로 새 버전만 게시했다. 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256을 대조했다. Latest 정식 v1.0.5와 기존 34개 Release·태그·자산, 이슈 #2 closed·#4 open·#5 open을 보존했다.
 
 ## Windows에서 우선 확인할 항목
 
@@ -97,13 +97,17 @@ Xbox/XInput 패드, 마우스·트랙패드, 마우스로 인식되는 모니터
 
 ## 파일 확인·게시 결과
 
-| 항목 | 게시 전 상태 |
+| 항목 | 확인 값 |
 | --- | --- |
-| 고정 소스 커밋·주석 태그 | 최종 빌드 소스 확정 후 기록 |
+| 고정 소스 커밋·주석 태그 | `abc621eff772597972c6da61694b0fd589389d8d` |
 | `DiceMaster-v1.0.6-alpha.11.zip` 크기·SHA-256 | 264,765바이트 · `60b4047ba66c8a00418cd1a920da3bf22c730a8a0020428e21128a26c50482cc` |
 | `DiceMaster.dll` 크기·SHA-256 | 627,712바이트 · `7ec782c84e894e55f8ef91629631d37236aa738a6fc7cd598dae903aaf860ffa` |
 | `DiceMaster.cfg` 크기·SHA-256 | 11,759바이트 · `4d422b35ffeed86de26c02df4c8dc555c012495919d3fa101ef53ef8f7e8de5a` |
-| 전체·고정 재빌드 검사 결과 | 후보 전체 14개 통과 · 고정 재빌드 대기 |
-| Release/asset ID·게시 시각·익명 공개 파일 대조 | 게시 후 기록 |
+| 전체·고정 재빌드 검사 결과 | 각각 14개 통과 · 185개 입력·DLL/cfg/ZIP·전체 검사 결과 일치 |
+| Release/asset ID·게시 시각·익명 공개 파일 대조 | `417702109` / `657322364` · 2026-10-20 05:13:44 KST · 통과 |
 
-구현은 `3e051b8`, 조건명 원복은 `0b3e758`을 포함한다. [소스 태그](https://github.com/jungpaeng/dicemaster/tree/v1.0.6-alpha.11)와 최종 커밋 SHA는 게시 시 대조한다. 게시 결과 보충은 별도 문서 커밋으로 남기고 빌드 소스·태그·공개 자산을 이동하거나 교체하지 않는다.
+구현 `3e051b8`, 조건명 원복 `0b3e758`과 README·배포 준비 문서를 포함한다. [고정 소스 커밋](https://github.com/jungpaeng/dicemaster/commit/abc621eff772597972c6da61694b0fd589389d8d)·[주석 태그](https://github.com/jungpaeng/dicemaster/tree/v1.0.6-alpha.11)의 일치와 `origin/main` 반영을 확인했다. Release는 `draft=false`·`prerelease=true`·`make_latest=false`다.
+
+로컬 영수증은 `artifacts/releases/v1.0.6-alpha.11/`의 `release-verification.json`·`build-manifest.json`·`anonymous-verification.json`·`github-publication.json`·`public-release.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 공개 근거 링크로 로컬 파일을 사용하지 않는다. 고정 검사 영수증의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 검사 시점이며 실제 게시 결과와 구분한다.
+
+이 게시 결과 보충은 빌드 소스·태그·공개 자산을 바꾸지 않는 별도 main 문서 커밋이다. 실제 Windows·물리 장치 확인과 이슈 #5 완료는 대기다.

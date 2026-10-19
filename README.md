@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.11) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip) | 이벤트·대화 중 조건 분기 선택 팝업과 탭별 ON/OFF | 후보 14개 자동 검사 통과·게시 준비 중, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA11-RELEASE.md) |
+| [시험판 v1.0.6-alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.11) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip) | 이벤트·대화 중 조건 분기 선택 팝업과 탭별 ON/OFF | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA11-RELEASE.md) |
 
 alpha.11은 alpha.10의 조건명 처리를 alpha.9 방식으로 되돌린 버전입니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
 

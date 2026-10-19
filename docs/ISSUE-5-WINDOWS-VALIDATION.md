@@ -1,8 +1,8 @@
 # PRD #5 — 실제 Windows 확인표
 
-상태: **v1.0.6-alpha.11 게시 준비 · 새 DLL의 실제 Windows·장치 확인 대기**. 대화 중 조건 분기 선택·탭별 팝업 설정과 alpha.10 조건명 처리 원복을 포함한다. 이번 후보의 전체 14개 검사 프로그램은 통과했으며 고정 소스 재빌드·게시 후 공개 파일 대조는 별도 기록한다. [alpha.11 변경·검증·파일 식별값](ISSUE-5-ALPHA11-RELEASE.md) · [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md).
+상태: **v1.0.6-alpha.11 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. 대화 중 조건 분기 선택·탭별 팝업 설정과 alpha.10 조건명 처리 원복을 포함한다. 후보·고정 소스 재빌드에서 각각 14개 검사 프로그램을 통과하고 2026-10-20 05:13:44 KST 게시 후 익명 공개 ZIP의 CRC·두 파일·내부 바이트·해시를 대조했다. [alpha.11 변경·검증·파일 식별값](ISSUE-5-ALPHA11-RELEASE.md) · [구현·지원 범위](ISSUE-5-IMPLEMENTATION.md).
 
-시험 대상은 [DiceMaster-v1.0.6-alpha.11.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip)이다. 후보 DLL은 627,712바이트·SHA-256 `7ec782c84e894e55f8ef91629631d37236aa738a6fc7cd598dae903aaf860ffa`이며 최종 공개 파일과 같은지 게시 기록에서 대조한다. 이전 시험판의 사용자 보고는 아래 당시 이력으로 보존하며 새 DLL 통과로 승계하지 않는다.
+시험 대상은 [DiceMaster-v1.0.6-alpha.11.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip)이다. 소스·주석 태그는 `abc621eff772597972c6da61694b0fd589389d8d`이고 공개 DLL은 627,712바이트·SHA-256 `7ec782c84e894e55f8ef91629631d37236aa738a6fc7cd598dae903aaf860ffa`이며 검토 후보·고정 재빌드와 바이트 단위로 일치한다. 이전 시험판의 사용자 보고는 아래 당시 이력으로 보존하며 새 DLL 통과로 승계하지 않는다.
 
 ## alpha.11 조건 분기·탭별 설정 확인표
 
@@ -67,7 +67,7 @@ alpha.7 게시 뒤 사용자는 선택된 팝업 행과 하단 선택 이벤트�
 
 ## 판정·설정·복구
 
-각 항목에 실제 관찰 결과와 재현 순서·관련 token/ID·BepInEx `EventSelection` 로그를 남긴다. 미실행을 통과로 바꾸지 않는다.
+각 항목에 실제 관찰 결과와 재현 순서·관련 token/ID·BepInEx `EventSelection` 로그를 남긴다. 미실행을 통과로 바꾸지 않는다. 아래 기존 이벤트 체크리스트의 가능한 후보 우선 정렬·단일 정상 후보 팝업 생략·“이 이벤트”·“무작위” 문구는 `Position` 이벤트 팝업 기준이다. `Switch` 팝업은 Lua의 분기 순서를 유지하며 B/Esc로 원래 조건·난수 판정을 실행한다. Switch의 후보·설정·조작은 위 alpha.11 별도 확인표를 기준으로 확인한다.
 
 - [ ] **미실행** — 최초 설정 누락은 `EnableEventSelectionPopup=true`·`EnableSwitchSelectionPopup=true`; 각 ON/OFF 저장·재시작 뒤 유지. OFF는 새 팝업과 선택 대기를 생략한다.
 - [ ] **미실행** — `EnableOptionInfo=false`로 시작하면 팝업 저장값은 보존하고 표시·대기는 비활성. 상위 옵션을 켜는 재시작 계약을 확인한다.
