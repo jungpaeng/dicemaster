@@ -55,8 +55,9 @@ namespace DiceMaster.LiveLog
             public readonly long ContextId, Revision;
             public readonly string Tab;
             public readonly object Target;
-            public ReservationSnapshot(long contextId, string tab, object target, long revision)
-            { ContextId = contextId; Tab = tab; Target = target; Revision = revision; }
+            public readonly CheckpointReservation Choice;
+            public ReservationSnapshot(long contextId, string tab, object target, long revision, CheckpointReservation choice = null)
+            { ContextId = contextId; Tab = tab; Target = target; Revision = revision; Choice = choice; }
         }
 
         private sealed class MissionEntryMutation
@@ -70,6 +71,10 @@ namespace DiceMaster.LiveLog
         }
 
         private static readonly ReservationSlot missionReservation = new ReservationSlot();
+        private static readonly ReservationSlot conditionReservation = new ReservationSlot();
+        private static readonly ReservationSlot eventReservation = new ReservationSlot();
+        private static readonly Dictionary<object, Dictionary<int, CheckpointReservation>> conditionChoices =
+            new Dictionary<object, Dictionary<int, CheckpointReservation>>(new ReferenceIdentity());
         private static MissionEntryMutation missionEntryMutation;
         private static object canceledMissionTarget;
 
@@ -84,7 +89,9 @@ namespace DiceMaster.LiveLog
         {
             public string Key, Description, Text, RawId, Position;
             public LogConditionDetails ConditionDetails;
+            public List<CheckpointReservation> SwitchChoices;
             public EventEligibilitySnapshot EventEligibility;
+            public CheckpointReservation EventChoice;
             public object Data, Source, StoryState;
             public readonly List<string> AnalysisStates = new List<string>();
         }
@@ -280,6 +287,8 @@ namespace DiceMaster.LiveLog
                 token = lifecycle.EnterTransition();
                 pendingLuaToken = 0; pendingLua = pendingFriendly = null;
                 owner = Read(TypeFor("DiceMaster.DicePlugin"), "Instance");
+                CheckpointReservationStore.Clear();
+                conditionChoices.Clear();
                 ResetCore();
                 Write(Patch(), "_lastLuaString", null); Write(Patch(), "_lastFriendlyName", null);
                 Write(Patch(), "TargetMission", null);
@@ -526,7 +535,8 @@ namespace DiceMaster.LiveLog
                 {
                     string key = entry;
                     queries.Add(new DisplayQuery(key, () => {
-                        if (Read(RequireManager("Mortal.Story.CheckPointManager"), "_switchList") == null) throw new DataNotReadyException();
+                        object manager = RequireManager("Mortal.Story.CheckPointManager");
+                        if (Read(manager, "_switchList") == null) throw new DataNotReadyException();
                         string label = (string)Call(owner, "NormalizeCheckpointKey", key);
                         if (string.IsNullOrEmpty(label)) label = key;
                         string branches = (string)Call(Patch(), "BuildSwitchBranchStateText", switchStories, key);
@@ -538,9 +548,13 @@ namespace DiceMaster.LiveLog
                         // evaluate descriptions a second time for the model.
                         LogConditionDetails details = MapConditionDetails(
                             (LogConditionDetails)Call(TypeFor("DiceMaster.DataHelper"), "DescribeSwitchCheckpoint", key), Translate);
+                        object config;
+                        object pool = ResolveSwitch(manager, key, out config);
+                        if (pool != null && (bool)Read(pool, "_useCount")) details = DescribeCountBranches(pool);
                         return new Value { Key = title, RawId = key,
                             Description = details == null ? "" : details.DescriptionFallback,
                             ConditionDetails = details,
+                            SwitchChoices = pool == null ? null : BuildConditionChoices(manager, config, pool, key),
                             Text = branches, StoryState = state };
                     }));
                 }
@@ -594,6 +608,7 @@ namespace DiceMaster.LiveLog
                             Value value = new Value { Data = data, Position = position, RawId = (string)Read(data, "name"),
                                 Key = (string)Call(Cache(), "GetPositionEventName", data),
                                 EventEligibility = EventEligibility.Evaluate(data) };
+                            value.EventChoice = EventReservation(value);
                             Call(Cache(), "RetryDefinitionReads", data);
                             try
                             {
@@ -667,6 +682,111 @@ namespace DiceMaster.LiveLog
             object manager = Read(TypeFor(name), "Instance");
             if (manager == null) throw new DataNotReadyException();
             return manager;
+        }
+
+        private static object ResolveSwitch(object manager, string name, out object config)
+        {
+            config = null;
+            IEnumerable list = Read(manager, "_switchList") as IEnumerable;
+            if (list == null) throw new DataNotReadyException();
+            foreach (object entry in list)
+            {
+                if (entry == null) continue;
+                object pool = Call(entry, "GetData", name);
+                if (pool != null) { config = entry; return pool; }
+            }
+            return null;
+        }
+
+        private static LogConditionDetails DescribeCountBranches(object pool)
+        {
+            IList items = Read(pool, "_countItems") as IList;
+            if (items == null) throw new DataNotReadyException();
+            int next = unchecked((int)Read(pool, "_count") + 1);
+            string[] operators = { "=", "≠", "<", "≤", ">", "≥" };
+            var branches = new List<LogConditionBranch>();
+            for (int index = 0; index < items.Count; index++)
+            {
+                int op = Convert.ToInt32(Read(items[index], "_compareOp"));
+                if (op < 0 || op >= operators.Length) throw new InvalidOperationException("Unreadable Switch comparison.");
+                string description = "이번 실행 횟수 " + next + " " + operators[op] + " " + Convert.ToInt32(Read(items[index], "_value"));
+                branches.Add(new LogConditionBranch("분기 " + (index + 1),
+                    index == 0 ? "이 조건을 만족하면" : "앞 분기가 모두 불충족일 때 검사", description));
+            }
+            branches.Add(new LogConditionBranch("그 외 (분기 " + (items.Count + 1) + ")", "위 분기가 모두 불충족일 때", ""));
+            return new LogConditionDetails("실행 횟수를 위에서부터 검사하며, 처음 만족한 분기로 진행합니다.", branches);
+        }
+
+        private static List<CheckpointReservation> BuildConditionChoices(object manager, object config, object pool, string name)
+        {
+            bool useCount = (bool)Read(pool, "_useCount");
+            int count = (int)Read(pool, "_count");
+            IList items = Read(pool, useCount ? "_countItems" : "_items") as IList;
+            if (items == null) return null;
+            Dictionary<int, CheckpointReservation> cached;
+            if (!conditionChoices.TryGetValue(pool, out cached))
+                conditionChoices.Add(pool, cached = new Dictionary<int, CheckpointReservation>());
+            var choices = new List<CheckpointReservation>();
+            for (int result = 1; result <= items.Count + 1; result++)
+            {
+                object target = result <= items.Count ? items[result - 1] : pool;
+                if (target == null) throw new InvalidOperationException("Missing Switch branch.");
+                CheckpointReservation choice;
+                if (!cached.TryGetValue(result, out choice) || !ReferenceEquals(choice.Manager, manager) ||
+                    !ReferenceEquals(choice.Config, config) || !ReferenceEquals(choice.Target, target) ||
+                    choice.Name != name || choice.UseCount != useCount || choice.Count != count)
+                {
+                    choice = new CheckpointReservation(true, manager, config, pool, target, name,
+                        result.ToString(System.Globalization.CultureInfo.InvariantCulture), useCount: useCount, count: count);
+                    cached[result] = choice;
+                }
+                choices.Add(choice);
+            }
+            return choices;
+        }
+
+        private static CheckpointReservation EventReservation(Value value)
+        {
+            object manager = RequireManager("Mortal.Story.CheckPointManager");
+            object config = Read(manager, "_position");
+            IList pools = Read(config, "List") as IList;
+            if (pools == null) throw new DataNotReadyException();
+            foreach (object pool in pools)
+            {
+                if (pool == null || (string)Read(pool, "name") != value.Position) continue;
+                IList items = Read(pool, "List") as IList;
+                if (items == null) return null;
+                bool present = false;
+                foreach (object item in items) if (ReferenceEquals(item, value.Data)) present = true;
+                string prefix = Read(pool, "_scriptPrefix") as string;
+                string result = Read(value.Data, "ResultType") as string;
+                if (!present || prefix == null || string.IsNullOrEmpty(result)) return null;
+                return new CheckpointReservation(false, manager, config, pool, value.Data, value.Position,
+                    prefix + "_" + result, prefix, choice: value.Data);
+            }
+            return null;
+        }
+
+        private static bool ValidConditionChoice(CheckpointReservation choice)
+        {
+            if (choice == null || !choice.IsSwitch || !ReferenceEquals(RequireManager("Mortal.Story.CheckPointManager"), choice.Manager)) return false;
+            object config;
+            object pool = ResolveSwitch(choice.Manager, choice.Name, out config);
+            if (!ReferenceEquals(pool, choice.Pool) || !ReferenceEquals(config, choice.Config) ||
+                (bool)Read(pool, "_useCount") != choice.UseCount || (int)Read(pool, "_count") != choice.Count) return false;
+            IList items = Read(pool, choice.UseCount ? "_countItems" : "_items") as IList;
+            int result;
+            if (items == null || !int.TryParse(choice.Result, out result) || result < 1 || result > items.Count + 1) return false;
+            return ReferenceEquals(result <= items.Count ? items[result - 1] : pool, choice.Target);
+        }
+
+        private static bool SameChoice(CheckpointReservation left, CheckpointReservation right)
+        {
+            return left != null && right != null && left.IsSwitch == right.IsSwitch &&
+                ReferenceEquals(left.Manager, right.Manager) && ReferenceEquals(left.Config, right.Config) &&
+                ReferenceEquals(left.Pool, right.Pool) && ReferenceEquals(left.Target, right.Target) &&
+                left.Name == right.Name && left.Result == right.Result && left.Prefix == right.Prefix &&
+                left.UseCount == right.UseCount && left.Count == right.Count;
         }
 
         private static void AdvanceSourceClock(float now)
@@ -748,7 +868,9 @@ namespace DiceMaster.LiveLog
                         RefreshStatus = row.Status ?? "", RefreshState = row.Status == RefreshEngine.WaitingStatus ? LogRefreshState.Waiting :
                             row.Status == RefreshEngine.RetainedFailureStatus ? LogRefreshState.RetainedFailure :
                             string.IsNullOrEmpty(row.Status) ? LogRefreshState.Healthy : LogRefreshState.ReadFailure,
-                        HasLastGood = row.Value != null, ReservationAllowed = tab == "미션" && !discoveryFailed && lifecycle.IsReady,
+                        HasLastGood = row.Value != null, ReservationAllowed =
+                            (tab == "미션" || tab == "조건" || tab == "이벤트" && value != null && value.EventChoice != null &&
+                                value.EventEligibility != null && value.EventEligibility.CanUseResult) && !discoveryFailed && lifecycle.IsReady,
                         // No mission value means a diagnostic row, not a
                         // mission whose description can be inspected/acted on.
                         IsStatusOnly = tab == "미션" && value == null
@@ -760,9 +882,34 @@ namespace DiceMaster.LiveLog
                         string state = value.StoryState == null ? "" : value.StoryState.ToString();
                         modelRow.ReadState = state == "Read" ? LogReadState.Read : state == "Unread" ? LogReadState.Unread : LogReadState.Unknown;
                         modelRow.AnalysisStates.AddRange(value.AnalysisStates);
-                        values[row.Id] = value;
                     }
-                    modelRows.Add(modelRow);
+                    if (tab == "조건" && value != null && value.SwitchChoices != null && value.ConditionDetails != null &&
+                        value.SwitchChoices.Count == value.ConditionDetails.Branches.Count)
+                    {
+                        for (int index = 0; index < value.SwitchChoices.Count; index++)
+                        {
+                            CheckpointReservation choice = value.SwitchChoices[index];
+                            LogConditionBranch branch = modelRow.ConditionDetails.Branches[index];
+                            string id = row.Id + "/result/" + choice.Result;
+                            var branchRow = new LogItem {
+                                Id = id, RawId = modelRow.RawId, Title = modelRow.Title + ": " + branch.Title,
+                                Description = branch.Description, Target = choice,
+                                ConditionDetails = new LogConditionDetails(modelRow.ConditionDetails.Hint,
+                                    new[] { branch }, branch.Description),
+                                ReadState = modelRow.ReadState, RefreshStatus = modelRow.RefreshStatus,
+                                RefreshState = modelRow.RefreshState, HasLastGood = modelRow.HasLastGood,
+                                ReservationAllowed = modelRow.ReservationAllowed
+                            };
+                            branchRow.AnalysisStates.AddRange(modelRow.AnalysisStates);
+                            modelRows.Add(branchRow);
+                            values[id] = new Value { Data = choice };
+                        }
+                    }
+                    else
+                    {
+                        modelRows.Add(modelRow);
+                        if (value != null) values[row.Id] = value;
+                    }
                     if (!string.IsNullOrEmpty(row.Status)) description += "\n" + row.Status;
                     if (tab == "선택지" || tab == "조건")
                     {
@@ -792,16 +939,22 @@ namespace DiceMaster.LiveLog
         { return ChangeReservation(expectedContext, tab, id, target, null, false); }
 
         private static ReservationSlot Slot(string tab)
-        { return tab == "미션" ? missionReservation : null; }
+        { return tab == "미션" ? missionReservation : tab == "조건" ? conditionReservation : tab == "이벤트" ? eventReservation : null; }
 
         private static string ReservationField(string tab)
         { return "TargetMission"; }
+
+        private static object ReservationChoice(object reservation)
+        { return reservation is CheckpointReservation checkpoint ? checkpoint.Choice : reservation; }
+
+        private static object ReadReservation(string tab)
+        { return tab == "미션" ? Read(Patch(), ReservationField(tab)) : CheckpointReservationStore.Current(tab == "조건"); }
 
         private static object ObserveReservation(string tab)
         {
             ReservationSlot slot = Slot(tab);
             object raw;
-            try { raw = Read(Patch(), ReservationField(tab)); }
+            try { raw = ReadReservation(tab); }
             catch
             {
                 slot.Revision = checked(slot.Revision + 1);
@@ -829,7 +982,7 @@ namespace DiceMaster.LiveLog
             try
             {
                 slot.Revision = checked(slot.Revision + 1);
-                slot.Target = Read(Patch(), ReservationField(tab));
+                slot.Target = ReadReservation(tab);
                 slot.Observed = true;
                 if (tab == "미션" && missionEntryMutation != null && !ReferenceEquals(missionEntryMutation.Target, slot.Target))
                     missionEntryMutation = null;
@@ -848,7 +1001,17 @@ namespace DiceMaster.LiveLog
                 ReservationSlot slot = Slot(tab);
                 if (slot == null || !lifecycle.IsReady) return;
                 object raw = ObserveReservation(tab);
-                captured = new ReservationSnapshot(contextId, tab, raw, slot.Revision);
+                CheckpointReservation choice = null;
+                if (tab != "미션")
+                {
+                    LogItem selected = Model.Tab(tab).Selected;
+                    Dictionary<string, Value> values; Value value;
+                    if (selected == null || !selected.CanReserve || !publishedValues.TryGetValue(tab, out values) ||
+                        !values.TryGetValue(selected.Id, out value)) return;
+                    choice = tab == "조건" ? value.Data as CheckpointReservation : value.EventChoice;
+                    if (choice == null) return;
+                }
+                captured = new ReservationSnapshot(contextId, tab, raw, slot.Revision, choice);
             });
             snapshot = captured;
             return captured != null;
@@ -914,7 +1077,9 @@ namespace DiceMaster.LiveLog
                 object currentReservation = ObserveReservation(tab);
                 if (toggle && (snapshot.ContextId != expectedContext || snapshot.Tab != tab || snapshot.Revision != Slot(tab).Revision ||
                     !ReferenceEquals(snapshot.Target, currentReservation))) return;
-                bool cancel = toggle && ReferenceEquals(snapshot.Target, target);
+                if (tab != "미션" && toggle && !SameChoice(snapshot.Choice,
+                    tab == "조건" ? value.Data as CheckpointReservation : value.EventChoice)) return;
+                bool cancel = toggle && ReferenceEquals(ReservationChoice(snapshot.Target), target);
                 if (tab == "미션")
                 {
                     object manager = RequireManager("Mortal.Core.MissionManagerData");
@@ -933,14 +1098,38 @@ namespace DiceMaster.LiveLog
                     NotifyReservationChanged(tab);
                     reserved = true;
                 }
+                else
+                {
+                    if (cancel)
+                    {
+                        if (!CheckpointReservationStore.Take(currentReservation as CheckpointReservation)) return;
+                    }
+                    else
+                    {
+                        CheckpointReservation choice;
+                        if (tab == "조건")
+                        {
+                            choice = target as CheckpointReservation;
+                            if (!ValidConditionChoice(choice)) return;
+                        }
+                        else
+                        {
+                            choice = value.EventChoice;
+                            if (!SameChoice(choice, EventReservation(value))) return;
+                        }
+                        CheckpointReservationStore.Set(choice);
+                    }
+                    NotifyReservationChanged(tab);
+                    reserved = true;
+                }
             });
             return reserved;
         }
 
         public static bool IsReserved(string tab, object target)
         {
-            if (target == null || tab != "미션") return false;
-            try { return ReferenceEquals(ObserveReservation(tab), target); }
+            if (target == null || Slot(tab) == null) return false;
+            try { return ReferenceEquals(ReservationChoice(ObserveReservation(tab)), target); }
             catch (Exception) { return false; }
         }
     }

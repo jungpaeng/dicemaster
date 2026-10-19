@@ -53,7 +53,7 @@ static partial class RealGameApiTests
                 VerifyMetadataContract(candidate, root);
                 metadataAssertions += assertions - before;
             }
-            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "CheckpointReservation", "CheckpointReservationStore" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             if (destination.MainModule.GetType("DiceMaster.LiveLog.SafeDisplayEvaluation") == null)
                 throw new InvalidDataException("Candidate does not contain SafeDisplayEvaluation.");
         }

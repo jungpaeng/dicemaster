@@ -68,6 +68,7 @@ public class DicePlugin : BaseUnityPlugin
 			&& ConfigManager.GetConfigValue(ConfigManager.EnableEventSelectionPopup);
 		EventSelectionRuntime.SwitchEnabled = () => ConfigManager.GetConfigValue(ConfigManager.EnableOptionInfo)
 			&& ConfigManager.GetConfigValue(ConfigManager.EnableSwitchSelectionPopup);
+		EventSelectionRuntime.ReservationsEnabled = () => ConfigManager.GetConfigValue(ConfigManager.EnableOptionInfo);
 		EventSelectionRuntime.WaitingChanged = waiting =>
 		{
 			ResetEventInput(ModalInputResetReason.PopupWaitingChanged);

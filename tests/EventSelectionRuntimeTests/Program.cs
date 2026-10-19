@@ -453,6 +453,7 @@ internal static class Program
         Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards(); HardCancellationBeforeLuaContinuation(); DelayedSchemeObservation(); RefreshCannotReplaceConfirmation(); ModalResetPolicyBoundaries();
         scenarios += PopupExecutionRegression.Run(Check);
         scenarios += SwitchExecutionRegression.Run(Check);
+        scenarios += ReservationExecutionRegression.Run(Check);
         Console.WriteLine("PASS: event execution runtime " + assertions + " assertions across " + scenarios + " scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries)");
     }
     private static void Main(string[] args) => RuntimeModeIntegration.Run(args);

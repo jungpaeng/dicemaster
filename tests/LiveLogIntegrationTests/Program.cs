@@ -86,7 +86,10 @@ static class LiveLogIntegrationTests
         using var fixtures = AssemblyDefinition.ReadAssembly(args[1]);
         target = fixtures.MainModule;
         var module = source.MainModule;
-        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || type.Namespace == "DiceMaster.EventSelection" && (type.Name == "EventEligibility" || type.Name == "EventEligibilitySnapshot" || type.Name == "EventEligibilityState" || type.Name == "EventEligibilityReason") || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+        new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || type.Namespace == "DiceMaster.EventSelection" && new[] {
+            "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason",
+            "CheckpointReservation", "CheckpointReservationStore"
+        }.Contains(type.Name) || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
         // The fixture project deliberately has no duplicate model definitions.
         // Bind its object-returning helper boundary to the DTO copied from this
         // exact delivered DLL, then install the real helper body below for the
@@ -158,6 +161,7 @@ static class LiveLogIntegrationTests
         assertions += Run(output, "RunLifecycle");
         if (target.GetType("DiceMaster.LogUI.LogModel") != null) assertions += Run(output, "RunLogModel");
         assertions += Run(output, "RunReservationToggles");
+        assertions += Run(output, "RunCheckpointReservations");
         var helperSource = module.GetType("DiceMaster.DataHelper");
         var helperTarget = target.GetType("DiceMaster.DataHelper");
         foreach (var method in helperSource.Methods.Where(method => method.Name == "GetMissions" || method.Name == "ExtractConditions" || method.Name == "IsValidMission" || method.Name == "ParseSwitchCheckpoint" || method.Name == "DescribeSwitchCheckpoint"))

@@ -501,7 +501,7 @@ namespace DiceMaster.Config
         public static Element<int> LogFontSize = new Element<int>(20);
         public static Element<bool> EnableOptionInfo = new Element<bool>(true);
         public static Element<bool> EnableEventSelectionPopup = new Element<bool>(true);
-        public static Element<bool> EnableSwitchSelectionPopup = new Element<bool>(true);
+        public static Element<bool> EnableSwitchSelectionPopup = new Element<bool>(false);
         public static Element<UnityEngine.KeyCode> LogMenuToggleKey = new Element<UnityEngine.KeyCode>(UnityEngine.KeyCode.Tab);
     }
 }
@@ -589,14 +589,14 @@ namespace DiceMaster.LiveLog
         }
         public static bool IsReserved(string tab, object target)
         {
-            if (target == null || tab != "이벤트" && tab != "미션") return false;
+            if (target == null || tab != "조건" && tab != "이벤트" && tab != "미션") return false;
             try { return ReferenceEquals(target, ObserveReservation(tab).Target); }
             catch (InvalidOperationException) { return false; }
         }
         public static bool TryCaptureReservation(string tab, out object snapshot)
         {
             snapshot = null;
-            if (tab != "이벤트" && tab != "미션") return false;
+            if (tab != "조건" && tab != "이벤트" && tab != "미션") return false;
             try
             {
                 Slot slot = ObserveReservation(tab);

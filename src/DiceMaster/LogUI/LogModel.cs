@@ -113,6 +113,7 @@ namespace DiceMaster.LogUI
         public string SelectedId { get; private set; }
         public float ListScroll, DetailScroll;
         public bool ExecutionFocus;
+        public bool SupportsReservation { get { return Snapshot.Tab == "조건" || Snapshot.Tab == "이벤트" || Snapshot.Tab == "미션"; } }
         private long selectionVersion;
         private string searchQuery = "";
         private bool availableOnly;
@@ -225,14 +226,14 @@ namespace DiceMaster.LogUI
         public ReservationTicket BeginReservation(object reservationState = null)
         {
             LogItem row = Selected;
-            if (Snapshot.Tab != "미션" || PublicationFailed || !ExecutionFocus || row == null || !row.CanReserve) return null;
+            if (!SupportsReservation || PublicationFailed || !ExecutionFocus || row == null || !row.CanReserve) return null;
             return new ReservationTicket(Snapshot.ContextId, Snapshot.Tab, row.Id, row.Target, selectionVersion, reservationState);
         }
 
         public bool CanActivate(ReservationTicket ticket)
         {
             LogItem row = Selected;
-            return Snapshot.Tab == "미션" && !PublicationFailed && ticket != null && ExecutionFocus && ticket.ContextId == Snapshot.ContextId && ticket.Tab == Snapshot.Tab &&
+            return SupportsReservation && !PublicationFailed && ticket != null && ExecutionFocus && ticket.ContextId == Snapshot.ContextId && ticket.Tab == Snapshot.Tab &&
                 ticket.SelectionVersion == selectionVersion && row != null && row.CanReserve && row.Id == ticket.Id &&
                 ReferenceEquals(row.Target, ticket.Target);
         }

@@ -4,6 +4,12 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 조건·이벤트 일회 예약 — v1.0.6-alpha.12 prerelease
+
+사용자의 커밋·`origin/main` 반영·README 갱신·새 prerelease 요청에 따라 alpha.12를 준비한다. 조건 목록을 결과별 행으로 나누고 조건·이벤트에 서로 독립적인 일회 예약·해제를 추가한다. 예약은 팝업보다 우선해 다음 일치 체크포인트에서 한 번 결과를 지정하며 즉시 실행이나 게임 상태의 사전 변경은 아니다. 조건 팝업의 신규 기본값은 OFF로 바꾸고 이미 저장된 ON은 유지한다. [사용자 변화·설치·검증](ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검사 근거](ISSUE-5-CHECKPOINT-RESERVATIONS.md).
+
+2026-10-20 05:29:55 KST 현재 소스 후보에서 14개 검사 프로그램과 188개 입력·78개 소스/리소스 해시, 설치 ZIP의 CRC·두 파일·DLL/cfg 바이트를 확인했다. 이 문단은 게시 준비 기록이다. 고정 커밋을 별도 소스 스냅샷에서 재빌드해 후보와 대조하고 새 버전만 `prerelease=true`·`make_latest=false`로 게시한다. 게시 후 익명 공개 ZIP·해시와 고정 태그를 검증한다. 기존 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open은 보존한다. 이번 DLL의 실제 Windows·장치 확인과 이슈 #5 완료는 대기다.
+
 ## 대화 중 조건 분기 선택 — v1.0.6-alpha.11 prerelease
 
 사용자의 테스트용 prerelease 요청에 따라 **2026-10-20 05:13:44 KST에 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.11)을 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.11/DiceMaster-v1.0.6-alpha.11.zip). 구현 `3e051b8`과 조건명 원복 `0b3e758` 및 README·배포 준비 문서를 포함한 고정 소스·주석 태그는 `abc621eff772597972c6da61694b0fd589389d8d`이며 `origin/main`에 반영했다. [변경·설치·지원 범위·검사](ISSUE-5-ALPHA11-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md).

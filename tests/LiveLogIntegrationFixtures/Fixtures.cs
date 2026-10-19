@@ -82,6 +82,11 @@ namespace Mortal.Core
         public List<StatCompareItem> _items = new List<StatCompareItem>();
         public LogicOperatorType _logicOp;
     }
+    public class ValueCompareItem
+    {
+        public int _value;
+        public StatCompareType _compareOp;
+    }
     public class ConditionResultData : UnityEngine.Object
     {
         public int _count;
@@ -179,6 +184,7 @@ namespace Mortal.Story
     public class SwitchResultData : UnityEngine.Object
     {
         public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>();
+        public List<Mortal.Core.ValueCompareItem> _countItems = new List<Mortal.Core.ValueCompareItem>();
         public bool _useCount;
         public int _count;
         public static int Executions;
@@ -187,6 +193,7 @@ namespace Mortal.Story
     public class SwitchResultConfig : UnityEngine.Object
     {
         public List<SwitchResultData> _list = new List<SwitchResultData>();
+        public List<SwitchResultData> List => _list;
         public Dictionary<string, SwitchResultData> Items = new Dictionary<string, SwitchResultData>();
         public SwitchResultData GetData(string key) { Items.TryGetValue(key, out var value); return value; }
     }
@@ -211,7 +218,7 @@ namespace Mortal.Story
         public ConditionResultConfig _condition = new ConditionResultConfig();
     }
     public class PositionCollection { public IList List = new List<object>(); }
-    public class PositionDefinition : UnityEngine.Object { public IList List = new List<object>(); }
+    public class PositionDefinition : UnityEngine.Object { public IList List = new List<object>(); public string _scriptPrefix = "fixture"; }
 }
 namespace DiceMaster.Config
 {
@@ -474,13 +481,14 @@ namespace DiceMaster
             Check((string)Member(row, "RawId") == Event.name && ReferenceEquals(Member(row, "Target"), Event), "Actual event identity/target was lost at publication");
             Check(((IList)Member(row, "AnalysisStates")).Count > 0, "Fixed event analysis did not reach structured model");
             object state = LogTab("이벤트"); InstanceCall(state, "Select", id);
-            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Read-only event list created a reservation");
-            Check(!(bool)Member(row, "CanReserve") && !(bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Removed event reservation still appeared actionable");
+            Check((bool)Member(row, "CanReserve") && (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event),
+                "Selected healthy event did not create a one-use reservation");
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Pending event reservation was not visible in the actual bridge");
             object eligibility = Member(row, "EventEligibility");
             Check(eligibility != null && Member(eligibility, "State").ToString() == "Eligible", "Read-only structured event eligibility did not reach the log");
             object[] eventCapture = { "이벤트", new object() };
-            Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", eventCapture) && eventCapture[1] == null,
-                "Read-only event list captured pre-execution authority");
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", eventCapture) && eventCapture[1] != null,
+                "Event list did not capture opaque reservation authority");
             EmbeddedTranslations.Display.Throw = true; UnityEngine.Time.unscaledTime = 101.5f; Tick(plugin);
             Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", id, Event), "Failed actual publication left previous healthy target executable");
             Check((bool)Member(LogTab("이벤트"), "PublicationFailed") && !(bool)Member(LogTab("이벤트"), "ExecutionFocus"), "Actual publication failure did not reach UI state/cancel execution focus");
@@ -641,10 +649,13 @@ namespace DiceMaster
                 object reserveBeforeOther = Capture(); SetSlot(null);
                 Check(!Toggle(reserveBeforeOther) && !Reserved(), "Old reserve intent rejects a changed nonselected slot");
                 Check(!Toggle(new object()), "A caller cannot forge an opaque snapshot");
-                object[] eventSlot = { "이벤트", new object() };
-                Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", eventSlot) && eventSlot[1] == null,
-                    "Event capture remained available beside mission-only reservations");
-                object[] unsupported = { "조건", new object() };
+                foreach (string supported in new[] { "이벤트", "조건" })
+                {
+                    object[] otherSlot = { supported, null };
+                    Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", otherSlot) && otherSlot[1] == null,
+                        "Unselected condition/event panes cannot capture row authority while the mission is selected");
+                }
+                object[] unsupported = { "선택지", new object() };
                 Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", unsupported) && unsupported[1] == null,
                     "Unsupported capture fails closed instead of looking like an empty slot");
                 object healthy = Capture(); Tick(plugin, true);
@@ -754,6 +765,142 @@ namespace DiceMaster
             Check(!(bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", blocked) && blocked[1] == null && !Toggle(beforeBlocked),
                 "Unready transition rejects capture and mutation without treating failure as an empty reservation");
             TransitionFinalizer("SaveSystem_LoadGameData", null, token);
+            return assertions - before;
+        }
+
+        // Run actual DLL bridge/store/model bodies together. Reservations may
+        // change only pending authority here: no game condition, Switch, RNG,
+        // counter, mission dictionary or Lua action may execute on confirmation.
+        public static int RunCheckpointReservations()
+        {
+            int before = assertions;
+            const string store = "DiceMaster.EventSelection.CheckpointReservationStore";
+            int sequence = 0;
+            DicePlugin plugin = null;
+            Mortal.Story.CheckPointManager manager = null;
+            Mortal.Story.PositionDefinition position = null;
+            Mortal.Story.SwitchResultConfig config = null;
+            Mortal.Story.SwitchResultData pool = null;
+            string tab = null, id = null;
+            object target = null;
+            long context = 0;
+            bool IsSwitch() => tab == "조건";
+            object Pending(bool isSwitch) => Invoke(store, "Current", isSwitch);
+            object Capture()
+            {
+                object[] arguments = { tab, null };
+                Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", arguments) && arguments[1] != null,
+                    tab + ": actual bridge captures opaque authority");
+                return arguments[1];
+            }
+            bool Toggle(object snapshot) => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryToggleReservation", context, tab, id, target, snapshot);
+            bool Reserve() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, tab, id, target);
+            bool Reserved() => (bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", tab, target);
+            void Prepare(string nextTab)
+            {
+                tab = nextTab;
+                Invoke(store, "Clear");
+                OptionInfoPatch.TargetMission = null;
+                Probe.FailReservationReads = false;
+                Config.ConfigManager.EnableOptionInfo.Value = true;
+                DataHelper.Ready = true; DataHelper.FailingCheckpoint = null;
+                PositionEventCache.ThrowDescription = false; EmbeddedTranslations.Display.Throw = false;
+                Event.Destroyed = false; Event.ResultType = "event";
+                Event._toggleCondition = false; Event._defaultRate = 10;
+                Event._eventRateItem = new Mortal.Story.PositionEventRateItem[0];
+                position = new Mortal.Story.PositionDefinition { name = "fixture_position" };
+                position.List.Add(Event);
+                var positions = new Mortal.Story.PositionCollection(); positions.List.Add(position);
+                pool = new Mortal.Story.SwitchResultData { name = "switch_one", _count = 7,
+                    _items = new List<Mortal.Core.ConditionResultItem> { new Mortal.Core.ConditionResultItem() } };
+                config = new Mortal.Story.SwitchResultConfig(); config.Items["switch_one"] = pool; config._list.Add(pool);
+                manager = new Mortal.Story.CheckPointManager { _position = positions, _switchList = new[] { config } };
+                Mortal.Story.CheckPointManager.Instance = manager;
+                plugin = new DicePlugin { showLogWindow = true, currentTab = tab }; DicePlugin.Instance = plugin;
+                UnityEngine.Time.unscaledTime = 4000 + ++sequence;
+                NewLua(Lua("O_checkpoint_" + sequence), "checkpoint-" + sequence); Tick(plugin, true);
+                context = (long)Member(LogModel, "ContextId");
+                object row = ModelRows(tab).Cast<object>().First(value => Member(value, "Target") != null);
+                id = (string)Member(row, "Id"); target = Member(row, "Target");
+                Check((bool)Member(row, "CanReserve") && (bool)InstanceCall(LogTab(tab), "Select", id),
+                    tab + ": healthy published branch/event is selectable and reservable");
+            }
+
+            int conditions = Mortal.Core.ConditionResultData.Executions;
+            int switches = Mortal.Story.SwitchResultData.Executions;
+            int valueReads = Mortal.Core.StatGroupVariable.OriginalReads;
+            int comparisons = Mortal.Core.StatCompareItem.OriginalReads;
+            int random = UnityEngine.Random.Calls;
+            foreach (string kind in new[] { "조건", "이벤트" })
+            {
+                Prepare(kind);
+                object empty = Capture();
+                Check(Toggle(empty) && Reserved() && Pending(IsSwitch()) != null, kind + ": a fresh confirmation reserves once");
+                Check(!Toggle(empty) && Reserved(), kind + ": replaying a consumed gesture cannot cancel the reservation");
+                object stored = Pending(IsSwitch());
+                Check(ReferenceEquals(Invoke(store, "Peek", IsSwitch(), manager, kind == "조건" ? "switch_one" : "fixture_position"), stored) &&
+                    Invoke(store, "Peek", IsSwitch(), new Mortal.Story.CheckPointManager(), kind == "조건" ? "switch_one" : "fixture_position") == null,
+                    kind + ": pending authority is scoped to the exact manager and checkpoint name");
+                Tick(plugin, true);
+                Check(ReferenceEquals(Member(ModelRows(tab).Cast<object>().Single(row => (string)Member(row, "Id") == id), "Target"), target),
+                    kind + ": unchanged refresh preserves published target identity");
+                object active = Capture();
+                Check(Toggle(active) && !Reserved() && Pending(IsSwitch()) == null, kind + ": same-target confirmation cancels once");
+                Check(!Toggle(active) && !Reserved(), kind + ": duplicate cancellation cannot reserve again");
+                Check(Reserve(), kind + ": reserve-only entry point still creates pending authority");
+                active = Capture(); stored = Pending(IsSwitch());
+                Check((bool)Invoke(store, "Take", stored) && !(bool)Invoke(store, "Take", stored),
+                    kind + ": stored authority is consumed exactly once");
+                Check(!Toggle(active) && !Reserved(), kind + ": a pre-consumption capture cannot create authority after consumption");
+                Check(Reserve() && !Toggle(active) && Reserved(), kind + ": consume/reinsert ABA rejects the old capture");
+                active = Capture(); Check(Reserve() && !Toggle(active) && Reserved(), kind + ": re-reserve clones authority and invalidates old intent");
+                Check(pool._count == 7 && OptionInfoPatch.TargetMission == null,
+                    kind + ": reserve/cancel cannot change Switch counters or mission authority");
+                foreach (string boundary in new[] { "unselected", "closed", "tab", "publication", "removed", "replaced-manager", "result-changed" })
+                {
+                    Prepare(kind); active = Capture();
+                    if (boundary == "unselected") InstanceCall(LogTab(tab), "ClearSelection");
+                    else if (boundary == "closed") plugin.showLogWindow = false;
+                    else if (boundary == "tab") plugin.currentTab = "선택지";
+                    else if (boundary == "publication") InstanceCall(LogModel, "MarkPublicationFailure", tab);
+                    else if (boundary == "removed") { if (IsSwitch()) config.Items.Remove("switch_one"); else position.List.Clear(); }
+                    else if (boundary == "replaced-manager") Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager { _position = manager._position, _switchList = manager._switchList };
+                    else if (IsSwitch()) pool._items[0] = new Mortal.Core.ConditionResultItem();
+                    else Event.ResultType = "different_result";
+                    Check(!Toggle(active) && Pending(IsSwitch()) == null,
+                        kind + ": stale confirmation cannot create authority after " + boundary);
+                }
+            }
+            foreach (string mode in new[] { "count", "mode" })
+            {
+                Prepare("조건"); object captured = Capture();
+                if (mode == "count") pool._count++; else pool._useCount = true;
+                Check(!Toggle(captured) && !Reserve(), "Condition branch rejects stale " + mode + " even before a UI refresh");
+            }
+            Prepare("조건"); Check(Reserve(), "Persistence fixture reserves a condition"); object condition = Pending(true);
+            plugin.currentTab = "이벤트"; Tick(plugin, true);
+            object eventRow = ModelRows("이벤트")[0];
+            string eventId = (string)Member(eventRow, "Id"); InstanceCall(LogTab("이벤트"), "Select", eventId);
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryReserve", context, "이벤트", eventId, Member(eventRow, "Target")) &&
+                ReferenceEquals(Pending(true), condition) && Pending(false) != null,
+                "Condition and event reservations coexist without overwriting each other's slot");
+            object positionReservation = Pending(false);
+            NewLua(Lua("O_checkpoint_continued"), "checkpoint-continued");
+            Check(ReferenceEquals(Pending(true), condition) && ReferenceEquals(Pending(false), positionReservation),
+                "Ordinary Lua compilation preserves next-checkpoint reservations");
+            plugin.currentTab = "조건"; Tick(plugin, true);
+            object conditionRow = ModelRows("조건").Cast<object>().First(row => Member(row, "Target") != null);
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "조건", Member(conditionRow, "Target")),
+                "Republished condition branch keeps its reservation marker after an ordinary Lua boundary");
+            plugin.currentTab = "이벤트"; Tick(plugin, true);
+            Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Member(ModelRows("이벤트")[0], "Target")),
+                "Republished event keeps its reservation marker after an ordinary Lua boundary");
+            long token = TransitionPrefix("SaveSystem_LoadGameData");
+            Check(Pending(true) == null && Pending(false) == null, "Load/new-game transition invalidates both checkpoint reservation slots");
+            TransitionFinalizer("SaveSystem_LoadGameData", null, token);
+            Check(Mortal.Core.ConditionResultData.Executions == conditions && Mortal.Story.SwitchResultData.Executions == switches &&
+                Mortal.Core.StatGroupVariable.OriginalReads == valueReads && Mortal.Core.StatCompareItem.OriginalReads == comparisons && UnityEngine.Random.Calls == random,
+                "Reservation bridge invoked original conditions/value reads, Switch execution or Unity RNG");
             return assertions - before;
         }
 
@@ -1148,13 +1295,17 @@ namespace DiceMaster
             Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager { _switchList = new[] { config } };
             DataHelper.Ready = true; DataHelper.CurrentValue = 31; UnityEngine.Time.unscaledTime = 300;
             NewLua(Lua("O_condition_blocks"), "condition_blocks"); Tick(plugin);
-            object Row(string raw) => ModelRows("조건").Cast<object>().Single(row => (string)Member(row, "RawId") == raw);
+            List<object> Rows(string raw) => ModelRows("조건").Cast<object>().Where(row => (string)Member(row, "RawId") == raw).ToList();
+            object Row(string raw, int result = 1) => Rows(raw).Single(row => Member(row, "Target") == null ||
+                (string)Member(Member(row, "Target"), "Result") == result.ToString());
             IList Branches(object details) => (IList)Member(details, "Branches");
             string Description(object branch) => (string)Member(branch, "Description");
             object originalRow = Row("switch_one"), original = Member(originalRow, "ConditionDetails");
-            IList originalBranches = Branches(original);
-            Check(original != null && originalBranches.Count == 3 && originalBranches.IsReadOnly,
-                "Actual helper branch DTO never reached the published immutable model list");
+            IList originalBranches = Rows("switch_one").Select(row => Branches(Member(row, "ConditionDetails"))[0]).ToList();
+            Check(original != null && originalBranches.Count == 3 && Branches(original).Count == 1 && Branches(original).IsReadOnly &&
+                Rows("switch_one").All(row => (bool)Member(row, "CanReserve")) &&
+                Rows("switch_one").Select(row => (string)Member(row, "Id")).Distinct().Count() == 3,
+                "Actual helper branches were not independently selectable/reservable immutable rows");
             Check((string)Member(original, "Hint") == "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.",
                 "Actual model lost the first-satisfied branch-order explanation");
             Check((string)Member(originalBranches[0], "Title") == "분기 1" &&
@@ -1169,8 +1320,9 @@ namespace DiceMaster
                 Description(originalBranches[1]).Contains("(31)") && Description(originalBranches[2]) == "",
                 "Actual helper confused an internal compound comparison with another branch");
             Check((string)Member(original, "DescriptionFallback") == (string)Member(originalRow, "Description") &&
-                plugin.switchEntries[0].Description == (string)Member(originalRow, "Description"),
-                "Structured branch values diverged from the same-capture compatibility description");
+                plugin.switchEntries[0].Description.Contains(Description(originalBranches[0])) &&
+                plugin.switchEntries[0].Description.Contains(Description(originalBranches[1])),
+                "Selected branch values or the complete same-capture compatibility description were lost");
             Check(first._value1.Reads == 1 && first._value2.Reads == 1 && compound._value1.Reads == 1 &&
                 compound._value2.Reads == 1 && second._value1.Reads == 1 && second._value2.Reads == 1,
                 "Actual helper evaluated branch operands twice to create UI and plaintext views");
@@ -1187,15 +1339,16 @@ namespace DiceMaster
             second._value1.Throw = true; DataHelper.CurrentValue = 39; Tick(plugin, true);
             object failed = Row("switch_one"), retained = Member(failed, "ConditionDetails");
             Check(Member(failed, "RefreshState").ToString() == "RetainedFailure" && (bool)Member(failed, "HasLastGood") &&
-                Branches(retained).Count == 3 && Description(Branches(retained)[0]).Contains("(37)") &&
-                Description(Branches(retained)[1]).Contains("(37)") && !Description(Branches(retained)[0]).Contains("(39)"),
+                Branches(retained).Count == 1 && Description(Branches(retained)[0]).Contains("(37)") &&
+                Description(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0]).Contains("(37)") &&
+                !Description(Branches(retained)[0]).Contains("(39)"),
                 "A later branch failure leaked partial current values instead of the complete last-good branch set");
             Check((string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus") &&
                 Description(Branches(Member(Row("switch_two"), "ConditionDetails"))[0]).Contains("(39)"),
                 "Failed branch details lost readable selection or blocked a healthy sibling checkpoint");
             second._value1.Throw = false; Tick(plugin, true);
             Check(Member(Row("switch_one"), "RefreshState").ToString() == "Healthy" &&
-                Description(Branches(Member(Row("switch_one"), "ConditionDetails"))[1]).Contains("(39)") &&
+                Description(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0]).Contains("(39)") &&
                 (string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus"),
                 "Actual helper recovery did not replace retained branch values without reviving execution focus");
             long context = (long)Member(LogModel, "ContextId");
@@ -1214,13 +1367,14 @@ namespace DiceMaster
                 !(bool)Member(state, "ExecutionFocus"),
                 "Unavailable checkpoint asset retained stale branch details or execution authority");
             config.Items["switch_one"] = checkpoint; checkpoint._useCount = true; second._value1.Throw = true;
+            checkpoint._countItems.Add(new Mortal.Core.ValueCompareItem { _value = 3, _compareOp = Mortal.Core.StatCompareType.GreaterEqual });
             int countReads = first._value1.Reads + second._value1.Reads;
             Tick(plugin, true);
             object counted = Member(Row("switch_one"), "ConditionDetails");
-            Check(Branches(counted).Count == 0 && (string)Member(counted, "DescriptionFallback") ==
-                "이 체크포인트는 조건식 대신 실행 횟수를 기준으로 분기합니다." &&
+            Check(Rows("switch_one").Count == 2 && Branches(counted).Count == 1 &&
+                (string)Member(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0], "Title") == "그 외 (분기 2)" &&
                 countReads == first._value1.Reads + second._value1.Reads,
-                "Count-based checkpoint invented condition branches or evaluated the inactive condition route");
+                "Count-based checkpoint did not expose count/fallback choices or evaluated the inactive condition route");
             checkpoint._useCount = false; checkpoint._items = null; Tick(plugin, true);
             Check(Branches(Member(Row("switch_one"), "ConditionDetails")).Count == 0 &&
                 (string)Member(Row("switch_one"), "Description") == "",
@@ -1231,9 +1385,9 @@ namespace DiceMaster
                 "Empty checkpoint did not expose its sole fallback branch without invented conditions");
             checkpoint._items.Add(new Mortal.Core.ConditionResultItem()); Tick(plugin, true);
             object emptyGroup = Member(Row("switch_one"), "ConditionDetails");
-            Check(Branches(emptyGroup).Count == 2 && Description(Branches(emptyGroup)[0]) ==
+            Check(Rows("switch_one").Count == 2 && Branches(emptyGroup).Count == 1 && Description(Branches(emptyGroup)[0]) ==
                 "등록된 조건이 없어 이 분기는 충족되지 않습니다." &&
-                (string)Member(emptyGroup, "DescriptionFallback") == "    " + Environment.NewLine,
+                (string)Member(Branches(Member(Row("switch_one", 2), "ConditionDetails"))[0], "Title") == "그 외 (분기 2)",
                 "Empty condition group acquired a true/unconditional meaning or changed the plaintext contract");
             NewLua(Lua("O_condition_removed").Replace("checkpointmanager.Switch(\"switch_one\")\n", ""), "condition_removed"); Tick(plugin);
             Check(!ModelRows("조건").Cast<object>().Any(row => (string)Member(row, "RawId") == "switch_one") &&

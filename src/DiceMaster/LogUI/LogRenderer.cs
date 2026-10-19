@@ -53,7 +53,7 @@ namespace DiceMaster.LogUI
         private bool IsEventTab => currentTabIndex == 2;
         private bool HasPopupSetting => currentTabIndex == 1 || IsEventTab;
         private bool HasStoryReadState => currentTabIndex < 2;
-        private bool SupportsReservation => currentTabIndex == 3;
+        private bool SupportsReservation => State.SupportsReservation;
         private IList<LogItem> VisibleRows => IsEventTab ? State.VisibleRows : State.Snapshot.Rows;
         private float RowHeight => renderedFont * 2f + 14f;
         private float ChoiceGap => Math.Max(8, renderedFont * .6f);
@@ -470,7 +470,7 @@ namespace DiceMaster.LogUI
             float paneHeight = Math.Max(1, BodyHeight - (HasPopupSetting ? DrawPopupSetting() : 0));
             GUILayout.BeginHorizontal(GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
             GUILayout.BeginVertical(GUILayout.Width(listWidth), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
-            string listTitle = IsEventTab || SupportsReservation ? "목록" : "체크포인트";
+            string listTitle = CurrentTab == "조건" ? "체크포인트" : "목록";
             Display.Label((area == Area.List ? "▶ " : "") + listTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
             Vector2 list = BeginListScroll(Math.Max(1, paneHeight - headingHeight));
             State.ListScroll = list.y;
@@ -515,7 +515,7 @@ namespace DiceMaster.LogUI
             GUILayout.EndVertical();
             GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
             LogItem selectedRow = State.Selected;
-            string detailTitle = IsEventTab || SupportsReservation ? "상세" : "조건 상세";
+            string detailTitle = CurrentTab == "조건" ? "조건 상세" : "상세";
             Display.Label(detailTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
             Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, paneHeight - headingHeight - 10));
             State.DetailScroll = detail.y;
@@ -534,14 +534,12 @@ namespace DiceMaster.LogUI
                 if (SupportsReservation)
                 {
                     Label(ReservationStatus(selectedRow), statusStyle);
-                    Label("해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
+                    Label(CurrentTab == "미션" ?
+                        "해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다." :
+                        "조건을 무시하고 다음 해당 판정에 한 번 적용하도록 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
                 }
-                if (IsEventTab)
-                {
-                    Label("관련 이벤트 조회입니다. 실제 행동의 판정에 도달하면 작은 팝업에서 이번 결과를 선택합니다.", statusStyle);
-                    if (selectedRow.EventEligibility != null && !string.IsNullOrEmpty(selectedRow.EventEligibility.Summary))
-                        Label((selectedRow.RefreshState == LogRefreshState.Healthy ? "" : "이전 조회 설명: ") + selectedRow.EventEligibility.Summary, statusStyle);
-                }
+                if (IsEventTab && selectedRow.EventEligibility != null && !string.IsNullOrEmpty(selectedRow.EventEligibility.Summary))
+                    Label((selectedRow.RefreshState == LogRefreshState.Healthy ? "" : "이전 조회 설명: ") + selectedRow.EventEligibility.Summary, statusStyle);
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
                 if (CurrentTab == "조건" && selectedRow.ConditionDetails != null)
@@ -842,7 +840,7 @@ namespace DiceMaster.LogUI
 
         private string ReservationStatus(LogItem row)
         {
-            const string action = "미션 조건 통과 예약";
+            string action = CurrentTab == "미션" ? "미션 조건 통과 예약" : IsEventTab ? "이벤트 결과 예약" : "조건 분기 결과 예약";
             bool reserved = LogBridge.IsReserved(CurrentTab, row.Target);
             string state = reserved ? "활성화 (예약 중)" : "비활성화 (예약 없음)";
             if (row.CanReserve && !State.PublicationFailed)
@@ -861,8 +859,13 @@ namespace DiceMaster.LogUI
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
             if (area == Area.PopupSetting) return "현재: 팝업 설정 · A / Enter 켜기·끄기 / ↓ 목록 / LB·RB 탭 / Y 도구 / B 닫기";
             if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
-            if (IsEventTab) return "현재: 이벤트 조회 · ↑↓ 항목 이동 / 목록 맨 위에서 ↑ 팝업 설정 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구 / B 닫기";
-            if (HasPopupSetting) return "현재: 조건 목록 · ↑↓ 항목 이동 / 목록 맨 위에서 ↑ 팝업 설정 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            if (HasPopupSetting)
+            {
+                string reservationAction = State.Selected == null ? "" : !State.Selected.CanReserve || State.PublicationFailed ? " / 예약 변경 불가" :
+                    " / A · Enter · 선택된 항목 다시 클릭·터치 " + (LogBridge.IsReserved(CurrentTab, State.Selected.Target) ? "예약 해제" : "예약");
+                return "현재: " + CurrentTab + " 목록 · ↑↓ 항목 이동" + reservationAction +
+                    " / 목록 맨 위에서 ↑ 팝업 설정 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
+            }
             if (State.Selected == null) return "현재: " + (SupportsReservation ? "목록" : "체크포인트 목록") + " · ↑↓ 항목 이동 / 오른쪽 스틱 목록 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!SupportsReservation) return "현재: 체크포인트 목록 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
             if (!State.Selected.CanReserve || State.PublicationFailed) return "현재: 목록 · 예약 변경 불가 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";

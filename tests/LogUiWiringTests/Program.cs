@@ -333,9 +333,11 @@ static class Program
                 configRegistration.Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == option)) &&
                 Calls(Method("DiceMaster.Config.ConfigElement`1", "SetValue")).Any(c => c.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && c.Name == "SaveConfig"),
             "tab and tool popup settings must use both registered BepInEx options through the existing persistent SaveConfig path");
-        Check(Method(renderer, "get_SupportsReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldc_I4_3) &&
-                Method("DiceMaster.LogUI.LogTabState", "BeginReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == "미션"),
-            "renderer and model must keep reservation authority restricted to missions");
+        const string logTabState = "DiceMaster.LogUI.LogTabState";
+        Check(Calls(Method(renderer, "get_SupportsReservation")).Any(c => c.DeclaringType.FullName == logTabState && c.Name == "get_SupportsReservation") &&
+                new[] { "조건", "이벤트", "미션" }.All(tab => Method(logTabState, "get_SupportsReservation").Body.Instructions.Any(i => i.OpCode == OpCodes.Ldstr && (string)i.Operand == tab)) &&
+                new[] { "BeginReservation", "CanActivate" }.All(name => Calls(Method(logTabState, name)).Any(c => c.Name == "get_SupportsReservation")),
+            "renderer and both model authority checks share reservation support for conditions, events and missions");
         Check(choices.Body.Instructions.Any(i => i.Operand is FieldReference field &&
                 field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "Description") &&
                 Calls(choices).Any(c => c.Name == "Label") &&

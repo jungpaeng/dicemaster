@@ -161,6 +161,7 @@ namespace DiceMaster.EventSelection
             if (current != null && (!ReferenceEquals(current.Coroutine, coroutine) || current.Script != script || current.Site != site || current.SwitchPool == null)) return false;
             try
             {
+                if (BypassForReservation(true, name)) return false;
                 if (current == null)
                 {
                     if (!IsEnabled(true) || definition == null) return false;
@@ -214,6 +215,8 @@ namespace DiceMaster.EventSelection
 
         internal static ActionContextHandle BeginSwitch(CheckPointManager manager, string name)
         {
+            ActionContextHandle reserved = BeginReserved(true, manager, name);
+            if (reserved != null) return reserved;
             ActionContext action = current;
             if (action == null || action.SwitchPool == null || !action.Permit || action.Executing || !ReferenceEquals(manager, action.Manager) || action.Name != name) return null;
             action.Permit = false; action.Executing = true;

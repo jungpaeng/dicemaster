@@ -23,6 +23,7 @@ internal static partial class Program
         RendererMissionStatusRows();
         RendererWaitingStatusExplanation();
         RendererDirectListReservations();
+        RendererReservableConditionDetails();
         RendererReservationToggleState();
         RendererListChromePointerTransactions();
         NativeButtonEventContract();
@@ -189,15 +190,15 @@ internal static partial class Program
         Publish(model, "이벤트", Item("event1", target), Item("event2", new object()));
         renderer.Handle(LogPadCommand.Activate);
         renderer.Handle(LogPadCommand.Activate);
-        Check(Area(renderer) == "List" && !model.Tab("이벤트").ExecutionFocus && LogBridge.Reservations == 0,
-            "event A selects for inspection and never reserves even after repeated confirmation");
+        Check(Area(renderer) == "List" && !model.Tab("이벤트").ExecutionFocus && LogBridge.Reservations == 1 && LogBridge.IsReserved("이벤트", target),
+            "event first A selects and the next fresh A reserves the selected result exactly once");
         renderer.Handle(LogPadCommand.Down);
-        Check(model.Tab("이벤트").SelectedId == "event2" && LogBridge.Reservations == 0,
-            "event down navigates read-only related candidates");
+        Check(model.Tab("이벤트").SelectedId == "event2" && LogBridge.Reservations == 1,
+            "event down navigates candidates without changing the current reservation");
         renderer.Handle(LogPadCommand.Up);
         Check(model.Tab("이벤트").SelectedId == "event1", "event up returns to previous candidate");
         renderer.Handle(LogPadCommand.Activate);
-        Check(LogBridge.Reservations == 0, "event confirmation cannot invoke the legacy reservation bridge");
+        Check(LogBridge.Reservations == 2 && !LogBridge.IsReserved("이벤트", target), "fresh event confirmation releases the selected reservation once");
         renderer.Handle(LogPadCommand.Left);
         renderer.Scroll(1);
         Check(model.Tab("이벤트").DetailScroll > 0 && model.Tab("이벤트").ListScroll == 0, "right stick scrolls selected detail while list owns focus");
@@ -556,7 +557,7 @@ internal static partial class Program
     private static void AssertReservationStatus(LogRenderer renderer, LogModel model, string tab, bool enabled, string scenario)
     {
         Repaint(renderer);
-        Check(GUILayout.LiteralLabels.Contains("상세") && !GUILayout.LiteralLabels.Contains("▶ 상세"), scenario + ": detail heading remains plain text");
+        Check(GUILayout.LiteralLabels.Contains(tab == "조건" ? "조건 상세" : "상세") && !GUILayout.LiteralLabels.Contains("▶ 상세"), scenario + ": detail heading remains plain text");
         Check(!GUILayout.ScrollViews[1].Controls.Exists(control => control.Button), scenario + ": detail status and body contain no focusable controls");
         bool reserved = LogBridge.IsReserved(tab, model.Tab(tab).Selected?.Target);
         string expectedAction = enabled ? (reserved ? "예약 해제 가능" : "예약 가능") : "예약 변경 불가";
@@ -569,6 +570,57 @@ internal static partial class Program
             scenario + ": list owns navigation and no durable reservation authority remains");
     }
 
+    private static void RendererReservableConditionDetails()
+    {
+        int attempts = LogBridge.Reservations;
+        object oldCondition = LogBridge.CurrentReservation("조건"), oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
+        bool popup = DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value;
+        object oldTarget = LogBridge.LastTarget;
+        try
+        {
+            DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value = false;
+            object selected = new object(), otherResult = new object(), eventTarget = new object(), missionTarget = new object();
+            var first = Item("switch-result-1", selected);
+            first.Text = "분기 1 · 결과 1";
+            first.ConditionDetails = new LogConditionDetails("앞 분기가 모두 불충족일 때 검사", new[] {
+                new LogConditionBranch("분기 2", "앞 분기가 모두 불충족일 때 검사", "A10005 = 0 | 랜덤값 <= 10")
+            });
+            var second = Item("switch-result-2", otherResult);
+            var model = new LogModel(); model.ResetContext(711); Publish(model, "조건", first, second);
+            var renderer = new LogRenderer(model, null, null); renderer.Handle(LogPadCommand.None);
+            renderer.Handle(LogPadCommand.NextTab); renderer.Handle(LogPadCommand.Activate);
+            Repaint(renderer);
+            var pane = GUILayout.ScrollViews[1];
+            Check(pane.Controls.Exists(control => !control.Button && control.Text == "A10005 = 0 | 랜덤값 <= 10")
+                && pane.Controls.Exists(control => !control.Button && control.Text == "앞 분기가 모두 불충족일 때 검사"),
+                "a reservable condition result retains its complete structured branch and priority context");
+            Check(pane.Controls.Exists(control => !control.Button && control.Text.Contains("조건을 무시하고 다음 해당 판정에 한 번 적용", StringComparison.Ordinal))
+                && pane.Controls.Exists(control => !control.Button && control.Text.StartsWith("조건 분기 결과 예약", StringComparison.Ordinal)),
+                "condition reservation clearly explains a one-use override rather than immediate game execution");
+            Check(LogBridge.Reservations == attempts && model.Tab("조건").SelectedId == first.Id,
+                "opening a result and its details never reserves it automatically");
+            LogBridge.SetReservation("조건", null); LogBridge.SetReservation("이벤트", eventTarget); LogBridge.SetReservation("미션", missionTarget);
+            renderer.Handle(LogPadCommand.Activate);
+            Check(LogBridge.Reservations == attempts + 1 && LogBridge.IsReserved("조건", selected)
+                && LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget)
+                && !DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value,
+                "a condition reservation works with its popup disabled and cannot replace event or mission reservations");
+            Repaint(renderer);
+            Check(GUILayout.ScrollViews[0].Controls.Exists(control => control.Button && control.Text.Contains(first.Id, StringComparison.Ordinal)
+                && control.Text.Contains("예약 중", StringComparison.Ordinal)), "the selected branch row displays its own reservation badge");
+            renderer.Handle(LogPadCommand.Activate);
+            Check(LogBridge.Reservations == attempts + 2 && LogBridge.CurrentReservation("조건") == null
+                && LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget),
+                "a new condition confirmation releases only the condition reservation");
+        }
+        finally
+        {
+            LogBridge.SetReservation("조건", oldCondition); LogBridge.SetReservation("이벤트", oldEvent); LogBridge.SetReservation("미션", oldMission);
+            DiceMaster.Config.ConfigManager.EnableSwitchSelectionPopup.Value = popup;
+            LogBridge.Reservations = attempts; LogBridge.LastTarget = oldTarget;
+        }
+    }
+
     private static ReservationTicket ArmModelTicket(LogTabState state)
     { state.ExecutionFocus = true; return state.BeginReservation(); }
 
@@ -579,7 +631,7 @@ internal static partial class Program
         bool savedResult = LogBridge.ReservationResult;
         try
         {
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
             {
                 int attempts = LogBridge.Reservations;
                 object target = new object(); int closes = 0;
@@ -587,7 +639,7 @@ internal static partial class Program
                 Publish(model, tab, Item("focused-target", target), Item("second-target", new object()));
                 var renderer = new LogRenderer(model, null, () => closes++);
                 renderer.Handle(LogPadCommand.None);
-                for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
+                for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
                 renderer.Handle(LogPadCommand.Activate);
                 AssertReservationStatus(renderer, model, tab, true, tab + " first A only selects");
                 Check(LogBridge.Reservations == attempts, "initial A never reserves an item that was not already selected");
@@ -684,7 +736,7 @@ internal static partial class Program
                     if (disabled == "publication-failed") disabledModel.MarkPublicationFailure(tab);
                     var disabledRenderer = new LogRenderer(disabledModel, null, null);
                     disabledRenderer.Handle(LogPadCommand.None);
-                    for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) disabledRenderer.Handle(LogPadCommand.NextTab);
+                    for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) disabledRenderer.Handle(LogPadCommand.NextTab);
                     disabledRenderer.Handle(LogPadCommand.Activate); disabledRenderer.Handle(LogPadCommand.Activate);
                     disabledRenderer.Handle(LogPadCommand.Right); disabledRenderer.Handle(LogPadCommand.Left);
                     AssertReservationStatus(disabledRenderer, disabledModel, tab, false, tab + " " + disabled + " direct action refused");
@@ -704,7 +756,7 @@ internal static partial class Program
 
                 var keyModel = new LogModel(); keyModel.ResetContext(703); Publish(keyModel, tab, Item("key-reservation", new object()));
                 var keyRenderer = new LogRenderer(keyModel, null, null); keyRenderer.Handle(LogPadCommand.None);
-                for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) keyRenderer.Handle(LogPadCommand.NextTab);
+                for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) keyRenderer.Handle(LogPadCommand.NextTab);
                 PressKey(keyRenderer, KeyCode.Return); PressKey(keyRenderer, KeyCode.Return);
                 Check(LogBridge.Reservations == attempts && keyModel.Tab(tab).SelectedId == "key-reservation", "held first Enter selects only once");
                 ReleaseKey(keyRenderer, KeyCode.Return);
@@ -746,10 +798,10 @@ internal static partial class Program
     {
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         bool savedReadable = LogBridge.ReservationReadable, savedResult = LogBridge.ReservationResult;
-        object oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
+        object oldCondition = LogBridge.CurrentReservation("조건"), oldEvent = LogBridge.CurrentReservation("이벤트"), oldMission = LogBridge.CurrentReservation("미션");
         try
         {
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
             {
                 LogBridge.SetReservation(tab, null);
                 object firstTarget = new object(), secondTarget = new object();
@@ -893,18 +945,18 @@ internal static partial class Program
             var eventModel = new LogModel(); var eventRenderer = PointerReservationRenderer(eventModel, "이벤트", eventTarget);
             var missionModel = new LogModel(); var missionRenderer = PointerReservationRenderer(missionModel, "미션", missionTarget);
             eventRenderer.Handle(LogPadCommand.Activate); missionRenderer.Handle(LogPadCommand.Activate);
-            Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.IsReserved("미션", missionTarget),
-                "read-only event confirmation leaves the independent mission reservation intact");
+            Check(LogBridge.IsReserved("이벤트", eventTarget) && LogBridge.IsReserved("미션", missionTarget),
+                "event confirmation reserves its own result and leaves the independent mission reservation intact");
             eventRenderer.Handle(LogPadCommand.Activate);
             Check(LogBridge.CurrentReservation("이벤트") == null && LogBridge.IsReserved("미션", missionTarget),
-                "event confirmation cannot reserve or clear the mission slot");
+                "releasing an event reservation cannot clear the independent mission slot");
             missionRenderer.Handle(LogPadCommand.Activate);
             Check(LogBridge.CurrentReservation("미션") == null, "mission reservation still toggles off");
 
         }
         finally
         {
-            LogBridge.SetReservation("이벤트", oldEvent); LogBridge.SetReservation("미션", oldMission);
+            LogBridge.SetReservation("조건", oldCondition); LogBridge.SetReservation("이벤트", oldEvent); LogBridge.SetReservation("미션", oldMission);
             LogBridge.Reservations = savedAttempts; LogBridge.LastTarget = savedTarget;
             LogBridge.ReservationReadable = savedReadable; LogBridge.ReservationResult = savedResult; LogBridge.DuringReservation = null;
             GUILayout.ButtonInput = null; GUILayout.ConsumeButtonEvent = false; Input.Held.Clear();
@@ -916,7 +968,7 @@ internal static partial class Program
         int attempts = LogBridge.Reservations;
         try
         {
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
             {
                 foreach (string action in new[] { "close", "tab", "tools" })
                 {
@@ -925,12 +977,12 @@ internal static partial class Program
                     int closes = 0;
                     var renderer = new LogRenderer(model, null, () => closes++);
                     renderer.Handle(LogPadCommand.None);
-                    for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
+                    for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
                     renderer.Handle(LogPadCommand.Activate);
                     renderer.Handle(LogPadCommand.Right);
                     AssertReservationStatus(renderer, model, tab, true, tab + " before mouse " + action);
-                    ClickRenderedButton(renderer, action == "close" ? "닫기" : action == "tab" ? "조건" : "도구", action != "tools");
-                    Check(action == "close" ? closes == 1 : action == "tab" ? renderer.CurrentTab == "조건" && Area(renderer) == "List" : Area(renderer) == "Tools",
+                    ClickRenderedButton(renderer, action == "close" ? "닫기" : action == "tab" ? "선택지" : "도구", action != "tools");
+                    Check(action == "close" ? closes == 1 : action == "tab" ? renderer.CurrentTab == "선택지" && Area(renderer) == "List" : Area(renderer) == "Tools",
                         tab + ": list reservation authority cancellation preserves mouse down/up transaction for " + action);
                     Check(LogBridge.Reservations == attempts, "chrome mouse action is never a reservation confirmation");
                 }
@@ -1078,7 +1130,7 @@ internal static partial class Program
         Publish(model, tab, Item("pointer-target", target));
         var renderer = new LogRenderer(model, null, close);
         renderer.Handle(LogPadCommand.None);
-        for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
+        for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
         renderer.Handle(LogPadCommand.Activate); renderer.Handle(LogPadCommand.Right);
         return renderer;
     }
@@ -1088,7 +1140,7 @@ internal static partial class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
                 foreach (bool touch in new[] { false, true })
                 {
                     object firstTarget = new object(), secondTarget = new object();
@@ -1152,7 +1204,7 @@ internal static partial class Program
         try
         {
             GamepadBridge.PointerActivity = () => pointerActivities++;
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
             {
                 Func<string, bool> reserve = text => text.Contains("pointer-target", StringComparison.Ordinal);
                 foreach (int kind in new[] { 0, 1, 2, 3 })
@@ -1187,13 +1239,13 @@ internal static partial class Program
                     {
                         int closes = 0; var chromeModel = new LogModel();
                         var chrome = PointerReservationRenderer(chromeModel, tab, new object(), () => closes++);
-                        Func<string, bool> matches = text => action == "close" ? text == "닫기" : action == "tab" ? text == "조건" : text.Contains("도구", StringComparison.Ordinal);
+                        Func<string, bool> matches = text => action == "close" ? text == "닫기" : action == "tab" ? text == "선택지" : text.Contains("도구", StringComparison.Ordinal);
                         Vector2 chromePoint = PointerTarget(chrome, control => control.Button && matches(control.Text));
                         attempts = LogBridge.Reservations;
                         DrawPointer(chrome, down, rawDown, chromePoint);
                         SoftResetForPointer(chrome);
                         DrawPointer(chrome, up, rawUp, chromePoint, matches, consume: true);
-                        Check(action == "close" ? closes == 1 : action == "tab" ? chrome.CurrentTab == "조건" : Area(chrome) == "Tools",
+                        Check(action == "close" ? closes == 1 : action == "tab" ? chrome.CurrentTab == "선택지" : Area(chrome) == "Tools",
                             "pointer takeover preserves mouse/touch chrome transaction for " + action);
                         Check(LogBridge.Reservations == attempts, "chrome pointer release never confirms a reservation");
                     }
@@ -1265,7 +1317,7 @@ internal static partial class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
                 foreach (string transition in new[] { "gamepad-stays", "gamepad-to-mouse", "mouse-pad-override", "unknown" })
                     foreach (PadState held in new[] {
                         new PadState { Buttons = PadButtons.A }, new PadState { Buttons = PadButtons.B },
@@ -1390,7 +1442,7 @@ internal static partial class Program
         int savedAttempts = LogBridge.Reservations; object savedTarget = LogBridge.LastTarget;
         try
         {
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
                 foreach (string modeCase in new[] { "Gamepad", "KeyboardMouse", "Unknown", "Gamepad-to-mouse" })
                 {
                     GamepadBridge.PointerActivity = null; GamepadBridge.KeyboardActivity = null; GamepadBridge.Cancelled = null;
@@ -1528,6 +1580,7 @@ internal static partial class Program
 
         var conditions = new LogModel(); conditions.ResetContext(301);
         var conditionRows = new[] { Item("condition-alpha", new object()), Item("condition-beta", new object()), Item("condition-charlie", new object()) };
+        foreach (LogItem row in conditionRows) row.ReservationAllowed = false;
         conditionRows[0].Description = "조건 첫 상세 설명";
         conditionRows[1].Description = "조건 둘 상세 설명";
         conditionRows[2].Description = "조건 셋 상세 설명";
@@ -1558,13 +1611,13 @@ internal static partial class Program
         Check(Area(conditionRenderer) == "List" && !conditions.Tab("조건").ExecutionFocus, "condition right cannot enter a preview with no actionable control");
         conditions.Tab("조건").ExecutionFocus = true;
         ReservationTicket dummyConditionTicket = conditions.Tab("조건").BeginReservation();
-        Check(dummyConditionTicket == null, "condition model cannot mint mission-only reservation authority even with a dummy target");
+        Check(dummyConditionTicket == null, "condition model refuses rows without an explicit reservable branch target");
         typeof(LogRenderer).GetMethod("Reserve", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(conditionRenderer, new object[] { dummyConditionTicket });
         Check(LogBridge.Reservations == reservations && !conditions.Tab("조건").ExecutionFocus,
-            "condition renderer cannot reserve when the mission-only model refuses authority");
+            "condition renderer cannot reserve when the selected row refuses authority");
         conditions.Tab("조건").ExecutionFocus = true;
         conditionRenderer.Handle(LogPadCommand.Activate);
-        Check(LogBridge.Reservations == reservations, "dummy reservable targets and forced execution focus cannot reserve a condition");
+        Check(LogBridge.Reservations == reservations, "read-only condition rows and forced execution focus cannot reserve a condition");
         conditionRenderer.Scroll(1);
         Check(conditions.Tab("조건").DetailScroll > 0 && conditions.Tab("조건").ListScroll == 0, "condition right stick scrolls the detail instead of the checkpoint list");
         conditionRenderer.Handle(LogPadCommand.Tools);
@@ -1579,7 +1632,7 @@ internal static partial class Program
             Publish(reservationModel, tab, Item("reserve-first", new object()), Item("reserve-second", new object()));
             var reservationRenderer = new LogRenderer(reservationModel, null, null);
             reservationRenderer.Handle(LogPadCommand.None);
-            for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) reservationRenderer.Handle(LogPadCommand.NextTab);
+            for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) reservationRenderer.Handle(LogPadCommand.NextTab);
             reservationRenderer.Handle(LogPadCommand.Activate);
             reservationRenderer.Handle(LogPadCommand.Right);
             reservationRenderer.Handle(LogPadCommand.Down);
@@ -1948,7 +2001,7 @@ internal static partial class Program
         renderer.Handle(LogPadCommand.Down);
         Check(!model.Tab("이벤트").ExecutionFocus && Area(renderer) == "List", "failed publication cannot retain reservation authority");
         string summary = (string)typeof(LogRenderer).GetMethod("Summary", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
-        Check(summary.Contains("게시 실패 · 이전 값", StringComparison.Ordinal) && !summary.Contains("예약", StringComparison.Ordinal), "publication failure reason remains visible in summary");
+        Check(summary.Contains("게시 실패 · 이전 값", StringComparison.Ordinal) && summary.Contains("(예약 불가)", StringComparison.Ordinal), "event publication failure reason and disabled reservation remain visible in summary");
         foreach (string tab in new[] { "선택지", "조건", "미션" })
         {
             while (renderer.CurrentTab != tab) renderer.Handle(LogPadCommand.NextTab);
@@ -1956,7 +2009,7 @@ internal static partial class Program
             model.MarkPublicationFailure(tab);
             summary = (string)typeof(LogRenderer).GetMethod("Summary", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(renderer, null);
             Check(summary.Contains("게시 실패 · 이전 값", StringComparison.Ordinal)
-                && (tab == "미션" ? summary.Contains("(예약 불가)", StringComparison.Ordinal) : !summary.Contains("예약", StringComparison.Ordinal)),
+                && (tab != "선택지" ? summary.Contains("(예약 불가)", StringComparison.Ordinal) : !summary.Contains("예약", StringComparison.Ordinal)),
                 tab + ": failed publication explains retained data and mentions reservation only for tabs that support it");
         }
     }
@@ -2023,11 +2076,7 @@ internal static partial class Program
                             scenario + ": localization cannot mutate publication fields, selected identity or target");
                         int before = LogBridge.Reservations;
                         renderer.Handle(LogPadCommand.Activate);
-                        if (tab != "미션")
-                            Check(LogBridge.Reservations == before && !model.Tab(tab).ExecutionFocus,
-                                scenario + ": condition localization never creates a reservation control");
-                        else
-                            Check(LogBridge.Reservations == before + 1 && LogBridge.LastReservedContext == context
+                        Check(LogBridge.Reservations == before + 1 && LogBridge.LastReservedContext == context
                                 && LogBridge.LastReservedTab == tab && LogBridge.LastReservedId == identity
                                 && ReferenceEquals(LogBridge.LastTarget, target),
                                 scenario + ": an actual renderer reservation retains the original context, tab, identity and target");
@@ -2381,7 +2430,7 @@ internal static partial class Program
                     "pad can restore readable window/font defaults from pressure layout");
             }
 
-            foreach (string tab in new[] { "미션" })
+            foreach (string tab in new[] { "조건", "이벤트", "미션" })
             {
                 DiceMaster.Config.ConfigManager.LogWindowWidth.Value = 540;
                 DiceMaster.Config.ConfigManager.LogWindowHeight.Value = 440;
@@ -2392,7 +2441,7 @@ internal static partial class Program
                 LogBridge.SetReservation(tab, reservationItem.Target);
                 var reservationRenderer = new LogRenderer(reservationModel, null, null);
                 reservationRenderer.Handle(LogPadCommand.None);
-                for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) reservationRenderer.Handle(LogPadCommand.NextTab);
+                for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) reservationRenderer.Handle(LogPadCommand.NextTab);
                 reservationRenderer.Handle(LogPadCommand.Activate);
                 reservationRenderer.Handle(LogPadCommand.Down);
                 Repaint(reservationRenderer); Repaint(reservationRenderer);
@@ -2732,7 +2781,7 @@ internal static partial class Program
                 Publish(model, tab, rows);
                 var renderer = new LogRenderer(model, null, null);
                 renderer.Handle(LogPadCommand.None);
-                for (int index = 0; index < (tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
+                for (int index = 0; index < (tab == "조건" ? 1 : tab == "이벤트" ? 2 : 3); index++) renderer.Handle(LogPadCommand.NextTab);
                 renderer.Handle(LogPadCommand.Activate);
                 Repaint(renderer); Repaint(renderer);
                 GUILayout.ScrollViewRecord list = GUILayout.ScrollViews[0];

@@ -157,6 +157,7 @@ static class Program
         StatusOnlyRows();
         StructuredConditionDetails();
         EventViews();
+        SharedReservationAuthority();
         Console.WriteLine("PASS: " + checks + " log model assertions (full publications, status-only rows, navigation, identity, last-good/errors, context and activation tickets).");
         Measure();
         return 0;
@@ -308,8 +309,9 @@ static class Program
             events.Snapshot.Rows[2].Id == "blocked" && events.Snapshot.Rows[3].Id == "unknown" && events.Snapshot.Rows[4].Id == "retained",
             "Event ordering did not retain each group's original order or treated retained eligibility as available");
         Check(!events.AvailableOnly && events.SearchQuery == "", "A new event view did not start unfiltered");
+        blocked.ReservationAllowed = false;
         events.Select("blocked"); events.ExecutionFocus = true;
-        Check(events.BeginReservation() == null, "Read-only related event list created an execution/reservation request");
+        Check(events.BeginReservation() == null, "A nonreservable event created an execution/reservation request");
         events.ListScroll = 72; events.AvailableOnly = true;
         Check(events.VisibleRows.Count == 2 && events.Selected == null && events.ListScroll == 0 && !events.ExecutionFocus,
             "Available-only filter retained an unavailable selection or stale input authority");
@@ -340,6 +342,49 @@ static class Program
         events.AvailableOnly = true; events.SearchQuery = "a"; model.ResetContext(51);
         Check(!events.AvailableOnly && events.SearchQuery == "" && events.VisibleRows.Count == 0 &&
             !model.Tab("이벤트").AvailableOnly && model.Tab("이벤트").SearchQuery == "", "Event query/filter leaked across game contexts");
+    }
+
+
+    static void SharedReservationAuthority()
+    {
+        foreach (string tab in new[] { "조건", "이벤트", "미션" })
+        {
+            var model = new LogModel(); model.ResetContext(60);
+            object target = new object(), stateSnapshot = new object();
+            var row = Row("result", target);
+            Publish(model, tab, row);
+            var state = model.Tab(tab);
+            Check(state.SupportsReservation && state.BeginReservation() == null && state.Selected == null,
+                tab + ": publication cannot arm or auto-select a reservable result");
+            state.Select(row.Id); state.ExecutionFocus = true;
+            ReservationTicket ticket = state.BeginReservation(stateSnapshot);
+            Check(ticket != null && ticket.Tab == tab && ReferenceEquals(ticket.ReservationState, stateSnapshot) && state.CanActivate(ticket),
+                tab + ": an explicit selected result carries the opaque game-boundary snapshot");
+            Publish(model, tab, Row(row.Id, target));
+            Check(state.CanActivate(ticket), tab + ": a healthy same-target refresh retains the pending confirmation");
+            foreach (string foreign in new[] { "조건", "이벤트", "미션", "선택지" })
+            {
+                if (foreign == tab) continue;
+                Publish(model, foreign, Row(row.Id, target));
+                var other = model.Tab(foreign); other.Select(row.Id); other.ExecutionFocus = true;
+                Check(!other.CanActivate(ticket), tab + ": a matching result identity cannot activate in another tab");
+            }
+            row.ReservationAllowed = false; Publish(model, tab, row);
+            Check(!state.CanActivate(ticket) && Arm(state) == null, tab + ": disabling a branch cancels pending authority");
+            row.ReservationAllowed = true; Publish(model, tab, row); state.Select(row.Id); ticket = Arm(state);
+            model.MarkPublicationFailure(tab);
+            Check(!state.CanActivate(ticket) && Arm(state) == null, tab + ": failed publication blocks existing and fresh confirmations");
+            Publish(model, tab, Row(row.Id, target)); state.Select(row.Id); ticket = Arm(state);
+            Publish(model, tab, Row(row.Id, new object()));
+            Check(state.Selected == null && !state.CanActivate(ticket), tab + ": replacement behind the same row ID cannot inherit authority");
+            state.Select(row.Id); ticket = Arm(state); model.ResetContext(61);
+            Check(!state.CanActivate(ticket) && !model.Tab(tab).ExecutionFocus,
+                tab + ": scene replacement clears selected result and pending authority");
+        }
+        var choices = new LogModel(); choices.ResetContext(62); Publish(choices, "선택지", Row("dummy", new object()));
+        var choice = choices.Tab("선택지"); choice.Select("dummy");
+        Check(!choice.SupportsReservation && Arm(choice) == null,
+            "the read-only choice tab cannot mint reservation authority even with a target");
     }
 
     static void Measure()

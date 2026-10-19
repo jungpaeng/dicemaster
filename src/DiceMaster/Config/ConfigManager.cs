@@ -98,7 +98,7 @@ public static class ConfigManager
 		EnableDiceController = new ConfigElement<bool>("EnableDiceController", "Enable dice controller", defaultValue: true);
 		EnableOptionInfo = new ConfigElement<bool>("EnableOptionInfo", "Enable option info", defaultValue: true);
 		EnableEventSelectionPopup = new ConfigElement<bool>("EnableEventSelectionPopup", "실제 이벤트 판정 직전에 이벤트 선택 팝업을 표시합니다. 끄면 대기를 취소하고 원래 무작위 판정으로 진행합니다. EnableOptionInfo가 유효하게 켜져 있을 때만 작동하며, 이 상위 설정의 재시작 규칙은 유지합니다.", defaultValue: true);
-		EnableSwitchSelectionPopup = new ConfigElement<bool>("EnableSwitchSelectionPopup", "실제 Switch 조건 분기 직전에 분기 선택 팝업을 표시합니다. 끄면 조건 분기 대기만 해제하고 원래 조건 판정으로 진행합니다. EnableOptionInfo가 유효하게 켜져 있을 때만 작동합니다.", defaultValue: true);
+		EnableSwitchSelectionPopup = new ConfigElement<bool>("EnableSwitchSelectionPopup", "실제 Switch 조건 분기 직전에 분기 선택 팝업을 표시합니다. 끄면 조건 분기 대기만 해제하고 원래 조건 판정으로 진행합니다. EnableOptionInfo가 유효하게 켜져 있을 때만 작동합니다.", defaultValue: false);
 		LogMenuToggleKey = new ConfigElement<KeyCode>("LogMenuToggleKey", "Log menu toggle key", KeyCode.Tab);
 		EnableGamepadLogOpen = new ConfigElement<bool>("EnableGamepadLogOpen", "같은 패드의 양쪽 스틱 클릭(LS+RS) 누름이 겹치면 로그를 엽니다. 한쪽을 누른 채 다른 쪽을 누르면 되며 순서와 간격 제한은 없습니다. 활성화하면 게임에 초점이 있는 동안 두 스틱 클릭을 로그 전용으로 사용합니다. 끄면 버튼 해제 후 원래 게임 입력으로 돌아갑니다. Tab 열기는 유지합니다.", defaultValue: true);
 		SpeedUpKey = new ConfigElement<KeyCode>("SpeedUpKey", "Speed up key", KeyCode.LeftControl);

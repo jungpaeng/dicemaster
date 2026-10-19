@@ -84,6 +84,7 @@ namespace DiceMaster.EventSelection
         private static readonly Dictionary<string, string> failures = new Dictionary<string, string>(StringComparer.Ordinal);
         public static Func<bool> Enabled;
         public static Func<bool> SwitchEnabled;
+        public static Func<bool> ReservationsEnabled;
         public static bool IsSwitch => current != null && current.SwitchPool != null;
         public static string PopupTitle => IsSwitch ? "이번 대화의 조건 분기 선택" : "이번 행동의 이벤트 선택";
         public static string PrimaryNoun => IsSwitch ? "분기" : "이벤트";
@@ -263,6 +264,7 @@ namespace DiceMaster.EventSelection
             }
             try
             {
+                if (BypassForReservation(false, name)) return false;
                 if (current == null)
                 {
                     if (!IsEnabled()) return false;
@@ -406,6 +408,8 @@ namespace DiceMaster.EventSelection
 
         internal static ActionContextHandle BeginPosition(CheckPointManager manager, string name)
         {
+            ActionContextHandle reserved = BeginReserved(false, manager, name);
+            if (reserved != null) return reserved;
             ActionContext action = current;
             if (action == null || action.SwitchPool != null || !action.Permit || action.Executing || !ReferenceEquals(manager, action.Manager) || action.Name != name)
                 return null;
