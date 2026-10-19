@@ -1,5 +1,15 @@
 # 소스 기반 Release와 게시 이력
 
+## PRD #4 alpha.9 목록 예약 표시·해제 게시
+
+사용자의 커밋·prerelease 지시에 따라 **2026-10-19 23:23:31 KST에 [v1.0.5-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.9)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.9/DiceMaster-v1.0.5-alpha.9.zip)은 목록 `(예약 중)` 표시와 새 A/Enter/Space·선택된 행 재클릭/터치의 예약·해제를 포함합니다. 미션 해제는 확인 가능한 모드 소유 활성 항목만 복원하며 마지막 명시 취소 대상의 즉시 자동 재예약을 같은 문맥에서 억제합니다. 이미 소비된 결과·게임 진행은 되감지 않으며 [설치·복구·Windows 확인표](ISSUE-4-ALPHA9-RELEASE.md)를 따릅니다.
+
+소스·태그는 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`, Release ID `417385047`·asset ID `656496078`, `draft=false`·`prerelease=true`·`make_latest=false`입니다. 구현·검사·문서 16개 파일만 커밋했고 `.agents/`·`skills-lock.json`은 제외했습니다. 고정 커밋의 깨끗한 전체 재빌드·12개 검사·입력 153개·소스 63개와 검토 DLL/cfg/ZIP 바이트 일치를 확인했습니다. UI/입력 3,472개·실제 Bridge 통합 400개·모델 375개·DLL 연결 71개와 기존 분석·갱신·번역·주사위·패드 검사를 포함하며 독립 감사도 통과했습니다.
+
+DLL은 585,728바이트·`39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339`, cfg는 11,175바이트·`bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`, ZIP은 246,335바이트·`98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04`입니다. ZIP에는 cfg/새 DLL 두 파일만 있으며 게임 소스·게임 DLL을 포함하지 않습니다. 공개 페이지와 ZIP을 인증 없이 확인해 SHA-256·CRC·두 파일·내부 바이트를 검증했습니다. 기존 22개 Release·22개 태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다.
+
+영수증은 `artifacts/releases/v1.0.5-alpha.9/`에 보존합니다. 게시 결과 문서의 후속 커밋은 소스 태그·공개 설치 파일을 바꾸지 않습니다. **게임 설치·실행은 수행하지 않았으며 실제 Windows 패드·스크롤·버튼·터치와 이슈 #4 완료는 사용자 확인 대기입니다.**
+
 ## PRD #4 alpha.8 목록에서 바로 예약 게시
 
 사용자의 커밋·prerelease 지시에 따라 **2026-10-19 22:58:37 KST에 [v1.0.5-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.8)을 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.8/DiceMaster-v1.0.5-alpha.8.zip)은 이벤트·미션의 목록 직접 예약과 읽기 전용 상세 상태 표시를 포함합니다. 새 A/Enter/Space와 선택된 행 재클릭·터치로 기존 예약을 한 번 설정하며 상세 버튼·포커스를 제거합니다. 예약은 취소 토글·즉시 실행이 아니며 [설치·복구·Windows 확인표](ISSUE-4-ALPHA8-RELEASE.md)를 따릅니다.

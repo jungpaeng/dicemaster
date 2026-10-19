@@ -8,11 +8,11 @@
 
 ## PRD #4 후보와 prerelease
 
-### alpha.9 게시 후보: 목록 예약 표시와 해제
+### v1.0.5-alpha.9 게시·고정 커밋 재빌드 검증
 
-`--output-dir artifacts/issue-4/reservation-toggle`로 전체 소스 후보를 빌드합니다. 실제 예약 상태를 목록에 표시하고 새 확인 입력의 예약/해제를 당시의 불변 상태·세대로 고정합니다. 실제 Bridge는 원본 대상·문맥·선택·게시·게임 데이터 멤버십 검증과 현재 예약 일치를 확인한 뒤 변경합니다. 게임 소비 훅과 기존 자동 할당도 예약 세대에 반영해 오래된 누름이 새 예약을 해제하지 않게 합니다.
+`--output-dir artifacts/issue-4/reservation-toggle`로 목록 예약 표시·새 확인 입력의 예약/해제와 미션 소유 상태 복구 후속을 전체 소스로 빌드했습니다. 실제 소비·동일 객체 재예약·조회 실패 사이의 오래된 입력을 예약 슬롯·문맥·변경 세대로 거부하며 기존 최신 대상/게임 멤버십·홀드/중립 보호를 유지합니다. [상세 계약·로컬 검토 기록](ISSUE-4-RESERVATION-TOGGLE.md)을 따릅니다.
 
-미션은 아직 모드가 소유한 활성 목록 변경만 안전하게 복원하고 게임이 재계산·소비한 상태는 되감지 않습니다. 같은 문맥의 명시 취소 대상에 대한 기존 자동 재예약을 억제하며 조건 로그는 보존합니다. 2026-10-19 23:16:31 KST 후보의 전체 12개 검사 프로그램·UI/입력 3,472개·실제 Bridge 통합 400개·DLL 연결 71개 검사가 통과했습니다. 사용자의 지시에 따라 [alpha.9](ISSUE-4-ALPHA9-RELEASE.md)을 `verify-preview-release.py --scope prd4`로 고정 커밋에서 재빌드하고 게시합니다. 결과는 `artifacts/releases/v1.0.5-alpha.9/`에 보존하며 실제 게시 결과는 확인 후 기록합니다. [로컬 후보 검토 기록](ISSUE-4-RESERVATION-TOGGLE.md)과 아래 alpha.8 공개 이력은 보존합니다. 기존 cfg를 보존해 DLL만 교체하며 실제 Windows 확인과 이슈 #4 완료는 대기입니다.
+**2026-10-19 23:23:31 KST에 [v1.0.5-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.9)를 게시했습니다.** 소스·태그 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 12개 검사·입력 153개·소스 63개와 검토 DLL/cfg/ZIP 바이트 일치를 확인했습니다. UI/입력 3,472개·실제 Bridge 통합 400개·모델 375개·DLL 연결 71개를 포함합니다. 공개 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.9/DiceMaster-v1.0.5-alpha.9.zip)의 SHA-256은 `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04`, DLL은 `39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. 인증 없는 다운로드의 CRC·두 파일·내부 바이트/해시도 확인했습니다. 결과는 `artifacts/releases/v1.0.5-alpha.9/`에 보존하며 [설치·복구·Windows 확인](ISSUE-4-ALPHA9-RELEASE.md)을 따릅니다. cfg를 보존해 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 대기이며 아래 alpha.8 공개 이력은 보존합니다.
 
 ### v1.0.5-alpha.8 게시·고정 커밋 재빌드 검증
 

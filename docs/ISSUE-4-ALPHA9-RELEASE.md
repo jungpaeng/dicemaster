@@ -1,6 +1,6 @@
 # DiceMaster v1.0.5-alpha.9 — 목록 예약 표시·예약 해제
 
-이벤트·미션 목록에 `(예약 중)`을 표시하고, 같은 예약 항목에서 새 A 입력으로 예약을 해제한다. 사용자의 커밋·prerelease 지시에 따라 **고정 커밋에서 깨끗하게 재빌드·검증한 뒤 게시할 예정**이다. 소스·태그 커밋, 실제 게시 시각과 공개 다운로드 검증 결과는 확인 후 기록한다. 아래 해시와 검사 결과는 게시 전 검토 후보의 기록이다.
+**2026-10-19 23:23:31 KST에 [v1.0.5-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.9)를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.9/DiceMaster-v1.0.5-alpha.9.zip)은 소스·태그 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`의 깨끗한 전체 재빌드·12개 검사와 검토 DLL/cfg/ZIP 바이트 일치를 확인한 파일입니다. 공개 페이지와 설치 ZIP을 인증 없이 확인해 SHA-256·CRC·두 파일·내부 바이트를 검증했습니다. 이벤트·미션 목록에 `(예약 중)`을 표시하고 선택된 예약 항목의 새 A로 해제하며, 다시 새 A로 재예약합니다.
 
 에이전트는 실제 Windows 게임을 설치하거나 실행하지 않았다. 패드 탐색·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기이며 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)를 완료 처리하지 않는다. 이전 DLL의 Windows 확인을 이번 DLL에 승계하지 않는다.
 
@@ -43,7 +43,7 @@
 | 파일 | 크기 | 검토 후보 SHA-256 |
 | --- | ---: | --- |
 | `DiceMaster.dll` | 585,728바이트 | `39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339` |
-| 설치 ZIP (`DiceMaster-v1.0.5-alpha.9.zip` 예정) | 246,335바이트 | `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04` |
+| 설치 ZIP (`DiceMaster-v1.0.5-alpha.9.zip`) | 246,335바이트 | `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04` |
 | ZIP 내부 `config/DiceMaster.cfg` | 11,175바이트 | `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0` |
 
 | 검사 프로그램 | 검토 후보 결과 |
@@ -63,12 +63,12 @@
 
 입력 153개·생산 소스 63개의 현재 해시, ZIP CRC·정확히 두 파일·내부 DLL/cfg 바이트·해시, 외부 참조 15개와 alpha.8 대비 설정 보존을 독립 검토했다. alpha.8 대비 생산 4개·검사 6개 입력만 변경했다. 실제 새 DLL의 게시 → 모델 → 입력 → 토글 검증과 게임 소비 알림 연결을 검사했다. Unity·게임 데이터·Win32/XInput 경계는 검사 대역이므로 실제 게임·물리 장치·후킹·화면 배치를 확인한 결과로 확대하지 않는다.
 
-게시 전 고정 커밋을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 12개 검사·입력 해시·검토 DLL/cfg/ZIP 바이트 일치를 요구한다. 게시 후 소스 태그·prerelease 상태·공개 페이지와 인증 없는 설치 ZIP의 SHA-256·CRC·두 파일·내부 바이트를 확인하고 영수증을 보존한다. **고정 재빌드와 공개 게시 검증 결과는 실제 확인 후 기록한다.**
+`verify-preview-release.py --scope prd4`로 고정 커밋을 깨끗하게 재빌드해 12개 검사·입력 153개·생산 소스 63개와 검토 DLL/cfg/ZIP 바이트 일치를 확인했다. 소스 태그·prerelease 상태·공개 페이지와 인증 없는 설치 ZIP의 SHA-256·CRC·두 파일·내부 바이트도 검증했다. 영수증은 `artifacts/releases/v1.0.5-alpha.9/`에 보존한다.
 
 ## 적용·복구
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 게임 폴더 밖에 백업한다.
-2. 게시 후 Assets의 **`DiceMaster-v1.0.5-alpha.9.zip`**을 임시 폴더에 푼다. GitHub 자동 `Source code` 압축 파일과 구분하고 위 SHA-256을 확인한다.
+2. Assets의 **`DiceMaster-v1.0.5-alpha.9.zip`**을 임시 폴더에 푼다. GitHub 자동 `Source code` 압축 파일과 구분하고 위 SHA-256을 확인한다.
 3. **`plugins/DiceMaster/DiceMaster.dll`만** `BepInEx/plugins/DiceMaster/DiceMaster.dll`로 교체한다. 새 설정 키가 없으므로 기존 cfg를 보존한다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. [alpha.8 설치·해시](ISSUE-4-ALPHA8-RELEASE.md)로 복구하면 기존 목록 직접 예약 방식으로 돌아가며 목록 예약 마커와 A 예약 해제는 없어진다.
 
@@ -92,4 +92,12 @@ ZIP에는 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`만 있�
 7. 홀드로 닫기·Alt-Tab·모드 전환·재연결·주사위 왕복 후 해제·중립과 입력 소유권을 확인한다. 게임 대화·취소·주사위·예약/해제로 중복 전달되지 않아야 한다.
 8. 네 탭의 한국어·읽음·조건 분기·긴/짧은 목록·창/글자·스크롤바·설정 저장을 확인한다. [전체 12단계](ISSUE-4-RESERVATION-TOGGLE.md#windows-확인표)를 따른다.
 
-게시 시 기존 **22개 Release·태그·자산**과 Latest 정식 **v1.0.4**를 보존한다. 게시·자동 검사만으로 기능이나 이슈를 완료하지 않으며 이슈 #2 closed·#4 open을 유지한다. 실제 게시 결과와 보존 검증은 확인 후 기록한다.
+기존 **22개 Release·22개 태그·자산**과 Latest 정식 **v1.0.4**를 보존했다. 게시·자동 검사만으로 기능이나 이슈를 완료하지 않으며 이슈 #2 closed·#4 open을 유지한다.
+
+## 실제 게시·공개 다운로드 검증
+
+2026-10-19 23:23:31 KST 게시. 소스·태그 커밋 `7d9c9ec0cfaadbb968c35cfaa5111912c1c68f45`, Release `417385047`·asset `656496078`, `draft=false`·`prerelease=true`·`make_latest=false`입니다. 입력 153개·생산 소스 63개와 DLL/cfg/ZIP은 검토 후보와 일치하고 전체 12개 검사 프로그램이 통과했습니다. 독립 감사도 고정 Git 입력·후보·release 바이트와 검사 기록 일치를 확인했습니다.
+
+인증 없이 내려받은 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.9/DiceMaster-v1.0.5-alpha.9.zip)의 SHA-256은 `98fd7ed0a6a3232ebc6cf6bde29a333cba08ca5ce40b647c4eb3beaba527db04`, DLL은 `39e30eb7816e140e8175c9a44da14b5e04fdfefe3398e3b56dafc92ac0e49339`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. ZIP CRC·정확히 두 파일·내부 바이트가 모두 일치합니다. 기존 22개 Release·22개 태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다.
+
+`artifacts/releases/v1.0.5-alpha.9/`의 `release-verification.json`, `reviewed-candidate-comparison.json`, `independent-audit.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md`와 로그에 영수증을 보존합니다. 게시 기록의 후속 문서 커밋은 소스 태그나 설치 자산을 바꾸지 않습니다. **실제 Windows 패드·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기입니다.**
