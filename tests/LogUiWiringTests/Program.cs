@@ -175,6 +175,37 @@ static class Program
                 Calls(Method(popup, "Submit")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "ContinueRandom") &&
                 !Type(popup).Methods.SelectMany(Calls).Any(c => c.DeclaringType.Namespace.StartsWith("Mortal.", StringComparison.Ordinal)),
             "popup explicit commands must queue requests in the runtime without invoking game event methods from rendering");
+        Instruction BeforeCall(MethodDefinition owner, MethodReference called)
+        {
+            var instruction = owner.Body.Instructions.Single(i => i.Operand is MethodReference reference && reference.FullName == called.FullName);
+            instruction = instruction.Previous;
+            while (instruction != null && instruction.OpCode == OpCodes.Nop) instruction = instruction.Previous;
+            return instruction;
+        }
+        var popupFrameReset = updateCalls.Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
+        Check(popupFrameReset.Parameters.Count == 1 && popupFrameReset.Parameters[0].ParameterType.FullName == "System.Boolean" &&
+                BeforeCall(update, popupFrameReset)?.Operand is FieldReference resetReason &&
+                resetReason.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && resetReason.Name == "PreservePointerTransaction",
+            "actual popup frame reset must forward the controller's pointer preservation flag, not erase every down/up transaction");
+        var observeMode = Method(plugin, "ObserveEventInputMode");
+        var popupModeReset = Calls(observeMode).Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
+        Check(BeforeCall(observeMode, popupModeReset)?.OpCode == OpCodes.Ldc_I4_1 &&
+                Calls(observeMode).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation"),
+            "actual input-mode change cancels queued result confirmation while preserving only a valid active pointer transaction");
+        Check(new[] { "SetLogOpen", "OnApplicationFocus" }.All(name => {
+                var method = Method(plugin, name);
+                var reset = Calls(method).Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
+                return BeforeCall(method, reset)?.OpCode == OpCodes.Ldc_I4_0;
+            }), "actual log/focus boundaries hard-reset the popup instead of carrying a stale press into another context");
+        foreach (string owner in new[] { renderer, popup })
+        {
+            var buttonCalls = Calls(Method(owner, "SafeButton")).ToArray();
+            int rectangle = Array.FindIndex(buttonCalls, call => call.DeclaringType.FullName == "UnityEngine.GUILayoutUtility" && call.Name == "GetRect");
+            int unityButton = Array.FindIndex(buttonCalls, call => call.DeclaringType.FullName == "UnityEngine.GUI" && call.Name == "Button");
+            Check(rectangle >= 0 && unityButton > rectangle && !buttonCalls.Any(call =>
+                    call.DeclaringType.FullName == "UnityEngine.GUILayout" && call.Name == "Button"),
+                "actual " + owner + " must allocate and retain its hit rectangle before Unity consumes the button event");
+        }
         const string cursor = "DiceMaster.LogUI.LogCursorScope";
         Check(new[] { "SetLogOpen", "Update", "OnGUI", "OnApplicationFocus" }.All(name =>
                 Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == cursor && c.Name == "SetActive")) &&

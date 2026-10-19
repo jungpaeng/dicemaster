@@ -4,7 +4,13 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## PRD #5 — v1.0.6-alpha.1 prerelease
+## PRD #5 — v1.0.6-alpha.2 prerelease 준비
+
+2026-10-20 사용자가 A 확인 통일·클릭/터치 문제 수정 뒤 검증·커밋·prerelease를 지시했습니다. 대상은 `v1.0.6-alpha.2`, 자산은 `DiceMaster-v1.0.6-alpha.2.zip`이며 [변경·설치·복구·검증 상태](ISSUE-5-ALPHA2-RELEASE.md)를 본문으로 사용합니다. A/Enter의 문맥별 일반/명시 조건 무시, 버튼 영역과 프레임 사이 포인터 처리 수정이 범위입니다. 새 Windows 확인과 이슈 #5 완료는 대기입니다.
+
+고정 소스 커밋은 실제 커밋 후 확정하고 `verify-preview-release.py --scope prd5`로 전체 소스 재빌드·자동 검사·검토 DLL/cfg/ZIP 바이트 일치를 확인합니다. `codex/prd5-prerelease` 작업 브랜치와 새 태그를 push하며 이전 자동 승인 검토에서 거부된 기본 main 직접 push는 하지 않습니다. `prerelease=true`·`make_latest=false`로 게시하고 Latest v1.0.5와 기존 Release·태그·자산을 보존합니다. 게시 뒤 공개 페이지·태그·설치 ZIP의 SHA-256·CRC·두 파일·내부 바이트를 대조하며 영수증은 `artifacts/releases/v1.0.6-alpha.2/`에 둡니다. 이 절은 준비 기록이며 실행 결과·식별값은 아직 기록 전입니다.
+
+## PRD #5 — v1.0.6-alpha.1 prerelease 게시 이력
 
 **2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
 

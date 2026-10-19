@@ -79,6 +79,8 @@ namespace UnityEngine
         public static void SetNextControlName(string name) { NextControlName = name; }
         public static void Box(Rect rect, string text) { }
         public static void DragWindow(Rect rect) { }
+        public static bool Button(Rect rect, string text, GUIStyle style) => GUILayout.ButtonAtRect(rect, text, style);
+        public static bool Button(Rect rect, GUIContent content, GUIStyle style) => GUILayout.ButtonAtRect(rect, content.text, style);
         public static Rect Window(int id, Rect rect, Action<int> draw, string title, GUIStyle style)
             => GUILayout.InvokeWindow(id, rect, draw, style, false, Array.Empty<GUILayoutOption>());
     }
@@ -138,6 +140,7 @@ namespace UnityEngine
         public static Func<string, bool> ButtonInput;
         public static Func<string, string> TextFieldInput;
         public static bool ConsumeButtonEvent;
+        private static int buttonIndex, hotWindow, hotButton = -1;
         private static readonly Stack<Group> Groups = new Stack<Group>();
         private static readonly Dictionary<int, Rect> NativeWindows = new Dictionary<int, Rect>();
         private static readonly Dictionary<(int Window, int Index), bool> PreviousScrollOverflow = new Dictionary<(int Window, int Index), bool>();
@@ -148,6 +151,7 @@ namespace UnityEngine
         public static void ResetLayout(float width = 1000, float height = 900)
         {
             Groups.Clear(); ScrollViews.Clear(); Controls.Clear(); Boxes.Clear(); Buttons.Clear(); LiteralLabels.Clear();
+            buttonIndex = 0;
             Groups.Push(new Group { Bounds = new Rect(0, 0, width, height), FixedHeight = height, Clip = new Rect(0, 0, width, height) });
             LastRect = new Rect();
         }
@@ -316,12 +320,12 @@ namespace UnityEngine
             Event.current.mousePosition = scroll.SavedMouse;
             Advance(scroll.Record.Viewport);
         }
-        private static void Control(string text, GUIStyle style, bool button, GUILayoutOption[] options)
+        internal static Rect ContentRect(GUIContent content, GUIStyle style, GUILayoutOption[] options)
         {
             Rect initial = Allocate(0, options);
             float width = Option("Width", style.fixedWidth > 0 ? style.fixedWidth : initial.width, options);
             width = Math.Min(Math.Max(width, Option("MinWidth", 0, options)), Option("MaxWidth", float.MaxValue, options));
-            float naturalHeight = style.CalcHeight(new GUIContent(text), width);
+            float naturalHeight = style.CalcHeight(content, width);
             float height = Option("Height", style.fixedHeight > 0 ? style.fixedHeight : naturalHeight, options);
             // Unity GUILayoutEntry.MinHeight raises maxHeight too. A wrapping
             // sizer caches both forced values and therefore skips CalcHeight,
@@ -329,19 +333,57 @@ namespace UnityEngine
             if (style.wordWrap && style.fixedHeight == 0 && Option("Height", -1, options) < 0 && Option("MinHeight", 0, options) > 0)
                 height = Option("MinHeight", height, options);
             Rect rect = Allocate(height, new[] { Width(width), Height(height) });
+            Advance(rect);
+            return rect;
+        }
+        private static void RecordControl(string text, GUIStyle style, bool button, Rect rect)
+        {
             var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, Button = button, Enabled = GUI.enabled,
                 WindowLocalRect = Offset(rect, Current.GuiOrigin), AncestorClip = Current.Clip };
             control.VisibleRect = Intersection(control.WindowLocalRect, control.AncestorClip);
             Controls.Add(control);
             foreach (Group group in Groups)
                 if (group.Scroll) { group.Record.Controls.Add(control); break; }
-            Advance(rect);
+        }
+        private static void Control(string text, GUIStyle style, bool button, GUILayoutOption[] options)
+        {
+            RecordControl(text, style, button, ContentRect(new GUIContent(text), style, options));
         }
         public static bool Button(string text, GUIStyle style, params GUILayoutOption[] options)
         {
-            Buttons.Add(text); Control(text, style, true, options);
+            Rect rect = GUILayoutUtility.GetRect(new GUIContent(text), style, options);
+            return ButtonAtRect(rect, text, style);
+        }
+        public static void ResetPointerCapture() { hotButton = -1; }
+        internal static bool ButtonAtRect(Rect rect, string text, GUIStyle style)
+        {
+            Buttons.Add(text); RecordControl(text, style, true, rect);
+            int id = buttonIndex++, window = activeWindow?.Id ?? 0;
+            Event evt = Event.current;
+            // Managed contract from Unity GUI.DoControl: accepted down claims
+            // hotControl and consumes the event; matching up releases capture,
+            // consumes it, and activates only inside the original control.
+            // rawType survives Use(), while effective type becomes Used.
+            bool inside = rect.Contains(evt.mousePosition)
+                && Current.Clip.Contains(new Vector2(evt.mousePosition.x + Current.GuiOrigin.x, evt.mousePosition.y + Current.GuiOrigin.y));
+            if (GUI.enabled && evt.button == 0 && evt.type != EventType.Used)
+            {
+                if (evt.type == EventType.MouseDown && inside)
+                {
+                    hotWindow = window; hotButton = id; evt.Use();
+                    return false;
+                }
+                if (evt.type == EventType.MouseUp && hotWindow == window && hotButton == id)
+                {
+                    hotButton = -1; evt.Use();
+                    return inside && (ButtonInput == null || ButtonInput(text));
+                }
+            }
+            // Compatibility injection for older action-authority tests. These
+            // intentionally forge releases; regressions below exercise native
+            // geometry/capture with ButtonInput unset.
             bool pressed = GUI.enabled && ButtonInput != null && ButtonInput(text);
-            if (pressed && ConsumeButtonEvent) Event.current.Use();
+            if (pressed && ConsumeButtonEvent) evt.Use();
             return pressed;
         }
         public static void Label(string text, GUIStyle style, params GUILayoutOption[] options)
@@ -366,7 +408,12 @@ namespace UnityEngine
     }
     public static class GUILayoutUtility
     {
-        public static Rect GetLastRect() => Event.current.type == EventType.Layout ? new Rect(0, 0, 1, 1) : GUILayout.LastRect;
+        public static Rect GetLastRect() => Event.current.type == EventType.Layout || Event.current.type == EventType.Used ? new Rect(0, 0, 1, 1) : GUILayout.LastRect;
+        public static Rect GetRect(GUIContent content, GUIStyle style, params GUILayoutOption[] options)
+        {
+            Rect rect = GUILayout.ContentRect(content, style, options);
+            return Event.current.type == EventType.Layout || Event.current.type == EventType.Used ? new Rect(0, 0, 1, 1) : rect;
+        }
         public static Rect GetRect(float width, float height, params GUILayoutOption[] options)
         { GUILayout.Space(height); return GUILayout.LastRect; }
     }

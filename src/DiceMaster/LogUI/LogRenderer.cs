@@ -712,17 +712,24 @@ namespace DiceMaster.LogUI
             Event evt = Event.current;
             // Unity may translate touch to an effective mouse event; Button
             // can consume that event. Capture both forms before drawing it.
-            bool down = IsPointerPress(evt.rawType) || IsPointerPress(evt.type);
+            // An earlier control may already own this raw press. Its Used
+            // layout entries have dummy rectangles and cannot start a new one.
+            bool down = evt.type != EventType.Used && (IsPointerPress(evt.rawType) || IsPointerPress(evt.type));
             bool up = IsPointerRelease(evt.rawType) || IsPointerRelease(evt.type);
             GUIStyle style = chrome ? (highlighted ? chromeSelectedStyle : chromeButtonStyle) : (highlighted ? selectedStyle : buttonStyle);
             // MinHeight also forces maxHeight in Unity's word-wrap sizer. Let
             // rows measure their full wrapped caption at the final viewport
             // width, with no fixed height or permanent scrollbar gutter.
-            bool pressed = maxWidth > 0 ?
-                GUILayout.Button(label, style, GUILayout.MinWidth(1), GUILayout.MaxWidth(maxWidth), GUILayout.ExpandWidth(true)) :
-                height > 0 ? GUILayout.Button(label, style, GUILayout.ExpandWidth(true), GUILayout.Height(height)) :
-                GUILayout.Button(label, style, GUILayout.ExpandWidth(true));
-            Rect rect = GUILayoutUtility.GetLastRect();
+            // Button consumes the press/release event. GetLastRect after it
+            // therefore returns Unity's dummy rect for EventType.Used instead
+            // of the control's hit area. Allocate that same styled layout entry
+            // first, then use its rect for both native input and our identity.
+            var content = new GUIContent(label);
+            Rect rect = maxWidth > 0 ?
+                GUILayoutUtility.GetRect(content, style, GUILayout.MinWidth(1), GUILayout.MaxWidth(maxWidth), GUILayout.ExpandWidth(true)) :
+                height > 0 ? GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true), GUILayout.Height(height)) :
+                GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true));
+            bool pressed = GUI.Button(rect, content, style);
             if (down && evt.button == 0 && rect.Contains(evt.mousePosition) && GUI.enabled)
             {
                 pointerIdentity = identity;

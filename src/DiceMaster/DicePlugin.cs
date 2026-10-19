@@ -153,7 +153,7 @@ public class DicePlugin : BaseUnityPlugin
 		if (frame.ResetFocus) logRenderer.ResetInputFocus(frame.PreservePointerTransaction);
 		if (frame.ResetFocus)
 		{
-			eventPopup.ResetInput();
+			eventPopup.ResetInput(frame.PreservePointerTransaction);
 			if (!frame.PreservePointerTransaction) EventSelectionRuntime.CancelConfirmation();
 		}
 		eventPopup.UpdateInput();
@@ -180,7 +180,7 @@ public class DicePlugin : BaseUnityPlugin
 		if (eventInputModeKnown && eventInputMode != mode && EventSelectionRuntime.Waiting)
 		{
 			EventSelectionRuntime.CancelConfirmation();
-			eventPopup.ResetInput();
+			eventPopup.ResetInput(true);
 		}
 		eventInputMode = mode;
 		eventInputModeKnown = true;

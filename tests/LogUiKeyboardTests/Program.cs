@@ -25,6 +25,9 @@ internal static partial class Program
         RendererDirectListReservations();
         RendererReservationToggleState();
         RendererListChromePointerTransactions();
+        NativeButtonEventContract();
+        RendererNativePointerTransactions();
+        RendererNativeConsumedCornerPress();
         CursorOwnershipLifecycle();
         RendererListPointerSelectionTransactions();
         RendererPointerTakeoverTransactions();

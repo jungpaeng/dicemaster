@@ -2,7 +2,15 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## PRD #5 — v1.0.6-alpha.1 · 작은 이벤트 팝업
+## v1.0.6-alpha.2 — 팝업 A 확인·포인터 조작
+
+alpha.2는 **A/Enter로 선택한 후보를 확인**합니다. 정상 발동 가능한 후보는 `이 이벤트로 진행 [A/Enter]`, 미충족·가중치 0·판정 미확인 후보는 `조건 무시하고 이번만 진행 [A/Enter]`을 표시합니다. Shift+Enter도 같은 확인이고 X는 팝업 확정에 사용하지 않습니다. B/Escape 또는 무작위 행의 A/Enter는 원래 무작위 판정으로 진행합니다. 읽을 수 없는 대상·결과는 실행할 수 없으며, 일반 확정 직전 자격이 바뀌면 다시 선택해야 합니다.
+
+로그 탭·목록·도구·팝업 행과 진행 버튼은 클릭 조작 경로를 사용합니다. 공통 버튼 영역을 이벤트 소비 전에 확보하고 팝업의 유효한 누름·해제를 프레임 사이에 보존하도록 수정했습니다. 같은 문맥에서 마우스·터치로 전환하거나 게임 입력 모드가 바뀌어도 진행 중 누름은 유지하며, 이미 대기 중인 확정은 취소합니다. 초점·문맥·대상·연결·소유자 변화 같은 안전 경계에서는 누름을 취소합니다. 게임 A→팝업 및 팝업→게임 전환의 해제·중립 보호는 유지합니다.
+
+**새 DLL의 실제 Windows 입력 확인은 대기**입니다. 트랙패드 클릭과 마우스 이벤트로 인식되는 모니터 터치, Unity에 별도 터치 이벤트로 전달되는 입력은 구분해 확인합니다. 자동 대역 검사가 물리 장치 성공을 뜻하지는 않습니다. [alpha.2 변경·검증·설치/복구](ISSUE-5-ALPHA2-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 아래 alpha.1의 A/X 분리 조작과 게시·검사 결과는 해당 버전의 이력입니다.
+
+## PRD #5 — v1.0.6-alpha.1 · 작은 이벤트 팝업 게시 이력
 
 **2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
 

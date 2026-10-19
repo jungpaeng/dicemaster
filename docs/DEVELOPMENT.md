@@ -2,7 +2,17 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #5 — v1.0.6-alpha.1 prerelease
+## PRD #5 — v1.0.6-alpha.2 후속 준비
+
+사용자의 A 확인 통일·클릭/터치 수정과 검증 후 커밋·prerelease 지시에 따라 alpha.2를 준비합니다. 현재 동작과 검증·소스·파일 식별값은 [alpha.2 배포 기록](ISSUE-5-ALPHA2-RELEASE.md)에 모읍니다. 새 DLL의 실제 Windows 확인은 [검증표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기하며 아래 alpha.1의 검사·게시 결과를 새 검사로 사용하지 않습니다.
+
+팝업은 선택 후보의 상태에 맞춘 일반/명시 조건 무시 확인을 A/Enter 하나로 요청합니다. Shift+Enter도 같은 확인이며 X의 조건 무시 확정은 제거합니다. 표시 때 확인한 일반 진행이 확정 직전에 불가능해지면 재선택하도록 유지합니다. 대상·결과 읽기 실패는 차단합니다.
+
+공통 GUI는 `GUILayoutUtility.GetRect`로 영역을 확보한 뒤 `GUI.Button`을 호출해 Unity의 이벤트 소비에 영향을 받지 않도록 합니다. 팝업의 새 프레임·포인터 전환·입력 모드 변화는 같은 문맥의 유효한 누름 기록을 보존하며 이미 대기 중인 확정은 취소합니다. 초점·문맥·대상·연결·소유자 등 안전 경계와 해제·중립 보호는 유지합니다. 자동 검사에는 실제 Unity와 같은 버튼 누름 이벤트 소비 및 프레임을 나눈 누름/해제 회귀를 포함하고, 실제 장치 결과와 구분합니다.
+
+게시 검증은 `verify-preview-release.py --scope prd5`로 고정 커밋을 재빌드하고 검토 후보의 DLL/cfg/ZIP과 대조합니다. 이번 영수증은 `artifacts/releases/v1.0.6-alpha.2/`에 보존합니다. `codex/prd5-prerelease` 작업 브랜치와 새 태그와 prerelease를 사용하며 기본 main은 직접 push하지 않습니다. Latest 정식 v1.0.5와 이전 Release·태그·자산을 유지하고 이슈 #5는 종료하지 않습니다.
+
+## PRD #5 — v1.0.6-alpha.1 게시 이력
 
 **2026-10-20 00:32:06 KST에 [v1.0.6-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.1) prerelease를 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.1/DiceMaster-v1.0.6-alpha.1.zip). 고정 소스·태그 `9c257b76b8a551022b6ea606c35b91e870c4a654`의 새 빌드·14개 검사와 공개 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 확인했습니다. Latest 정식 v1.0.5와 기존 24개 Release·태그·자산을 보존했습니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
 
