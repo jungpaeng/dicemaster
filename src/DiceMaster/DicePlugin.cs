@@ -176,11 +176,12 @@ public class DicePlugin : BaseUnityPlugin
 
 	private void ObserveEventInputMode(LogInputMode mode)
 	{
-		// The log can preserve its own pointer transaction on a device-mode
-		// change. A queued event result must still lose its confirmation.
+		// A touch can update the game's control scheme after its release has
+		// already queued a result. That observation is not a new action owner:
+		// preserve the request until Lua resumes and revalidates its target.
+		// Focus, log/context and physical pad-owner changes still cancel it.
 		if (eventInputModeKnown && eventInputMode != mode && EventSelectionRuntime.Waiting)
 		{
-			EventSelectionRuntime.CancelConfirmation();
 			eventPopup.ResetInput(true);
 		}
 		eventInputMode = mode;

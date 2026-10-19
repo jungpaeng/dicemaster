@@ -4,12 +4,21 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <DefineConstants>$(DefineConstants);EVENT_EXECUTION_FIXTURE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.cs" Link="EventSelectionRuntime.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventLuaGate.cs" Link="EventLuaGate.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventExecutionPatches.cs" Link="EventExecutionPatches.cs" />
     <Compile Include="../../src/DiceMaster/LiveLog/PreviewSyntax.cs" Link="PreviewSyntax.cs" />
+    <Compile Include="../LogUiKeyboardTests/RendererBoundary.cs" Link="RendererBoundary.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/EventPopupRenderer.cs" Link="EventPopupRenderer.cs" />
+    <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
+    <Compile Include="../../src/DiceMaster/Gamepad/LogPadController.cs" Link="LogPadController.cs" />
+    <Compile Include="../../src/DiceMaster/Gamepad/PadController.cs" Link="PadController.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventResultPreview.Formatting.cs" Link="EventResultPreview.Formatting.cs" />
+    <Compile Include="../../tools/Shared/PayloadCopier.cs" Link="PayloadCopier.cs" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <Reference Include="Fungus"><HintPath>$(GameReferences)/Mortal_Data/Managed/Fungus.dll</HintPath></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.CoreModule.dll</HintPath><Aliases>gameUnity</Aliases></Reference>
     <Reference Include="0Harmony"><HintPath>$(GameReferences)/BepInEx/core/0Harmony.dll</HintPath></Reference>

@@ -29,7 +29,7 @@ namespace DiceMaster.LogUI
         private readonly Dictionary<string, string> plainTitles = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<LineKey, string> singleLines = new Dictionary<LineKey, string>();
         private static readonly Regex Markup = new Regex(@"</?(?:color|size|b|i|material)(?:=[^<>]*)?>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
-        private GUIStyle text, resultText, button, highlighted, rowMeasure, titleMeasure, chrome, chromeButton;
+        private GUIStyle text, resultText, button, highlighted, rowMeasure, titleMeasure, chrome;
         private int font, chromeFont;
         private Action deferred;
         internal string InputHint = "";
@@ -100,7 +100,7 @@ namespace DiceMaster.LogUI
                 || row.Result != pointerResult)) return false;
             if (pointerRowConfirmation && pointerPrimaryAvailable && pointerCandidate != null
                 && (row == null || (pointerPrimaryForce ? !row.CanForce : !row.CanSelect))) return false;
-            return !pointerControl.StartsWith("normal:", StringComparison.Ordinal) || (row != null && row.CanSelect);
+            return true;
         }
 
         // Keep the action the user last saw (or explicitly selected). A normal
@@ -186,8 +186,7 @@ namespace DiceMaster.LogUI
             highlighted = new GUIStyle(button);
             highlighted.normal.textColor = Color.yellow;
             chrome = new GUIStyle(text) { fontSize = small };
-            chromeButton = new GUIStyle(button) { fontSize = small, richText = false };
-            foreach (GUIStyle style in new[] { text, resultText, button, highlighted, rowMeasure, titleMeasure, chrome, chromeButton })
+            foreach (GUIStyle style in new[] { text, resultText, button, highlighted, rowMeasure, titleMeasure, chrome })
             {
                 style.margin = new RectOffset(0, 0, 0, 0);
                 style.fixedWidth = style.fixedHeight = 0;
@@ -212,7 +211,7 @@ namespace DiceMaster.LogUI
             float inner = Math.Max(1, width - 24);
             float contentWidth = Math.Max(1, inner - Math.Max(20,
                 GUI.skin.verticalScrollbar.fixedWidth + (GUI.skin.verticalScrollbar.margin?.left ?? 0)));
-            float actionHeight = chromeButton.CalcHeight(new GUIContent("조건 무시하고 이번만 진행 [A / Enter]"), inner) + 6;
+            float actionHeight = chrome.CalcHeight(new GUIContent("[A / Enter] 조건 무시하고 이번만 진행"), inner) + 6;
             float headingHeight = chrome.CalcHeight(new GUIContent("이번 행동의 이벤트 선택"), inner) + 8;
             string hint = "↑↓ 선택 · 오른쪽 스틱·휠로 결과 읽기 · Tab 로그";
             if (!string.IsNullOrEmpty(InputHint)) hint += "\n" + OneLine(InputHint, chrome, inner);
@@ -276,17 +275,13 @@ namespace DiceMaster.LogUI
             }
             GUILayout.EndScrollView();
             if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, chrome);
-            bool enabled = GUI.enabled;
             bool force = choice != null && choice.CanForce;
-            GUI.enabled = enabled && choice != null && (choice.CanSelect || choice.CanForce);
-            string caption = choice == null ? "이벤트를 선택하세요 [A / Enter]"
-                : force ? "조건 무시하고 이번만 진행 [A / Enter]"
-                : choice != null && choice.CanSelect ? "이 이벤트로 진행 [A / Enter]"
-                : "진행 불가 · 대상/결과 확인 필요";
-            SafeButton(caption, (force ? "force:" : "normal:") + selected,
-                () => Submit(force, false), chromeButton);
-            GUI.enabled = enabled;
-            SafeButton("무작위로 진행 [B / Esc]", "random", () => Submit(false, true), chromeButton);
+            string caption = choice == null ? "[A / Enter] 이벤트를 선택하세요"
+                : force ? "[A / Enter] 조건 무시하고 이번만 진행"
+                : choice.CanSelect ? "[A / Enter] 이 이벤트로 진행"
+                : "[A / Enter] 진행 불가 · 대상/결과 확인 필요";
+            GUILayout.Label(caption, chrome);
+            GUILayout.Label("[B / Esc] 무작위로 진행", chrome);
             GUILayout.Label(hint, chrome);
             GUILayout.EndArea();
             Action action = deferred; deferred = null;

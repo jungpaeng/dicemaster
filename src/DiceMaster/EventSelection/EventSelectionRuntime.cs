@@ -44,6 +44,7 @@ namespace DiceMaster.EventSelection
             internal readonly Dictionary<object, string> Identities = new Dictionary<object, string>(ReferenceComparer.Instance);
             internal readonly Dictionary<object, EligibilityRead> Reads = new Dictionary<object, EligibilityRead>(ReferenceComparer.Instance);
             internal string SelectedId;
+            internal EventCandidate SelectedCandidate;
             internal bool Force, RandomRequested, Released, Permit, Consumed, Executing;
             internal string DirectResult;
             internal PositionEventData DirectTarget;
@@ -288,7 +289,7 @@ namespace DiceMaster.EventSelection
                 // No original decision/effect has run at this point. Release
                 // this one invocation to the game's original path once.
                 if (current != null)
-                { current.SelectedId = null; current.DirectResult = null; current.Released = true; current.Permit = true; }
+                { current.SelectedId = null; current.SelectedCandidate = null; current.DirectResult = null; current.Released = true; current.Permit = true; }
                 else candidates = Empty;
                 SetWaiting(false);
                 return false;
@@ -298,12 +299,18 @@ namespace DiceMaster.EventSelection
         private static bool PrepareSelection(ActionContext action)
         {
             string selected = action.SelectedId;
+            EventCandidate confirmed = action.SelectedCandidate;
             action.SelectedId = null;
+            action.SelectedCandidate = null;
             EventCandidate candidate = null;
             foreach (EventCandidate item in candidates) if (item.Id == selected) { candidate = item; break; }
             PositionEventData target = candidate == null ? null : candidate.Target as PositionEventData;
             string result = target == null ? "" : Result(action, target);
-            if (candidate == null || string.IsNullOrEmpty(result) || result != candidate.Result)
+            // A display refresh may publish a new result under the same stable
+            // row id. It must not replace the target/result the user confirmed.
+            if (confirmed == null || candidate == null || confirmed.Id != selected ||
+                !ReferenceEquals(confirmed.Target, target) || string.IsNullOrEmpty(result) ||
+                result != confirmed.Result || result != candidate.Result)
             { Status = "대상이 바뀌었습니다. 다시 선택하세요."; Refresh(action, Time.unscaledTime, true); return false; }
             EventEligibilitySnapshot eligibility = EventEligibility.Evaluate(target);
             if (action.Force ? !eligibility.CanUseResult : !eligibility.IsEligible)
@@ -325,7 +332,7 @@ namespace DiceMaster.EventSelection
             foreach (EventCandidate item in candidates)
                 if (item.Id == id && (force ? item.CanForce : item.CanSelect))
                 {
-                    current.SelectedId = id; current.Force = force;
+                    current.SelectedId = id; current.SelectedCandidate = item; current.Force = force;
                     Status = "현재 판정을 확인하고 있습니다.";
                     return true;
                 }
@@ -335,7 +342,7 @@ namespace DiceMaster.EventSelection
         private static void ReleaseRandom(string reason)
         {
             if (current == null || current.Consumed || current.Released) return;
-            current.SelectedId = null; current.DirectResult = null; current.DirectTarget = null;
+            current.SelectedId = null; current.SelectedCandidate = null; current.DirectResult = null; current.DirectTarget = null;
             current.Released = true;
             Log("release token=" + current.Token + " mode=random reason=" + reason);
             SetWaiting(false);
@@ -351,8 +358,11 @@ namespace DiceMaster.EventSelection
         public static void CancelConfirmation()
         {
             if (current == null || current.Executing || current.Released) return;
+            bool cancelled = current.SelectedId != null || current.RandomRequested;
             current.SelectedId = null;
+            current.SelectedCandidate = null;
             current.RandomRequested = false;
+            if (cancelled && waiting) Status = "진행 요청이 취소되었습니다. 다시 확인하세요.";
         }
 
         public static void Tick(bool visible, float now)

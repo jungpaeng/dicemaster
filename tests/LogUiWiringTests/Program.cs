@@ -162,10 +162,10 @@ static class Program
                 updateCalls.Any(c => c.DeclaringType.FullName == runtime && c.Name == "Tick") &&
                 Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == popup && c.Name == "Draw"),
             "delivered runtime installation, visible refresh and popup rendering must be connected to the actual plugin");
-        Check(new[] { "SetLogOpen", "OnApplicationFocus", "ObserveEventInputMode" }.All(name =>
+        Check(new[] { "SetLogOpen", "OnApplicationFocus" }.All(name =>
                 Calls(Method(plugin, name)).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation")) &&
                 updateCalls.Any(c => c.DeclaringType.FullName == plugin && c.Name == "ObserveEventInputMode"),
-            "log transitions, focus and actual mode changes must invalidate queued result confirmations independently of pointer preservation");
+            "log and focus transitions cancel queued confirmations while Update continues observing automatic scheme changes");
         Check(Calls(Method(pad, "SetModalCapture")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput" && c.Name == "set_LogActive") &&
                 Calls(Method(pad, "SetModalCapture")).Any(c => c.Name == "RequireNeutral") &&
                 types.Where(t => t.FullName == plugin || t.FullName.StartsWith(plugin + "/", StringComparison.Ordinal))
@@ -190,8 +190,17 @@ static class Program
         var observeMode = Method(plugin, "ObserveEventInputMode");
         var popupModeReset = Calls(observeMode).Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");
         Check(BeforeCall(observeMode, popupModeReset)?.OpCode == OpCodes.Ldc_I4_1 &&
-                Calls(observeMode).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation"),
-            "actual input-mode change cancels queued result confirmation while preserving only a valid active pointer transaction");
+                !Calls(observeMode).Any(c => c.DeclaringType.FullName == runtime && c.Name == "CancelConfirmation"),
+            "automatic scheme observation preserves accepted result requests and a valid active pointer transaction until Lua revalidation");
+        var frameCancel = update.Body.Instructions.Single(i => i.Operand is MethodReference call &&
+            call.DeclaringType.FullName == runtime && call.Name == "CancelConfirmation");
+        var preserveGuard = frameCancel.Previous;
+        while (preserveGuard?.OpCode == OpCodes.Nop) preserveGuard = preserveGuard.Previous;
+        Check(preserveGuard != null && (preserveGuard.OpCode == OpCodes.Brtrue || preserveGuard.OpCode == OpCodes.Brtrue_S) &&
+                preserveGuard.Operand is Instruction afterCancel && afterCancel.Offset > frameCancel.Offset &&
+                preserveGuard.Previous?.Operand is FieldReference preserved &&
+                preserved.DeclaringType.FullName == "DiceMaster.Gamepad.LogPadFrame" && preserved.Name == "PreservePointerTransaction",
+            "physical pad reset boundaries retain confirmation cancellation independently of automatic input-mode observations");
         Check(new[] { "SetLogOpen", "OnApplicationFocus" }.All(name => {
                 var method = Method(plugin, name);
                 var reset = Calls(method).Single(c => c.DeclaringType.FullName == popup && c.Name == "ResetInput");

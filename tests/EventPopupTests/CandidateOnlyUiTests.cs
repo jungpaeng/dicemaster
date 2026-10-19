@@ -21,9 +21,9 @@ internal static partial class Program
             Check(GUILayout.ScrollViews[0].Controls.Count(control => control.Button) == EventSelectionRuntime.Candidates.Count
                 && !GUILayout.ScrollViews[0].Controls.Any(control => control.Text.Contains("무작위")),
                 "The candidate scroll view contains only real events");
-            Check(!GUILayout.Buttons.Contains("무작위로 진행 [A / Enter]")
-                && GUILayout.Controls.Single(control => control.Button && control.Text.StartsWith("이벤트를 선택하세요")).Enabled == false,
-                "An unselected popup has no default A/Enter random action");
+            Check(GUILayout.Buttons.Count == EventSelectionRuntime.Candidates.Count
+                && GUILayout.LiteralLabels.Contains("[A / Enter] 이벤트를 선택하세요"),
+                "An unselected popup contains only real event buttons and no default A/Enter action");
             popup.Handle(LogPadCommand.Activate); Key(popup, KeyCode.Return); Key(popup, KeyCode.KeypadEnter);
             Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
                 "Initial A and both Enter keys leave the decision waiting");
@@ -49,21 +49,7 @@ internal static partial class Program
                 "Candidate-only navigation remains safe after removal; empty=" + empty);
         }
 
-        foreach (var pair in new[] {
-            (EventType.MouseDown, EventType.MouseUp, EventType.MouseDown, EventType.MouseUp),
-            (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp),
-            (EventType.TouchDown, EventType.TouchUp, EventType.TouchDown, EventType.TouchUp) })
-        foreach (bool empty in new[] { false, true })
-        {
-            var popup = Start(); if (empty) EventSelectionRuntime.Candidates.Clear();
-            Draw(popup);
-            Check(GUILayout.Buttons.Count(text => text.StartsWith("무작위로 진행")) == 1
-                && GUILayout.LiteralLabels.All(text => !text.Contains("B/Esc 무작위")),
-                "Exactly one clickable footer action also supplies the B/Esc instruction; empty=" + empty);
-            Click(popup, text => text == "무작위로 진행 [B / Esc]", pair.Item1, pair.Item2, pair.Item3, pair.Item4);
-            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random,
-                "The footer preserves the original random game path for " + pair + "; empty=" + empty);
-        }
+        FooterTextRegressions();
         foreach (bool keyboard in new[] { false, true })
         {
             var popup = Start(); EventSelectionRuntime.Candidates.Clear();
@@ -74,6 +60,54 @@ internal static partial class Program
         }
 
         BoldTitleRegressions();
+    }
+
+    private static void FooterTextRegressions()
+    {
+        foreach (var pair in new[] {
+            (EventType.MouseDown, EventType.MouseUp, EventType.MouseDown, EventType.MouseUp),
+            (EventType.MouseDown, EventType.MouseUp, EventType.TouchDown, EventType.TouchUp),
+            (EventType.TouchDown, EventType.TouchUp, EventType.TouchDown, EventType.TouchUp) })
+        foreach (string selected in new[] { "unselected", "eligible", "blocked", "broken", "empty" })
+        {
+            var popup = Start();
+            if (selected == "empty") EventSelectionRuntime.Candidates.Clear();
+            else if (selected != "unselected")
+            {
+                popup.Handle(LogPadCommand.Down);
+                if (selected != "eligible") popup.Handle(LogPadCommand.Down);
+                if (selected == "broken") popup.Handle(LogPadCommand.Down);
+            }
+            Draw(popup);
+            var instructions = GUILayout.Controls.Where(control => InstructionCaption(control.Text)).ToArray();
+            string expected = selected == "eligible" ? "[A / Enter] 이 이벤트로 진행"
+                : selected == "blocked" ? "[A / Enter] 조건 무시하고 이번만 진행"
+                : selected == "broken" ? "[A / Enter] 진행 불가 · 대상/결과 확인 필요"
+                : "[A / Enter] 이벤트를 선택하세요";
+            Check(instructions.Length == 2 && instructions.All(control => !control.Button && !control.RichText)
+                && instructions.Any(control => control.Text == expected)
+                && instructions.Any(control => control.Text == "[B / Esc] 무작위로 진행")
+                && GUILayout.Buttons.Count == EventSelectionRuntime.Candidates.Count,
+                "The footer consists of two literal shortcut labels; only real candidates are clickable: " + selected);
+            string previousSelection = Selected(popup);
+            foreach (var instruction in instructions)
+            {
+                Check(instruction.VisibleRect.width > 0 && instruction.VisibleRect.height > 0,
+                    "The shortcut instruction is visible before pointer testing: " + instruction.Text);
+                var point = new Vector2(instruction.VisibleRect.x + instruction.VisibleRect.width / 2,
+                    instruction.VisibleRect.y + instruction.VisibleRect.height / 2);
+                for (int tap = 0; tap < 2; tap++)
+                {
+                    Pointer(popup, pair.Item1, pair.Item3, point);
+                    Pointer(popup, pair.Item2, pair.Item4, point);
+                }
+            }
+            Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0 && Selected(popup) == previousSelection,
+                "Clicking or touching either shortcut label cannot execute or select an event: " + pair + " " + selected);
+            popup.Handle(LogPadCommand.Back);
+            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random,
+                "The B shortcut still requests the original random decision after footer touches: " + selected);
+        }
     }
 
     private static void BoldTitleRegressions()

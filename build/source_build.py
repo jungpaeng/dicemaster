@@ -180,7 +180,7 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
     test('LogUiWiringTests', candidate)
     test('LogUiKeyboardTests')
     test('LogOpenerIntegrationTests')
-    test('EventSelectionRuntimeTests')
+    test('EventSelectionRuntimeTests', candidate)
     test('EventPopupTests')
     return results
 

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace UnityEngine { public static class Time { public static float unscaledTime; } }
+namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
 namespace Mortal.Core { }
 namespace Mortal.Story
 {
@@ -41,7 +41,16 @@ namespace Mortal.Story
 }
 namespace DiceMaster
 {
-    public static class DicePlugin { public static void LogInfo(string value) { } }
+    public sealed class DicePlugin
+    {
+        internal Gamepad.LogInputMode eventInputMode = Gamepad.LogInputMode.Unknown;
+        internal bool eventInputModeKnown = false;
+        internal readonly LogUI.EventPopupRenderer eventPopup = new LogUI.EventPopupRenderer();
+        public static void LogInfo(string value) { }
+        internal void RunModeChange(Gamepad.LogInputMode mode) => ObserveEventInputMode(mode);
+        private void ObserveEventInputMode(Gamepad.LogInputMode mode)
+            => throw new InvalidOperationException("Actual candidate input-mode observer IL was not installed.");
+    }
     public sealed class PositionEventCache
     {
         public static readonly PositionEventCache Instance = new PositionEventCache();
@@ -52,7 +61,7 @@ namespace DiceMaster.EventSelection
 {
     // Result-text preparation is a boundary here; actual reader/parser IL is
     // executed separately by PreviewIntegrationTests.
-    public sealed class EventResultPreview
+    public sealed partial class EventResultPreview
     {
         public readonly string Summary, Detail;
         public string RichSummary => Summary;

@@ -43,8 +43,8 @@ internal static partial class Program
         Check(result.RichText && !conditions.RichText
             && GUILayout.Controls.Where(control => !control.Button && (control.Text == "예상 결과" || control.Text == "발동 조건")).All(control => !control.RichText),
             "Only the prepared result body interprets rich colors; conditions and headings retain literal styles");
-        Check(GUILayout.Buttons.Any(value => value.StartsWith("이 이벤트로 진행 [A / Enter]", StringComparison.Ordinal)),
-            "The confirm button retains its action meaning and keyboard/gamepad shortcut");
+        Check(GUILayout.LiteralLabels.Contains("[A / Enter] 이 이벤트로 진행"),
+            "The literal confirm instruction retains its action meaning and keyboard/gamepad shortcut");
         Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
             "Color and hint presentation cannot execute an event");
     }
@@ -83,7 +83,7 @@ internal static partial class Program
         }
 
         var padPopup = Start(); padPopup.Handle(LogPadCommand.Down); padPopup.Handle(LogPadCommand.Down); Draw(padPopup);
-        Check(GUILayout.Buttons.Any(value => value.StartsWith("조건 무시하고 이번만 진행 [A / Enter]", StringComparison.Ordinal)),
+        Check(GUILayout.LiteralLabels.Contains("[A / Enter] 조건 무시하고 이번만 진행"),
             "The selected gray row exposes its explicit condition-bypass action");
         padPopup.Handle(LogPadCommand.Activate);
         Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Forced,
@@ -116,10 +116,9 @@ internal static partial class Program
             GUILayout.ControlRecord selected = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
             Check(selected.Rect.height == before.Rect.height && selected.Rect.y == before.Rect.y,
                 "Two-line colored rows keep stable geometry on selection at " + dimensions + " font=" + font);
-            foreach (GUILayout.ControlRecord control in GUILayout.Controls.Where(control => control.Button &&
-                (control.Text.StartsWith("이 이벤트로 진행 [", StringComparison.Ordinal) || control.Text.StartsWith("무작위로 진행 [", StringComparison.Ordinal))))
+            foreach (GUILayout.ControlRecord control in GUILayout.Controls.Where(control => InstructionCaption(control.Text)))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f,
-                    "Removing repeated instructions leaves confirm/recovery buttons accessible at " + dimensions + " font=" + font);
+                    "Confirm/recovery shortcut instructions remain visible as text at " + dimensions + " font=" + font);
             Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
                 "Rich summary/detail rendering remains a display-only operation");
         }

@@ -2,6 +2,14 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## PRD #5 — v1.0.6-alpha.8 prerelease 준비
+
+사용자는 구조 리팩터링을 보류하고 터치 반복 실행 문제 수정·하단 실행 버튼의 텍스트 안내 전환·회귀 검사·커밋·`origin/main` 반영·README 갱신·새 prerelease를 지시했다. 시작 main은 `572ba1df65a18e94af20be21d566430dd84c13ba`다. 자동 입력 모드 관측만으로 같은 유효 행동에 접수된 확정을 취소하지 않으며 접수한 후보·결과를 보관해 이후 후보 갱신이 확정 대상을 바꾸지 않게 한다. 초점·문맥·대상·연결·소유자 등의 하드 경계와 실행 직전 검증은 유지한다.
+
+하단 실행 버튼은 제거하고 A/Enter의 일반/명시 조건 무시 안내·B/Esc 무작위 안내를 텍스트로 표시한다. 클릭·터치 실행은 목록의 첫 선택 뒤 같은 행 재확인으로 모으고 무작위는 B/Esc로만 요청한다. 새 설정·키·패드 조합·구조 프레임워크는 추가하지 않는다. 터치만 사용하는 환경의 무작위 실행 UI는 없다.
+
+이번 전체·격리·고정 재빌드와 공개 파일 검증은 확정 결과를 [alpha.8 배포 기록](ISSUE-5-ALPHA8-RELEASE.md)에 기록한다. 이전 14개 검사 결과를 새 실행으로 복사하지 않는다. Latest 정식 v1.0.5와 기존 Release·태그·자산, 이슈 상태를 보존하며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.7은 게시 당시 이력이다.
+
 ## PRD #5 — v1.0.6-alpha.7 prerelease
 
 **2026-10-20 02:43:23 KST에 [v1.0.6-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.7) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.7/DiceMaster-v1.0.6-alpha.7.zip). 최신 `origin/main`의 `661622d8f221f25d58f871321caed935c952d6e9`에서 시작했고 README·구현·검사를 포함한 소스·태그 `5630a1a88a6f99cabad146c405810b1918ca83e1`를 main에 반영했다. 팝업 목록·기본 선택을 보완했다. 목록은 정상 발동 가능/불가 상태 행을 제거한 **굵은 제목·결과 요약 두 줄**이다. 제목은 기존 문자 이스케이프·회색 구분을 유지하고 굵은 폭으로 측정해 말줄임한다. 결과 자체의 효과색·선택 화살표·조건 설명·진행 버튼은 유지한다.

@@ -542,6 +542,7 @@ namespace DiceMaster.Gamepad
         public static void NotifyKeyboardActivity() { KeyboardActivity?.Invoke(); }
     }
 }
+#if !EVENT_EXECUTION_FIXTURE
 namespace DiceMaster.LiveLog
 {
     public static class LogBridge
@@ -630,3 +631,4 @@ namespace DiceMaster.LiveLog
         }
     }
 }
+#endif

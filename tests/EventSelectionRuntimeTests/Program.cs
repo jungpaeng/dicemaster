@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Reflection;
+using DiceMaster;
 using DiceMaster.EventSelection;
+using DiceMaster.Gamepad;
 using MoonSharp.Interpreter;
 using Mortal.Story;
 using UnityEngine;
@@ -101,8 +103,10 @@ internal static class Program
         Check(EventSelectionRuntime.Select(id, false), "select again");
         EventSelectionRuntime.CancelConfirmation();
         Check(Wait() && a.RealCalls == 0, "focus transition cancels pending confirm");
+        Check(EventSelectionRuntime.Status.Contains("다시 확인"), "cancelled confirmation restores a waiting status");
         EventSelectionRuntime.ContinueRandom(); EventSelectionRuntime.CancelConfirmation();
         Check(Wait(), "focus transition cancels pending random");
+        Check(EventSelectionRuntime.Status.Contains("다시 확인"), "cancelled random request does not retain a progressing status");
         EventSelectionRuntime.Enabled = () => false; EventSelectionRuntime.Tick(false, 2);
         Check(!EventSelectionRuntime.Waiting && !Wait(), "OFF cannot leave hidden wait");
         string result; var handle = Enter();
@@ -115,6 +119,9 @@ internal static class Program
         Check(EventSelectionRuntime.Select(id, false), "select before target removed"); pool.List.RemoveAt(0);
         Check(Wait() && EventSelectionRuntime.Waiting, "removed target requires reselection");
         Check(!EventSelectionRuntime.Select(id, false), "removed target has no authority");
+        string rejectedStatus = EventSelectionRuntime.Status;
+        EventSelectionRuntime.CancelConfirmation();
+        Check(EventSelectionRuntime.Status == rejectedStatus, "cancel without a queued request preserves the target-change explanation");
         long oldEpoch = EventSelectionRuntime.Epoch;
         EventSelectionRuntime.Invalidate("load");
         Check(EventSelectionRuntime.Wait("action", script, 1, coroutine, oldEpoch), "stale callback cannot resume old flow");
@@ -273,9 +280,102 @@ internal static class Program
         enumerator = (IEnumerator)guard.Invoke(null, new object[] { probe, context });
         Check(!enumerator.MoveNext() && probe.Moves == 0 && probe.Disposals == 1, "old closure first started after load cannot reauthorize or hang");
     }
-    private static void Main()
+    private static void HardCancellationBeforeLuaContinuation()
     {
-        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards();
+        foreach (string request in new[] { "normal", "force", "random" })
+        {
+            Begin(Event("target", request != "force"), Event("other"));
+            DynValue co;
+            Engine("return checkpointmanager.Position(\"action\")", out co);
+            co.Coroutine.Resume();
+            string id = null;
+            foreach (EventCandidate candidate in EventSelectionRuntime.Candidates)
+                if (candidate.Title == "target") id = candidate.Id;
+            Check(id != null && EventSelectionRuntime.Waiting, request + ": actual Lua waits before a hard boundary");
+            if (request == "random") EventSelectionRuntime.ContinueRandom();
+            else Check(EventSelectionRuntime.Select(id, request == "force"), request + ": queue before a hard boundary");
+            EventSelectionRuntime.CancelConfirmation();
+            Check(EventSelectionRuntime.Status.Contains("다시 확인"), request + ": cancellation restores a waiting status");
+            co.Coroutine.Resume();
+            Check(EventSelectionRuntime.Waiting && co.Coroutine.State == CoroutineState.Suspended &&
+                    CheckPointManager.Instance.PositionCalls == 0,
+                request + ": focus/log/pad-owner cancellation keeps the actual Lua call suspended without executing an event");
+            if (request == "random") EventSelectionRuntime.ContinueRandom();
+            else Check(EventSelectionRuntime.Select(id, request == "force"), request + ": fresh confirmation after a hard boundary");
+            DynValue result = co.Coroutine.Resume();
+            Check(co.Coroutine.State == CoroutineState.Dead && CheckPointManager.Instance.PositionCalls == 1 &&
+                    result.String == (request == "random" ? "original" : "story_target") &&
+                    CheckPointManager.Instance.OriginalCalls == (request == "random" ? 1 : 0),
+                request + ": a fresh confirmation still completes exactly one correct game invocation");
+        }
+    }
+    private static void DelayedSchemeObservation()
+    {
+        foreach (string request in new[] { "normal", "force", "random" })
+            foreach (LogInputMode observed in new[] { LogInputMode.KeyboardMouse, LogInputMode.Unknown })
+            {
+                Begin(Event("target", request != "force"), Event("other"));
+                var plugin = new DicePlugin();
+                plugin.RunModeChange(LogInputMode.Gamepad);
+                DynValue co;
+                Engine("return checkpointmanager.Position(\"action\")", out co);
+                co.Coroutine.Resume();
+                string id = null;
+                foreach (EventCandidate candidate in EventSelectionRuntime.Candidates)
+                    if (candidate.Title == "target") id = candidate.Id;
+                Check(id != null && EventSelectionRuntime.Waiting, request + ": actual Lua waits before delayed " + observed + " observation");
+                if (request == "random") EventSelectionRuntime.ContinueRandom();
+                else Check(EventSelectionRuntime.Select(id, request == "force"), request + ": first request accepted before delayed scheme observation");
+                if (request != "random") Check(!EventSelectionRuntime.Select(id, request == "force"), request + ": pending request rejects duplicates");
+                string acceptedStatus = EventSelectionRuntime.Status;
+                plugin.RunModeChange(observed);
+                plugin.RunModeChange(LogInputMode.Gamepad);
+                plugin.RunModeChange(observed);
+                bool acceptedStatusPreserved = EventSelectionRuntime.Status == acceptedStatus;
+                DynValue result = co.Coroutine.Resume();
+                Check(co.Coroutine.State == CoroutineState.Dead && !EventSelectionRuntime.Waiting &&
+                        CheckPointManager.Instance.PositionCalls == 1 && result.String == (request == "random" ? "original" : "story_target") &&
+                        CheckPointManager.Instance.OriginalCalls == (request == "random" ? 1 : 0),
+                    request + ": the first accepted request survives the actual delayed observer and completes exactly once");
+                Check(acceptedStatusPreserved,
+                    request + ": repeated automatic observations retain the accepted request status");
+                Check(EventSelectionRuntime.Token == 0 && EventSelectionRuntime.Candidates.Count == 0,
+                    request + ": completion discards all authority after delayed scheme observation");
+            }
+    }
+    private static void RefreshCannotReplaceConfirmation()
+    {
+        foreach (bool force in new[] { false, true })
+        foreach (bool refreshBeforeLua in new[] { false, true })
+        {
+            var target = Event("target", !force);
+            Begin(target, Event("other"));
+            DynValue co;
+            Engine("return checkpointmanager.Position(\"action\")", out co);
+            co.Coroutine.Resume();
+            EventCandidate confirmed = null;
+            foreach (EventCandidate candidate in EventSelectionRuntime.Candidates)
+                if (ReferenceEquals(candidate.Target, target)) confirmed = candidate;
+            Check(confirmed != null && EventSelectionRuntime.Select(confirmed.Id, force), "queue exact result before mutable result data changes");
+            target.ResultType = "replacement";
+            if (refreshBeforeLua) EventSelectionRuntime.Tick(true, 1);
+            co.Coroutine.Resume();
+            Check(EventSelectionRuntime.Waiting && co.Coroutine.State == CoroutineState.Suspended &&
+                    CheckPointManager.Instance.PositionCalls == 0 && EventSelectionRuntime.Status.Contains("바뀌"),
+                "normal/force confirmation cannot adopt a new result, with or without an intervening display refresh");
+            Check(confirmed.Result == "story_target", "published confirmation snapshots remain immutable after a display refresh");
+            Check(EventSelectionRuntime.Select(confirmed.Id, force), "the changed result needs and accepts a fresh explicit confirmation");
+            DynValue result = co.Coroutine.Resume();
+            Check(co.Coroutine.State == CoroutineState.Dead && result.String == "story_replacement" &&
+                    CheckPointManager.Instance.PositionCalls == 1 && CheckPointManager.Instance.OriginalCalls == 0 && target.RealCalls == 0,
+                "the newly confirmed replacement result executes once without original condition/RNG calls");
+        }
+    }
+    public static void Run()
+    {
+        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards(); HardCancellationBeforeLuaContinuation(); DelayedSchemeObservation(); RefreshCannotReplaceConfirmation();
+        scenarios += PopupExecutionRegression.Run(Check);
         Console.WriteLine("PASS: event execution runtime " + assertions + " assertions across " + scenarios + " scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries)");
     }
+    private static void Main(string[] args) => RuntimeModeIntegration.Run(args);
 }

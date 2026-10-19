@@ -104,3 +104,10 @@ ZIP은 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파일
 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.7/`의 `release-verification.json`, `build-manifest.json`, `anonymous-verification.json`, `github-publication.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 이후 실제 게시·익명 다운로드 검증과 구분한다.
 
 이 문서의 게시 결과 보충은 main의 별도 후속 문서 커밋에 포함한다. 빌드 소스·태그 `5630a1a`와 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스에 포함된 준비 문구는 당시 검사·게시 단계의 기록이다. 공개 Release에서는 이 문서·구현 문서·Windows 확인표를 포함한 고정 문서 커밋 URL을 사용한다.
+
+
+## 2026-10-20 사용자 후속 확인
+
+게시 뒤 사용자는 팝업의 선택된 행을 다시 터치해도 즉시 진행되지 않고 여러 번 터치해야 하며 하단 선택 이벤트·무작위 버튼도 같은 증상이라고 보고했다. 추가 답변에서 **패드 A에서는 이 문제가 나타나지 않고 키보드는 없어 시험하지 못했다**고 밝혔다. 트랙패드 클릭 결과·설치 DLL 해시·실제 입력 모드 변화 로그·장치별 입력 전달 단계는 제공되지 않았다.
+
+관리 경계 조사에서는 접수된 일반·조건 무시·무작위 요청이 Lua 재개 전 입력 모드 관측으로 취소되는 경로를 재현했다. 이 재현을 사용자 장치의 단일 원인 확정으로 해석하지 않는다. 사용자는 하단 실행 버튼을 텍스트 안내로 바꾸고 실행 지점을 목록에 모으기를 요청했으며, 구조 리팩터링은 보류한 채 수정·회귀 검사·main/README 반영·새 prerelease를 지시했다. 새 작업은 [alpha.8 배포 기록](ISSUE-5-ALPHA8-RELEASE.md)에 분리한다. 위 alpha.7 게시 시점의 파일·검사·해시·ID는 바꾸지 않는다.

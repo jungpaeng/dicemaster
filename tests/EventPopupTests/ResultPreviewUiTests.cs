@@ -170,10 +170,9 @@ internal static partial class Program
                 "Selecting a candidate retains its row height/position for the next tap at " + dimensions + " font=" + font);
             Check(GUILayout.ScrollViews.Count == 2 && GUILayout.ScrollViews.All(view => view.Viewport.height > 0),
                 "Results and candidates have independent usable scroll viewports at " + dimensions + " font=" + font);
-            foreach (GUILayout.ControlRecord control in GUILayout.Controls.Where(control => control.Button &&
-                (control.Text.StartsWith("이 이벤트로 진행 [") || control.Text.StartsWith("무작위로 진행 ["))))
+            foreach (GUILayout.ControlRecord control in GUILayout.Controls.Where(control => InstructionCaption(control.Text)))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f && control.VisibleRect.width > 0,
-                    "Confirm/recovery buttons remain visible beneath long result detail at " + dimensions + " font=" + font);
+                    "Confirm/recovery text instructions remain visible beneath long result detail at " + dimensions + " font=" + font);
             float originalList = GUILayout.ScrollViews[0].InputScroll.y;
             popup.Scroll(1); Draw(popup);
             Check(DetailScroll(popup) > 0 && GUILayout.ScrollViews[0].InputScroll.y == originalList,

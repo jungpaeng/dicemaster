@@ -4,6 +4,14 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## PRD #5 — v1.0.6-alpha.8 prerelease 준비
+
+사용자는 구조 리팩터링을 보류하고 터치 반복 실행 문제 수정·하단 실행 버튼의 텍스트 안내 전환·회귀 검사·커밋·`origin/main` 반영·README 갱신·새 prerelease를 지시했다. 시작 main은 `572ba1df65a18e94af20be21d566430dd84c13ba`다. 자동 입력 모드 관측만으로 같은 유효 행동에 접수된 확정을 취소하지 않으며 접수한 후보·결과를 보관해 이후 후보 갱신이 확정 대상을 바꾸지 않게 한다. 초점·문맥·대상·연결·소유자 등의 하드 경계와 실행 직전 검증은 유지한다.
+
+하단 실행 버튼은 제거하고 A/Enter의 일반/명시 조건 무시 안내·B/Esc 무작위 안내를 텍스트로 표시한다. 클릭·터치 실행은 목록의 첫 선택 뒤 같은 행 재확인으로 모으고 무작위는 B/Esc로만 요청한다. 새 설정·키·패드 조합·구조 프레임워크는 추가하지 않는다. 터치만 사용하는 환경의 무작위 실행 UI는 없다.
+
+새 태그 `v1.0.6-alpha.8`·자산 `DiceMaster-v1.0.6-alpha.8.zip`을 `prerelease=true`·`make_latest=false`로 게시할 준비다. 소스 커밋은 실제 커밋 후 확정한다. 전체·격리·`verify-preview-release.py --scope prd5` 고정 재빌드와 공개 파일 검증은 확정 결과를 [alpha.8 배포 기록](ISSUE-5-ALPHA8-RELEASE.md)에 기록한다. 이전 14개 검사 결과를 새 실행으로 복사하지 않는다. Latest 정식 v1.0.5와 기존 Release·태그·자산, 이슈 상태를 보존하며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.8/`에 보존한다. 아래 alpha.7은 게시 당시 이력이다.
+
 ## PRD #5 — v1.0.6-alpha.7 prerelease
 
 사용자의 같은 이벤트 팝업 후속 요청인 정상 발동 가능/불가 상태 행 제거·무작위 목록 항목 제거·첫 줄 제목 굵게 표시를 반영해 **2026-10-20 02:43:23 KST에 [v1.0.6-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.7)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.7/DiceMaster-v1.0.6-alpha.7.zip). 최신 main `661622d8f221f25d58f871321caed935c952d6e9`에서 시작했고 README·구현·검사를 포함한 소스·태그 `5630a1a88a6f99cabad146c405810b1918ca83e1`를 main에 반영했다. Release ID `417571269`·asset ID `656972428`, `draft=false`·`prerelease=true`·`make_latest=false`다. [변경·설치·복구·검증 기록](ISSUE-5-ALPHA7-RELEASE.md)을 따른다.

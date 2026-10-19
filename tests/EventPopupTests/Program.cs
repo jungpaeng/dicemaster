@@ -87,8 +87,9 @@ internal static partial class Program
         Check(EventSelectionRuntime.Selected == "eligible" && !EventSelectionRuntime.Forced, "A must submit normal current candidate");
         popup = Start(); popup.Handle(LogPadCommand.Down); popup.Handle(LogPadCommand.Down);
         Draw(popup);
-        Check(GUILayout.Buttons.Count(text => text.StartsWith("조건 무시하고 이번만 진행 [A / Enter]")) == 1
-            && !GUILayout.Buttons.Any(text => text.StartsWith("이 이벤트로 진행 [A / Enter]"))
+        Check(GUILayout.LiteralLabels.Count(text => text == "[A / Enter] 조건 무시하고 이번만 진행") == 1
+            && !GUILayout.LiteralLabels.Contains("[A / Enter] 이 이벤트로 진행")
+            && GUILayout.Buttons.All(text => !InstructionCaption(text))
             && !GUILayout.LiteralLabels.Any(text => text.Contains("X/Shift+Enter")),
             "Blocked candidate must expose one contextual A/Enter action and no separate force shortcut");
         popup.Handle(LogPadCommand.Refresh);
@@ -153,11 +154,10 @@ internal static partial class Program
                 Id = i.ToString(), Title = new string('한', 120), Summary = new string('글', 300), CanSelect = true }).ToList();
             Draw(popup);
             Check(GUILayout.ScrollViews.Count == 2 && GUILayout.ScrollViews.All(s => s.Viewport.width > 0 && s.Viewport.height > 0), "List and detail must have usable scroll viewports");
-            Check(GUILayout.Buttons.Any(b => b.StartsWith("무작위로 진행")), "Random recovery must remain present at every size");
-            foreach (var control in GUILayout.Controls.Where(c => c.Button &&
-                (c.Text.StartsWith("이 이벤트로 진행") || c.Text.StartsWith("조건 무시하고") || c.Text.StartsWith("무작위로 진행 ["))))
+            Check(GUILayout.LiteralLabels.Contains("[B / Esc] 무작위로 진행"), "Random shortcut instruction must remain present at every size");
+            foreach (var control in GUILayout.Controls.Where(c => InstructionCaption(c.Text)))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f,
-                    "All explicit progress/recovery buttons must fit at " + size + " font=" + font);
+                    "All literal progress/recovery instructions must fit at " + size + " font=" + font);
             Check(EventSelectionRuntime.Commands == 0, "Rendering must never queue event execution");
         }
         Console.WriteLine("PASS: EventPopupTests: " + checks + " actual popup input/layout boundary checks; managed substitutes, not Windows Unity rendering.");
@@ -302,7 +302,8 @@ internal static partial class Program
 
     private static bool RowCaption(string text, string id) => text.Contains(id == "eligible" ? "정상 후보"
         : id == "blocked" ? "미충족 후보" : id == "broken" ? "읽기 실패 후보" : "원래 게임 판정");
-    private static bool ActionCaption(string text) => text.StartsWith("이 이벤트로 진행 [") || text.StartsWith("조건 무시하고 이번만 진행 [") || text.StartsWith("진행 불가 · 대상/결과 확인 필요");
+    private static bool InstructionCaption(string text) => text.StartsWith("[A / Enter]") || text.StartsWith("[B / Esc]");
+    private static bool SelectedRowCaption(string text) => text.StartsWith("▶ ") && text.Split('\n').Length == 2;
     private static Vector2 Point(EventPopupRenderer popup, Func<string, bool> match)
     {
         Draw(popup);
@@ -382,7 +383,7 @@ internal static partial class Program
             Draw(popup);
             Check(GUILayout.Buttons.Any(text => text.StartsWith("▶ ") && RowCaption(text, candidate)),
                 pair + " selects the touched popup row after Unity consumes the pointer event");
-            Click(popup, ActionCaption, pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+            Click(popup, SelectedRowCaption, pair.Item1, pair.Item2, pair.Item3, pair.Item4);
             Check(candidate == "broken" ? EventSelectionRuntime.Commands == 0
                 : EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == candidate
                     && EventSelectionRuntime.Forced == (candidate == "blocked"),
@@ -411,7 +412,7 @@ internal static partial class Program
             GamepadBridge.KeyboardActivity = controller.KeyboardActivity;
             foreach (string action in new[] { "row", "confirm" })
             {
-                Func<string, bool> caption = action == "row" ? text => RowCaption(text, "blocked") : ActionCaption;
+                Func<string, bool> caption = text => RowCaption(text, "blocked");
                 Vector2 point = Point(popup, caption);
                 Input.touchCount = 1;
                 Pointer(popup, pair.Item1, pair.Item3, point);
@@ -445,7 +446,7 @@ internal static partial class Program
             controller.Tick(true, true, true, LogInputMode.Gamepad, 0, states, connected);
             controller.Tick(true, true, true, LogInputMode.Gamepad, .1, states, connected);
             GamepadBridge.PointerActivity = controller.PointerActivity;
-            Vector2 point = Point(popup, ActionCaption);
+            Vector2 point = Point(popup, SelectedRowCaption);
             Input.touchCount = 1; Pointer(popup, EventType.MouseDown, EventType.TouchDown, point);
             if (boundary == "context") EventSelectionRuntime.Token++;
             else if (boundary == "target") EventSelectionRuntime.Candidates[0] = new EventCandidate { Id = "eligible", Title = "정상 후보", CanSelect = true };
@@ -472,7 +473,7 @@ internal static partial class Program
         {
             var popup = Start(); popup.Handle(LogPadCommand.Down);
             if (change == "force-to-normal") popup.Handle(LogPadCommand.Down);
-            Vector2 point = Point(popup, ActionCaption);
+            Vector2 point = Point(popup, SelectedRowCaption);
             Input.touchCount = 1; Pointer(popup, EventType.MouseDown, EventType.MouseDown, point);
             int index = change == "force-to-normal" ? 1 : 0;
             EventCandidate original = EventSelectionRuntime.Candidates[index];
@@ -487,7 +488,7 @@ internal static partial class Program
         }
 
         var rawTouchPopup = Start(); rawTouchPopup.Handle(LogPadCommand.Down);
-        Vector2 rawTouch = Point(rawTouchPopup, ActionCaption);
+        Vector2 rawTouch = Point(rawTouchPopup, SelectedRowCaption);
         Pointer(rawTouchPopup, EventType.TouchDown, EventType.TouchDown, rawTouch);
         rawTouchPopup.ResetInput(true);
         Pointer(rawTouchPopup, EventType.TouchUp, EventType.TouchUp, rawTouch);
@@ -496,15 +497,8 @@ internal static partial class Program
         Pointer(rawTouchPopup, EventType.TouchUp, EventType.TouchUp, rawTouch);
         Check(EventSelectionRuntime.Commands == 1, "Direct touch adapter cannot confirm a duplicate release");
 
-        foreach (string shortcut in new[] { "B / Esc" })
-        {
-            var randomPopup = Start();
-            Click(randomPopup, text => text == "무작위로 진행 [" + shortcut + "]");
-            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random,
-                "Pointer random " + shortcut + " action preserves original game result path");
-        }
         var outsidePopup = Start(); outsidePopup.Handle(LogPadCommand.Down);
-        Vector2 inside = Point(outsidePopup, ActionCaption);
+        Vector2 inside = Point(outsidePopup, SelectedRowCaption);
         Pointer(outsidePopup, EventType.MouseUp, EventType.MouseUp, inside);
         Check(EventSelectionRuntime.Commands == 0, "Release without corresponding popup press never confirms");
         Pointer(outsidePopup, EventType.MouseDown, EventType.MouseDown, new Vector2(-50, -50));
@@ -539,11 +533,6 @@ internal static partial class Program
                         && EventSelectionRuntime.Forced == (candidate == "blocked"),
                     pair + " a fresh second row click uses the presented contextual action: " + candidate);
             }
-
-            var randomPopup = Start();
-            Click(randomPopup, text => text == "무작위로 진행 [B / Esc]", pair.Item1, pair.Item2, pair.Item3, pair.Item4);
-            Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random,
-                pair + " the dedicated footer button requests the original game decision");
 
             foreach (string change in new[] { "same-target-snapshot", "normal-to-blocked", "force-to-normal", "token", "target", "result", "removed" })
             {
