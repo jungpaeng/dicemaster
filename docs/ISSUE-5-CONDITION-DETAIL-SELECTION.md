@@ -1,6 +1,6 @@
 # 조건 체크포인트 목록과 상세 분기 선택
 
-상태: **v1.0.6-alpha.13 게시 준비 · 실제 Windows·장치 확인 대기**. 조건을 분기별 목록 행으로 표시한 alpha.12에서 체크포인트당 한 행과 상세 분기 선택으로 변경한다. 후보 빌드·14개 자동 검사와 패키지 대조를 통과했다. 고정 소스·공개 파일 대조와 게시 결과는 [alpha.13 배포 기록](ISSUE-5-ALPHA13-RELEASE.md)에 후속 기록한다. alpha.12의 공개 파일과 당시 이력은 변경하지 않는다.
+상태: **2026-10-20 05:59:52 KST v1.0.6-alpha.13 prerelease 게시 완료 · 실제 Windows·장치 확인 대기**. 조건을 분기별 목록 행으로 표시한 alpha.12에서 체크포인트당 한 행과 상세 분기 선택으로 변경한다. 소스·주석 태그는 `f9ec0be282ec86d14a0bfec23ab5a7ff6723101b`이며 후보·고정 소스 재빌드에서 각각 14개 검사와 동일 입력·DLL/cfg/ZIP 바이트를 확인했다. 게시 후 익명 공개 ZIP의 CRC·두 파일·내부 바이트·해시를 대조했다. [alpha.13 설치·배포 기록](ISSUE-5-ALPHA13-RELEASE.md)을 따르며 alpha.12의 공개 파일과 당시 이력은 보존한다.
 
 [현재 README](../README.md#시험판의-조건이벤트-선택) · [변경 이력](../CHANGELOG.md) · [실제 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha13-조건-상세-선택-확인표)
 
@@ -43,7 +43,7 @@
 | 기존 실행·팝업 회귀 | EventSelectionRuntimeTests 198개 시나리오·1,140개 단언, EventPopupTests 1,625개 검사 통과 |
 | 전체 소스 후보 빌드·14개 검사 프로그램·설치 ZIP | 전체 통과. 189개 빌드 입력·78개 소스/리소스, 새 DLL/cfg/ZIP 해시·ZIP CRC·정확한 두 파일과 내부 바이트 대조 통과 |
 | 실제 Unity/Windows·물리 패드·트랙패드·모니터 터치 | 미실행 |
-| 커밋·origin/main 반영·새 prerelease | 사용자 요청에 따라 alpha.13 게시 준비. 실행 결과는 버전별 배포 기록에 후속 기록 |
+| 커밋·origin/main 반영·새 prerelease | 소스·태그 `f9ec0be282ec86d14a0bfec23ab5a7ff6723101b`를 main에 반영하고 2026-10-20 05:59:52 KST alpha.13 게시. 공개 파일 대조 통과 |
 
 최종 후보는 `artifacts/condition-detail-selection/final/candidate/`에 생성했다. 전체 실행 로그는 `artifacts/condition-detail-selection/final/build-run.log`, 최종 입력·패키지 대조 기록은 `artifacts/condition-detail-selection/final/verification.json`, 14개 프로그램의 결과는 후보의 `build-manifest.json`에 기록했다. 빌드는 오류 0개이며 기존 생산 소스 경고 7개를 포함한다. 관리 경계 검사와 실제 게임·장치 실행은 구분한다.
 
@@ -53,4 +53,4 @@
 | DiceMaster.cfg | 11,761 | `435d221a32f505ce079c01c4afb9ecf39f4bbe29d5dd8d7ca8e3975f2a9b5400` |
 | DiceMaster-source-candidate.zip | 269,758 | `94c82f31c9c6253f4ca1fff77efcfb57990055ac0c44e671e1878750548ab387` |
 
-ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll`만 들어 있다. alpha.12의 DLL·ZIP 해시나 자동 검사 결과를 이번 변경 파일의 근거로 대신 사용하지 않는다. 실제 장치 시험은 [alpha.13 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha13-조건-상세-선택-확인표)에 결과와 시험 파일 식별값을 남긴다.
+같은 바이트의 공개 설치 파일은 [DiceMaster-v1.0.6-alpha.13.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.13/DiceMaster-v1.0.6-alpha.13.zip)이며 고정 재빌드·게시·익명 검증 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.13/`에 보존한다. 검토 후보 파일명은 후보 생성 당시 이름이다. ZIP에는 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll`만 들어 있다. alpha.12의 DLL·ZIP 해시나 자동 검사 결과를 이번 변경 파일의 근거로 대신 사용하지 않는다. 실제 장치 시험은 [alpha.13 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha13-조건-상세-선택-확인표)에 결과와 시험 파일 식별값을 남긴다.

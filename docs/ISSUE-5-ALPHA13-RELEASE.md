@@ -1,8 +1,8 @@
 # v1.0.6-alpha.13 — 조건 목록 정리와 상세 분기 예약
 
-상태: **게시 준비 · 후보의 전체 소스 빌드·14개 자동 검사 완료 · 실제 Windows·장치 확인 대기**. alpha.12에서 결과마다 행이 늘어나던 조건 목록을 체크포인트당 한 행으로 정리하고, 전체 분기 조건을 상세에 보여주며 상세에서 예약할 분기를 선택한다. 고정 소스 재빌드·공개 파일 대조와 게시 결과는 실행 후 아래에 기록한다.
+상태: **2026-10-20 05:59:52 KST prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. alpha.12에서 결과마다 행이 늘어나던 조건 목록을 체크포인트당 한 행으로 정리하고, 전체 분기 조건을 상세에 보여주며 상세에서 예약할 분기를 선택한다. 소스·주석 태그는 `f9ec0be282ec86d14a0bfec23ab5a7ff6723101b`이며 후보·고정 재빌드·익명 공개 파일의 바이트·해시를 대조했다.
 
-**[게시 후 이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.13/DiceMaster-v1.0.6-alpha.13.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)
+**[이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.13/DiceMaster-v1.0.6-alpha.13.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)
 
 ## 사용자에게 달라진 점
 
@@ -89,23 +89,26 @@ alpha.12로 복구하면 조건 목록이 결과별 행으로 돌아가며 예�
 
 ## 파일 확인과 게시 기록
 
-아래 식별값은 검토한 소스 후보에서 확인했다. 고정 커밋 재빌드·공개 파일 대조와 게시 결과는 실제 실행 후 별도로 기록한다.
+아래 파일은 검토 후보·고정 소스 재빌드·익명 공개 다운로드의 바이트·해시가 일치한다. 소스 커밋은 [f9ec0be282ec86d14a0bfec23ab5a7ff6723101b](https://github.com/jungpaeng/dicemaster/commit/f9ec0be282ec86d14a0bfec23ab5a7ff6723101b)이다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
-| `DiceMaster-v1.0.6-alpha.13.zip`으로 게시할 후보 | 269,758 | `94c82f31c9c6253f4ca1fff77efcfb57990055ac0c44e671e1878750548ab387` |
+| `DiceMaster-v1.0.6-alpha.13.zip` | 269,758 | `94c82f31c9c6253f4ca1fff77efcfb57990055ac0c44e671e1878750548ab387` |
 | `DiceMaster.dll` | 640,000 | `a51bf83e35dc57da9d083f5c09f0234fa931b2782d9b315f9cf26d8aa0acceb2` |
 | `DiceMaster.cfg` | 11,761 | `435d221a32f505ce079c01c4afb9ecf39f4bbe29d5dd8d7ca8e3975f2a9b5400` |
 
 | 게시 항목 | 현재 기록 |
 | --- | --- |
-| 고정 소스·태그 커밋 | 커밋 후 기록 |
-| 고정 소스 재빌드·14개 검사·후보 대조 | 게시 절차에서 실행 후 기록 |
-| 게시 시각·Release / asset ID | 게시 후 기록 |
-| 공개 상태 | `draft=false`·`prerelease=true`·`make_latest=false`로 게시 예정 |
-| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 게시 후 실행·기록 |
-| 사전 원격 main | 로컬 HEAD와 같은 `a57c286bbe193005919ba48d4c723afc56d04ba0` |
-| 사전 Release·태그·자산 | 기존 36개 Release·36개 태그·자산 보관, alpha.13 미사용 확인 |
-| Latest 정식·이슈 사전 상태 | v1.0.5 · #2 closed·#4 closed·#5 open. 게시 후 보존 확인 예정 |
+| 고정 소스·주석 태그 커밋 | `f9ec0be282ec86d14a0bfec23ab5a7ff6723101b` |
+| 고정 소스 재빌드·14개 검사·후보 대조 | 2026-10-20 05:58:52 KST 완료. 189개 입력·78개 소스/리소스·전체 검사 결과와 DLL/cfg/ZIP 바이트 일치 |
+| 게시 시각 | 2026-10-20 05:59:52 KST |
+| Release / asset ID | `417748369` / `657424358` |
+| 공개 상태 | `draft=false`·`prerelease=true`·`make_latest=false` |
+| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 익명 공개 페이지·다운로드 대조 통과 |
+| 사전 원격 main | 게시 전 작업 시작 HEAD와 같은 `a57c286bbe193005919ba48d4c723afc56d04ba0` |
+| 기존 Release·태그·자산 | 사전 기존 36개 Release·36개 태그·자산 보관, 게시 후 보존 확인 |
+| Latest 정식·게시 전후 이슈 상태 | v1.0.5 · #2 closed·#4 closed·#5 open 유지. 이 작업은 이슈를 변경하지 않음 |
 
-후보 영수증은 로컬 `artifacts/condition-detail-selection/final/candidate/`와 `artifacts/condition-detail-selection/final/verification.json`에 보존한다. 고정 소스·게시·익명 검증 기록은 `artifacts/releases/v1.0.6-alpha.13/`에 보존할 예정이다. 로컬 경로는 공개 다운로드 링크가 아니며 소스 커밋·태그·공개 자산 확인은 게시 후 실제 값으로 보충한다.
+고정 소스 `f9ec0be282ec86d14a0bfec23ab5a7ff6723101b`를 기존 모드 DLL 0개인 별도 소스 스냅샷에서 재빌드하고 2026-10-20 05:58:52 KST에 같은 14개 검사 프로그램을 통과했다. 검토 후보와 189개 입력·전체 검사 결과 및 DLL/cfg/ZIP 바이트가 일치했다. 구현·검사·README를 `origin/main`에 반영하고 고정 커밋을 가리키는 주석 태그로 새 버전을 게시했다. 기존 36개 Release·태그·자산과 Latest 정식 v1.0.5를 보존했으며 이슈 #5는 종료하지 않았다.
+
+후보 영수증은 로컬 `artifacts/condition-detail-selection/final/candidate/`와 `artifacts/condition-detail-selection/final/verification.json`에 보존한다. 고정 소스·게시·익명 검증 기록은 `artifacts/releases/v1.0.6-alpha.13/`의 `release-verification.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 고정 검사 영수증의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 검사 시점이다. 이 게시 결과 보충은 별도 main 문서 커밋으로 반영하며 빌드 소스·태그·공개 자산을 변경하지 않는다.

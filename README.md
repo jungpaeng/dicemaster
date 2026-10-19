@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.13 (게시 준비)](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13) · [게시 후 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.13/DiceMaster-v1.0.6-alpha.13.zip) | 조건 목록을 체크포인트 단위로 정리하고 상세에서 분기 선택·예약 | 후보의 14개 자동 검사 완료, 고정 소스·공개 파일 대조는 게시 절차에서 기록. 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA13-RELEASE.md) |
+| [시험판 v1.0.6-alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.13/DiceMaster-v1.0.6-alpha.13.zip) | 조건 목록을 체크포인트 단위로 정리하고 상세에서 분기 선택·예약 | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA13-RELEASE.md) |
 
 alpha.13은 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
 
@@ -118,7 +118,7 @@ alpha.13은 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설�
 
 ## 시험판의 조건·이벤트 선택
 
-**[v1.0.6-alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13) 게시 준비 중입니다.** 조건 목록을 체크포인트당 한 행으로 정리하고 전체 조건을 상세에 보여주며, 상세에서 예약할 분기를 선택합니다. 아래 조작은 alpha.13 기준이고 공개 alpha.12에는 분기별 목록이 들어 있습니다. 조건·이벤트의 일회 예약, 조건 팝업 신규 기본값 OFF와 기존 설정 보존, 선택 팝업과 탭별 ON/OFF를 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha13-조건-상세-선택-확인표)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13)**입니다. 조건 목록을 체크포인트당 한 행으로 정리하고 전체 조건을 상세에 보여주며, 상세에서 예약할 분기를 선택합니다. 조건·이벤트의 일회 예약, 조건 팝업 신규 기본값 OFF와 기존 설정 보존, 선택 팝업과 탭별 ON/OFF를 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha13-조건-상세-선택-확인표)에서 대기합니다.
 
 ### 예약과 설정
 

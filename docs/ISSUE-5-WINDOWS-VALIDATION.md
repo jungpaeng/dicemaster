@@ -1,8 +1,8 @@
 # PRD #5 — 실제 Windows 확인표
 
-**v1.0.6-alpha.13 게시 준비 중이며 이번 DLL의 실제 Windows·장치 확인은 대기**다. 조건 목록을 체크포인트당 한 행으로 정리하고 상세에서 예약할 분기를 선택한다. 후보는 14개 자동 검사와 패키지 대조를 통과했으며 고정 소스·공개 파일 확인은 [alpha.13 배포 기록](ISSUE-5-ALPHA13-RELEASE.md)에 후속 기록한다. [조건 상세 선택 설계·자동 검사](ISSUE-5-CONDITION-DETAIL-SELECTION.md)와 실제 시험 파일 식별값을 확인한다. 공개 alpha.12의 분기별 목록과 아래 새 동작을 구분한다.
+**v1.0.6-alpha.13을 2026-10-20 05:59:52 KST에 게시했으며 이번 DLL의 실제 Windows·장치 확인은 대기**다. 조건 목록을 체크포인트당 한 행으로 정리하고 상세에서 예약할 분기를 선택한다. 후보·고정 소스 재빌드에서 각각 14개 검사와 189개 입력·DLL/cfg/ZIP 바이트 일치를 확인하고 게시 후 익명 공개 ZIP의 CRC·두 파일·내부 바이트·해시 대조를 통과했다. [alpha.13 설치·배포 기록](ISSUE-5-ALPHA13-RELEASE.md) · [조건 상세 선택 설계·자동 검사](ISSUE-5-CONDITION-DETAIL-SELECTION.md). alpha.12의 분기별 목록은 아래 당시 기록으로 보존한다.
 
-이번 후보 DLL은 640,000바이트·SHA-256 `a51bf83e35dc57da9d083f5c09f0234fa931b2782d9b315f9cf26d8aa0acceb2`다. 시험 전에 설치 파일 해시와 게임·BepInEx·Windows 버전, 장치·Steam Input, 해상도·UI 배율을 기록한다. 이전 버전 확인을 새 DLL의 실제 Windows 통과로 승계하지 않는다.
+시험 대상은 [DiceMaster-v1.0.6-alpha.13.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.13/DiceMaster-v1.0.6-alpha.13.zip)이며 소스·주석 태그는 `f9ec0be282ec86d14a0bfec23ab5a7ff6723101b`다. 공개 DLL은 640,000바이트·SHA-256 `a51bf83e35dc57da9d083f5c09f0234fa931b2782d9b315f9cf26d8aa0acceb2`다. 시험 전에 설치 파일 해시와 게임·BepInEx·Windows 버전, 장치·Steam Input, 해상도·UI 배율을 기록한다. 이전 버전 확인을 새 DLL의 실제 Windows 통과로 승계하지 않는다.
 
 ## alpha.13 조건 상세 선택 확인표
 
