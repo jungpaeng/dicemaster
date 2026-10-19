@@ -6,9 +6,13 @@
 
 ## 조건·이벤트 일회 예약 — v1.0.6-alpha.12 prerelease
 
-사용자의 커밋·`origin/main` 반영·README 갱신·새 prerelease 요청에 따라 alpha.12를 준비한다. 조건 목록을 결과별 행으로 나누고 조건·이벤트에 서로 독립적인 일회 예약·해제를 추가한다. 예약은 팝업보다 우선해 다음 일치 체크포인트에서 한 번 결과를 지정하며 즉시 실행이나 게임 상태의 사전 변경은 아니다. 조건 팝업의 신규 기본값은 OFF로 바꾸고 이미 저장된 ON은 유지한다. [사용자 변화·설치·검증](ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검사 근거](ISSUE-5-CHECKPOINT-RESERVATIONS.md).
+사용자의 커밋·`origin/main` 반영·README 갱신·새 prerelease 요청에 따라 **2026-10-20 05:36:03 KST에 [alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.12/DiceMaster-v1.0.6-alpha.12.zip). 조건 목록을 결과별 행으로 나누고 조건·이벤트의 독립적인 일회 예약·해제와 조건 팝업의 신규 기본값 OFF를 포함한다. 이미 저장된 ON은 유지한다. 구현·검사·README·준비 문서를 포함한 고정 소스·주석 태그는 `11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8`이며 `origin/main`에 반영했다. [사용자 변화·설치·검증](ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검사 근거](ISSUE-5-CHECKPOINT-RESERVATIONS.md).
 
-2026-10-20 05:29:55 KST 현재 소스 후보에서 14개 검사 프로그램과 188개 입력·78개 소스/리소스 해시, 설치 ZIP의 CRC·두 파일·DLL/cfg 바이트를 확인했다. 이 문단은 게시 준비 기록이다. 고정 커밋을 별도 소스 스냅샷에서 재빌드해 후보와 대조하고 새 버전만 `prerelease=true`·`make_latest=false`로 게시한다. 게시 후 익명 공개 ZIP·해시와 고정 태그를 검증한다. 기존 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open은 보존한다. 이번 DLL의 실제 Windows·장치 확인과 이슈 #5 완료는 대기다.
+후보 전체 소스 빌드와 고정 소스의 별도 스냅샷 재빌드에서 각각 14개 검사 프로그램을 통과했다. 고정 재빌드는 2026-10-20 05:34:10 KST에 기존 모드 DLL 0개에서 완료했고 검토 후보와 188개 입력·DLL/cfg/ZIP 바이트·전체 검사 결과가 일치했다. Release `417723438`·asset `657372175`, `draft=false`·`prerelease=true`·`make_latest=false`다. 게시 후 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256과 고정 태그를 확인했다.
+
+사전 원격 main `1f189a9cf21fcc2ede30c183f6d9e2dc1a8905af`와 기존 35개 Release·태그·자산을 보관하고 게시 후 보존을 확인했다. Latest 정식 v1.0.5를 유지했다. 빌드 중 2026-10-20 05:31:35 KST에 `jungpaeng`이 이슈 #4를 외부에서 종료한 것을 확인했다(`commit_id=null`). 원래 사전 원본과 변경 근거를 보존하고 게시 직전 기준을 #2 closed·#4 closed·#5 open으로 다시 확인했다. 이 배포 작업은 이슈를 변경하지 않았고 해당 기준을 게시 후에도 유지했다. 이슈 #4의 외부 종료를 alpha.12 DLL의 Windows 검증으로 해석하지 않는다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.12/`의 `release-verification.json`·`build-manifest.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 외부 이슈 변경은 `artifacts/releases/alpha12-work/issue-state-change.json`과 `artifacts/checkpoint-reservations/alpha12-prepublish/external-issue-change.json`에 기록했다. 고정 검사 영수증의 `published=false`와 고정 소스의 준비 문구는 게시 전 검사 시점이며 이후 게시 결과와 구분한다. 이 결과 보충은 별도 main 문서 커밋이며 빌드 소스·태그·공개 자산은 변경하지 않는다. 이번 DLL의 실제 Windows·장치 확인과 이슈 #5 완료는 대기다.
 
 ## 대화 중 조건 분기 선택 — v1.0.6-alpha.11 prerelease
 

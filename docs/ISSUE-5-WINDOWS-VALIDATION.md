@@ -1,6 +1,6 @@
 # PRD #5 — 실제 Windows 확인표
 
-**v1.0.6-alpha.12의 새 DLL은 실제 Windows·장치 확인 대기**다. 조건·이벤트 일회 예약과 조건 팝업 신규 기본값 OFF를 확인한다. 아래 첫 확인표는 이번 변경을 위한 것으로 아직 실제 Windows에서 실행하지 않았다. 전체 현재 소스 후보 빌드·14개 검사 프로그램과 설치 ZIP·188개 입력 해시 대조를 통과했다. 이번 DLL은 634,368바이트·SHA-256 `7db4b6dbffd3ed4f4441002fa7c868d5d66db234942395178de5cf4ad6fc802f`이며 실제 게임 확인과 구분한다. [alpha.12 배포 기록](ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검증 범위](ISSUE-5-CHECKPOINT-RESERVATIONS.md). 공개 alpha.11의 파일·기본값·검증 기록은 다음 절에 당시 상태로 보존한다.
+**v1.0.6-alpha.12의 새 DLL은 실제 Windows·장치 확인 대기**다. 조건·이벤트 일회 예약과 조건 팝업 신규 기본값 OFF를 확인한다. 아래 첫 확인표는 이번 변경을 위한 것으로 아직 실제 Windows에서 실행하지 않았다. 후보·고정 소스 재빌드에서 각각 14개 검사 프로그램을 통과하고 188개 입력·DLL/cfg/ZIP 바이트·전체 검사 결과가 일치했다. 2026-10-20 05:36:03 KST 소스·태그 `11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8`에서 게시한 뒤 익명 공개 ZIP의 CRC·두 파일·내부 바이트·해시를 대조했다. 이번 DLL은 634,368바이트·SHA-256 `7db4b6dbffd3ed4f4441002fa7c868d5d66db234942395178de5cf4ad6fc802f`이며 실제 게임 확인과 구분한다. [alpha.12 배포 기록](ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검증 범위](ISSUE-5-CHECKPOINT-RESERVATIONS.md). 공개 alpha.11의 파일·기본값·검증 기록은 다음 절에 당시 상태로 보존한다.
 
 ## alpha.12 예약·기본값 변경 확인표
 

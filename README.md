@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.12/DiceMaster-v1.0.6-alpha.12.zip) | 조건·이벤트 일회 예약과 팝업 선택, 조건 팝업 신규 기본값 OFF | 게시 준비: 후보의 14개 자동 검사 통과, 고정 커밋·공개 파일 대조 전. 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA12-RELEASE.md) |
+| [시험판 v1.0.6-alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.12/DiceMaster-v1.0.6-alpha.12.zip) | 조건·이벤트 일회 예약과 팝업 선택, 조건 팝업 신규 기본값 OFF | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA12-RELEASE.md) |
 
 alpha.12는 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
 
@@ -118,7 +118,7 @@ alpha.12는 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설�
 
 ## 시험판의 조건·이벤트 선택
 
-**[v1.0.6-alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12) 게시를 준비하고 있습니다.** 조건·이벤트 탭에 미션처럼 일회 예약·해제를 추가하고 조건 팝업의 신규 기본값을 OFF로 바꿉니다. 기존 이벤트·대화 중 조건 분기 선택 팝업과 탭별 ON/OFF는 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12)**입니다. 조건·이벤트 탭에 미션처럼 일회 예약·해제를 추가하고 조건 팝업의 신규 기본값을 OFF로 바꿉니다. 기존 이벤트·대화 중 조건 분기 선택 팝업과 탭별 ON/OFF는 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md)에서 대기합니다.
 
 ### 예약과 설정
 

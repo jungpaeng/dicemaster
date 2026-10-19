@@ -1,6 +1,6 @@
 # 조건·이벤트 일회 예약과 조건 팝업 기본값
 
-상태: **v1.0.6-alpha.12 구현·후보 검사 완료, prerelease 게시 준비**. 조건 팝업의 신규 기본값 OFF와 조건·이벤트 탭의 일회 예약을 포함한다. 고정 커밋 재빌드·공개 자산 검증은 아래 후보 검사와 구분해 [alpha.12 배포 기록](ISSUE-5-ALPHA12-RELEASE.md)에 남긴다. 공개 alpha.11은 이벤트 탭 조회 전용·Switch 팝업 기본값 ON인 당시 파일로 보존한다.
+상태: **v1.0.6-alpha.12 prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. 조건 팝업의 신규 기본값 OFF와 조건·이벤트 탭의 일회 예약을 포함한다. 2026-10-20 05:36:03 KST 소스·태그 `11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8`에서 게시했으며 고정 커밋 재빌드·익명 공개 자산 검증은 아래 후보 검사와 구분해 [alpha.12 배포 기록](ISSUE-5-ALPHA12-RELEASE.md)에 남긴다. 공개 alpha.11은 이벤트 탭 조회 전용·Switch 팝업 기본값 ON인 당시 파일로 보존한다.
 
 [현재 README](../README.md#시험판의-조건이벤트-선택) · [변경 이력](../CHANGELOG.md) · [alpha.12 배포 기록](ISSUE-5-ALPHA12-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)
 
@@ -18,7 +18,7 @@
 
 선택이 없을 때 확인 입력은 첫 항목을 고르기만 한다. 예약 행에는 `(예약 중)`을 표시한다. 조건과 이벤트에 각각 하나의 독립된 예약이 있으며 미션 예약과도 별개다. 읽기 실패·이전 값 상태 또는 대상·결과를 확인할 수 없는 행에서는 예약을 변경할 수 없다. 누름 중 게시·대상·결과·예약 상태가 교체되면 이전 누름으로 새 예약을 만들거나 해제하지 않는다.
 
-| 설정 | 현재 소스의 신규 기본값 | 기존 cfg |
+| 설정 | alpha.12의 신규 기본값 | 기존 cfg |
 | --- | --- | --- |
 | `EnableSwitchSelectionPopup` | `false` | 이미 저장된 `true`/`false` 유지 |
 | `EnableEventSelectionPopup` | `true` | 저장값 유지 |
@@ -71,7 +71,7 @@
 
 ## 검증 기록
 
-2026-10-20 05:29:55 KST에 .NET SDK 8.0.426으로 현재 소스 전체를 빌드하고 **14개 검사 프로그램**을 통과했다. 188개 빌드 입력·78개 소스/리소스의 해시를 대조하고 설치 ZIP의 CRC·두 파일·DLL/cfg 바이트 일치를 확인했다. 고정 커밋 재빌드나 실제 Windows 게임 실행을 수행한 결과는 아니다.
+후보 검사 당시인 2026-10-20 05:29:55 KST에 .NET SDK 8.0.426으로 전체 소스를 빌드하고 **14개 검사 프로그램**을 통과했다. 188개 빌드 입력·78개 소스/리소스의 해시를 대조하고 설치 ZIP의 CRC·두 파일·DLL/cfg 바이트 일치를 확인했다. 이 시점의 후보 검사는 이후 고정 커밋 재빌드 및 실제 Windows 게임 실행과 구분한다.
 
 | 검사 | 현재 기록 |
 | --- | --- |
@@ -82,9 +82,9 @@
 | 전체 소스 후보 빌드·14개 검사 프로그램 | 전체 통과. 로그 갱신·수명·게임 API 경계·패드·번역·미리보기·GUI·열기·예약 런타임·팝업 포함 |
 | 빌드 입력·설치 ZIP | 188개 입력 해시·ZIP CRC·정확히 두 파일·DLL/cfg 바이트 일치 |
 | 실제 Unity/Windows·물리 패드·트랙패드·모니터 터치 | 미실행 |
-| 고정 커밋 재빌드·새 prerelease·공개 다운로드 대조 | 사용자 후속 지시로 준비 중. 완료 결과는 alpha.12 배포 기록에 별도 기록 |
+| 고정 커밋 재빌드·새 prerelease·공개 다운로드 대조 | 소스 `11a6fb4`의 별도 스냅샷에서 14개 검사와 188개 입력·DLL/cfg/ZIP·전체 결과 일치. 05:36:03 KST 게시 후 익명 공개 ZIP CRC·두 파일·바이트·해시 통과 |
 
-현재 후보는 `artifacts/checkpoint-reservations/full/candidate/`에 보존하며 기준 Git HEAD `1f189a9` 이후의 작업 트리를 빌드했다. 후보·검사 영수증은 `build-manifest.json`·`build.log`와 상위 `verification.json`에 있다. 이 후보는 alpha.12 고정 재빌드의 대조 대상이며 alpha.11과 같은 파일이 아니다.
+현재 후보는 `artifacts/checkpoint-reservations/full/candidate/`에 보존하며 기준 Git HEAD `1f189a9` 이후의 작업 트리를 빌드했다. 후보·검사 영수증은 `build-manifest.json`·`build.log`와 상위 `verification.json`에 있다. 이 후보는 alpha.12 고정 재빌드·익명 공개 파일과 바이트·해시가 일치하며 alpha.11과 같은 파일이 아니다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |

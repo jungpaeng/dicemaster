@@ -1,12 +1,12 @@
 # 변경 이력
 
-## [v1.0.6-alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12) — 2026-10-20 (prerelease 게시 준비)
+## [v1.0.6-alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12) — 2026-10-20 (prerelease)
 
 - 조건 분기 팝업의 신규 설정 기본값을 `EnableSwitchSelectionPopup=false`로 바꿉니다. 기존 cfg에 저장된 ON/OFF와 이벤트 팝업 기본값 `true`는 유지합니다.
 - 조건 탭을 분기별 행으로 나누고 조건·이벤트 탭에도 미션과 같은 일회 예약·해제를 추가합니다. 항목 선택 후 A/Enter 또는 선택 행의 다음 클릭·터치로 변경하며 `(예약 중)`을 표시합니다. 각 탭에 하나씩 독립적으로 예약하고 같은 탭의 다른 예약은 교체합니다.
 - 다음 일치하는 실제 체크포인트 호출에서 예약 결과를 한 번 적용하며 팝업 ON/OFF보다 우선합니다. 팝업 대기 중 만든 같은 판정의 예약도 재개 시 적용합니다. 원래 조건·가중치·난수를 우회하지만 조건·능력치를 미리 수정하지 않고 Switch 자체 횟수만 한 번 증가시킵니다. 즉시 실행·행동 재개나 세이브에 남는 설정은 아닙니다.
 - 일반 Lua 교체에는 예약을 유지하고 로드·새 게임 등 실행 전환에서 해제합니다. 표시·실행 경계에서 대상·결과·소속·Switch 모드와 횟수를 검증하며 오래된 예약은 폐기합니다. 상위 `EnableOptionInfo`가 꺼져 있으면 적용하지 않습니다. 미션·기존 팝업의 조작을 유지합니다.
-- 전체 소스 빌드·14개 검사 프로그램과 188개 빌드 입력 해시·설치 ZIP의 CRC/두 파일/바이트 대조를 통과했습니다. 예약 런타임 198개 시나리오·1,140개 단언, 브리지 통합 431개·UI 5,771개 검사를 포함합니다. 사용자의 커밋·main 반영·prerelease 요청에 따라 고정 커밋 재빌드와 새 ZIP 게시를 준비합니다. 실제 Windows 확인은 대기입니다. [배포·설치·검증](docs/ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검증 범위](docs/ISSUE-5-CHECKPOINT-RESERVATIONS.md).
+- 전체 소스 빌드·14개 검사 프로그램과 188개 빌드 입력 해시·설치 ZIP의 CRC/두 파일/바이트 대조를 통과했습니다. 예약 런타임 198개 시나리오·1,140개 단언, 브리지 통합 431개·UI 5,771개 검사를 포함합니다. 고정 재빌드·14개 검사를 통과한 소스·태그 `11a6fb4`로 2026-10-20 05:36:03 KST에 prerelease를 게시하고, 이후 익명 공개 ZIP의 CRC·두 파일·내부 바이트·해시를 대조했습니다. README·구현·검사를 `origin/main`에 반영했고 기존 35개 Release·태그·자산과 Latest v1.0.5를 보존했습니다. 빌드 중 발생한 #4의 외부 종료는 배포 작업과 구분해 기록하며, 이번 DLL의 실제 Windows 확인과 이슈 #5 완료는 대기입니다. [배포·설치·검증](docs/ISSUE-5-ALPHA12-RELEASE.md) · [예약 설계·검증 범위](docs/ISSUE-5-CHECKPOINT-RESERVATIONS.md).
 
 ## [v1.0.6-alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.11) — 2026-10-20 (prerelease)
 

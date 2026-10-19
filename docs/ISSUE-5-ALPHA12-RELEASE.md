@@ -1,6 +1,6 @@
 # v1.0.6-alpha.12 — 조건·이벤트 일회 예약
 
-상태: **2026-10-20 후보 검사 완료 · prerelease 게시 준비 · 새 DLL의 실제 Windows·장치 확인 대기**. 조건·이벤트 목록의 예약과 조건 팝업의 신규 기본값 OFF를 포함한다. 고정 커밋 재빌드와 게시 후 공개 파일 검증은 후보 검사와 구분해 이 문서에 보충한다.
+상태: **2026-10-20 05:36:03 KST prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. 조건·이벤트 목록의 예약과 조건 팝업의 신규 기본값 OFF를 포함한다. 소스·주석 태그는 `11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8`이며 후보·고정 재빌드·익명 공개 파일의 바이트·해시를 대조했다.
 
 **[이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.12/DiceMaster-v1.0.6-alpha.12.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.12) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)
 
@@ -76,14 +76,28 @@ alpha.11로 복구하면 조건·이벤트 일회 예약은 제공하지 않고 
 
 관리 코드·모의 경계 검사는 실제 Unity/Windows 화면·물리 패드·트랙패드·모니터 터치·다른 모드 조합의 통과 근거로 확대하지 않는다. 이번 새 DLL의 실제 Windows 확인과 이슈 #5 완료는 대기다.
 
-## 파일 확인과 게시 준비
+## 파일 확인과 게시 결과
 
-다음은 고정 커밋 재빌드와 공개 자산 검증의 대조 대상인 후보 파일 식별값이다. 후보 영수증은 로컬 `artifacts/checkpoint-reservations/full/candidate/`에 보존하며 공개 근거 문서 링크를 대신하지 않는다.
+다음 파일은 검토 후보·고정 소스 재빌드·익명 공개 다운로드의 바이트·해시가 일치한다. 소스 커밋은 [11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8](https://github.com/jungpaeng/dicemaster/commit/11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8)이다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
-| `DiceMaster-v1.0.6-alpha.12.zip` 예정 파일과 같은 후보 ZIP | 267,579 | `76d2f8e350b5eab4a57a628a245714705ab6b86f7675db7f7d79e6f8fdb2fc05` |
+| `DiceMaster-v1.0.6-alpha.12.zip` | 267,579 | `76d2f8e350b5eab4a57a628a245714705ab6b86f7675db7f7d79e6f8fdb2fc05` |
 | `DiceMaster.dll` | 634,368 | `7db4b6dbffd3ed4f4441002fa7c868d5d66db234942395178de5cf4ad6fc802f` |
 | `DiceMaster.cfg` | 11,761 | `435d221a32f505ce079c01c4afb9ecf39f4bbe29d5dd8d7ca8e3975f2a9b5400` |
 
-고정 소스 커밋·태그·게시 시각·Release/asset ID·공개 ZIP 대조 결과는 해당 작업 완료 뒤 추가한다. 새 버전만 `prerelease=true`·`make_latest=false`로 게시하고 이전 Release·태그·자산·Latest 정식 v1.0.5 및 이슈 상태를 보존한다.
+고정 소스 `11a6fb4570ca632ff435d3ddf2ac74beecfe1aa8`를 기존 모드 DLL 0개인 별도 소스 스냅샷에서 재빌드해 2026-10-20 05:34:10 KST에 같은 14개 검사 프로그램을 통과했다. 검토 후보와 188개 입력·DLL/cfg/ZIP 바이트·전체 검사 결과가 일치했다. 구현·검사·README를 `origin/main`에 반영하고 고정 커밋을 가리키는 주석 태그로 새 버전만 게시했다.
+
+| 게시 항목 | 확인 값 |
+| --- | --- |
+| 게시 시각 | 2026-10-20 05:36:03 KST |
+| Release / asset ID | `417723438` / `657372175` |
+| 공개 상태 | `draft=false`·`prerelease=true`·`make_latest=false` |
+| 공개 파일 대조 | 익명 페이지·다운로드·ZIP CRC·두 파일·내부 바이트·SHA-256 통과 |
+| 기존 자산·태그 | 기존 35개 Release·태그·자산 보존 |
+| Latest 정식 | v1.0.5 유지 |
+| 게시 직전·후 이슈 | #2 closed·#4 closed·#5 open, 이 작업은 이슈를 변경하지 않음 |
+
+사전 확인 뒤 빌드 중 2026-10-20 05:31:35 KST에 `jungpaeng`이 #4를 외부에서 종료했다(`commit_id=null`). 사전 원본·변경 근거를 보존하고 새 상태를 게시 직전 기준으로 다시 확인했다. #4 종료를 이번 DLL의 실제 Windows 확인으로 간주하지 않는다. 기존 35개 Release·태그·자산과 Latest 정식 v1.0.5를 유지하며 이슈 #5는 종료하지 않았다.
+
+후보 영수증은 로컬 `artifacts/checkpoint-reservations/full/candidate/`, 고정 빌드·게시·익명 검증 영수증은 `artifacts/releases/v1.0.6-alpha.12/`에 보존한다. `release-verification.json`의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 검사 시점이다. 이 게시 결과 보충은 별도 main 문서 커밋으로 반영하며 빌드 소스·태그·공개 자산을 변경하지 않는다.
