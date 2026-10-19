@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.8/DiceMaster-v1.0.6-alpha.8.zip) | 터치 재확인 보완·하단 조작 안내 | 게시 준비 중, 새 DLL의 장치 확인 대기. [시험판 안내](#시험판의-이벤트-선택-팝업) |
+| [시험판 v1.0.6-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.8/DiceMaster-v1.0.6-alpha.8.zip) | 터치 재확인 보완·하단 조작 안내 | 자동 검사·공개 파일 확인 완료, 새 DLL의 장치 확인 대기. [시험판 안내](#시험판의-이벤트-선택-팝업) |
 
 **아래 조작법은 정식 v1.0.5 기준입니다.** 시험판에서는 이벤트 선택 방식이 달라집니다. 배포별 파일 해시와 제한은 각 Release에서 확인하세요.
 

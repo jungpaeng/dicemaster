@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.8 prerelease 준비 · 실제 Windows·장치 확인 대기**. 시작 main `572ba1df65a18e94af20be21d566430dd84c13ba`에서 구조 리팩터링을 보류하고 터치 진행 요청의 모드 관측 취소 경로와 하단 실행 버튼을 수정한다. [alpha.8 배포 안내](ISSUE-5-ALPHA8-RELEASE.md)에 실제 검사·파일·게시 결과를 확정 뒤 기록한다. 아래 동작·입력 절은 alpha.8 대상이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 실제 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.8 prerelease 게시 · 실제 Windows·장치 확인 대기**. 2026-10-20 03:18:58 KST에 소스·태그 `7d79363bc33dffac80d453fe6a945a6e3edeb513`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 시작 main `572ba1df65a18e94af20be21d566430dd84c13ba`에서 구조 리팩터링을 보류하고 터치 진행 요청의 모드 관측 취소·후보 갱신 경로와 하단 안내를 수정해 README·소스·검사를 main에 반영했다. [alpha.8 배포 안내](ISSUE-5-ALPHA8-RELEASE.md)에 실제 검사·파일·게시 결과를 기록한다. 게시 결과 보충은 빌드 소스·태그·자산을 바꾸지 않는 별도 main 문서 커밋이며 고정 소스의 준비 문구와 구분한다. 아래 동작·입력 절은 alpha.8 대상이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 실제 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 alpha.7은 2026-10-20 02:43:23 KST에 소스·태그 `5630a1a88a6f99cabad146c405810b1918ca83e1`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 이후 사용자는 터치 반복 실패와 하단 버튼 제거를 요청했고 패드 A는 반복 문제가 없으며 키보드는 없어 미시험이라고 답했다. 이는 새 alpha.8의 성공 근거가 아니며 당시 파일·검사·게시와 제한된 후속 확인은 [alpha.7 배포 안내](ISSUE-5-ALPHA7-RELEASE.md)에 보존한다.
 

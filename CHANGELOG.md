@@ -1,10 +1,10 @@
 # 변경 이력
 
-## v1.0.6-alpha.8 — 2026-10-20 (prerelease 준비)
+## [v1.0.6-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8) — 2026-10-20 (prerelease)
 
 - 팝업에서 선택된 행을 다시 터치해 접수한 진행 요청이 다음 Lua 재개 전 자동 입력 모드 관측으로 취소되던 경로를 보완합니다. 접수한 후보·결과를 보관해 이후 표시 갱신이 확정 대상을 바꾸지 않게 합니다. 일반·명시 조건 무시·무작위의 한 번 소비와 실행 직전 검증, 초점·문맥·소유자·연결 변경의 취소는 유지합니다.
 - 하단의 선택 이벤트·무작위 실행 버튼을 텍스트 안내로 바꿉니다. 클릭·터치 실행은 목록에 모으고 A/Enter는 선택 이벤트, B/Esc는 무작위 진행입니다. 터치 전용 무작위 UI는 제공하지 않습니다.
-- 구조 리팩터링은 보류하고 이 입력 수정과 안내 변경만 반영합니다. 회귀 검사·고정 재빌드·공개 파일 검증과 게시 결과는 [alpha.8 배포 기록](docs/ISSUE-5-ALPHA8-RELEASE.md)에 확정 뒤 기록합니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
+- 구조 리팩터링은 보류하고 이 입력 수정과 안내 변경만 반영합니다. 2026-10-20 03:18:58 KST prerelease 게시. 소스·태그 `7d79363`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 ZIP의 CRC·두 파일·바이트·해시 검증을 통과했습니다. README·구현·검사를 `origin/main`에 반영했으며 기존 31개 Release·태그·자산과 Latest v1.0.5를 보존했습니다. 상세 결과는 [alpha.8 배포 기록](docs/ISSUE-5-ALPHA8-RELEASE.md)에 기록합니다. 새 DLL의 Windows 확인과 이슈 #5 완료는 대기입니다.
 
 ## [v1.0.6-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.7) — 2026-10-20 (prerelease)
 

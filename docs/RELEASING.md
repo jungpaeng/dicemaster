@@ -4,13 +4,17 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## PRD #5 — v1.0.6-alpha.8 prerelease 준비
+## PRD #5 — v1.0.6-alpha.8 prerelease
 
 사용자는 구조 리팩터링을 보류하고 터치 반복 실행 문제 수정·하단 실행 버튼의 텍스트 안내 전환·회귀 검사·커밋·`origin/main` 반영·README 갱신·새 prerelease를 지시했다. 시작 main은 `572ba1df65a18e94af20be21d566430dd84c13ba`다. 자동 입력 모드 관측만으로 같은 유효 행동에 접수된 확정을 취소하지 않으며 접수한 후보·결과를 보관해 이후 후보 갱신이 확정 대상을 바꾸지 않게 한다. 초점·문맥·대상·연결·소유자 등의 하드 경계와 실행 직전 검증은 유지한다.
 
 하단 실행 버튼은 제거하고 A/Enter의 일반/명시 조건 무시 안내·B/Esc 무작위 안내를 텍스트로 표시한다. 클릭·터치 실행은 목록의 첫 선택 뒤 같은 행 재확인으로 모으고 무작위는 B/Esc로만 요청한다. 새 설정·키·패드 조합·구조 프레임워크는 추가하지 않는다. 터치만 사용하는 환경의 무작위 실행 UI는 없다.
 
-새 태그 `v1.0.6-alpha.8`·자산 `DiceMaster-v1.0.6-alpha.8.zip`을 `prerelease=true`·`make_latest=false`로 게시할 준비다. 소스 커밋은 실제 커밋 후 확정한다. 전체·격리·`verify-preview-release.py --scope prd5` 고정 재빌드와 공개 파일 검증은 확정 결과를 [alpha.8 배포 기록](ISSUE-5-ALPHA8-RELEASE.md)에 기록한다. 이전 14개 검사 결과를 새 실행으로 복사하지 않는다. Latest 정식 v1.0.5와 기존 Release·태그·자산, 이슈 상태를 보존하며 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.8/`에 보존한다. 아래 alpha.7은 게시 당시 이력이다.
+**2026-10-20 03:18:58 KST에 [v1.0.6-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.8) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.8/DiceMaster-v1.0.6-alpha.8.zip). 최신 `origin/main`의 `572ba1df65a18e94af20be21d566430dd84c13ba`에서 시작했고 README·구현·검사를 포함한 소스·태그 `7d79363bc33dffac80d453fe6a945a6e3edeb513`를 main에 반영했다. Release ID `417602057`·asset ID `657055734`, `draft=false`·`prerelease=true`·`make_latest=false`다.
+
+전체·격리·고정 소스 `verify-preview-release.py --scope prd5` 재빌드에서 각각 14개 검사 프로그램과 동일 DLL/cfg/ZIP·전체 검사 결과를 확인했다. 고정 재빌드는 03:18:16 KST에 기존 모드 DLL 0개에서 완료했고 빌드 입력 176개·소스/리소스 71개를 대조했다. 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256도 확인했다. 런타임은 실제 후보 observer IL·소스 팝업/런타임·MoonSharp를 연결해 84개 시나리오·581개 단언을 통과했다. [alpha.8 배포 기록](ISSUE-5-ALPHA8-RELEASE.md)에 상세 결과를 기록한다.
+
+기존 31개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다. 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 게시 결과 보충은 빌드 소스·태그·공개 자산을 바꾸지 않는 별도 main 문서 커밋이며 고정 소스의 준비 문구와 아래 alpha.7은 당시 이력이다. 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.8/`의 `release-verification.json`·`build-manifest.json`·`anonymous-verification.json`·`github-publication.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 실제 게시·익명 검증과 구분한다.
 
 ## PRD #5 — v1.0.6-alpha.7 prerelease
 
