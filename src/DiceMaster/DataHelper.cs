@@ -97,6 +97,12 @@ public static class DataHelper
 		{
 			return GetLocalizedSystemText("System/Text/Unknown", "(알수없음)", "시스템_조건값_알수없음", "(알수없음)");
 		}
+		// Asset names may be checkpoint IDs, even when the value references a
+		// player stat. Resolve the complete expression before using name heuristics;
+		// never infer a stat from a checkpoint ID or collapse a composite to one stat.
+		int remaining = 128;
+		string statExpression = TryFormatConditionStatGroup(variable, new HashSet<StatGroupVariable>(), ref remaining, out bool hasStat);
+		if (hasStat && !string.IsNullOrEmpty(statExpression)) return statExpression;
 		string name = variable.name;
 		if (name.StartsWith("旗標_"))
 		{
@@ -162,6 +168,64 @@ public static class DataHelper
 			return text11;
 		}
 		return text3;
+	}
+
+	private static string TryFormatConditionStatGroup(StatGroupVariable variable, HashSet<StatGroupVariable> active, ref int remaining, out bool hasStat)
+	{
+		hasStat = false;
+		if (--remaining < 0 || variable == null || active.Count >= 16 || !active.Add(variable)) return null;
+		try
+		{
+			List<StatValueReference> values = variable.GetFieldValue<List<StatValueReference>>("_value");
+			StatGroupType operation = variable.GetFieldValue<StatGroupType>("_groupType");
+			if (values == null || values.Count == 0 || values.Count > 16 ||
+				(operation != StatGroupType.Sum && operation != StatGroupType.Max &&
+				 operation != StatGroupType.Min && operation != StatGroupType.Multiply)) return null;
+			var terms = new List<string>();
+			foreach (StatValueReference value in values)
+			{
+				if (value == null) return null;
+				StatCheckType type = value.GetFieldValue<StatCheckType>("_checkType");
+				string term;
+				if (type == StatCheckType.角色數值)
+				{
+					GameStat stat = value.GetFieldValue<GameStat>("_stat");
+					if (stat == null) return null;
+					string key = stat.GetLocaleKey();
+					if (string.IsNullOrEmpty(key)) return null;
+					term = LocalizationManager.Instance?.LocaleResolver?.GetString(key);
+					if (string.IsNullOrEmpty(term) || term == key) return null;
+					hasStat = true;
+				}
+				else if (type == StatCheckType.常數)
+				{
+					int number = value.GetFieldValue<int>("_constant");
+					if (value.GetFieldValue<bool>("_negative")) number = unchecked(-number);
+					term = number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+				}
+				else if (type == StatCheckType.數值群組)
+				{
+					term = TryFormatConditionStatGroup(value.GetFieldValue<StatGroupVariable>("_statGroup"), active, ref remaining, out bool nestedStat);
+					hasStat |= nestedStat;
+				}
+				else return null;
+				if (string.IsNullOrEmpty(term)) return null;
+				// The game's nested-group branch ignores _negative; only stat and
+				// constant references apply it. Naming must follow the same semantics.
+				if (type == StatCheckType.角色數值 && value.GetFieldValue<bool>("_negative")) term = "-(" + term + ")";
+				terms.Add(term);
+			}
+			if (terms.Count == 1) return terms[0];
+			switch (operation)
+			{
+				case StatGroupType.Sum: return "(" + string.Join(" + ", terms) + ")";
+				case StatGroupType.Multiply: return "(" + string.Join(" × ", terms) + ")";
+				case StatGroupType.Max: return "최댓값(" + string.Join(", ", terms) + ")";
+				case StatGroupType.Min: return "최솟값(" + string.Join(", ", terms) + ")";
+				default: return null;
+			}
+		}
+		finally { active.Remove(variable); }
 	}
 
 	private static string TryResolveFlagIdToName(string candidate)

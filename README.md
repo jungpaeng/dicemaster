@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.9) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.9/DiceMaster-v1.0.6-alpha.9.zip) | 클릭·터치 입력 처리 정리·기존 조작·설정 유지 | 자동 검사·공개 파일 확인 완료, 새 DLL의 장치 확인 대기. [배포 기록](docs/ISSUE-5-ALPHA9-RELEASE.md) |
+| [시험판 v1.0.6-alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.10) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.10/DiceMaster-v1.0.6-alpha.10.zip) | 실제 능력치 참조에 따른 조건 로그 이름·복합식 표시 | 자동 검사 통과·게시 준비, 실제 게임 회상 화면 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA10-RELEASE.md) |
 
 **아래 조작법은 정식 v1.0.5 기준입니다.** 시험판에서는 이벤트 선택 방식이 달라집니다. 배포별 파일 해시와 제한은 각 Release에서 확인하세요.
 
@@ -114,7 +114,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 시험판의 이벤트 선택 팝업
 
-**v1.0.6-alpha.9의 안내이며 새 DLL의 실제 Windows·장치 확인은 대기입니다.** 정식 v1.0.5의 사용법과 구분하세요. alpha.8 이후 화면·조작·설정은 유지하며 내부 입력 경계를 정리했습니다.
+**v1.0.6-alpha.10의 안내이며 새 DLL의 실제 Windows·장치 확인은 대기입니다.** 정식 v1.0.5의 사용법과 구분하세요. 팝업 화면·조작·설정은 alpha.9와 같으며 이번에는 공통 조건 설명의 능력치 이름 표시를 보완했습니다.
 
 이 시험판은 이벤트 사전 예약을 없애고, 지원하는 실제 판정 직전에 작은 팝업에서 **일반 지정 / 조건 무시하고 이번만 지정 / 무작위**를 선택합니다. 큰 로그의 이벤트 탭은 조회 전용이며 이 탭에만 검색·가능 우선 정렬·가능한 항목만 보기가 있습니다. 미션 예약·해제와 주사위 기능은 유지합니다.
 
@@ -124,13 +124,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 팝업 목록은 **굵은 이벤트 제목·결과 요약의 두 줄**이며 정상 발동 가능/불가 문구를 반복하지 않습니다. 결과 요약·상세는 로그와 같은 효과색을 유지하고 정상 발동 불가 후보의 제목은 회색으로 구분합니다. 선택 화살표·조작 안내·조건 설명과 명시 조건 무시 가능 여부는 유지합니다. **예상 결과·발동 조건**은 휠·오른쪽 스틱으로 따로 읽고 ↑↓는 항목 이동입니다. 전체 로그의 도구 화면 유지도 보존합니다. 설명은 정적 분석 범위이며 실제 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md)에서 구분합니다.
 
-alpha.8의 터치 진행 요청 보존과 후보·결과 스냅샷 검증을 유지합니다. alpha.9에서는 로그창·팝업의 클릭·터치 처리와 입력 취소 정책을 공통 경계로 정리했습니다. 조작·설정 변경은 없으며 DLL 용량 최적화는 아닙니다. 실제 Windows·물리 터치 확인은 새 DLL을 대상으로 별도로 진행합니다.
+alpha.10은 회상에 추가되는 조건 로그와 공통 조건 설명에서 실제 능력치 참조로 이름을 구하고 합산·곱셈·최댓값·최솟값과 중첩식을 보존합니다. `Ch_3_6_4_3_001`을 학문으로 고정 치환하지 않습니다. 해석할 수 없으면 기존 객체 이름 표시를 유지하므로 잘못된 원본 이름에 따른 오표시 가능성은 남습니다. 해당 ID의 실제 능력치 연결과 게임 회상 화면에서의 개선은 아직 확인 대기입니다.
 
 조건 무시는 이번 발동 자격만 우회하며 능력치·호감도를 미리 바꾸거나 모든 후속 이야기 조건을 통과시키는 기능은 아닙니다. 모든 이벤트 호출에 팝업이 표시되지는 않으며 지원 밖 경로는 원래 판정으로 진행합니다.
 
 `EnableEventSelectionPopup=true`가 기본값이며 로그 도구의 **이벤트 선택 팝업 사용: ON/OFF**에서 바꾸고 저장할 수 있습니다. OFF는 미확정 대기를 취소하고 원래 판정으로 진행합니다. 상위 `EnableOptionInfo`도 켜져 있어야 합니다.
 
-[시험판의 변경·지원 범위·설치·복구·검증 상태](docs/ISSUE-5-ALPHA9-RELEASE.md) · [Windows 검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md)
+[시험판의 변경·지원 범위·설치·복구·검증 상태](docs/ISSUE-5-ALPHA10-RELEASE.md) · [Windows 검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md)
 
 ## 오류 제보와 개발 문서
 
