@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| 시험판 v1.0.6-alpha.3 준비 | 전체 로그 터치 처리 보완·팝업 선택 행 재클릭/터치로 진행 | 검사·게시 준비 중, 새 DLL의 장치 확인 대기. [시험판 안내](#시험판의-이벤트-선택-팝업) |
+| [시험판 v1.0.6-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.3/DiceMaster-v1.0.6-alpha.3.zip) | 전체 로그 터치 처리 보완·팝업 선택 행 재클릭/터치로 진행 | 자동 검사·공개 파일 확인 완료, 새 DLL의 장치 확인 대기. [시험판 안내](#시험판의-이벤트-선택-팝업) |
 
 **아래 조작법은 정식 v1.0.5 기준입니다.** 시험판에서는 이벤트 선택 방식이 달라집니다. 배포별 파일 해시와 제한은 각 Release에서 확인하세요.
 
@@ -114,7 +114,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 시험판의 이벤트 선택 팝업
 
-**v1.0.6-alpha.3 준비 안내이며 아직 새 시험 파일을 게시하지 않았습니다.** 새 DLL의 실제 Windows·장치 확인은 대기입니다. 정식 v1.0.5의 사용법과 구분하세요.
+**v1.0.6-alpha.3의 안내이며 새 DLL의 실제 Windows·장치 확인은 대기입니다.** 정식 v1.0.5의 사용법과 구분하세요.
 
 이 시험판은 이벤트 사전 예약을 없애고, 지원하는 실제 판정 직전에 작은 팝업에서 **일반 지정 / 조건 무시하고 이번만 지정 / 무작위**를 선택합니다. 큰 로그의 이벤트 탭은 조회 전용이며 이 탭에만 검색·가능 우선 정렬·가능한 항목만 보기가 있습니다. 미션 예약·해제와 주사위 기능은 유지합니다.
 

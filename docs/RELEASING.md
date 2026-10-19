@@ -4,13 +4,15 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## PRD #5 — v1.0.6-alpha.3 준비
+## PRD #5 — v1.0.6-alpha.3 prerelease
 
-사용자의 전체 로그 터치 수정·팝업 선택 행 재클릭/터치 진행 요청에 따른 후속 시험판이다. 앞서 요청한 main 반영 원칙에 따라 최신 `origin/main`에서 작업하고 README·구현·검사를 함께 main에 반영한다. 대상은 `v1.0.6-alpha.3`, 설치 자산은 `DiceMaster-v1.0.6-alpha.3.zip`이며 [변경·설치·복구·검증 상태](ISSUE-5-ALPHA3-RELEASE.md)를 따른다.
+사용자의 전체 로그 터치 수정·팝업 선택 행 재클릭/터치 진행 요청에 따라 **2026-10-20 01:23:02 KST에 [v1.0.6-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.3/DiceMaster-v1.0.6-alpha.3.zip). 최신 `origin/main`을 기준으로 구현·검사·README를 main에 반영했으며 소스·태그는 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`다. Release ID `417499227`·asset ID `656778224`, `draft=false`·`prerelease=true`·`make_latest=false`다. [변경·설치·복구·검증 상태](ISSUE-5-ALPHA3-RELEASE.md)를 따른다.
 
-실제 전체 소스 검사·격리 재빌드·고정 커밋 `verify-preview-release.py --scope prd5` 재빌드와 검토 DLL/cfg/ZIP 일치를 확인한 뒤, 새 태그·prerelease를 `prerelease=true`·`make_latest=false`로 게시한다. 사전 원격 목록과 게시 후 태그·공개 페이지·인증 없는 다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트를 대조한다. 기존 태그·Release·자산·Latest v1.0.5를 보존하고 이슈 #5를 종료하지 않는다.
+전체 소스·격리 소스·고정 커밋 `verify-preview-release.py --scope prd5` 재빌드에서 각각 14개 검사 프로그램을 통과했고 검토 DLL/cfg/ZIP과 동일 바이트였다. 공통 UI 2,743개·팝업 981개·후보 DLL 연결 83개, 빌드 입력 166개·모드 소스/리소스 69개를 확인했다. 게시 후 공개 태그·인증 없는 공개 페이지·다운로드의 SHA-256·CRC·정확히 두 파일·내부 바이트도 대조했다.
 
-이 절은 준비 기록이며 실제 통과 수·고정 소스·해시·시각·원격 ID를 아직 주장하지 않는다. 결과 영수증 예정 경로는 `artifacts/releases/v1.0.6-alpha.3/`다. 새 DLL의 실제 Windows 확인은 대기이며 alpha.2 팝업 터치 행 선택 성공을 새 DLL의 통과로 쓰지 않는다. 아래 alpha.2의 별도 브랜치 게시 방식은 당시 이력이다.
+사전 main `b0d4b291d4b3dbbfb7046134a5eae5875b1f2fa9`에서 검증한 소스 `b2036a9`로 main을 갱신했다. 기존 26개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다. 영수증은 `artifacts/releases/v1.0.6-alpha.3/`의 `release-verification.json`, `anonymous-verification.json`, `public-release.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 게시 결과를 보충하는 후속 문서 커밋은 main에 반영하며 빌드 소스·태그·공개 설치 자산을 변경하지 않는다.
+
+새 DLL의 실제 Windows·장치 확인은 대기이며 alpha.2 팝업 터치 행 선택 성공을 새 DLL의 통과로 쓰지 않는다. 아래 alpha.2의 별도 브랜치 게시 방식은 당시 이력이다.
 
 ## PRD #5 — v1.0.6-alpha.2 prerelease
 

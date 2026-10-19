@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.6-alpha.3 — 전체 로그 터치·팝업 행 재클릭 진행 준비
+## v1.0.6-alpha.3 — 전체 로그 터치·팝업 행 재클릭 진행
 
 팝업에서 **첫 클릭·터치로 행을 선택하고, 선택된 행을 새로 눌렀다 같은 행에서 떼면 진행**한다. 정상 후보는 일반 진행, 미충족·가중치 0·판정 미확인 후보는 명시 조건 무시, 무작위 행은 원래 판정으로 진행한다. 진행 버튼 클릭·터치와 A/Enter/Shift+Enter, B/Escape 무작위도 유지한다. 읽을 수 없는 대상·결과는 실행할 수 없고 누름 뒤 토큰·대상·결과·진행 방식이 바뀌면 새 확인이 필요하다.
 
 전체 로그의 탭·목록·도구와 이벤트 검색 칸도 클릭·터치 조작을 보완한다. 실제 입력 단계만 누름·해제에 사용하고 별도 터치 입력을 버튼의 마우스 단계로 전달한다. 기존 입력 소유권과 초점·문맥·대상·연결 보호, 화면 전환의 전체 해제·중립을 유지한다. 새 키·패드 조합·설정은 없다.
 
-검사·게시 준비 중이며 새 DLL의 실제 Windows·장치 확인은 대기다. alpha.2의 사용자 확인은 팝업 터치 선택 성공·전체 로그 터치 실패 범위다. [alpha.3 변경·검증·설치/복구](ISSUE-5-ALPHA3-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 아래 버전의 조작·게시 결과는 이력으로 보존한다.
+**2026-10-20 01:23:02 KST에 [alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.3/DiceMaster-v1.0.6-alpha.3.zip). 소스·태그 `b2036a9`의 고정 재빌드·14개 검사와 공개 다운로드의 CRC·두 파일·바이트·해시 검증을 통과했다. 새 DLL의 실제 Windows·장치 확인은 대기다. alpha.2의 사용자 확인은 팝업 터치 선택 성공·전체 로그 터치 실패 범위다. [alpha.3 변경·검증·설치/복구](ISSUE-5-ALPHA3-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 아래 버전의 조작·게시 결과는 이력으로 보존한다.
 
 ## v1.0.6-alpha.2 — 팝업 A 확인·포인터 조작
 

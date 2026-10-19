@@ -2,7 +2,7 @@
 
 alpha.2에서 남아 있던 전체 로그의 터치 처리 경로를 보완하고, 팝업에서 선택된 행을 다시 클릭·터치하면 바로 진행하도록 바꾼다. 마우스·터치 사용자는 Enter를 누르지 않고 행 또는 진행 버튼으로 확정할 수 있다.
 
-**로컬 후보 검증 완료 · 고정 커밋 재빌드·공개 게시 대기.** 아래 검사·해시는 이번 후보에서 확인한 값이며, 고정 소스·공개 게시 결과는 완료 뒤 보충한다. 현재 [공개 alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.2)에는 전체 로그 터치 실패가 보고됐으며, [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5다. 새 alpha.3 DLL의 실제 Windows·장치 확인은 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다.
+**2026-10-20 01:23:02 KST에 [v1.0.6-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3) prerelease를 게시했다.** **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.3/DiceMaster-v1.0.6-alpha.3.zip)**. 소스·태그 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`의 고정 재빌드·14개 검사와 인증 없는 공개 페이지·다운로드의 CRC·두 파일·내부 바이트·SHA-256 대조를 통과했다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5로 유지한다. 새 alpha.3 DLL의 실제 Windows·장치 확인은 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다.
 
 ## alpha.2 이후 변경
 
@@ -33,7 +33,7 @@ alpha.2에서 버튼 영역을 이벤트 소비 전에 확보한 수정은 유�
 Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 필요하다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
-2. 게시 후 이 버전 Release의 Assets에서 **`DiceMaster-v1.0.6-alpha.3.zip`**을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
+2. 이 버전 Release의 Assets에서 **`DiceMaster-v1.0.6-alpha.3.zip`**을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
 3. 업데이트는 ZIP의 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
@@ -43,7 +43,7 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 
 ## 검증·알려진 제한
 
-전체 소스 후보와 기존 모드 DLL·Git·이전 빌드 출력을 제외한 격리 소스 재빌드가 각각 14개 검사 프로그램을 통과했다. 두 빌드의 DLL·cfg·ZIP 바이트가 일치했다. 고정 커밋 재빌드와 공개 다운로드 결과는 게시 단계에 보충한다.
+전체 소스 후보와 기존 모드 DLL·Git·이전 빌드 출력을 제외한 격리 소스 재빌드가 각각 14개 검사 프로그램을 통과했다. 두 빌드의 DLL·cfg·ZIP 바이트가 일치했다. 같은 고정 소스 커밋의 재빌드에서도 14개 검사와 검토 DLL/cfg/ZIP 동일 바이트를 확인했다. 공개 다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256도 대조했다.
 
 | 확인 | 이번 결과 |
 | --- | --- |
@@ -52,8 +52,8 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 | 전체 로그의 실제/effective 입력 단계·소비된 이벤트 정리·마우스/별도 터치 회귀 | 공통 UI 2,743개 통과 · 기존 코드의 raw 해제/검색 포커스 실패 재현 |
 | 팝업의 첫 선택·선택 행 재클릭·정상/조건 무시/무작위·읽기 실패 차단 | 팝업 981개 통과 · 마우스/변환 터치/별도 터치 |
 | 누름 뒤 토큰·대상·결과·진행 방식 변경 및 중복 실행 거부 | 팝업 회귀·실제 컨트롤러 소스의 프레임 사이 입력 검사 통과 · 배포 DLL 연결 83개 |
-| 고정 커밋 `--scope prd5` 재빌드·검토 파일 일치 | 준비 중 |
-| 공개 태그·prerelease·Latest 보존·익명 다운로드 CRC/두 파일/바이트·해시 | 준비 중 |
+| 고정 커밋 `--scope prd5` 재빌드·검토 파일 일치 | `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b` · 기존 모드 DLL 0개에서 14개 프로그램 통과 · 검토 DLL/cfg/ZIP 동일 바이트 |
+| 공개 태그·prerelease·Latest 보존·익명 다운로드 CRC/두 파일/바이트·해시 | 인증 없는 공개 페이지·다운로드 검증 통과 · Latest v1.0.5와 기존 26개 Release·태그·자산 보존 |
 | 실제 Windows 게임·트랙패드·마우스로 인식되는 터치·별도 터치·Xbox/XInput | 미실행 · 사용자 확인 대기 |
 
 자동 검사는 관리 코드·명시적 Unity/게임/native 대역과 실제 참조 API의 경계를 확인한다. 새 대역은 창 안의 유효 입력과 화면 갱신·무시된 입력을 구분하며 Unity 버튼의 마우스 단계 소비·잘림·누름 소유권을 모델링한다. 실제 Windows native 창의 전체 이벤트 전달이나 물리 장치·글꼴·화면 배치·성능까지 실행한 근거는 아니다.
@@ -92,10 +92,14 @@ alpha.2에 대한 사용자 보고는 팝업 터치 행 선택 성공과 전체 
 
 | 항목 | 이번 식별값 |
 | --- | --- |
-| 고정 소스 커밋·태그 | 준비 중 · `v1.0.6-alpha.3` 예정 |
+| 고정 소스 커밋·태그 | [`b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`](https://github.com/jungpaeng/dicemaster/commit/b2036a9c8a08d259c6cecee4ee360f24c4af3d4b) · `v1.0.6-alpha.3` |
 | `DiceMaster-v1.0.6-alpha.3.zip` 크기·SHA-256 | 259190바이트 · `2a40b742263042bcfd3389bd867ac3e3c1abd310e1adb90d489dfaa11a8d2b47` |
 | `DiceMaster.dll` 크기·SHA-256 | 614400바이트 · `4a8d7ba9b54bfcd9acd3b6b6675ef3d0328bcc30a3347d4a0c8284915472a59e` |
 | `config/DiceMaster.cfg` 크기·SHA-256 | 11459바이트 · `66b34802ed57b53db7ad977e96e8e17ef4847149e08ac3f244788f0704d9aea7` |
-| 게시 시각·Release/asset ID | 미게시 |
+| 게시 시각·Release/asset ID | 2026-10-20 01:23:02 KST (2026-10-19 16:23:02 UTC) · Release `417499227` · asset `656778224` |
 
-사용자의 main 반영 지시에 따라 최신 `origin/main`을 기준으로 작업하고 README를 포함해 main에 반영한다. 새 태그·prerelease에는 검증한 고정 소스를 사용하며 기존 태그·Release·자산을 바꾸지 않는다. Latest 정식 v1.0.5와 이슈 #5 open을 유지한다. 실제 원격 확인 결과와 영수증은 게시 후 덧붙인다. 준비 문구를 실제 게시 사실로 읽지 않는다.
+사용자의 main 반영 지시에 따라 최신 `origin/main`을 기준으로 작업했고 README·구현·검사를 포함한 소스 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`를 main에 반영했다. 사전 main은 `b0d4b291d4b3dbbfb7046134a5eae5875b1f2fa9`다. 새 태그는 검증한 소스를 가리키며 `draft=false`·`prerelease=true`·`make_latest=false`로 게시했다. 기존 26개 Release·태그·자산과 Latest 정식 v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.3/`의 `release-verification.json`, `build-manifest.json`, `public-release.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증은 게시 전 검사 시점의 결과이며 실제 공개 상태·다운로드는 후속 게시·익명 검증 영수증으로 구분한다.
+
+이 문서의 게시 결과 보충은 main의 후속 문서 커밋에 포함한다. 빌드 소스·태그 `b2036a9`와 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스에 포함된 준비 문구는 당시 검사·게시 단계의 기록이다.

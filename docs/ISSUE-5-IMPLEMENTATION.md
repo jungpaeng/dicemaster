@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.3 준비 중 — 전체 로그 터치·팝업 행 재클릭 진행 보완**. 최신 `origin/main`을 기준으로 구현하며 검사·고정 소스·게시 결과는 [alpha.3 배포 안내](ISSUE-5-ALPHA3-RELEASE.md)에 실제 확인 후 기록한다. 아래 동작·입력 절은 현재 alpha.3 후보 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)의 새 이벤트 실행 방식은 사용자 확인 전까지 완료로 취급하거나 이슈를 닫지 않는다. [이번 후보 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.3 prerelease 게시 · 실제 Windows·장치 확인 대기**. 2026-10-20 01:23:02 KST에 소스·태그 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`의 재빌드·14개 검사·공개 다운로드 검증을 마치고 게시했다. 최신 `origin/main`을 기준으로 구현·검사·README를 main에 반영했으며 [alpha.3 배포 안내](ISSUE-5-ALPHA3-RELEASE.md)에 파일·검사·게시 결과를 기록한다. 아래 동작·입력 절은 현재 alpha.3 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)의 새 이벤트 실행 방식은 사용자 확인 전까지 완료로 취급하거나 이슈를 닫지 않는다. [이번 후보 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 alpha.2는 2026-10-20 01:02:17 KST에 고정 소스·태그 `e71020020b1b7f1938f22ff4a60d046c8bace839`의 재빌드·14개 검사·공개 다운로드 검증을 마치고 게시했다. 이후 사용자는 팝업 터치 행 선택 성공과 전체 로그 터치 실패를 보고했다. 당시 검사·파일·게시와 제한된 사용자 확인 범위는 [alpha.2 배포 안내](ISSUE-5-ALPHA2-RELEASE.md)에 보존한다.
 
