@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.4 준비 · 실제 Windows·장치 확인 대기**. 최신 `origin/main`의 `ea11afbda83433c58eeddc90cada3d021013bdda`에서 로그 탭별 터치 차이와 팝업 두 번째 터치 누락을 수정한다. [alpha.4 배포 안내](ISSUE-5-ALPHA4-RELEASE.md)에 새 소스·검사·파일·게시 결과를 완료 후 기록한다. 아래 동작·입력 절은 현재 후보 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)의 새 이벤트 실행 방식은 사용자 확인 전까지 완료로 취급하거나 이슈를 닫지 않는다. [이번 후보 Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.4 prerelease 게시 · 실제 Windows·장치 확인 대기**. 2026-10-20 01:47:20 KST에 소스·태그 `bea9e87f8a9e138150fd6b70e2d17f0fcb92ccce`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 최신 main `ea11afbda83433c58eeddc90cada3d021013bdda`에서 로그 탭별 포커스 해제와 팝업 두 번째 터치 누락을 수정했고 README·구현·검사를 main에 반영했다. [alpha.4 배포 안내](ISSUE-5-ALPHA4-RELEASE.md)에 파일·검사·게시 결과를 기록한다. 아래 동작·입력 절은 현재 alpha.4 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. 이번 후속 문서 커밋은 빌드 소스·태그·자산을 바꾸지 않으며 고정 소스의 준비 문구와 구분한다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 alpha.3은 2026-10-20 01:23:02 KST에 소스·태그 `b2036a9c8a08d259c6cecee4ee360f24c4af3d4b`의 재빌드·14개 검사·공개 다운로드 검증을 마치고 게시했다. 이후 사용자는 이벤트 탭의 목록 선택·다른 탭 이동 및 팝업 첫 터치 선택 성공과, 다른 탭의 터치 실패·팝업에서 선택 후 두 번 더 터치해야 실행되는 문제를 보고했다. 당시 파일·검사·제한된 확인은 [alpha.3 배포 안내](ISSUE-5-ALPHA3-RELEASE.md)에 보존한다.
 

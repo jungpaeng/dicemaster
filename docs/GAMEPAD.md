@@ -8,7 +8,7 @@ alpha.3에서 사용자는 이벤트 탭의 목록 선택·다른 탭 이동과 
 
 조작은 **첫 클릭·터치 선택 → 두 번째 클릭·터치 진행**이며 진행 버튼과 A/Enter/Shift+Enter도 유지한다. B/Escape는 무작위다. 대상·결과·일반/조건 무시 방식이 달라진 누름은 취소하고 초점·문맥·연결·소유자 경계와 화면 전환의 해제·중립 보호를 유지한다. 새 키·패드 조합·설정은 없다.
 
-현재 alpha.4는 회귀 검사·고정 재빌드·게시 검증 준비 단계다. 결과는 [alpha.4 배포 기록](ISSUE-5-ALPHA4-RELEASE.md)에 확정 후 기록하며 새 DLL의 실제 Windows·장치 확인은 대기다. [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md). 아래 alpha.3의 게시 당시 검사·확인 대기는 당시 이력이다.
+**2026-10-20 01:47:20 KST에 [alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.4)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.4/DiceMaster-v1.0.6-alpha.4.zip). 소스·태그 `bea9e87`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 다운로드의 CRC·두 파일·바이트·해시 검증을 통과했다. README를 포함한 소스는 main에 반영했으며 Latest v1.0.5를 유지한다. [alpha.4 배포 기록](ISSUE-5-ALPHA4-RELEASE.md)에 상세 결과를 기록하고 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.3의 게시 당시 검사·확인 대기는 당시 이력이다.
 
 ## v1.0.6-alpha.3 — 전체 로그 터치·팝업 행 재클릭 진행
 

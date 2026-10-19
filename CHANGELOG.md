@@ -1,10 +1,10 @@
 # 변경 이력
 
-## v1.0.6-alpha.4 — 준비 중
+## [v1.0.6-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.4) — 2026-10-20 (prerelease)
 
 - 전체 로그의 이벤트 외 탭에서 화면·입력을 처리할 때마다 포커스를 해제하던 경로를 제거합니다. 탭·도구·키보드 전환 등 필요한 경계에서만 해제를 요청하고, 포인터 누름·해제가 끝난 안전한 화면 갱신 단계에 한 번 적용합니다.
 - 팝업에서 첫 터치로 선택한 뒤 늦게 처리된 포인터 전환이 입력 해제 대기를 다시 켜 다음 터치를 버리던 문제를 수정합니다. 첫 터치 선택 후 두 번째 터치로 표시된 진행을 요청하며, 안전 경계의 해제·중립과 대상·결과·진행 방식 검증은 유지합니다.
-- 회귀 검사·고정 소스 재빌드와 공개 ZIP 검증 결과는 [alpha.4 배포 기록](docs/ISSUE-5-ALPHA4-RELEASE.md)에 완료 후 기록합니다. README를 포함해 `origin/main`에 반영하고 새 prerelease를 게시하며 Latest 정식 v1.0.5를 유지합니다. 새 DLL의 실제 Windows·장치 확인과 이슈 #5 완료는 대기입니다.
+- 2026-10-20 01:47:20 KST prerelease 게시. 소스·태그 `bea9e87`의 전체·격리·고정 커밋 재빌드에서 각각 14개 검사와 검토 DLL/cfg/ZIP 동일 바이트를 확인했고, 공개 ZIP의 CRC·두 파일·바이트·해시 검증을 통과했습니다. README를 포함해 `origin/main`에 반영했으며 Latest 정식 v1.0.5와 기존 27개 Release·태그·자산을 보존했습니다. 상세 수치는 [alpha.4 배포 기록](docs/ISSUE-5-ALPHA4-RELEASE.md)에 기록합니다. 새 DLL의 실제 Windows·장치 확인과 이슈 #5 완료는 대기입니다.
 
 ## [v1.0.6-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.3) — 2026-10-20 (prerelease)
 

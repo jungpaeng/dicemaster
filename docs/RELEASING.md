@@ -4,13 +4,15 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## PRD #5 — v1.0.6-alpha.4 prerelease 준비
+## PRD #5 — v1.0.6-alpha.4 prerelease
 
-사용자는 조사한 두 터치 문제의 수정·회귀 검사·커밋·`origin/main` 반영·README 갱신·새 prerelease 게시를 지시했다. 최신 main `ea11afbda83433c58eeddc90cada3d021013bdda`를 시작점으로 사용한다. 로그 포커스 해제와 팝업 첫 선택 이후의 늦은 입력 초기화가 범위이며 [alpha.4 변경·설치·복구·검증 기록](ISSUE-5-ALPHA4-RELEASE.md)을 따른다.
+사용자의 두 터치 문제 수정·회귀 검사·커밋·`origin/main` 반영·README 갱신·새 prerelease 지시에 따라 **2026-10-20 01:47:20 KST에 [v1.0.6-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.4)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.4/DiceMaster-v1.0.6-alpha.4.zip). 최신 main `ea11afbda83433c58eeddc90cada3d021013bdda`에서 시작했고 README·구현·검사를 포함한 소스·태그 `bea9e87f8a9e138150fd6b70e2d17f0fcb92ccce`를 main에 반영했다. Release ID `417518975`·asset ID `656831696`, `draft=false`·`prerelease=true`·`make_latest=false`다. [alpha.4 변경·설치·복구·검증 기록](ISSUE-5-ALPHA4-RELEASE.md)을 따른다.
 
-대상은 `v1.0.6-alpha.4`, 설치 ZIP은 `DiceMaster-v1.0.6-alpha.4.zip`이다. 전체 소스·격리 소스·고정 소스 커밋의 자동 검사를 완료하고 검토 DLL/cfg/ZIP 바이트를 대조한 뒤 main·새 태그를 반영한다. `draft=false`·`prerelease=true`·`make_latest=false`로 게시하고 익명 공개 페이지·다운로드의 CRC·두 파일·바이트·SHA-256과 태그를 다시 확인한다. 이 절의 검사·게시 수치와 원격 ID는 실제 단계가 끝난 뒤 기록한다.
+전체·격리·고정 소스 커밋 `verify-preview-release.py --scope prd5` 재빌드에서 각각 14개 검사 프로그램과 검토 DLL/cfg/ZIP의 동일 바이트·검사 결과 일치를 확인했다. 기존 모드 DLL 0개에서 고정 재빌드했으며 빌드 입력 167개·소스/리소스 69개를 대조했다. 게시 후 태그와 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256 검증을 통과했다. 자세한 검사별 수치는 배포 기록에 둔다.
 
-영수증 경로는 `artifacts/releases/v1.0.6-alpha.4/`다. 기존 Release·태그·자산과 Latest v1.0.5를 보존하며 새 DLL의 실제 Windows·장치 확인 전에는 이슈 #5를 완료로 닫지 않는다. alpha.3의 사용자 보고는 [당시 후속 기록](ISSUE-5-ALPHA3-RELEASE.md#2026-10-20-사용자-후속-확인)에 한정하며 새 후보 통과로 승계하지 않는다. 아래 alpha.3의 빌드·게시 수치와 이력은 보존한다.
+기존 27개 Release·태그·자산과 Latest v1.0.5, 이슈 #2 closed·#4 open·#5 open을 보존했다. 영수증은 `artifacts/releases/v1.0.6-alpha.4/`의 `release-verification.json`, `build-manifest.json`, `anonymous-verification.json`, `github-publication.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 후속 게시·익명 검증과 구분한다.
+
+새 DLL의 실제 Windows·장치 확인은 대기다. alpha.3의 사용자 보고는 [당시 후속 기록](ISSUE-5-ALPHA3-RELEASE.md#2026-10-20-사용자-후속-확인)에 한정하며 새 후보 통과로 승계하지 않는다. 게시 결과를 보충하는 이번 문서 커밋은 main에 별도로 반영하며 빌드 소스·태그·공개 설치 자산을 바꾸지 않는다. 고정 소스 문서의 준비 문구와 아래 alpha.3의 수치는 당시 이력이다.
 
 ## PRD #5 — v1.0.6-alpha.3 prerelease
 

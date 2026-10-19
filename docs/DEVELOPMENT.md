@@ -2,13 +2,15 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #5 — v1.0.6-alpha.4 준비
+## PRD #5 — v1.0.6-alpha.4 prerelease
 
-최신 `origin/main`의 `ea11afbda83433c58eeddc90cada3d021013bdda`에서 로그의 탭별 터치 차이와 팝업의 추가 터치 문제를 수정하고 README·검사·구현을 main에 반영한다. [alpha.4 배포 기록](ISSUE-5-ALPHA4-RELEASE.md)에 검증한 소스·검사·설치 파일·게시 결과를 확정한 뒤 기록한다. 현재는 준비 단계이며 이전 alpha.3의 통과 수치·파일 해시를 새 후보 결과로 쓰지 않는다.
+**2026-10-20 01:47:20 KST에 [v1.0.6-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.4) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.4/DiceMaster-v1.0.6-alpha.4.zip). 최신 `origin/main`의 `ea11afbda83433c58eeddc90cada3d021013bdda`에서 작업했고 README·검사·구현을 포함한 소스·태그 `bea9e87f8a9e138150fd6b70e2d17f0fcb92ccce`를 main에 반영했다. 전체·격리·고정 커밋 재빌드의 14개 검사와 검토 DLL/cfg/ZIP 동일 바이트·전체 검사 결과 일치를 확인했다. 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256 검증도 통과했다. [alpha.4 배포 기록](ISSUE-5-ALPHA4-RELEASE.md)에 상세 수치·파일·게시 식별값을 기록한다.
 
-로그는 이벤트 외 탭의 매 콜백 `GUI.FocusControl(null)`을 제거하고 탭·도구·키보드 경계의 해제 요청을 안전한 화면 갱신에서 한 번 처리한다. 진행 중인 포인터 누름·해제를 해제 요청 때문에 끊지 않는다. 실제 Windows에서 이 경로가 탭별 터치 실패의 직접 원인이었는지는 새 장치 확인이 필요하다.
+로그는 이벤트 외 탭의 매 콜백 `GUI.FocusControl(null)`을 제거하고 탭·도구·키보드 경계의 해제 요청을 안전한 화면 갱신에서 한 번 처리한다. 진행 중인 포인터 누름·해제를 해제 요청 때문에 끊지 않으며 늦은 소프트 초기화도 도구·검색 입력 커서를 보존한다. 실제 Windows에서 이 경로가 탭별 터치 실패의 직접 원인이었는지는 새 장치 확인이 필요하다.
 
-팝업은 실제 `LogPadController` 소스를 연결한 재현 순서에서 첫 터치 해제 후 늦은 포인터 전환이 `ResetInput(true)`을 호출해 다음 입력을 막는 경로를 수정한다. 소프트 초기화는 유효한 누름과 이미 해제된 중립 상태를 보존한다. 잘못된 누름·초점 상실·새 진입·토큰/대상/결과 교체 같은 안전 경계에서는 계속 취소하고 해제·중립을 기다린다. 실제 장치 확인 범위는 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에 별도로 기록한다.
+팝업은 실제 `LogPadController` 소스를 연결한 재현 순서에서 첫 터치 해제 후 늦은 포인터 전환이 `ResetInput(true)`을 호출해 다음 입력을 막는 경로를 수정한다. 소프트 초기화는 유효한 누름과 이미 해제된 중립 상태를 보존한다. 잘못된 누름·초점 상실·새 진입·토큰/대상/결과 교체 같은 안전 경계에서는 계속 취소하고 해제·중립을 기다린다.
+
+Latest v1.0.5와 기존 27개 Release·태그·자산, 이슈 #2 closed·#4 open·#5 open을 보존했다. 영수증은 `artifacts/releases/v1.0.6-alpha.4/`에 보존한다. 이번 게시 결과를 보충하는 후속 문서 커밋은 main에 반영하며 소스 태그·설치 자산을 바꾸지 않는다. 고정 소스의 준비 문구는 당시 단계의 기록이다. 새 DLL의 실제 Windows·장치 확인은 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.3은 당시 기록이다.
 
 ## PRD #5 — v1.0.6-alpha.3 prerelease
 
