@@ -66,6 +66,31 @@ namespace DiceMaster
                 Excludes(Detail(markup), "<color", "Known Unity rich text is stripped for the plain popup");
                 Check(Summary(markup).Length <= 161 && Summary(markup).EndsWith("…"), "Long summary is bounded while detail remains available");
                 Check(Detail(markup).Length > Summary(markup).Length, "Summary truncation does not remove full result details");
+                var colored = constructor.Invoke(new object[] { "<size=100><color=#A3B86C>동전 +5</color> <color=#CD594A>심상 -2</color></size>\n조건 < 10 그리고 > 5 " + new string('가', 180), false });
+                string richDetail = (string)Member(colored, "RichDetail"), richSummary = (string)Member(colored, "RichSummary");
+                Contains(richDetail, "<color=#A3B86C>동전 +5</color>", "Popup retains the log's positive result color");
+                Contains(richDetail, "<color=#CD594A>심상 -2</color>", "Popup retains the log's negative result color");
+                Excludes(richDetail, "<size", "Result font/size tags cannot alter popup row geometry");
+                Contains(richDetail, "조건 ＜ 10 그리고 ＞ 5", "Rich comparisons remain visible without being parsed as markup");
+                Contains(richSummary, "<color=#A3B86C>", "One-line result summary preserves effect color");
+                Check(!richSummary.Contains("\n"), "Colored summary is still a single display line");
+                string RichCall(string method, params object[] values) => (string)Invoke(Type("EventSelection.EventResultPreview"), null, method, values);
+                string longRich = "<color=#A3B86C>동전 +5 <color=#CD594A>감소 -2</color>🙂</color> " + new string('나', 180);
+                for (int length = 0; length < 200; length++)
+                {
+                    string fit = RichCall("FitSummary", longRich, length);
+                    string plain = RichCall("PlainText", fit);
+                    int opens = System.Text.RegularExpressions.Regex.Matches(fit, "<color=").Count;
+                    int closes = System.Text.RegularExpressions.Regex.Matches(fit, "</color>").Count;
+                    Check(opens == closes, "Every colored truncation closes its spans at visible length " + length);
+                    Check(plain.Length <= length + 1, "Color markup does not count against the visible-text truncation budget");
+                    for (int index = 0; index < plain.Length; index++)
+                        if (char.IsHighSurrogate(plain[index])) { Check(index + 1 < plain.Length && char.IsLowSurrogate(plain[index + 1]), "Emoji remains a complete pair"); index++; }
+                }
+                string malformed = RichCall("FitSummary", "</color><color=#A3B86C>보상 +1 <size=500>큰 글자</size>", 200);
+                Check(malformed.StartsWith("<color=#A3B86C>") && malformed.EndsWith("</color>") && !malformed.Contains("<size"),
+                    "Malformed color closings and font tags cannot leak into surrounding UI");
+                Check(RichCall("Escape", "<b>문자</b>") == "＜b＞문자＜/b＞", "Candidate labels are escaped rather than interpreted as result markup");
                 var absent = Preview("");
                 Excludes(Detail(absent), "확인된 효과 없음", "Unreadable target/result key has an explicit unavailable result");
             }

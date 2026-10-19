@@ -29,7 +29,13 @@ namespace UnityEngine
         public static bool operator ==(Rect first, Rect second) => first.Equals(second);
         public static bool operator !=(Rect first, Rect second) => !first.Equals(second);
     }
-    public struct Color { public Color(float r, float g, float b) { } public static Color white => new Color(1, 1, 1); public static Color yellow => new Color(1, 1, 0); }
+    public struct Color
+    {
+        public float r, g, b, a;
+        public Color(float r, float g, float b) { this.r = r; this.g = g; this.b = b; a = 1; }
+        public static Color white => new Color(1, 1, 1);
+        public static Color yellow => new Color(1, 1, 0);
+    }
     public sealed class RectOffset
     {
         public int left, right, top, bottom;
@@ -56,17 +62,20 @@ namespace UnityEngine
             fontSize = source.fontSize; richText = source.richText; wordWrap = source.wordWrap;
             padding = source.padding; margin = source.margin; fontStyle = source.fontStyle;
             fixedWidth = source.fixedWidth; fixedHeight = source.fixedHeight;
+            normal.textColor = source.normal.textColor;
         }
         public float CalcHeight(GUIContent content, float width)
         {
             float font = Math.Max(10, fontSize);
             float available = Math.Max(font, width - (padding?.horizontal ?? 0));
             int lines = 0;
-            foreach (string line in (content.text ?? "").Split('\n'))
+            foreach (string line in VisibleText(content.text).Split('\n'))
                 lines += wordWrap ? Math.Max(1, (int)Math.Ceiling(line.Length * font * (fontStyle == FontStyle.Bold ? .78f : .72f) / available)) : 1;
             return lines * (font + 4) + (padding?.vertical ?? 0);
         }
-        public Vector2 CalcSize(GUIContent content) => new Vector2((content.text?.Length ?? 0) * Math.Max(10, fontSize) * .72f, CalcHeight(content, float.MaxValue));
+        private string VisibleText(string value) => richText ? System.Text.RegularExpressions.Regex.Replace(value ?? "",
+            @"</?(?:color|size|b|i|material)(?:=[^<>]*)?>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase) : value ?? "";
+        public Vector2 CalcSize(GUIContent content) => new Vector2(VisibleText(content.text).Length * Math.Max(10, fontSize) * .72f, CalcHeight(content, float.MaxValue));
     }
     public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
@@ -117,6 +126,7 @@ namespace UnityEngine
         public sealed class ControlRecord
         {
             public string Text; public Rect Rect; public int FontSize; public FontStyle FontStyle; public bool Button, Enabled;
+            public bool RichText; public Color TextColor;
             public Rect WindowLocalRect, AncestorClip, VisibleRect;
         }
         // Observe actual styled vertical groups so branch blocks cannot be
@@ -351,7 +361,7 @@ namespace UnityEngine
         }
         private static void RecordControl(string text, GUIStyle style, bool button, Rect rect)
         {
-            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, FontStyle = style.fontStyle, Button = button, Enabled = GUI.enabled,
+            var control = new ControlRecord { Text = text, Rect = rect, FontSize = style.fontSize, FontStyle = style.fontStyle, RichText = style.richText, TextColor = style.normal.textColor, Button = button, Enabled = GUI.enabled,
                 WindowLocalRect = Offset(rect, Current.GuiOrigin), AncestorClip = Current.Clip };
             control.VisibleRect = Intersection(control.WindowLocalRect, control.AncestorClip);
             Controls.Add(control);

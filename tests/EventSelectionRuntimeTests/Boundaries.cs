@@ -55,6 +55,8 @@ namespace DiceMaster.EventSelection
     public sealed class EventResultPreview
     {
         public readonly string Summary, Detail;
+        public string RichSummary => Summary;
+        public string RichDetail => Detail;
         public readonly bool Retry;
         public static readonly EventResultPreview Pending = new EventResultPreview("pending", true);
         public static readonly EventResultPreview Unavailable = new EventResultPreview("unavailable", false);

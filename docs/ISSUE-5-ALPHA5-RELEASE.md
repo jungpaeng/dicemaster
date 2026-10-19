@@ -108,3 +108,9 @@ ZIP에는 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파
 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.5/`의 `release-verification.json`, `build-manifest.json`, `anonymous-verification.json`, `github-publication.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 이후 실제 게시·익명 다운로드 검증과 구분한다.
 
 이 문서의 게시 결과 보충은 main의 별도 후속 문서 커밋에 포함한다. 빌드 소스·태그 `3f13872`와 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스에 포함된 준비 문구는 당시 검사·게시 단계의 기록이다.
+
+## 2026-10-20 사용자 후속 요청
+
+사용자는 같은 이벤트 팝업에서 **반복 클릭·터치 선택/진행 안내 제거**, **결과 요약·상세를 기존 로그와 같은 색으로 표시**, **현재 조건을 충족하지 못한 후보를 회색으로 구분**하는 세 UI 후속을 요청했다. 이는 해당 표시 요구이며 새 DLL이나 모든 Windows 항목의 검증 완료를 의미하지 않는다.
+
+후속 구현·검사·배포는 [alpha.6 배포 기록](ISSUE-5-ALPHA6-RELEASE.md)에서 구분한다. 이 문서의 기존 동작·검사 수치·해시·게시 시점 기록은 보존한다.

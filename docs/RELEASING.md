@@ -4,6 +4,14 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## PRD #5 — v1.0.6-alpha.6 prerelease 준비
+
+사용자의 같은 이벤트 팝업 UI 후속 요청인 반복 클릭 안내 제거·로그와 같은 결과 효과색·정상 발동 불가 이름/상태 회색 표시를 기존 main·README·prerelease 작업의 연속 범위로 반영한다. 최신 main `cb6c20fdef23d7b19c39171df114e855c3e4b363`에서 작업하며 대상은 `v1.0.6-alpha.6`, 설치 자산은 `DiceMaster-v1.0.6-alpha.6.zip`이다. [변경·설치·복구·검증 기록](ISSUE-5-ALPHA6-RELEASE.md)에 실제 결과를 완료 후 기록한다.
+
+전체·격리·고정 소스 재빌드의 자동 검사와 검토 DLL/cfg/ZIP 일치를 확인하고 main·새 태그를 반영한다. `draft=false`·`prerelease=true`·`make_latest=false`로 게시한 뒤 익명 공개 페이지·다운로드의 CRC·두 파일·바이트·SHA-256과 기존 자산·태그 보존을 대조한다. 현재 검사·소스·해시·원격 ID는 준비 단계이며 이전 alpha.5 값을 새 결과로 쓰지 않는다.
+
+영수증 경로는 `artifacts/releases/v1.0.6-alpha.6/`다. Latest v1.0.5와 기존 Release·태그·자산을 보존하며 새 DLL의 실제 Windows 확인 전에는 이슈 #5를 완료로 닫지 않는다. alpha.5의 후속 UI 요청은 [당시 기록](ISSUE-5-ALPHA5-RELEASE.md#2026-10-20-사용자-후속-요청)에 보존한다. 후속 게시 문서 커밋은 빌드 소스·태그·공개 파일과 구분한다. 아래 alpha.5는 당시 이력이다.
+
 ## PRD #5 — v1.0.6-alpha.5 prerelease
 
 사용자의 로그 도구 선택 표시·장치 전환 시 화면 유지·팝업 결과 설명 구현과 회귀 검사·main 반영·README 갱신·새 prerelease 지시에 따라 **2026-10-20 02:09:55 KST에 [v1.0.6-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.5)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.5/DiceMaster-v1.0.6-alpha.5.zip). 최신 main `3a5ffdf85f5965623c6c585032086976515dd98a`에서 시작했고 README·구현·검사를 포함한 소스·태그 `3f138728c109651533f25b5e7aee3f147a082d14`를 main에 반영했다. Release ID `417540991`·asset ID `656889735`, `draft=false`·`prerelease=true`·`make_latest=false`다. [변경·설치·복구·검증 기록](ISSUE-5-ALPHA5-RELEASE.md)을 따른다.

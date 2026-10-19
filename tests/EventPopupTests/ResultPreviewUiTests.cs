@@ -108,10 +108,9 @@ internal static partial class Program
             && !GUILayout.LiteralLabels.Any(text => text.Contains(candidate.ResultDetail)),
             "Random keeps its original-decision explanation instead of implying any fixed result");
         popup.Handle(LogPadCommand.Down); Draw(popup);
-        string detail = GUILayout.LiteralLabels.Single(text => text.Contains(candidate.ResultDetail));
-        Check(detail.IndexOf("예상 결과", StringComparison.Ordinal) < detail.IndexOf(candidate.ResultDetail, StringComparison.Ordinal)
-            && detail.IndexOf(candidate.ResultDetail, StringComparison.Ordinal) < detail.IndexOf("발동 조건", StringComparison.Ordinal)
-            && detail.IndexOf("발동 조건", StringComparison.Ordinal) < detail.IndexOf(candidate.Summary, StringComparison.Ordinal),
+        Check(GUILayout.LiteralLabels.IndexOf("예상 결과") < GUILayout.LiteralLabels.IndexOf(candidate.ResultDetail)
+            && GUILayout.LiteralLabels.IndexOf(candidate.ResultDetail) < GUILayout.LiteralLabels.IndexOf("발동 조건")
+            && GUILayout.LiteralLabels.IndexOf("발동 조건") < GUILayout.LiteralLabels.IndexOf(candidate.Summary),
             "Selected detail presents expected results first and the separate eligibility explanation afterward");
         Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
             "Presenting result summaries/details never requests gameplay execution");
@@ -131,7 +130,7 @@ internal static partial class Program
         popup = Start(); candidate = EventSelectionRuntime.Candidates[1];
         candidate.ResultSummary = candidate.ResultDetail = "결과 설명 읽기 실패 · 실행 여부와 별도";
         popup.Handle(LogPadCommand.Down); popup.Handle(LogPadCommand.Down); Draw(popup);
-        Check(GUILayout.LiteralLabels.Any(text => text.Contains(candidate.ResultDetail) && text.Contains(candidate.Summary)),
+        Check(GUILayout.LiteralLabels.Contains(candidate.ResultDetail) && GUILayout.LiteralLabels.Contains(candidate.Summary),
             "Readable blocked candidates retain separate result-preview failure and eligibility explanations");
         popup.Handle(LogPadCommand.Activate);
         Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Forced,
@@ -162,11 +161,11 @@ internal static partial class Program
             candidate.ResultDetail = string.Join("\n", Enumerable.Range(0, 180).Select(i => "결과 " + i + ": 동전 +100 · 호감도 +3 · 분기 이후 가능한 변화"));
             candidate.Summary = new string('조', 400);
             Draw(popup);
-            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 4).ElementAt(1);
-            Check(before.Text.Split('\n').Length == 4 && before.Text.Contains("…"),
-                "Long titles and result summaries remain four bounded lines at " + dimensions + " font=" + font);
+            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).ElementAt(1);
+            Check(before.Text.Split('\n').Length == 3 && before.Text.Contains("…"),
+                "Long titles and result summaries remain three bounded lines at " + dimensions + " font=" + font);
             popup.Handle(LogPadCommand.Down); Draw(popup); Draw(popup);
-            GUILayout.ControlRecord after = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 4).ElementAt(1);
+            GUILayout.ControlRecord after = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).ElementAt(1);
             Check(Math.Abs(before.Rect.height - after.Rect.height) < .1f && Math.Abs(before.Rect.y - after.Rect.y) < .1f,
                 "Selecting a candidate retains its row height/position for the next tap at " + dimensions + " font=" + font);
             Check(GUILayout.ScrollViews.Count == 2 && GUILayout.ScrollViews.All(view => view.Viewport.height > 0),

@@ -17,6 +17,9 @@ namespace DiceMaster.EventSelection
     {
         public string Id, Title, Result = "mock-result", State = "정상 발동 가능", Summary = "현재 조건 충족";
         public string ResultSummary = "예상 효과 요약", ResultDetail = "예상 효과 상세";
+        private string resultSummaryRich, resultDetailRich;
+        public string ResultSummaryRich { get => resultSummaryRich ?? EventResultPreview.Escape(ResultSummary); set => resultSummaryRich = value; }
+        public string ResultDetailRich { get => resultDetailRich ?? EventResultPreview.Escape(ResultDetail); set => resultDetailRich = value; }
         public bool CanSelect, CanForce;
         public object Target = new object();
     }
@@ -128,14 +131,15 @@ internal static partial class Program
         popup = Start();
         EventSelectionRuntime.Candidates[0].Title = "<color=#BCA136>긴 한국어 제목</color>";
         Draw(popup);
-        Check(GUILayout.Buttons.Any(b => b.Contains("긴 한국어 제목")) && GUILayout.Buttons.All(b => !b.Contains("<color=")),
-            "Popup must show translated game names without raw rich text markup");
+        Check(GUILayout.Buttons.Any(b => b.Contains("긴 한국어 제목")) && GUILayout.Buttons.All(b => !b.Contains("#BCA136")),
+            "Popup must show translated game names without carrying their source title markup into preview styles");
 
         PointerRegressions();
         RowReclickRegressions();
         PostReleaseTakeoverRegressions();
         SoftResetBarrierRegressions();
         ResultPreviewUiRegressions();
+        RichResultUiRegressions();
         KeyboardContextualConfirmation();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
@@ -526,8 +530,8 @@ internal static partial class Program
                     pair + " first row click selects without requesting an event: " + candidate);
                 Draw(popup);
                 Check(GUILayout.Buttons.Any(text => text.StartsWith("▶ ") && RowCaption(text, candidate)
-                    && text.Contains("다시 클릭·터치:")),
-                    "Selected row advertises its explicit repeat-click action: " + candidate);
+                    && text.Split('\n').Length == 3 && !text.Contains("클릭·터치")),
+                    "Selected row keeps three content lines without repeated pointer instructions: " + candidate);
                 Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
                 Check(candidate == "broken" ? EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0
                     : EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == candidate

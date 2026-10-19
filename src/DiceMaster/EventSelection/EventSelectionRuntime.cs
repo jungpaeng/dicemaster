@@ -22,6 +22,8 @@ namespace DiceMaster.EventSelection
         public string Summary => Eligibility.Summary;
         public string ResultSummary => preview.Summary;
         public string ResultDetail => preview.Detail;
+        public string ResultSummaryRich => preview.RichSummary;
+        public string ResultDetailRich => preview.RichDetail;
         public bool CanSelect => Eligibility.IsEligible && Eligibility.CanUseResult && !string.IsNullOrEmpty(Result);
         public bool CanForce => !Eligibility.IsEligible && Eligibility.CanUseResult && !string.IsNullOrEmpty(Result);
     }

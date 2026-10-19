@@ -223,8 +223,12 @@ static class Program
             "actual popup receives right-stick detail scrolling from Update");
         const string resultPreview = "DiceMaster.EventSelection.EventResultPreview";
         Check(Calls(Method(runtime, "Refresh")).Any(c => c.DeclaringType.FullName == resultPreview && c.Name == "Read") &&
-                !Calls(Method(popup, "Draw")).Any(c => c.DeclaringType.FullName == resultPreview || c.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser"),
+                !Calls(Method(popup, "Draw")).Any(c => c.DeclaringType.FullName == resultPreview && c.Name == "Read" || c.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser"),
             "actual result text is prepared outside OnGUI and the popup only consumes prepared descriptions");
+        Check(new[] { "Escape", "PlainText", "FitSummary", "NormalizeRich" }.All(name =>
+                !Calls(Method(resultPreview, name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser" ||
+                    c.DeclaringType.FullName == "DiceMaster.DataHelper" || c.DeclaringType.FullName.StartsWith("Mortal."))),
+            "OnGUI color formatting helpers never load result scripts or invoke game evaluation");
         Check(Calls(Method("DiceMaster.LogUI.GameActionGate", "ReleaseIfNeutral"))
                 .Any(c => c.DeclaringType.FullName == "UnityEngine.Input" && c.Name == "get_touchCount"),
             "actual gameplay release gate waits for touchscreen contact as well as held keyboard/mouse input");
