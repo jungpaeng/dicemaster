@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #5 — v1.0.6-alpha.6 준비
+## PRD #5 — v1.0.6-alpha.6 prerelease
 
-최신 `origin/main`의 `cb6c20fdef23d7b19c39171df114e855c3e4b363`를 기준으로 같은 이벤트 팝업의 UI 후속 요청을 반영한다. 반복 클릭 안내를 제거한 세 줄 목록, 기존 로그의 결과 효과색 보존, 정상 발동 불가 이름·상태의 회색 표시가 범위다. README·검사·소스를 main에 반영하고 새 prerelease를 게시하며 실제 결과는 [alpha.6 배포 기록](ISSUE-5-ALPHA6-RELEASE.md)에 완료 후 기록한다.
+**2026-10-20 02:29:50 KST에 [v1.0.6-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.6) prerelease를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.6/DiceMaster-v1.0.6-alpha.6.zip). 최신 `origin/main`의 `cb6c20fdef23d7b19c39171df114e855c3e4b363`에서 작업했고 README·구현·검사를 포함한 소스·태그 `b68046494656c03a7d0c9cb4a13b78258e73f52f`를 main에 반영했다. 전체·격리·고정 재빌드의 14개 검사와 검토 DLL/cfg/ZIP 동일 바이트·전체 결과 일치를 확인했고 익명 공개 페이지·다운로드의 CRC·정확히 두 파일·내부 바이트·SHA-256 검증도 통과했다. [alpha.6 배포 기록](ISSUE-5-ALPHA6-RELEASE.md)에 상세 검사·파일·게시 결과를 기록한다.
 
 `EventResultPreview.Formatting.cs`는 기존 정적 분석 결과에서 안전한 색 범위만 보존하고 표시 문자 기준 말줄임·닫는 태그·UTF-16 쌍을 처리한다. 크기·굵기 등 기존 서식 태그는 제거하고 그 밖의 글꼴·태그처럼 보이는 문자열도 서식으로 해석하지 않아 행 기하를 바꾸지 않는다. 이름·상태·발동 조건도 안전한 문자로 표시하며 기존 분석기가 효과색을 주지 않은 설명에 새 색을 부여하지 않는다.
 
-`!CanSelect`인 후보의 이름·상태는 `#B3B3B3`, 선택 화살표는 노랑이며 결과 요약·상세의 효과색은 그대로 유지한다. 행 선택·명시 조건 무시·읽기 실패 차단과 기존 입력 경계·결과 캐시·독립 상세 스크롤은 유지한다. 새 후보의 자동 검사·파일 식별값과 Windows 확인은 이전 alpha.5에서 승계하지 않으며 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 사용한다. 아래 alpha.5는 당시 게시 기록이다.
+`!CanSelect`인 후보의 이름·상태는 `#B3B3B3`, 선택 화살표는 노랑이며 결과 요약·상세의 효과색은 그대로 유지한다. 행 선택·명시 조건 무시·읽기 실패 차단과 기존 입력 경계·결과 캐시·독립 상세 스크롤은 유지한다. 새 후보의 자동 검사·파일 식별값과 Windows 확인은 이전 alpha.5에서 승계하지 않으며 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 사용한다. Latest v1.0.5와 기존 29개 Release·태그·자산, 이슈 #2 closed·#4 open·#5 open을 보존했다. 영수증은 `artifacts/releases/v1.0.6-alpha.6/`에 보존한다. 이번 게시 결과를 보충하는 후속 문서 커밋은 main에 별도로 반영하며 빌드 소스·태그·자산을 바꾸지 않는다. 고정 소스의 준비 문구와 아래 alpha.5는 당시 기록이다.
 
 ## PRD #5 — v1.0.6-alpha.5 prerelease
 

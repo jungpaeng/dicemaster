@@ -1,6 +1,6 @@
 # PRD #5 — 이번 행동의 이벤트 선택 팝업 구현 기록
 
-상태: **v1.0.6-alpha.6 준비 · 실제 Windows·장치 확인 대기**. 최신 `origin/main`의 `cb6c20fdef23d7b19c39171df114e855c3e4b363`에서 팝업의 반복 안내·결과 효과색·정상 발동 불가 이름/상태 구분을 보완한다. README·소스·검사를 main에 반영하고 새 prerelease를 게시하며 실제 검사·파일·게시 결과는 [alpha.6 배포 안내](ISSUE-5-ALPHA6-RELEASE.md)에 완료 후 기록한다. 아래 동작·입력 절은 현재 후보 안내이고 마지막 로컬 검증 절은 alpha.1 당시 기록이다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 실제 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
+상태: **v1.0.6-alpha.6 prerelease 게시 · 실제 Windows·장치 확인 대기**. 2026-10-20 02:29:50 KST에 소스·태그 `b68046494656c03a7d0c9cb4a13b78258e73f52f`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 최신 main `cb6c20fdef23d7b19c39171df114e855c3e4b363`에서 반복 안내·결과 효과색·정상 발동 불가 이름/상태 구분을 보완했고 README·소스·검사를 main에 반영했다. [alpha.6 배포 안내](ISSUE-5-ALPHA6-RELEASE.md)에 검사·파일·게시 결과를 기록한다. 아래 동작·입력 절은 현재 alpha.6 안내이며 마지막 로컬 검증 절은 alpha.1 당시 기록이다. 이번 별도 후속 문서 커밋은 빌드 소스·태그·자산을 바꾸지 않고 고정 소스의 준비 문구와 구분한다. [PRD #5](https://github.com/jungpaeng/dicemaster/issues/5)는 실제 사용자 확인 전까지 완료로 취급하거나 닫지 않고 [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md)를 별도로 사용한다.
 
 alpha.5는 2026-10-20 02:09:55 KST에 소스·태그 `3f138728c109651533f25b5e7aee3f147a082d14`의 전체·격리·고정 재빌드·14개 검사와 공개 다운로드 검증을 마치고 게시했다. 사용자는 이후 팝업의 반복 클릭 안내 제거·로그와 같은 결과 효과색·미충족 후보의 회색 표시를 요청했다. 이 요청을 새 DLL이나 전체 Windows 검증 완료로 취급하지 않으며 당시 결과는 [alpha.5 배포 안내](ISSUE-5-ALPHA5-RELEASE.md)에 보존한다.
 

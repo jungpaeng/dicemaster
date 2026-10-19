@@ -1,11 +1,11 @@
 # 변경 이력
 
-## v1.0.6-alpha.6 — 준비 중
+## [v1.0.6-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.6) — 2026-10-20 (prerelease)
 
 - 팝업 행과 하단에서 반복되던 클릭·터치 선택/진행 안내를 제거하고 목록을 제목·발동 자격·결과 요약의 세 줄로 유지합니다. 첫 선택 후 같은 행을 다시 눌러 진행하는 조작과 진행 버튼·A/Enter·B/Escape는 유지합니다.
 - 결과 요약·상세에 기존 로그의 효과색을 보존합니다. 말줄임은 색 태그를 제외한 표시 텍스트를 기준으로 하고 잘린 색 범위를 닫으며 글자 크기 등을 바꾸는 태그는 허용하지 않습니다. 기존 설명에 색이 없는 효과는 본문색을 유지합니다.
 - 정상 발동 불가 후보의 이름·상태를 회색으로 표시하고 선택 화살표와 결과 자체 효과색은 유지합니다. 회색 표시는 선택이나 읽기 가능한 후보의 명시 조건 무시를 비활성화하지 않으며 실제 대상·결과 읽기 실패의 실행 차단은 유지합니다.
-- 최신 `origin/main`에서 구현·검사·README를 반영하고 새 prerelease를 게시합니다. 현재는 준비 단계이며 검사·소스·파일·게시 식별값은 [alpha.6 배포 기록](docs/ISSUE-5-ALPHA6-RELEASE.md)에 완료 후 기록합니다. Latest v1.0.5와 새 DLL의 Windows 확인 대기를 유지합니다.
+- 2026-10-20 02:29:50 KST prerelease 게시. 소스·태그 `b680464`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 ZIP의 CRC·두 파일·바이트·해시 검증을 통과했습니다. README·구현·검사를 `origin/main`에 반영했으며 기존 29개 Release·태그·자산과 Latest v1.0.5를 보존했습니다. 상세 수치는 [alpha.6 배포 기록](docs/ISSUE-5-ALPHA6-RELEASE.md)에 기록합니다. 새 DLL의 실제 Windows 확인과 이슈 #5 완료는 대기입니다.
 
 ## [v1.0.6-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.5) — 2026-10-20 (prerelease)
 

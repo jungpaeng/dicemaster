@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.6-alpha.6 — 팝업 안내·효과색·후보 구분 준비
+## v1.0.6-alpha.6 — 팝업 안내·효과색·후보 구분
 
 팝업 행과 하단의 반복 클릭·터치 안내를 제거한다. 행은 제목·발동 자격·결과 요약의 세 줄이며 첫 클릭·터치는 선택, 선택된 같은 행의 새 클릭·터치는 진행 요청이다. 진행 버튼과 A/Enter/Shift+Enter, B/Escape 무작위는 유지한다. ↑↓ 후보 이동과 휠·오른쪽 스틱의 독립 상세 읽기도 유지한다.
 
 결과 요약·상세에는 기존 로그의 효과색을 보존한다. 정상 발동 불가 후보의 이름·상태는 회색, 선택 화살표는 노랑이며 결과 자체 효과색은 바꾸지 않는다. 회색 행도 선택할 수 있고 읽기 가능한 후보의 명시 조건 무시는 유지한다. 실제 대상·결과를 읽을 수 없는 항목은 실행을 차단한다.
 
-현재 alpha.6은 회귀 검사·빌드·게시 준비 단계다. [alpha.6 배포 기록](ISSUE-5-ALPHA6-RELEASE.md)에 실제 결과를 남기며 새 DLL의 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.5의 네 줄·안내·게시 결과는 당시 이력이다.
+**2026-10-20 02:29:50 KST에 [alpha.6 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.6)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.6/DiceMaster-v1.0.6-alpha.6.zip). 소스·태그 `b680464`의 전체·격리·고정 재빌드에서 각각 14개 검사와 동일 DLL/cfg/ZIP을 확인했고 공개 다운로드의 CRC·두 파일·바이트·해시 검증을 통과했다. README·구현·검사는 main에 반영했으며 Latest v1.0.5를 유지한다. [alpha.6 배포 기록](ISSUE-5-ALPHA6-RELEASE.md)에 상세 결과를 기록하고 새 DLL의 실제 Windows·장치 확인은 [확인표](ISSUE-5-WINDOWS-VALIDATION.md)에서 대기한다. 아래 alpha.5의 네 줄·안내·게시 결과는 당시 이력이다.
 
 ## v1.0.6-alpha.5 — 도구 화면 유지·팝업 결과 설명
 
