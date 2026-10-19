@@ -8,11 +8,11 @@
 
 ## PRD #4 후보와 prerelease
 
-### alpha.8 게시 후보: 목록에서 바로 예약
+### v1.0.5-alpha.8 게시·고정 커밋 재빌드 검증
 
 `--output-dir artifacts/issue-4/list-reservation`으로 전체 소스를 빌드합니다. 이벤트·미션의 선택된 목록에서 새 A·Enter·Space로 일회 예약하고, 상세는 예약 활성 여부와 가능/불가 이유를 표시하는 읽기 전용 영역으로 바꿉니다. 선택된 행의 재클릭·터치는 누름 시점 티켓을 해제 시 다시 검증하며 해제 시 새 권한을 만들지 않습니다. 기존 `LogModel`·`LogBridge`·controller의 대상/문맥·홀드·해제/중립 보호를 유지합니다.
 
-2026-10-19 22:45:14 KST 후보의 전체 12개 검사 프로그램·UI/입력 3,201개·실제 DLL 연결 64개 검사가 통과했습니다. 빌드 입력 153개·생산 소스 63개와 ZIP CRC·정확히 두 파일·내부 바이트/해시도 일치했습니다. 사용자의 지시에 따라 [alpha.8](ISSUE-4-ALPHA8-RELEASE.md)을 고정 커밋에서 `verify-preview-release.py --scope prd4`로 재빌드하고 게시합니다. 결과는 `artifacts/releases/v1.0.5-alpha.8/`에 보존하고 실제 게시 결과는 확인 후 기록합니다. cfg는 그대로 두고 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다. [로컬 후보 검토 기록](ISSUE-4-LIST-RESERVATION.md)과 아래 alpha.7 공개 기록은 당시 파일의 검증 이력입니다.
+2026-10-19 22:45:14 KST 후보의 전체 12개 검사 프로그램·UI/입력 3,201개·실제 DLL 연결 64개 검사가 통과했습니다. 빌드 입력 153개·생산 소스 63개와 ZIP CRC·정확히 두 파일·내부 바이트/해시도 일치했습니다. **2026-10-19 22:58:37 KST에 [v1.0.5-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.8)을 게시했습니다.** 소스·태그 `ce67f91704533e3db60985ca081b58e238cdd13e`을 `verify-preview-release.py --scope prd4`로 깨끗하게 재빌드해 12개 검사·입력 153개·소스 63개와 검토 DLL/cfg/ZIP 바이트 일치를 확인했습니다. 공개 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.8/DiceMaster-v1.0.5-alpha.8.zip)의 SHA-256은 `51d23774b16c53b1378d34f735cc461f0a440a8f075ab82825d9c5b3589412ea`, DLL은 `7657962841ad221fa3c3254fe4fc88d297a524d3f7eb7640a89bd939bb28622f`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. 익명 다운로드의 CRC·두 파일·내부 바이트/해시도 확인했습니다. 결과는 `artifacts/releases/v1.0.5-alpha.8/`에 보존하며 [설치·복구·Windows 확인](ISSUE-4-ALPHA8-RELEASE.md)을 따릅니다. cfg는 그대로 두고 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다. [로컬 후보 검토 기록](ISSUE-4-LIST-RESERVATION.md)과 아래 alpha.7 공개 기록은 당시 파일의 검증 이력입니다.
 
 ### v1.0.5-alpha.7 게시·고정 커밋 재빌드 검증
 

@@ -1,5 +1,15 @@
 # 소스 기반 Release와 게시 이력
 
+## PRD #4 alpha.8 목록에서 바로 예약 게시
+
+사용자의 커밋·prerelease 지시에 따라 **2026-10-19 22:58:37 KST에 [v1.0.5-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.8)을 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.8/DiceMaster-v1.0.5-alpha.8.zip)은 이벤트·미션의 목록 직접 예약과 읽기 전용 상세 상태 표시를 포함합니다. 새 A/Enter/Space와 선택된 행 재클릭·터치로 기존 예약을 한 번 설정하며 상세 버튼·포커스를 제거합니다. 예약은 취소 토글·즉시 실행이 아니며 [설치·복구·Windows 확인표](ISSUE-4-ALPHA8-RELEASE.md)를 따릅니다.
+
+소스·태그는 `ce67f91704533e3db60985ca081b58e238cdd13e`, Release ID `417357418`·asset ID `656434402`, `draft=false`·`prerelease=true`·`make_latest=false`입니다. 구현·검사·문서 9개 파일만 커밋했고 `.agents/`·`skills-lock.json`은 제외했습니다. 고정 커밋의 깨끗한 전체 소스 재빌드·12개 검사·입력 153개·소스 63개와 검토 후보 DLL/cfg/ZIP 바이트 일치를 확인했습니다. UI/입력 3,201개·실제 DLL 연결 64개·패드 열기 35개 시나리오/1,408개와 기존 분석·갱신·주사위·번역 검사를 포함하며 독립 비교도 통과했습니다.
+
+DLL은 582,656바이트·`7657962841ad221fa3c3254fe4fc88d297a524d3f7eb7640a89bd939bb28622f`, cfg는 11,175바이트·`bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`, ZIP은 245,090바이트·`51d23774b16c53b1378d34f735cc461f0a440a8f075ab82825d9c5b3589412ea`입니다. ZIP에는 DLL/cfg 두 파일만 있으며 게임 소스·DLL을 포함하지 않습니다. 공개 페이지·ZIP을 인증 없이 확인해 CRC·두 파일·내부 바이트·SHA-256을 검증했습니다. 기존 21개 Release·21개 태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다.
+
+영수증은 `artifacts/releases/v1.0.5-alpha.8/`에 보존합니다. 게시 결과 문서의 후속 커밋은 소스 태그·공개 설치 파일을 바꾸지 않습니다. **게임 설치·실행은 수행하지 않았으며 실제 Windows 패드·스크롤·버튼·터치 확인과 이슈 #4 완료는 사용자 확인 대기입니다.**
+
 ## PRD #4 alpha.7 한국어 표시·상태·패드 겹침 열기 게시
 
 사용자의 커밋·prerelease 명시적 지시에 따라 **2026-10-19 06:50:38 KST에 [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7)를 게시했습니다.** [설치 자산](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.7/DiceMaster-v1.0.5-alpha.7.zip)은 한국어 표시 경로 통일·이스케이프 등호/전체 문장 매칭, 정상 조회 문구 생략, 시간 제한 없는 동일 패드 L3/R3 겹침 열기를 포함합니다. 원본 ID·예약 대상과 반복/해제·중립 보호를 유지하며 [설치·복구·Windows 단계표](ISSUE-4-ALPHA7-RELEASE.md)를 따릅니다.

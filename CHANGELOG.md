@@ -1,10 +1,10 @@
 # 변경 이력
 
-## v1.0.5-alpha.8 게시 후보 — 목록에서 바로 예약
+## [v1.0.5-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.8) — 2026-10-19 (prerelease)
 
 - 이벤트·미션의 선택된 목록에서 새 A·Enter·Space로 바로 예약하고, 상세의 예약 버튼과 별도 포커스 단계를 제거합니다. 마우스·터치는 첫 클릭으로 선택하고 선택된 행을 다시 누르면 예약합니다.
 - 상세에 실제 예약 활성 여부와 예약 가능/불가 이유를 읽기 전용으로 표시하며 버튼이 차지하던 공간을 본문에 사용합니다. 목록 포커스·오래된 대상 거부·홀드/해제/중립 보호와 기존 예약 의미를 유지합니다.
-- 전체 소스 빌드·12개 검사 프로그램과 UI/입력 3,201개·실제 DLL 연결 64개 검사가 통과했습니다. [alpha.8 고정 커밋 재빌드·게시·SHA-256·적용/복구·Windows 확인](docs/ISSUE-4-ALPHA8-RELEASE.md)을 따릅니다. 실제 게시 결과는 확인 후 기록하며 실제 Windows 확인과 이슈 #4 완료는 대기입니다.
+- 소스 `ce67f91704533e3db60985ca081b58e238cdd13e`의 고정 커밋 재빌드·12개 검사 프로그램과 UI/입력 3,201개·실제 DLL 연결 64개, 공개 ZIP의 SHA-256·CRC·내부 바이트를 확인했습니다. 2026-10-19 22:58:37 KST 게시, Release `417357418`·asset `656434402`. [설치·해시·복구·Windows 확인](docs/ISSUE-4-ALPHA8-RELEASE.md)을 따릅니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다.
 
 ## [v1.0.5-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.7) — 2026-10-19 (prerelease)
 

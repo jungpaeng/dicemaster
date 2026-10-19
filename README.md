@@ -5,9 +5,9 @@
 
 **[공개 버전 다운로드](https://github.com/jungpaeng/dicemaster/releases)** · [변경 이력](CHANGELOG.md) · [개발 안내](docs/DEVELOPMENT.md) · [전체 소스 빌드](docs/SOURCE-BUILD.md)
 
-## PRD #4 — v1.0.5-alpha.8 게시 후보
+## PRD #4 — v1.0.5-alpha.8 prerelease
 
-이벤트·미션은 **선택된 목록 항목에서 새 A 입력으로 바로 예약**합니다. 상세의 예약 버튼·진입 단계를 없애고 예약 활성 여부와 예약 가능/불가 사유를 표시합니다. 포커스는 목록에 유지하며 B는 바로 닫습니다. Enter/Space와 선택된 항목 재클릭·터치도 같은 예약을 사용합니다. 전체 소스 빌드·12개 검사 프로그램을 통과했습니다. 사용자의 지시에 따라 [alpha.8의 고정 커밋 재빌드·게시·설치와 Windows 확인](docs/ISSUE-4-ALPHA8-RELEASE.md)을 진행하며 실제 게시 결과는 확인 후 기록합니다. [로컬 검토 후보·세부 계약](docs/ISSUE-4-LIST-RESERVATION.md)과 아래 공개 alpha.7은 보존합니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다.
+**2026-10-19 22:58:37 KST에 [v1.0.5-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.8)을 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.8/DiceMaster-v1.0.5-alpha.8.zip). 이벤트·미션은 선택된 목록에서 새 A/Enter/Space로 바로 예약하고 상세 버튼·포커스를 없앱니다. 상세는 실제 예약 상태와 예약 가능/불가 사유를 표시하며 마우스·터치는 선택된 행 재클릭으로 예약합니다. 소스 `ce67f91704533e3db60985ca081b58e238cdd13e`의 깨끗한 재빌드·12개 검사와 공개 ZIP의 SHA-256·CRC·두 파일·내부 바이트를 확인했습니다. [설치·해시·복구·Windows 확인표](docs/ISSUE-4-ALPHA8-RELEASE.md)를 따르며 기존 cfg를 보존하고 DLL만 교체합니다. 실제 Windows 확인과 이슈 #4 완료는 대기입니다. [로컬 검토 기록](docs/ISSUE-4-LIST-RESERVATION.md)과 아래 alpha.7 공개 파일은 보존합니다.
 
 ## PRD #4 — v1.0.5-alpha.7 prerelease
 

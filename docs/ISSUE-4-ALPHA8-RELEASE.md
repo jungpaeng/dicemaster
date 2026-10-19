@@ -1,6 +1,6 @@
 # DiceMaster v1.0.5-alpha.8 — 이벤트·미션 목록에서 바로 예약
 
-이벤트·미션은 **선택된 목록 항목에서 새 A 입력으로 바로 기존 예약**을 설정한다. 상세의 예약 버튼과 진입 단계를 없애고 포커스를 목록에 유지한다. 사용자의 커밋·prerelease 지시에 따라 이 후보를 고정 커밋에서 재빌드·검증하고 게시한다. 실제 게시 시각·커밋·공개 다운로드 검증 결과는 확인 후 아래에 기록한다.
+**2026-10-19 22:58:37 KST에 [v1.0.5-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5-alpha.8)을 게시했습니다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.8/DiceMaster-v1.0.5-alpha.8.zip)은 소스·태그 `ce67f91704533e3db60985ca081b58e238cdd13e`의 깨끗한 전체 재빌드·12개 검사와 검토 DLL/cfg/ZIP 바이트 일치를 확인한 파일입니다. 공개 페이지와 설치 ZIP을 인증 없이 확인해 SHA-256·CRC·두 파일·내부 바이트를 검증했습니다. 이벤트·미션은 선택된 목록에서 새 A로 바로 기존 예약을 설정하며 상세 버튼·진입 단계를 없애고 포커스를 목록에 유지합니다.
 
 실제 Windows 게임은 에이전트가 설치하거나 실행하지 않았다. 패드 탐색·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기이며 [이슈 #4](https://github.com/jungpaeng/dicemaster/issues/4)를 완료 처리하지 않는다. 이전 버전의 Windows 확인을 이번 DLL에 승계하지 않는다.
 
@@ -26,7 +26,7 @@ A는 기존 예약을 설정하며 취소 토글이 아니다. `이벤트 우선
 
 패드 열기는 alpha.7과 동일하다. 같은 패드에서 L3 또는 R3를 누른 채 반대쪽을 추가해 겹치면 순서·300ms 제한 없이 한 번 연다. 전체 해제·중립을 기다린 뒤 새 탐색 입력을 받는다. `[DiceMaster].EnableGamepadLogOpen=true`의 **게임 창 초점·로그 닫힘**에서는 첫 클릭 중복 방지를 위해 단독 L3/R3도 게임에 보내지 않는다. 원래 클릭 기능이 필요하면 옵션을 `false`로 바꾸고 재시작하며 남은 입력 해제 후 반환한다. 게임의 직렬화된 바인딩 자료가 없어 미사용 버튼이라고 확정하지 않는다. 주사위 옵션과 독립적이고 게임 scheme·액션 맵을 강제 변경하지 않는다.
 
-기존 `[DiceMaster].LogMenuToggleKey`(기본 Tab)를 유지한다. **Tab 진입의 기존 모드 전환·첫 패드 입력 소비 문제는 별도 미해결 경로**다. 패드 겹침 열기는 진입 의도를 전달해 같은 첫 입력 손실을 피하는 기존 경로를 유지한다. 실제 지원·확인된 XInput 경로에서 사용하고 미지원 시 Tab·마우스·키보드를 사용한다. native 폴링 1초 신선도 보호는 조합 유지 시간 제한과 구분한다.
+기존 `[DiceMaster].LogMenuToggleKey`(기본 Tab)를 유지한다. **Tab 진입의 기존 모드 전환·첫 패드 입력 소비 문제는 별도 미해결 경로**다. 패드 겹침 열기는 진입 의도를 전달해 같은 첫 입력 손실을 피하는 기존 경로를 유지한다. 게임의 XInput 폴링·차단 경로를 사용할 수 있을 때 지원하며 미지원 시 Tab·마우스·키보드를 사용한다. native 폴링 1초 신선도 보호는 조합 유지 시간 제한과 구분한다.
 
 ## 검토 후보·고정 커밋 검사
 
@@ -69,3 +69,11 @@ Get-FileHash .\plugins\DiceMaster\DiceMaster.dll -Algorithm SHA256
 7. 짧고 긴 네 탭·조건 분기·읽음 표시·한국어 번역·창/글자 설정·필요한 스크롤바와 cfg 저장을 확인한다. [상세 12단계](ISSUE-4-LIST-RESERVATION.md#windows-확인표)를 따른다.
 
 공개 게시·자동 검사 통과만으로 기능이나 이슈 #4를 완료하지 않는다. 기존 Release·태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 유지한다.
+
+## 실제 게시·공개 다운로드 검증
+
+2026-10-19 22:58:37 KST 게시. 소스·태그 커밋 `ce67f91704533e3db60985ca081b58e238cdd13e`, Release `417357418`·asset `656434402`, `draft=false`·`prerelease=true`·`make_latest=false`입니다. 입력 153개·생산 소스 63개와 DLL/cfg/ZIP은 검토 후보와 일치하고 전체 12개 검사 프로그램이 통과했습니다. 독립 검토도 고정 Git 입력·후보·release 바이트와 검사 기록의 일치를 확인했습니다.
+
+인증 없이 내려받은 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5-alpha.8/DiceMaster-v1.0.5-alpha.8.zip)의 SHA-256은 `51d23774b16c53b1378d34f735cc461f0a440a8f075ab82825d9c5b3589412ea`, DLL은 `7657962841ad221fa3c3254fe4fc88d297a524d3f7eb7640a89bd939bb28622f`, cfg는 `bec354ddd2663ea7e54053e5f00ed17202016259d6edda84445348c1fdf4c6b0`입니다. ZIP CRC·정확히 두 파일·내부 바이트가 모두 일치합니다. 기존 21개 Release·21개 태그·자산과 Latest 정식 v1.0.4, 이슈 #2 closed·#4 open을 보존했습니다.
+
+`artifacts/releases/v1.0.5-alpha.8/`의 `release-verification.json`, `reviewed-candidate-comparison.json`, `independent-audit.json`, `github-publication.json`, `anonymous-verification.json`, `tag-verification.json`, `release-body.md`와 로그에 영수증을 보존합니다. 게시 기록의 후속 문서 커밋은 소스 태그나 설치 자산을 바꾸지 않습니다. **실제 Windows 패드·스크롤·버튼·터치와 주요 회귀는 사용자 확인 대기입니다.**
