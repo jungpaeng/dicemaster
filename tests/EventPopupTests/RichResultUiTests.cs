@@ -28,8 +28,8 @@ internal static partial class Program
         GUILayout.ControlRecord row = GUILayout.Controls.Single(control => control.Button && RowCaption(control.Text, "eligible"));
         Check(row.RichText && row.Text.Contains("#A3B86C") && row.Text.Contains("#CD594A") && !row.Text.Contains("#BCA136"),
             "List results retain the existing positive/negative effect colors without importing title markup");
-        Check(row.Text.Contains("＜sprite=42＞") && row.Text.Contains("＜size=999＞") && !row.Text.Contains("<size="),
-            "Names and status remain escaped literals inside the rich result row");
+        Check(row.Text.Contains("＜sprite=42＞") && !row.Text.Contains(candidate.State) && !row.Text.Contains("<size="),
+            "Names remain escaped literals and eligibility status is absent from the rich result row");
         Check(GUILayout.Buttons.All(value => !value.Contains("클릭·터치") && !value.Contains("다시 눌러"))
             && GUILayout.LiteralLabels.All(value => !value.Contains("클릭·터치") && !value.Contains("다시 눌러")),
             "Repeated pointer selection/progress instructions are absent from rows and the popup footer");
@@ -65,9 +65,9 @@ internal static partial class Program
             Draw(popup);
             GUILayout.ControlRecord before = GUILayout.Controls.Single(control => control.Button && RowCaption(control.Text, "blocked"));
             string[] lines = before.Text.Split('\n');
-            Check(before.Enabled && lines.Length == 3 && lines[0].Contains("<color=#B3B3B3>") && lines[1].Contains("<color=#B3B3B3>")
-                && !lines[2].Contains("#B3B3B3") && lines[2].Contains("#A3B86C"),
-                "Ineligible title/status are visibly gray while the selectable row keeps effect colors: " + state + " " + pair);
+            Check(before.Enabled && lines.Length == 2 && lines[0].Contains("<color=#B3B3B3>") && !before.Text.Contains(state)
+                && !lines[1].Contains("#B3B3B3") && lines[1].Contains("#A3B86C"),
+                "Ineligible titles are visibly gray without status text while the selectable row keeps effect colors: " + state + " " + pair);
             Vector2 point = Point(popup, text => RowCaption(text, "blocked"));
             Pointer(popup, pair.Item1, pair.Item3, point); Pointer(popup, pair.Item2, pair.Item4, point);
             Draw(popup);
@@ -104,18 +104,18 @@ internal static partial class Program
             candidate.ResultDetailRich = "<color=#A3B86C>" + new string('상', 6000) + "</color>";
             candidate.ResultDetail = EventResultPreview.PlainText(candidate.ResultDetailRich);
             Draw(popup);
-            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).ElementAt(1);
-            string summary = before.Text.Split('\n')[2];
+            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
+            string summary = before.Text.Split('\n')[1];
             Check(summary.Contains("…") && summary.Contains("#A3B86C")
                 && Regex.Matches(summary, "<color=").Count == Regex.Matches(summary, "</color>").Count,
                 "Summary ellipsis retains and closes effect-color spans at " + dimensions + " font=" + font);
             Check(!EventResultPreview.PlainText(summary).Any(char.IsSurrogate)
-                && before.Rect.height <= (font + 4) * 3 + 1,
+                && before.Rect.height <= (font + 4) * 2 + 1,
                 "Color tag length cannot add wrapped row lines or leave a split emoji at " + dimensions + " font=" + font);
             popup.Handle(LogPadCommand.Down); Draw(popup); Draw(popup);
-            GUILayout.ControlRecord selected = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).ElementAt(1);
+            GUILayout.ControlRecord selected = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
             Check(selected.Rect.height == before.Rect.height && selected.Rect.y == before.Rect.y,
-                "Three-line colored rows keep stable geometry on selection at " + dimensions + " font=" + font);
+                "Two-line colored rows keep stable geometry on selection at " + dimensions + " font=" + font);
             foreach (GUILayout.ControlRecord control in GUILayout.Controls.Where(control => control.Button &&
                 (control.Text.StartsWith("이 이벤트로 진행 [", StringComparison.Ordinal) || control.Text.StartsWith("무작위로 진행 [", StringComparison.Ordinal))))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f,

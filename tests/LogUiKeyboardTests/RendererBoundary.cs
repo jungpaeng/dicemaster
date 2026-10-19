@@ -3,6 +3,7 @@
 // substitutes cannot validate Unity layout, font rendering or XInput blocking.
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace UnityEngine
@@ -69,13 +70,33 @@ namespace UnityEngine
             float font = Math.Max(10, fontSize);
             float available = Math.Max(font, width - (padding?.horizontal ?? 0));
             int lines = 0;
-            foreach (string line in VisibleText(content.text).Split('\n'))
-                lines += wordWrap ? Math.Max(1, (int)Math.Ceiling(line.Length * font * (fontStyle == FontStyle.Bold ? .78f : .72f) / available)) : 1;
+            foreach (string line in (content.text ?? "").Split('\n'))
+                lines += wordWrap ? Math.Max(1, (int)Math.Ceiling(LineWidth(line) / available)) : 1;
             return lines * (font + 4) + (padding?.vertical ?? 0);
         }
-        private string VisibleText(string value) => richText ? System.Text.RegularExpressions.Regex.Replace(value ?? "",
-            @"</?(?:color|size|b|i|material)(?:=[^<>]*)?>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase) : value ?? "";
-        public Vector2 CalcSize(GUIContent content) => new Vector2(VisibleText(content.text).Length * Math.Max(10, fontSize) * .72f, CalcHeight(content, float.MaxValue));
+        private static readonly System.Text.RegularExpressions.Regex Markup = new System.Text.RegularExpressions.Regex(
+            @"\G</?(?:color|size|b|i|material)(?:=[^<>]*)?>", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        private float LineWidth(string value)
+        {
+            float width = 0; int bold = fontStyle == FontStyle.Bold ? 1 : 0;
+            for (int index = 0; index < value.Length; index++)
+            {
+                if (richText && value[index] == '<')
+                {
+                    var tag = Markup.Match(value, index);
+                    if (tag.Success)
+                    {
+                        if (tag.Value.Equals("<b>", StringComparison.OrdinalIgnoreCase)) bold++;
+                        else if (tag.Value.Equals("</b>", StringComparison.OrdinalIgnoreCase)) bold = Math.Max(0, bold - 1);
+                        index += tag.Length - 1;
+                        continue;
+                    }
+                }
+                width += Math.Max(10, fontSize) * (bold > 0 ? .78f : .72f);
+            }
+            return width;
+        }
+        public Vector2 CalcSize(GUIContent content) => new Vector2((content.text ?? "").Split('\n').Max(LineWidth), CalcHeight(content, float.MaxValue));
     }
     public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI

@@ -104,3 +104,7 @@ ZIP은 `plugins/DiceMaster/DiceMaster.dll`과 `config/DiceMaster.cfg` 두 파일
 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.6/`의 `release-verification.json`, `build-manifest.json`, `anonymous-verification.json`, `github-publication.json`, `tag-verification.json`, `release-body.md` 등에 보존한다. 고정 재빌드 영수증의 `published=false`는 게시 전 검사 시점이며 이후 실제 게시·익명 다운로드 검증과 구분한다.
 
 이 문서의 게시 결과 보충은 main의 별도 후속 문서 커밋에 포함한다. 빌드 소스·태그 `b680464`와 구분하며 공개 태그·DLL·cfg·ZIP을 바꾸지 않는다. 고정 소스에 포함된 준비 문구는 당시 검사·게시 단계의 기록이다.
+
+## 2026-10-20 사용자 후속 요청
+
+게시 뒤 사용자는 색으로 발동 가능 여부를 구분할 수 있으므로 팝업의 정상 발동 가능/발동 불가 텍스트를 생략하고, 별도 무작위 목록 항목 대신 B/Escape 하단 안내를 사용하며, `Section_...:이벤트_이름` 제목 첫 줄을 굵게 표시해 달라고 요청했다. 이는 UI 후속 요구이며 alpha.6 전체 기능·장치나 다음 DLL의 Windows 검증 완료로 기록하지 않는다. 다음 변경·검사·파일 식별값은 [alpha.7 배포 기록](ISSUE-5-ALPHA7-RELEASE.md)에 별도로 기록한다. 위 alpha.6의 검사 수치·소스·해시·게시 결과는 당시 이력으로 보존한다.

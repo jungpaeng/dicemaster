@@ -104,9 +104,9 @@ internal static partial class Program
         Draw(popup);
         Check(GUILayout.Buttons.Any(text => RowCaption(text, "eligible") && text.Contains(candidate.ResultSummary)),
             "Every candidate row exposes its prepared result summary before selection");
-        Check(GUILayout.LiteralLabels.Contains("지정 없이 게임의 조건·가중치·난수 판정으로 진행합니다.")
+        Check(GUILayout.LiteralLabels.Contains("이벤트를 선택하면 예상 결과와 발동 조건을 확인할 수 있습니다.")
             && !GUILayout.LiteralLabels.Any(text => text.Contains(candidate.ResultDetail)),
-            "Random keeps its original-decision explanation instead of implying any fixed result");
+            "No selection presents a reading hint without implying any chosen result");
         popup.Handle(LogPadCommand.Down); Draw(popup);
         Check(GUILayout.LiteralLabels.IndexOf("예상 결과") < GUILayout.LiteralLabels.IndexOf(candidate.ResultDetail)
             && GUILayout.LiteralLabels.IndexOf(candidate.ResultDetail) < GUILayout.LiteralLabels.IndexOf("발동 조건")
@@ -161,11 +161,11 @@ internal static partial class Program
             candidate.ResultDetail = string.Join("\n", Enumerable.Range(0, 180).Select(i => "결과 " + i + ": 동전 +100 · 호감도 +3 · 분기 이후 가능한 변화"));
             candidate.Summary = new string('조', 400);
             Draw(popup);
-            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).ElementAt(1);
-            Check(before.Text.Split('\n').Length == 3 && before.Text.Contains("…"),
-                "Long titles and result summaries remain three bounded lines at " + dimensions + " font=" + font);
+            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
+            Check(before.Text.Split('\n').Length == 2 && before.Text.Contains("…"),
+                "Long titles and result summaries remain two bounded lines at " + dimensions + " font=" + font);
             popup.Handle(LogPadCommand.Down); Draw(popup); Draw(popup);
-            GUILayout.ControlRecord after = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).ElementAt(1);
+            GUILayout.ControlRecord after = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
             Check(Math.Abs(before.Rect.height - after.Rect.height) < .1f && Math.Abs(before.Rect.y - after.Rect.y) < .1f,
                 "Selecting a candidate retains its row height/position for the next tap at " + dimensions + " font=" + font);
             Check(GUILayout.ScrollViews.Count == 2 && GUILayout.ScrollViews.All(view => view.Viewport.height > 0),

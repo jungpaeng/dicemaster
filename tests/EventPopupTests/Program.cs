@@ -81,7 +81,7 @@ internal static partial class Program
     {
         var popup = Start();
         popup.Handle(LogPadCommand.Activate);
-        Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random, "Initial focus must use original random decision");
+        Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0, "Unselected A cannot silently choose the original random decision");
 
         popup = Start(); popup.Handle(LogPadCommand.Down); popup.Handle(LogPadCommand.Activate);
         Check(EventSelectionRuntime.Selected == "eligible" && !EventSelectionRuntime.Forced, "A must submit normal current candidate");
@@ -117,7 +117,7 @@ internal static partial class Program
         Check(EventSelectionRuntime.Commands == 0, "Target removal must cancel keyboard authority");
         Draw(popup, EventType.KeyUp, KeyCode.Return);
         popup.UpdateInput(); Key(popup, KeyCode.Return);
-        Check(EventSelectionRuntime.Random, "Removed target must return focus to random without auto execution");
+        Check(EventSelectionRuntime.Commands == 0 && !EventSelectionRuntime.Random, "Removed target must leave no selection and no A/Enter execution authority");
         popup = Start(); Key(popup, KeyCode.DownArrow); EventSelectionRuntime.Token++;
         Draw(popup, EventType.KeyDown, KeyCode.Return);
         Check(EventSelectionRuntime.Commands == 0, "Old token input must never execute new decision");
@@ -140,6 +140,7 @@ internal static partial class Program
         SoftResetBarrierRegressions();
         ResultPreviewUiRegressions();
         RichResultUiRegressions();
+        CandidateOnlyRegressions();
         KeyboardContextualConfirmation();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
@@ -495,7 +496,7 @@ internal static partial class Program
         Pointer(rawTouchPopup, EventType.TouchUp, EventType.TouchUp, rawTouch);
         Check(EventSelectionRuntime.Commands == 1, "Direct touch adapter cannot confirm a duplicate release");
 
-        foreach (string shortcut in new[] { "A / Enter", "B / Esc" })
+        foreach (string shortcut in new[] { "B / Esc" })
         {
             var randomPopup = Start();
             Click(randomPopup, text => text == "무작위로 진행 [" + shortcut + "]");
@@ -530,8 +531,8 @@ internal static partial class Program
                     pair + " first row click selects without requesting an event: " + candidate);
                 Draw(popup);
                 Check(GUILayout.Buttons.Any(text => text.StartsWith("▶ ") && RowCaption(text, candidate)
-                    && text.Split('\n').Length == 3 && !text.Contains("클릭·터치")),
-                    "Selected row keeps three content lines without repeated pointer instructions: " + candidate);
+                    && text.Split('\n').Length == 2 && !text.Contains("클릭·터치")),
+                    "Selected row keeps two content lines without repeated pointer instructions: " + candidate);
                 Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
                 Check(candidate == "broken" ? EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0
                     : EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Selected == candidate
@@ -540,9 +541,9 @@ internal static partial class Program
             }
 
             var randomPopup = Start();
-            Click(randomPopup, text => RowCaption(text, "random"), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
+            Click(randomPopup, text => text == "무작위로 진행 [B / Esc]", pair.Item1, pair.Item2, pair.Item3, pair.Item4);
             Check(EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Random,
-                pair + " selected random row click requests the original game decision");
+                pair + " the dedicated footer button requests the original game decision");
 
             foreach (string change in new[] { "same-target-snapshot", "normal-to-blocked", "force-to-normal", "token", "target", "result", "removed" })
             {
