@@ -1,6 +1,6 @@
-# 지도 이야기·선택 경로 — v1.0.7-alpha.5 후보
+# 지도 이야기·선택 경로 — v1.0.7-alpha.5 prerelease
 
-2026-10-21 사용자가 지도 첫 진입의 조건, 선택 뒤 연결되는 이야기와 필요한 선택 경로를 안내하는 후속 구현을 승인했다. 원래 작업 폴더의 `main`에서 구현하고 전체 소스의 21개 자동 검사와 실제 DLL 연결·설치 ZIP 검증을 통과했다. **고정 소스 재빌드·게시 결과는 후속 기록에서 확정한다.** 현재 공개 시험판은 [v1.0.7-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.4)이며 아래 새 후보의 사용자 Windows 확인은 별도다.
+지도 첫 진입 조건과 선택 화면의 연결 이야기·선택 경로 안내를 원래 작업 폴더의 `main`에 구현했다. **2026-10-21 04:50:33 KST에 [v1.0.7-alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.5)를 prerelease로 게시하고 익명 공개 ZIP까지 검증했다.** 전체·고정 소스 재빌드의 21개 프로그램 결과와 DLL/cfg/ZIP 바이트가 같으며 최신 정식은 v1.0.6이다. 새 DLL의 실제 Windows·물리 입력·성능 확인과 PRD #6 전체 완료는 대기다.
 
 [사용자 안내](../README.md) · [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6) · [구현 계약](ISSUE-6-IMPLEMENTATION.md) · [소스 빌드](SOURCE-BUILD.md) · [패드](GAMEPAD.md)
 
@@ -72,11 +72,27 @@
 
 ZIP은 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMaster.dll` 정확히 두 파일이며 CRC와 새 DLL/커밋 대상 cfg의 내부 바이트를 확인했다. 게임 참조 DLL·원문 Lua를 포함하지 않는다.
 
-후보 영수증은 `artifacts/issue-6/choice-story-candidate/full-final/`의 build-manifest.json·build.log다. 다음 단계에서 소스 커밋을 확정하고 `verify-preview-release.py --scope prd6`로 기존 관리 모드 DLL 0개인 스냅샷을 재빌드한다. 고정 재빌드·공개 파일 대조는 `artifacts/releases/v1.0.7-alpha.5/`에 별도 보존하며 결과 확정 전에는 게시·Windows 확인으로 표시하지 않는다.
+후보 영수증은 `artifacts/issue-6/choice-story-candidate/full-final/`의 build-manifest.json·build.log다. 소스·태그 커밋 `a26603bf746bff0332ea2d4fde2642c000008426`을 `verify-preview-release.py --scope prd6`로 새로 추출했다. 기존 관리 모드 DLL 0개에서 같은 SDK·참조로 재빌드하고 위 21개를 다시 실행했다. 248개 입력·103개 생산 소스/리소스·모든 성공 기록·DLL/cfg/ZIP 바이트가 후보와 같다. 고정 재빌드·공개 대조 영수증은 `artifacts/releases/v1.0.7-alpha.5/`의 release-verification.json·candidate-fixed-comparison.json·anonymous-verification.json에 별도로 보존한다.
+
+## 공개 게시·보존 결과
+
+| 항목 | 확인값 |
+| --- | --- |
+| 소스·주석 태그 | `a26603bf746bff0332ea2d4fde2642c000008426` / `v1.0.7-alpha.5` |
+| 게시 시각 | 2026-10-20 19:50:33 UTC / 2026-10-21 04:50:33 KST |
+| Release / 설치 자산 ID | `418807014` / `660315051` |
+| 채널 | `draft=false`, `prerelease=true`, `make_latest=false` |
+| 공개 검증 | 익명 API·페이지·ZIP 다운로드, CRC·정확히 두 파일·내부 바이트·SHA 일치 |
+| 기존 배포 | 46개 Release·47개 태그와 기존 자산 보존, Latest 정식 v1.0.6 유지 |
+| 이슈 | #2·#4 closed, #5·#6 open 유지 |
+| 작업 위치 | 원래 폴더 main, 새 브랜치·Git worktree 생성 없음 |
+| 실제 Windows | 새 DLL 미실행·사용자 확인 대기 |
+
+게시 기록을 반영하는 후속 문서 커밋은 위 소스 태그나 설치 자산을 바꾸지 않는다. 공개 후 문서 링크도 고정 문서 커밋으로 갱신하고 공개 바이트를 대조한다. 원래 미추적 `.agents/`·skills-lock.json은 커밋하거나 변경하지 않았다.
 
 ## 설치와 실제 Windows 확인
 
-alpha.5 설치 파일이 확정되면 게임 종료 후 현재 DLL·cfg를 백업하고 ZIP의 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 처음 설치하는 경우에는 BepInEx 아래에 config·plugins 경로를 넣는다. 문제 시 게임을 종료하고 백업 DLL과 필요한 cfg를 복원한다. DLL 복원으로 이미 진행·저장한 게임 상태가 되돌아가지는 않는다.
+**[alpha.5 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.5/DiceMaster-v1.0.7-alpha.5.zip)**을 사용한다. 게임 종료 후 현재 DLL·cfg를 백업하고 ZIP의 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 처음 설치하는 경우에는 BepInEx 아래에 config·plugins 경로를 넣는다. 문제 시 게임을 종료하고 백업 DLL과 필요한 cfg를 복원한다. DLL 복원으로 이미 진행·저장한 게임 상태가 되돌아가지는 않는다.
 
 설치한 버전·DLL/ZIP SHA-256, 게임/Windows/BepInEx, Xbox/XInput/Steam Input 구성, 해상도·UI 배율·글자를 [공통 환경표](ISSUE-6-WINDOWS-VALIDATION.md#환경과-파일)에 기록한다. 아래는 새 후보의 미실행 확인 항목이다.
 

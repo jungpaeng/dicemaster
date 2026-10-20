@@ -1,8 +1,10 @@
 # 개발 안내
 
+2026-10-21 04:50:33 KST에 소스·태그 `a26603bf746bff0332ea2d4fde2642c000008426`의 [alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.5)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 248개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 46개 Release·47개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [최종 수치·파일·게시·Windows 확인](ISSUE-6-ALPHA5-RELEASE.md).
+
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## 현재 후속 준비 — 이야기 연결과 구조화된 선택 경로
+## 현재 alpha.5 — 이야기 연결과 구조화된 선택 경로
 
 사용자가 지도 첫 진입 조건, 현재 선택 항목 뒤의 이야기와 필요한 선택 순서를 안내하는 후속 구현을 승인했다. 원래 작업 폴더의 `main`에서만 작업하며 별도 branch/worktree를 만들지 않는다. [alpha.5 후보 기록](ISSUE-6-ALPHA5-RELEASE.md)에 실제 지원 범위·최종 검사·소스/파일 식별값과 새 Windows 확인을 분리한다. 아래 alpha.4는 이미 공개한 이전 버전의 기록이다.
 
