@@ -1,10 +1,10 @@
 # 변경 이력
 
-## [v1.0.6-alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.17) — 2026-10-20 (prerelease)
+## [v1.0.6-alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.18) — 2026-10-20 (prerelease)
 
 - 조건·이벤트의 플래그·호감도·아이템·기능·개발 항목·도감·날짜와 팝업 결과 요약·상세에 한국어 표시를 연결합니다.
 - 알려진 Book 표시 이름을 ID 보호 전에 해석하고, 원본 식별자는 보존합니다. 이름 준비 지연 시 표시를 재조회하며 게임 판정·RNG·예약·입력은 유지합니다.
-- 실제 번역 자료와 제품 표시기를 연결한 회귀 검사를 추가합니다. 실제 Windows·장치 확인은 대기입니다. [변경·설치·검증](docs/ISSUE-5-ALPHA17-RELEASE.md).
+- 실제 번역 자료와 제품 표시기를 연결한 회귀 검사를 추가합니다. 실제 Windows·장치 확인은 대기입니다. [변경·설치·검증](docs/ISSUE-5-ALPHA18-RELEASE.md).
 
 ## [v1.0.6-alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16) — 2026-10-20 (prerelease)
 

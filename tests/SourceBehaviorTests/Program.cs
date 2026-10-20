@@ -191,6 +191,11 @@ static class Program
         string condition = (string)Call(formatter,"Condition", new DisplayNode { _items=new object[] { comparison } });
         Check(condition.Contains("우소매") && condition.Contains("E12003") && !condition.Contains("旗標") && !condition.Contains("常數"),
             "actual formatter and actual embedded translations connect for a Door flag");
+        flag.name="S2920_01"; flag._devNote="觸發竹之心";
+        comparison._value1=Group(flagRef,"旗標_S2920_01");
+        condition=(string)Call(formatter,"Condition",new DisplayNode { _items=new object[] { comparison } });
+        Check(condition.Contains("죽지심 발동 여부") && condition.Contains("S2920_01") && !condition.Any(c => c >= '\u3400' && c <= '\u9fff'),
+            "Door story flag translates its literal trigger prefix and title without recursive expansion");
         var relation = new DisplayNode { name="Relationship_Girl7_郁竹", Value=10 };
         comparison._value1=Group(new DisplayNode { _checkType=2, _relationship=relation },"好感度_郁竹");
         comparison._value2=Const(50,"常數_50");

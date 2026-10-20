@@ -1,6 +1,6 @@
-# 조건·결과 한국어 표시 연결 — v1.0.6-alpha.17
+# 조건·결과 한국어 표시 연결 — v1.0.6-alpha.18
 
-[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.17/DiceMaster-v1.0.6-alpha.17.zip) · [최신 정식판](https://github.com/jungpaeng/dicemaster/releases/latest) · [사용자 안내](../README.md)
+[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.18/DiceMaster-v1.0.6-alpha.18.zip) · [최신 정식판](https://github.com/jungpaeng/dicemaster/releases/latest) · [사용자 안내](../README.md)
 
 ## 변경
 
@@ -22,7 +22,9 @@ Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 �
 
 ## 검증
 
-2026-10-20 22:47 KST, .NET SDK 8.0.426 전체 소스 빌드에서 14개 검사 프로그램을 통과했다. 198개 빌드 입력·81개 소스/리소스를 대조했다. 고정 커밋 재빌드·패키지 대조는 게시 전에 확인한다. 실제 번역 리소스·제품 조건 표시기 IL을 연결한 원문 입력 검사, GetFlag 미실행·순환 보호·원본 ID 보존·효과색·알려진 Book 이름 매핑·locale 준비 후 회복을 포함한다. 기존 RNG·카운터 비변경과 UI/입력·예약·Lua 회귀 검사도 수행한다.
+2026-10-20 22:55 KST, .NET SDK 8.0.426 전체 소스 빌드에서 14개 검사 프로그램을 통과했다. 198개 빌드 입력·81개 소스/리소스를 대조했다. 고정 커밋 재빌드·패키지 대조는 게시 전에 확인한다.
+
+실제 번역 리소스·제품 조건 표시기 IL을 연결한 원문 입력, GetFlag 미실행·원본 ID·효과색 보존, Book 이름 매핑, 외부 파일 지연 준비, 캐시된 결과의 이름 회복을 검사했다. `Door_001_001`의 `E12003`과 `S2920_01`에 해당하는 개발 메모를 넣어 체류 설명과 `죽지심 발동 여부`가 한국어로 출력되는 것도 확인했다. 기존 RNG·카운터·예약·Lua·포커스·터치·패드 검사도 통과했다.
 
 이 DLL의 실제 Windows·Unity 화면·물리 패드·터치 확인은 대기다. 기존 버전의 사용자 확인을 이 DLL에 승계하지 않는다. 이슈 #5 완료를 주장하지 않는다.
 
@@ -36,7 +38,7 @@ Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 �
 | LiveLogIntegrationTests | PASS: 485 integration assertions using actual DLL parser, Action, refresh engine, bridge, lifecycle hook, pure wrapper, option-summary and dynamic helper IL; game/UI/compiler boundaries are fixtures. |
 | RealGameApiTests | METADATA CONTRACT: actual game/Harmony target signatures, paired hooks, exception preservation and pure description wrappers verified; Harmony/native game NOT executed. / PASS: 4265 managed behavior assertions and 1278 metadata contract assertions; Unity/random/data boundaries are managed fixtures, native game runtime NOT executed. |
 | GamepadTests | PASS: 262831 assertions. |
-| SourceBehaviorTests | PASS: 3540 source translation/parser/narrative/dice behavior assertions; actual mod IL and embedded translation data, Unity/loader/locale/game-table/narrative-sink/input boundaries are fixtures. Windows/UI/native NOT executed. |
+| SourceBehaviorTests | PASS: 3541 source translation/parser/narrative/dice behavior assertions; actual mod IL and embedded translation data, Unity/loader/locale/game-table/narrative-sink/input boundaries are fixtures. Windows/UI/native NOT executed. |
 | PreviewIntegrationTests | PASS: 2101 preview integration assertions using actual DLL parser, Action, analyzer and description IL; script/state/translation boundaries are fixtures. |
 | LogUiModelTests | PASS: 444 log model assertions (full publications, status-only rows, navigation, identity, last-good/errors, context and activation tickets). |
 | LogUiWiringTests | PASS: 112 actual candidate GUI/publication/input wiring and package boundary assertions; Unity/native/Windows execution remains untested. |
@@ -47,9 +49,10 @@ Windows용 활협전과 BepInEx가 포함된 활협전용 모드 베이스가 �
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
-| DiceMaster.dll | 654848 | `a8efd430371d75731539754bf1fef60f9af3203fd0655778de30218bb68659f2` |
-| DiceMaster-v1.0.6-alpha.17.zip | 275235 | `07dc10aa1cb180e82764fe451549f5656956d90312f899e79990e645d4a38e9b` |
+| DiceMaster.dll | 654848 | `d7e85e2843c77c9c7195b05b5b4db57bdb00ed3b9198cd5e1b70cdf1873c786d` |
+| DiceMaster-v1.0.6-alpha.18.zip | 275266 | `2c1968e399d89d1fbca8eeef900875d487b8f2836469d84690fbb6e77a1a39d7` |
 | DiceMaster.cfg | 11761 | `435d221a32f505ce079c01c4afb9ecf39f4bbe29d5dd8d7ca8e3975f2a9b5400` |
 
-ZIP은 cfg와 DLL 두 파일로 구성되며 게임 DLL·소스는 포함하지 않는다. 고정 커밋의 깨끗한 재빌드와 공개 다운로드의 일치는 게시 후 기록한다. 배포 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.17/`에 보관한다.
+ZIP은 cfg와 DLL 두 파일로 구성되며 게임 DLL·소스는 포함하지 않는다. 고정 커밋 재빌드와 공개 다운로드 대조 결과는 게시 후 기록한다. 배포 영수증은 로컬 `artifacts/releases/v1.0.6-alpha.18/`에 보관한다.
 
+alpha.17은 이 작업의 검증 준비 소스 태그로 보존하며 설치용 GitHub Release는 게시하지 않았다. 최종 접두사·null 메모 보완을 포함한 설치용 시험판은 alpha.18이다.

@@ -15,9 +15,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.17) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.17/DiceMaster-v1.0.6-alpha.17.zip) | 조건·결과의 한국어 이름·날짜 표시 연결과 미확정 이름 재조회 | 전체 소스의 14개 자동 검사 통과. 고정 커밋·공개 파일 대조 후 게시하며 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA17-RELEASE.md) |
+| [시험판 v1.0.6-alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.18) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.18/DiceMaster-v1.0.6-alpha.18.zip) | 조건·결과의 한국어 이름·날짜 표시 연결과 미확정 이름 재조회 | 전체 소스의 14개 자동 검사 통과. 고정 커밋·공개 파일 대조 후 게시하며 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA18-RELEASE.md) |
 
-alpha.17은 조건·이벤트의 이름과 날짜, 팝업의 결과 요약·상세에 기존 한국어 번역을 연결합니다. 플래그·호감도·아이템 등의 표시 이름을 해석하고 이름 자료가 늦게 준비되면 다시 조회합니다. 번역이 없는 항목과 원본 ID는 남을 수 있습니다. 기존 회색 판정·예약·팝업 조작과 cfg를 유지합니다. [변경·검증 범위](docs/ISSUE-5-ALPHA17-RELEASE.md)
+alpha.18은 조건·이벤트의 이름과 날짜, 팝업의 결과 요약·상세에 기존 한국어 번역을 연결합니다. 플래그·호감도·아이템 등의 표시 이름을 해석하고 이름 자료가 늦게 준비되면 다시 조회합니다. 번역이 없는 항목과 원본 ID는 남을 수 있습니다. 기존 회색 판정·예약·팝업 조작과 cfg를 유지합니다. [변경·검증 범위](docs/ISSUE-5-ALPHA18-RELEASE.md)
 
 **시험판의 조건 팝업 기본값은 OFF입니다.** 기존 cfg에 저장된 ON은 유지하므로 끄려면 조건 탭 상단 설정을 OFF로 바꾸세요. 새 cfg 또는 해당 키가 없는 cfg에만 OFF를 적용합니다.
 
@@ -118,7 +118,7 @@ alpha.17은 조건·이벤트의 이름과 날짜, 팝업의 결과 요약·상�
 
 ## 시험판의 조건·이벤트 선택
 
-공개 시험판은 **[v1.0.6-alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.17)**입니다. 로그·팝업 조건과 예상 결과의 한국어 표시를 보완합니다. 기존 확정 미충족 회색 표시·세 줄 팝업·로그 열기·상세 분기 예약은 유지하며, 실제 Windows·장치 확인은 [배포 기록](docs/ISSUE-5-ALPHA17-RELEASE.md)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.18)**입니다. 로그·팝업 조건과 예상 결과의 한국어 표시를 보완합니다. 기존 확정 미충족 회색 표시·세 줄 팝업·로그 열기·상세 분기 예약은 유지하며, 실제 Windows·장치 확인은 [배포 기록](docs/ISSUE-5-ALPHA18-RELEASE.md)에서 대기합니다.
 
 ### 로그 판정 표시
 

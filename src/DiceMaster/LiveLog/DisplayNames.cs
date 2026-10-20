@@ -59,8 +59,12 @@ namespace DiceMaster.LiveLog
             if (string.IsNullOrWhiteSpace(translated))
             {
                 string note = String(Field(flag, "_devNote"));
-                if (string.IsNullOrEmpty(note)) note = PreviewState.FlagDevNote(id);
+                if (string.IsNullOrEmpty(note)) note = PreviewState.FlagDevNote(id) ?? "";
                 string literal = Text(note);
+                // A frequent literal flag note is a verb prefix plus a story
+                // title. Translate its subject without evaluating expressions.
+                if (note.StartsWith("觸發", StringComparison.Ordinal) && note.Length > 2 && literal.StartsWith("觸發", StringComparison.Ordinal))
+                    literal = Text(note.Substring(2).Trim()) + " 발동 여부";
                 if (!string.IsNullOrWhiteSpace(literal) && literal != note) translated = literal;
             }
             if (string.IsNullOrWhiteSpace(translated))
