@@ -1,6 +1,6 @@
 # 조건·이벤트 팝업의 조건과 판정 표시 통일
 
-상태: **v1.0.6-alpha.15 배포 준비 중 · 전체 후보 검사 통과 · 고정 재빌드·공개 파일 검증 대기 · 실제 Windows·장치 확인 대기**. alpha.14의 팝업 로그 전환과 조건 분기 표시를 유지하고 이벤트의 정보량과 두 팝업의 상태 표현을 맞춘다. [배포·파일 기록](ISSUE-5-ALPHA15-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표).
+상태: **2026-10-20 12:54:18 KST v1.0.6-alpha.15 prerelease 게시 완료 · 실제 Windows·장치 확인 대기**. 소스·주석 태그는 `ede946e674f2c200d20b76eb5efe9728b61861d0`다. alpha.14의 팝업 로그 전환과 조건 분기 표시를 유지하고 이벤트의 정보량과 두 팝업의 상태 표현을 맞춘다. 후보·고정 소스에서 각각 14개 검사와 동일 입력·파일 바이트를 확인하고 익명 공개 파일을 대조했다. [배포·파일 기록](ISSUE-5-ALPHA15-RELEASE.md) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표).
 
 ## 사용자에게 보여주는 정보
 
@@ -40,8 +40,10 @@
 | --- | --- |
 | EventPopupTests 전체 후보 | 2,069개 검사 통과. 두 종류의 정상·미충족·난수·미지원·읽기 실패, 같은 좌표의 다음 터치 일반/명시 조건 무시/차단, 효과색·문자 경계·미확인 표시·설명 중복 방지와 4개 해상도×3개 글자 크기의 긴 조건/결과·로그 열기 배치 |
 | RealGameApiTests 전체 후보 | 관리 동작 3,988개·메타데이터 계약 1,250개 단언 통과. 실제 제공 API와 설명·난수 비소비·표시 오류·안전한 이름 조회 경계 |
-| 전체 소스 후보·고정 커밋 재빌드 | 후보 14개 통과. 고정 커밋 재빌드·동일 입력·파일 대조는 다음 단계에서 기록 |
-| 공개 파일 대조 | 미게시. 게시 후 익명 다운로드·CRC·두 파일·바이트·해시 확인 필요 |
+| 전체 소스 후보·고정 커밋 재빌드 | 후보 2026-10-20 12:51:23 KST·고정 소스 12:53:40 KST 각각 14개 통과. 194개 입력·79개 소스/리소스·전체 검사 결과와 DLL/cfg/ZIP 바이트 일치 |
+| 공개 파일 대조 | 2026-10-20 12:54:18 KST 게시 후 익명 공개 페이지·다운로드·CRC·두 파일·내부 바이트·해시 일치. 기존 38개 Release·태그·자산과 Latest 정식 v1.0.5 보존 |
 | 실제 Windows·물리 장치 | 미실행. 트랙패드·마우스 인식 터치·별도 터치·XInput과 실제 게임 표시를 별도로 확인 |
 
 제공된 게임 API·실제 MoonSharp·관리 Unity 대체 경계의 통과를 실제 Windows 화면과 물리 입력의 확인으로 확대하지 않는다. 이전 버전 확인은 해당 파일의 당시 기록이며 새 DLL의 통과를 대신하지 않는다.
+
+후보는 로컬 `artifacts/popup-parity/full/candidate/build-manifest.json`과 `artifacts/popup-parity/full-build-run2.log`, 고정 소스·게시·익명 검증 영수증은 `artifacts/releases/v1.0.6-alpha.15/`의 `release-verification.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json` 등에 보존한다. 고정 소스의 준비 문구와 검사 영수증의 `published=false`는 게시 전 검사 시점이며 이 게시 결과 보충은 별도 문서 커밋에 남긴다.

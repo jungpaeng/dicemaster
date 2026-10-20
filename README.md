@@ -15,9 +15,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 준비 v1.0.6-alpha.15](docs/ISSUE-5-ALPHA15-RELEASE.md) | 조건·이벤트 팝업의 조건 요약·전체 상세·회색/미확정 구분 통일 | 후보 전체 14개 검사 통과 · 고정 소스 재빌드·공개 파일 대조 대기, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA15-RELEASE.md) |
+| [시험판 v1.0.6-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.15) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.15/DiceMaster-v1.0.6-alpha.15.zip) | 조건·이벤트 팝업의 조건 요약·전체 상세·회색/미확정 구분 통일 | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA15-RELEASE.md) |
 
-현재 공개 시험판은 [v1.0.6-alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14)이며 alpha.15는 배포 준비 중입니다. alpha.15는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
+alpha.15는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
 
 **시험판의 조건 팝업 기본값은 OFF입니다.** 기존 cfg에 저장된 ON은 유지하므로 끄려면 조건 탭 상단 설정을 OFF로 바꾸세요. 새 cfg 또는 해당 키가 없는 cfg에만 OFF를 적용합니다.
 
@@ -118,7 +118,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 시험판의 조건·이벤트 선택
 
-다음 시험판 **[v1.0.6-alpha.15](docs/ISSUE-5-ALPHA15-RELEASE.md)**를 준비 중입니다. 아래 팝업의 조건·판정 안내는 이 변경 기준입니다. 조건·이벤트 모두 같은 수준의 요약·전체 조건을 보여주며, 기존 로그 열기와 체크포인트당 한 행·상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.15)**입니다. 조건·이벤트 모두 같은 수준의 요약·전체 조건을 보여주며, 기존 로그 열기와 체크포인트당 한 행·상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표)에서 대기합니다.
 
 ### 예약과 설정
 
@@ -151,7 +151,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 정상 후보는 일반 진행, 미충족·가중치 0·난수/미지원 조건으로 판정 미확인인 후보는 **조건 무시하고 이번만 진행**으로 안내합니다. X는 확정하지 않습니다. 대상·결과를 읽을 수 없는 항목은 실행할 수 없고, 확정 전에 조건이 바뀌면 새로 표시된 진행 방식을 다시 확인해야 합니다.
 
-조건·이벤트 팝업 목록은 모두 **굵은 제목·결과 요약·조건 요약의 고정 세 줄**입니다. 긴 조건은 목록에서 줄이고 선택 상세의 **현재 판정 이유 → 전체 조건 → 예상 결과** 순서로 읽습니다. 이유와 전체 조건이 같은 경우에는 한 번만 표시합니다.
+조건·이벤트 팝업 목록은 모두 **굵은 제목·결과 요약·조건 요약의 고정 세 줄**입니다. 긴 조건은 목록에서 줄이고 선택 상세의 **필요한 짧은 판정 이유 → 전체 조건 → 예상 결과** 순서로 읽습니다. 일반 진행에는 별도 정상 상태 문구를 덧붙이지 않고, 전체 조건식을 한 번만 표시합니다.
 
 | 팝업의 조건 표시 | 의미와 진행 |
 | --- | --- |

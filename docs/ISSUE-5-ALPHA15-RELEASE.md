@@ -1,8 +1,8 @@
 # v1.0.6-alpha.15 — 조건·이벤트 팝업의 조건과 판정 표시 통일
 
-상태: **배포 준비 중 · 전체 후보 검사 통과 · 고정 커밋 재빌드·공개 파일 검증 대기 · 실제 Windows·장치 확인 대기**. alpha.14 이후 두 팝업에서 같은 수준의 조건 요약과 전체 상세를 읽고, 확정 미충족·미확정·실행에 필요한 자료 확인 실패를 구분하도록 정리한다. 작업 기준 main은 `5e2d4cf`이며 이번 빌드 소스·태그·파일 해시·게시 시각은 실제 검증 후 아래에 기록한다.
+상태: **2026-10-20 12:54:18 KST prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. alpha.14 이후 두 팝업에서 같은 수준의 조건 요약과 전체 상세를 읽고, 확정 미충족·미확정·실행에 필요한 자료 확인 실패를 구분하도록 정리한다. 소스·주석 태그는 `ede946e674f2c200d20b76eb5efe9728b61861d0`이며 후보·고정 재빌드·익명 공개 파일의 바이트·해시를 대조했다.
 
-현재 공개 시험판은 [v1.0.6-alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14)다. alpha.15의 설치 자산은 아직 게시 전이며 예정 이름은 `DiceMaster-v1.0.6-alpha.15.zip`이다. [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표).
+**[이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.15/DiceMaster-v1.0.6-alpha.15.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.15) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표).
 
 ## 사용자에게 달라진 점
 
@@ -33,15 +33,15 @@
 Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**가 필요하다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
-2. 게시 후 이 버전의 설치 ZIP을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
+2. 위 설치 ZIP을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
 3. 업데이트는 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
-alpha.14로 복구하면 이벤트 팝업은 이전 두 줄 요약과 상세 정보량으로 돌아간다. 조건 분기 팝업과 이벤트 팝업의 판정 표시 차이도 다시 생기지만 팝업에서 로그 열기와 조건 상세 예약은 유지된다. 기존 Release·태그·자산과 Latest 정식 v1.0.5를 보존하는 새 prerelease로 준비한다. 설치 ZIP은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함한다.
+alpha.14로 복구하면 이벤트 팝업은 이전 두 줄 요약과 상세 정보량으로 돌아간다. 조건 분기 팝업과 이벤트 팝업의 판정 표시 차이도 다시 생기지만 팝업에서 로그 열기와 조건 상세 예약은 유지된다. 기존 Release·태그·자산과 Latest 정식 v1.0.5를 보존했다. 설치 ZIP은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 두 파일만 포함한다.
 
 ## 검증과 알려진 제한
 
-새 설명은 표시용 엄격 평가·이름 표시 경로를 사용하며 원래 게임의 조건 검사·가중치·Switch 판정 알고리즘이나 직접 지정의 의미를 변경하지 않는다. 예약/직접 지정은 기존과 같이 해당 원래 판정을 건너뛰고 이후 대사·효과는 게임이 실행한다. 모든 후속 조건·미래 결과를 확정하지 않는다.
+새 설명은 표시용 엄격 평가와 유한한 시간·능력치 번역·직접 지역화 이름 조회를 사용한다. 기존 이름 도우미의 GetFlag/DevNote 표현식 확장은 순환할 수 있어 팝업에서 호출하지 않으며 실패 시 원본 이름·ID를 남긴다. 원래 게임의 조건 검사·가중치·Switch 판정 알고리즘이나 직접 지정의 의미는 변경하지 않는다. 예약/직접 지정은 기존과 같이 해당 원래 판정을 건너뛰고 이후 대사·효과는 게임이 실행한다. 모든 후속 조건·미래 결과를 확정하지 않는다.
 
 이벤트 팝업은 지원하는 비메인 Lua의 직접 리터럴 `Position` 호출, 조건 팝업은 직접 문자열 리터럴 `Switch`를 지역 변수에 대입한 뒤 바로 정수 동등 비교 `if/elseif/else`로 분기하는 형식을 지원한다. 팝업 지원 형식과 예약 소비 경계는 넓히지 않는다. 회상·조건 설명의 내부 ID 문제를 해결한 것으로 안내하지 않으며 구조 리팩터링의 보류한 3단계도 범위에 포함하지 않는다.
 
@@ -68,11 +68,11 @@ alpha.14로 복구하면 이벤트 팝업은 이전 두 줄 요약과 상세 정
 | EventSelectionRuntimeTests | 실제 MoonSharp 연결 237개 시나리오·1,393개 단언 |
 | EventPopupTests | 2,069개 검사 |
 
-새 회귀는 전체 조건·AND/OR·중첩 수식·모든 조건별 가중치, 난수 원래 범위·미확정과 RNG/조건 횟수 보존, 설명 실패와 실행 권한 분리, 이름 변환의 순환 경로 회피, 두 팝업의 상태·상세 순서·고정 터치 좌표·큰 글자/좁은 창, 기존 Switch 우선순위·예약·로그 포커스를 포함한다. 고정 커밋 별도 재빌드·후보 대조와 게시 후 익명 다운로드는 다음 단계에서 기록한다.
+새 회귀는 전체 조건·AND/OR·중첩 수식·모든 조건별 가중치, 난수 원래 범위·미확정과 RNG/조건 횟수 보존, 설명 실패와 실행 권한 분리, 이름 변환의 순환 경로 회피, 두 팝업의 상태·상세 순서·고정 터치 좌표·큰 글자/좁은 창, 기존 Switch 우선순위·예약·로그 포커스를 포함한다. 고정 소스 별도 재빌드에서 같은 14개 검사·194개 입력·79개 소스/리소스·전체 검사 결과와 DLL/cfg/ZIP 바이트 일치를 확인했다. 게시 후 익명 공개 페이지·ZIP 다운로드와 패키지 대조도 통과했다.
 
 ## 파일 확인과 게시 기록
 
-아래는 같은 최종 검토 후보의 파일 크기·해시다. 고정 커밋 재빌드·공개 다운로드와의 대조는 완료 후 기록한다.
+아래 파일은 검토 후보·고정 소스 재빌드·익명 공개 다운로드의 바이트·해시가 일치한다. 소스 커밋은 [ede946e674f2c200d20b76eb5efe9728b61861d0](https://github.com/jungpaeng/dicemaster/commit/ede946e674f2c200d20b76eb5efe9728b61861d0)다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -82,15 +82,17 @@ alpha.14로 복구하면 이벤트 팝업은 이전 두 줄 요약과 상세 정
 
 | 게시 항목 | 현재 기록 |
 | --- | --- |
-| 작업 기준 main | `5e2d4cf` |
-| 고정 소스·주석 태그 커밋 | 커밋 후 기록 |
+| 사전 원격 main | `5e2d4cf46fbe1236eac5fae4b0e2abb0b13fd63f` |
+| 고정 소스·주석 태그 커밋 | `ede946e674f2c200d20b76eb5efe9728b61861d0` |
 | 후보 빌드·입력·패키지 대조 | 2026-10-20 12:51:23 KST 완료. 194개 입력·79개 소스/리소스·전체 14개 검사·ZIP CRC/두 파일/바이트 확인 |
-| 고정 소스 재빌드·전체 검사·후보 대조 | 완료 후 기록 |
-| 게시 시각 | 미게시 |
-| Release / asset ID | 미게시 |
-| 공개 상태 | 미게시. 예정: `draft=false`·`prerelease=true`·`make_latest=false` |
-| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 게시 후 확인 |
-| 기존 Release·태그·자산·Latest 정식 | 게시 전후 실제 대조 후 기록 |
-| 이슈 상태 | 게시 전후 실제 조회 후 기록. 이 작업에서 이슈 종료를 요청하지 않음 |
+| 고정 소스 재빌드·전체 검사·후보 대조 | 2026-10-20 12:53:40 KST 고정 검사 완료, 12:53:54 KST 후보 대조 완료. 194개 입력·79개 소스/리소스·전체 14개 검사 결과·DLL/cfg/ZIP 바이트 일치 |
+| 게시 시각 | 2026-10-20 12:54:18 KST |
+| Release / asset ID | `417982532` / `658198769` |
+| 공개 상태 | `draft=false`·`prerelease=true`·`make_latest=false` |
+| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 익명 공개 페이지·다운로드 대조 통과 |
+| 기존 Release·태그·자산 | 사전 기존 38개 Release·38개 태그·자산 보관, 게시 후 보존 확인 |
+| Latest 정식·게시 전후 이슈 상태 | v1.0.5 · #2 closed·#4 closed·#5 open 유지. 이 작업은 이슈를 변경하지 않음 |
 
-후보 영수증은 로컬 `artifacts/popup-parity/full/candidate/build-manifest.json`, 전체 로그는 `artifacts/popup-parity/full-build-run2.log`에 보존한다. 고정 소스·게시·익명 검증은 `artifacts/releases/v1.0.6-alpha.15/`에 수행 후 보존한다. 공개 Release 본문은 게시된 자산과 고정 커밋 문서의 공개 절대 URL을 사용하며 로컬 `artifacts/` 경로를 다운로드 근거 링크로 쓰지 않는다.
+고정 소스를 기존 모드 DLL 0개인 별도 소스 스냅샷에서 재빌드하고 같은 14개 검사 프로그램을 통과했다. 검토 후보와 입력·소스/리소스·전체 검사 결과·파일 바이트가 일치했다. 구현·검사·README를 `origin/main`에 반영하고 고정 커밋을 가리키는 주석 태그로 새 버전을 게시했다. 기존 38개 Release·태그·자산과 Latest 정식 v1.0.5를 보존했으며 이슈 #5는 종료하지 않았다.
+
+후보 영수증은 로컬 `artifacts/popup-parity/full/candidate/build-manifest.json`, 전체 로그는 `artifacts/popup-parity/full-build-run2.log`에 보존한다. 고정 소스·게시·익명 검증은 `artifacts/releases/v1.0.6-alpha.15/`의 `release-verification.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`에 보존한다. 고정 검사 영수증의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 검사 시점이다. 이 게시 결과 보충은 별도 main 문서 커밋으로 반영하며 빌드 소스·태그·공개 자산은 변경하지 않는다. 이전 DLL의 검사나 실제 Windows 확인을 이번 파일의 통과 근거로 대신 사용하지 않는다.
