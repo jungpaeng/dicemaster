@@ -156,7 +156,7 @@ internal static partial class Program
         KeyboardContextualConfirmation();
         SwitchPopupRegressions();
         ConditionParityRegressions();
-        PopupLogControlRegressions();
+        PopupShortcutReturnRegressions();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
         foreach (int font in new[] { 12, 20, 64 })

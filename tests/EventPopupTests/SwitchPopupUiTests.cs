@@ -100,8 +100,6 @@ internal static partial class Program
             EventCandidate candidate = EventSelectionRuntime.Candidates[0];
             candidate.Summary = "직전 분기 미충족 시 기본 분기\n" + new string('조', 2000) + " <color=red>문자</color>";
             candidate.ResultDetail = new string('결', 4000);
-            popup.OpenLog = () => { };
-            popup.LogHint = "F8 로그";
             Draw(popup);
             var before = GUILayout.ScrollViews[0].Controls.First(control => control.Button);
             Check(before.Text.Split('\n').Length == 3 && before.Text.Contains("…") && !before.Text.Contains("<color=red>"),
@@ -113,9 +111,12 @@ internal static partial class Program
             Check(GUILayout.ScrollViews.All(view => view.Viewport.width > 0 && view.Viewport.height > 0)
                 && GUILayout.ScrollViews[1].Controls.First(control => control.Text == "조건 상세").VisibleRect.height > 0,
                 "Switch conditions lead an independently scrollable readable detail viewport at " + size + " font=" + font);
-            foreach (var control in GUILayout.Controls.Where(control => InstructionCaption(control.Text) || control.Text.StartsWith("로그 열기")))
+            Check(GUILayout.Buttons.Count == EventSelectionRuntime.Candidates.Count
+                && !GUILayout.Controls.Any(control => control.Text.Contains("로그 열기")),
+                "Switch popup has no log button at " + size + " font=" + font);
+            foreach (var control in GUILayout.Controls.Where(control => InstructionCaption(control.Text)))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f,
-                    "Switch log access and progress hints remain visible at " + size + " font=" + font);
+                    "Switch progress hints remain visible without the log control at " + size + " font=" + font);
             Check(EventSelectionRuntime.Commands == 0, "Reading long Switch conditions never executes a result");
         }
     }

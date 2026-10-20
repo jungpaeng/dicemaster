@@ -29,12 +29,10 @@ namespace DiceMaster.LogUI
         private readonly Dictionary<string, string> plainTitles = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<LineKey, string> singleLines = new Dictionary<LineKey, string>();
         private static readonly Regex Markup = new Regex(@"</?(?:color|size|b|i|material)(?:=[^<>]*)?>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
-        private GUIStyle text, mutedText, resultText, button, highlighted, rowMeasure, titleMeasure, chrome, logButton;
+        private GUIStyle text, mutedText, resultText, button, highlighted, rowMeasure, titleMeasure, chrome;
         private int font, chromeFont;
         private Action deferred;
         internal string InputHint = "";
-        internal string LogHint = "";
-        internal Action OpenLog;
 
         private struct LineKey : IEquatable<LineKey>
         {
@@ -190,8 +188,7 @@ namespace DiceMaster.LogUI
             highlighted = new GUIStyle(button);
             highlighted.normal.textColor = Color.yellow;
             chrome = new GUIStyle(text) { fontSize = small };
-            logButton = new GUIStyle(button) { fontSize = small };
-            foreach (GUIStyle style in new[] { text, mutedText, resultText, button, highlighted, rowMeasure, titleMeasure, chrome, logButton })
+            foreach (GUIStyle style in new[] { text, mutedText, resultText, button, highlighted, rowMeasure, titleMeasure, chrome })
             {
                 style.margin = new RectOffset(0, 0, 0, 0);
                 style.fixedWidth = style.fixedHeight = 0;
@@ -224,9 +221,7 @@ namespace DiceMaster.LogUI
             float hintHeight = chrome.CalcHeight(new GUIContent(hint), inner) + 6;
             string status = OneLine(EventSelectionRuntime.Status ?? "", chrome, inner);
             float statusHeight = string.IsNullOrEmpty(status) ? 0 : chrome.CalcHeight(new GUIContent(status), inner);
-            string logCaption = string.IsNullOrEmpty(LogHint) ? "로그 열기" : "로그 열기 · " + LogHint;
-            float logHeight = OpenLog == null ? 0 : logButton.CalcHeight(new GUIContent(logCaption), inner);
-            float controls = 24 + headingHeight + logHeight + hintHeight + statusHeight + actionHeight * 2 + 20;
+            float controls = 24 + headingHeight + hintHeight + statusHeight + actionHeight * 2 + 20;
             float height = Math.Min(Screen.height - margin * 2, Math.Max(Screen.height * .8f, controls + size * 8 + 24));
             float paneHeight = Math.Max(2, height - controls);
             float listHeight = Math.Max(1, Math.Min(Screen.height * .34f, paneHeight * .45f));
@@ -238,7 +233,6 @@ namespace DiceMaster.LogUI
             GUI.Box(bounds, "");
             GUILayout.BeginArea(new Rect(bounds.x + 12, bounds.y + 12, inner, Math.Max(1, bounds.height - 24)));
             GUILayout.Label(heading, chrome);
-            if (OpenLog != null) SafeButton(logCaption, "log", () => OpenLog?.Invoke(), logButton, inner);
             rowBounds.Clear();
             Vector2 position = GUILayout.BeginScrollView(new Vector2(0, scroll), false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, GUILayout.Height(listHeight));
             scroll = position.y;

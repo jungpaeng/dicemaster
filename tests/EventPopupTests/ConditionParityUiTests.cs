@@ -139,8 +139,6 @@ internal static partial class Program
                 EventEligibilityReason.ConditionsNotMet, null, candidate.Summary);
             candidate.ConditionDetail = string.Join("\n", Enumerable.Range(0, 100).Select(index => "조건 " + index + ": 명성 >= 5 & 호감도 >= 10"));
             candidate.ResultDetailRich = "<color=#A3B86C>" + new string('결', 4000) + "</color>";
-            popup.OpenLog = () => { };
-            popup.LogHint = "F8 로그";
             Draw(popup);
             var before = GUILayout.ScrollViews[0].Controls.First(control => control.Button);
             Check(before.Text.Split('\n').Length == 3 && before.Text.Contains("…") && before.Rect.height <= (font + 4) * 3 + .1f,
@@ -154,9 +152,12 @@ internal static partial class Program
                 "All full conditions remain readable after one reason without moving the next tap target at " + isSwitch + "/" + dimensions + "/" + font);
             Check(GUILayout.ScrollViews.All(view => view.Viewport.width > 0 && view.Viewport.height > 0),
                 "Long complete condition and result bodies retain separate usable list/detail viewports at " + isSwitch + "/" + dimensions + "/" + font);
-            foreach (var instruction in GUILayout.Controls.Where(control => InstructionCaption(control.Text) || control.Text.StartsWith("로그 열기")))
+            Check(GUILayout.Buttons.Count == EventSelectionRuntime.Candidates.Count
+                && !GUILayout.Controls.Any(control => control.Text.Contains("로그 열기")),
+                "Both popups omit the log control at " + isSwitch + "/" + dimensions + "/" + font);
+            foreach (var instruction in GUILayout.Controls.Where(control => InstructionCaption(control.Text)))
                 Check(instruction.VisibleRect.height >= instruction.Rect.height - .1f,
-                    "Log access and confirm/recovery instructions remain completely visible at " + isSwitch + "/" + dimensions + "/" + font);
+                    "Confirm/recovery instructions remain completely visible without the log control at " + isSwitch + "/" + dimensions + "/" + font);
             popup.Scroll(1); Draw(popup);
             Check(DetailScroll(popup) > 0 && EventSelectionRuntime.Commands == 0,
                 "Reading either popup's long complete conditions scrolls detail without executing at " + isSwitch + "/" + dimensions + "/" + font);

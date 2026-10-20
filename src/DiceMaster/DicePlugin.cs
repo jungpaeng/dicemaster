@@ -110,7 +110,6 @@ public class DicePlugin : BaseUnityPlugin
 		logRenderer = new LogRenderer(LogBridge.Model, RefreshGameData, () => SetLogOpen(false));
 		logRenderer.TabChanged = tab => { currentTab = tab; RefreshLiveLogDisplay(); };
 		logRenderer.ReselectController = GamepadBridge.ReselectLogController;
-		eventPopup.OpenLog = () => SetLogOpen(true);
 	}
 
 	private void SetLogOpen(bool open, int padOwner = -1)
@@ -260,7 +259,6 @@ public class DicePlugin : BaseUnityPlugin
 		else if (EventSelectionRuntime.Waiting)
 		{
 			logCursor.SetActive(Application.isFocused, logInputMode);
-			eventPopup.LogHint = ConfigManager.LogMenuToggleKey.Value + " 로그";
 			eventPopup.Draw();
 		}
 		else logCursor.Release();

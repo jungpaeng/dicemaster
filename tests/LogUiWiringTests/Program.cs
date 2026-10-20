@@ -229,17 +229,19 @@ static class Program
                 CanReachCall(Method(plugin, "OnGUI"), Method(popup, "Draw"), PopupFacts, ForegroundPopup),
             "actual OnGUI must render only the foreground log or the waiting popup, preserving exclusive keyboard/pointer ownership");
         var popupDrawMethods = WithinTypeTree(Method(popup, "Draw"), types).ToArray();
-        Check(popupDrawMethods.SelectMany(method => method.Body.Instructions).Any(instruction =>
-                    instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == "log") &&
-                popupDrawMethods.SelectMany(Calls).Any(call => call.DeclaringType.FullName == popup && call.Name == "SafeButton") &&
-                popupDrawMethods.SelectMany(method => method.Body.Instructions).Any(instruction =>
-                    instruction.Operand is FieldReference field && field.DeclaringType.FullName == popup && field.Name == "OpenLog") &&
-                WithinTypeTree(Method(plugin, "Awake"), types).Any(method => method.Body.Instructions.Any(instruction =>
-                    instruction.OpCode == OpCodes.Stfld && instruction.Operand is FieldReference field &&
-                    field.DeclaringType.FullName == popup && field.Name == "OpenLog")) &&
-                WithinTypeTree(Method(plugin, "Awake"), types).Any(method => Calls(method).Any(call =>
-                    call.DeclaringType.FullName == plugin && call.Name == "SetLogOpen")),
-            "the visible native popup log control must invoke the actual plugin visibility boundary rather than a disconnected UI callback");
+        Check(!popupDrawMethods.SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.OpCode == OpCodes.Ldstr && ((string)instruction.Operand == "log" || ((string)instruction.Operand).Contains("로그 열기"))) &&
+                Type(popup).Fields.All(field => field.Name != "OpenLog" && field.Name != "LogHint") &&
+                !types.Where(type => type.FullName == plugin || type.FullName.StartsWith(plugin + "/", StringComparison.Ordinal))
+                    .SelectMany(type => type.Methods).Where(method => method.HasBody).SelectMany(method => method.Body.Instructions)
+                    .Any(instruction => instruction.Operand is FieldReference field && field.DeclaringType.FullName == popup &&
+                        (field.Name == "OpenLog" || field.Name == "LogHint")),
+            "the delivered popup must remove its log button and callback without a replacement log UI");
+        int? KeyboardShortcutFacts(MethodReference call) => call.DeclaringType.FullName == "UnityEngine.Input" && call.Name == "GetKeyDown" ? 1 : PopupFacts(call);
+        int? PadShortcutFacts(MethodReference call) => call.DeclaringType.FullName == pad && call.Name == "PollLogOpener" ? 0 : PopupFacts(call);
+        Check(CanReachCall(update, Method(plugin, "SetLogOpen"), KeyboardShortcutFacts, ForegroundPopup) &&
+                CanReachCall(update, Method(plugin, "SetLogOpen"), PadShortcutFacts, ForegroundPopup),
+            "existing keyboard and pad shortcuts must still reach the actual log visibility boundary while a popup is waiting");
         Check(Calls(Method(plugin, "SetLogOpen")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "SetLogVisible") &&
                 new[] { "OnDisable", "OnDestroy" }.All(name => Calls(Method(plugin, name)).Any(c =>
                     c.DeclaringType.FullName == runtime && c.Name == "SetLogVisible")),
