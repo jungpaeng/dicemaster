@@ -4,6 +4,16 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 이벤트·조건 선택과 일회 예약 — v1.0.6 정식
+
+사용자가 정식 `v1.0.6`을 명시적으로 선택한 뒤 **2026-10-20 23:36:49 KST에 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)을 게시했다.** v1.0.5 이후의 선택 팝업·조건 상세 예약·공통 조건/한국어 표시·클릭/터치 수정을 모으고 팝업의 로그 열기 버튼을 제거했다. README는 v1.0.6의 현재 설치·조작 안내로 정리했다. [변경·설치·자동 검사·Windows 확인표](ISSUE-5-STABLE-RELEASE.md).
+
+고정 소스·주석 태그는 `0d38cc6ce0e33fecf3341eba6df12f96831788e2`이며 main과 태그를 atomic push했다. 후보와 기존 관리 모드 DLL 0개인 격리 커밋 재빌드에서 각각 14개 검사와 198개 입력·81개 소스/리소스·참조·전체 검사 결과·DLL/cfg/ZIP 바이트를 대조했다. 공개 ZIP의 CRC·정확히 두 파일·내부 바이트·SHA-256도 일치했다.
+
+Release `418504455`·asset `659572711`, `draft=false`·`prerelease=false`·`make_latest=true`다. 기존 41개 Release·42개 태그·자산을 보존하고 Latest를 v1.0.5에서 v1.0.6으로 변경했다. 이슈 #2 closed·#4 closed·#5 open을 유지했다. 실제 Windows·Unity 화면·물리 패드·터치 확인과 이슈 #5 완료는 대기이며 정식 채널 선택과 구분한다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6/`에 보관한다. 과거 소스 동일성 정책과 prerelease 전용 CLI를 수정하지 않고 별도 고정 소스 검증에 정식 배포 지시·미실행 경계를 기록했다. 게시 결과 보충은 별도 main 문서 커밋이며 빌드 소스·태그·공개 설치 파일은 변경하지 않는다.
+
 ## 조건·결과 한국어 표시 연결 — v1.0.6-alpha.18 prerelease
 
 2026-10-20 22:58:00 KST [alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.18)를 게시했다. 조건의 참조별 이름·날짜와 팝업 결과에 안전한 문자열 번역을 연결하고, 알려진 Book 표시 이름의 ID 보호 충돌·늦은 이름 회복을 보완한다. [변경·설치·검증](ISSUE-5-ALPHA18-RELEASE.md).

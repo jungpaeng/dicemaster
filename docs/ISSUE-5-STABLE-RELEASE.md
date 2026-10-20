@@ -71,7 +71,7 @@ plugins/DiceMaster/DiceMaster.dll
 
 ## 이번 파일 검증
 
-2026-10-20 23:30:56 KST, .NET SDK 8.0.426으로 전체 소스 후보를 빌드하고 14개 검사 프로그램을 통과했다. 198개 빌드 입력·81개 소스/리소스와 읽기 전용 참조를 기록했다. 이번 버튼 제거는 후보 GUI 연결 113개·팝업 입력/배치 2,116개 검사에 반영했으며 기존 로그 단축키·대기/재개와 선택·스크롤 보존 검사도 통과했다. 고정 커밋 재빌드와 공개 다운로드 대조는 게시 절차에서 추가 기록한다.
+2026-10-20 23:30:56 KST, .NET SDK 8.0.426으로 전체 소스 후보를 빌드하고 14개 검사 프로그램을 통과했다. 198개 빌드 입력·81개 소스/리소스와 읽기 전용 참조를 기록했다. 이번 버튼 제거는 후보 GUI 연결 113개·팝업 입력/배치 2,116개 검사에 반영했으며 기존 로그 단축키·대기/재개와 선택·스크롤 보존 검사도 통과했다. 고정 커밋을 기존 관리 모드 DLL 0개인 별도 소스 스냅샷에서 재빌드해 23:35:34 KST 같은 14개 검사와 전체 입력·참조·검사 결과·DLL/cfg/ZIP 바이트 일치를 확인했다.
 
 후보 소스 빌드와 고정 소스 재빌드, 설치 ZIP의 CRC·정확한 두 파일·내부 바이트·SHA-256, 공개 다운로드 대조 결과는 아래 표와 게시 결과에 기록한다. 과거 시험판의 검사 횟수·Windows 확인을 이번 새 실행으로 옮기지 않는다.
 
@@ -121,13 +121,17 @@ plugins/DiceMaster/DiceMaster.dll
 | DiceMaster.dll | 654336 | `134ef356b512628e16795314a9308a91c5bb3c16d5c521aaa7a5e5bb0da198dc` |
 | DiceMaster.cfg | 11761 | `435d221a32f505ce079c01c4afb9ecf39f4bbe29d5dd8d7ca8e3975f2a9b5400` |
 
-위 값은 검토 후보의 파일 식별값이다. 빌드 소스는 [`v1.0.6` 태그](https://github.com/jungpaeng/dicemaster/tree/v1.0.6)로 고정하고 해당 커밋의 재빌드 일치·공개 파일 대조 뒤 커밋 SHA와 결과를 아래에 기록한다.
+위 값은 검토 후보·고정 커밋 재빌드·익명 공개 다운로드에서 일치한 파일 식별값이다. 빌드 소스와 [`v1.0.6` 주석 태그](https://github.com/jungpaeng/dicemaster/tree/v1.0.6)는 [`0d38cc6ce0e33fecf3341eba6df12f96831788e2`](https://github.com/jungpaeng/dicemaster/commit/0d38cc6ce0e33fecf3341eba6df12f96831788e2)로 고정했다.
 
 ## 게시 결과
 
-현재는 정식 게시 준비 단계다. 사용자 지시로 시험판이 아닌 `v1.0.6` 정식 Release를 발행한다. 사전 확인한 기존 41개 Release·42개 태그와 자산, Latest 정식 v1.0.5를 기준으로 정식 공개 후 상태를 대조한다. 고정 소스 커밋·게시 시각·Release/asset ID·다운로드 검증 결과는 완료 후 추가 기록한다.
+사용자가 정식 `v1.0.6`을 명시적으로 선택한 뒤 **2026-10-20 23:36:49 KST에 [정식 Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)를 게시했다.** 구현·회귀 검사·README·정식 준비 문서가 포함된 소스 커밋 `0d38cc6ce0e33fecf3341eba6df12f96831788e2`와 주석 태그를 `origin/main`에 atomic push했다. Release ID `418504455`·asset ID `659572711`, `draft=false`·`prerelease=false`·`make_latest=true`이며 Latest는 v1.0.5에서 v1.0.6으로 변경했다.
 
-이전 Release·태그·자산은 보존하며 정식 v1.0.6을 Latest로 공개한다. 이슈 #5는 실제 검증 대기로 유지한다. 게시 뒤 공개 페이지·설치 자산을 다시 읽어 채널·Latest·파일 식별값과 소스의 일치를 확인한다.
+공개 Release·설치 자산을 인증 없이 다시 읽고 다운로드한 ZIP의 CRC·정확히 두 파일·내부 바이트·SHA-256을 검토 후보·고정 커밋 재빌드와 대조해 통과했다. 기존 41개 Release·42개 태그와 자산을 보존했고 이슈 #2 closed·#4 closed·#5 open 상태를 유지했다. 실제 Windows·장치 실행과 이슈 #5 완료는 대기다.
+
+고정 소스 재빌드는 정식 배포 지시를 별도 영수증에 기록하고 기존 과거 소스 동일성 정책·prerelease 전용 CLI를 수정하지 않았다. 정식 채널 선택을 Windows 검증 완료로 해석하지 않으며 파일의 실제 미실행 경계를 유지했다. 영수증은 로컬 `artifacts/releases/v1.0.6/`의 `release-verification.json`·`reviewed-candidate-comparison.json`·`build-manifest.json`·`github-publication.json`·`anonymous-verification.json`·`tag-verification.json`·`release-body.md`에 보관한다. 독립 감사는 `artifacts/popup-log-button-removal/independent-audit.json`이다.
+
+이 게시 결과 보충은 별도 main 문서 커밋이며 빌드 소스·태그·공개 설치 파일은 변경하지 않는다.
 
 ## 변경 근거와 이전 기록
 
