@@ -6,7 +6,7 @@
 - 게임의 패드 선택을 따라 조회하고 기존 네 탭·#5 팝업·예약·주사위와 단일 XInput 입력 소유권·해제/중립을 유지합니다. 새 정보 행은 실행·구매·사용 권한을 만들지 않습니다.
 - 네 개별 영구 설정을 기본 ON으로 추가하고 OFF 정리·상위 `EnableOptionInfo` 시작 시 비활성화·설정 읽기 실패 분리를 적용합니다. 분기 알림·기록은 저장·로드·장면 전환·OFF에서 초기화하며 복원·파일 저장하지 않습니다.
 - 읽기 전용 필드/정적 분석과 기존 캐시를 사용합니다. 1회성 불명·미지원/동적 효과·소모품 실제 사용 경로 미확인은 확인 불가로 구분하며 정상 0.25초·실패 5초·숨김/OFF 조회 0 계약을 유지합니다.
-- 사용자가 2026-10-21 정식 v1.0.6 Windows 확인 완료·잔여 문제 없음을 답해 #6 착수 조건을 충족했습니다. 새 후보의 자동 검사·실제 DLL 연결·패키지 최종 결과는 확정 후 [후보 기록](docs/ISSUE-6-CANDIDATE.md)에 기록합니다. **새 후보의 사용자 Windows 확인은 미실행이며 공개 Release·이슈 종료 상태가 아닙니다.** [구현·한계](docs/ISSUE-6-IMPLEMENTATION.md) · [Windows 확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md).
+- 사용자가 2026-10-21 정식 v1.0.6 Windows 확인 완료·잔여 문제 없음을 답해 #6 착수 조건을 충족했습니다. 소스 `949ebcc`의 검토 후보·고정 소스 재빌드에서 각각 18개 검사 프로그램, 후보 검증기 Python 회귀 20개를 통과했고 전체 입력·검사 결과·DLL/cfg/ZIP 바이트·해시가 일치합니다. [후보·설치·최종 영수증](docs/ISSUE-6-CANDIDATE.md)에 기록했습니다. **새 후보의 사용자 Windows 확인은 미실행이며 공개 Release·이슈 종료 상태가 아닙니다.** [구현·한계](docs/ISSUE-6-IMPLEMENTATION.md) · [Windows 확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md).
 
 ## [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6) — 2026-10-20
 

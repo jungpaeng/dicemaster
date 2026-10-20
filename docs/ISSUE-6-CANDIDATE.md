@@ -2,7 +2,7 @@
 
 [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [구현·지원 범위](ISSUE-6-IMPLEMENTATION.md) · [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [변경 이력](../CHANGELOG.md)
 
-상태: **로컬 후보 준비·자동 검증 중 / 새 사용자 Windows 확인 미실행**. 공개 Release·태그·Latest 변경·이슈 종료는 수행하지 않았다. 공개 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. 아래 최종 설치 파일·소스·해시는 자동 검증 영수증이 확정된 뒤 채운다. 이전 후보 파일·검사 수치·사용자 확인을 새 후보에 옮기지 않는다.
+상태: **로컬 설치 후보·자동 검사·고정 소스 재빌드 검증 완료 / 새 사용자 Windows 확인 미실행**. 공개 Release·태그·Latest 변경·이슈 종료는 수행하지 않았다. 공개 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. 아래 최종 설치 파일·소스·해시는 검토 후보와 고정 소스 재빌드에서 일치했다. 이전 후보 파일·검사 수치·사용자 확인을 새 후보에 옮기지 않는다.
 
 ## 이번 변경
 
@@ -33,13 +33,14 @@
 | --- | --- |
 | 후보 빌드 | 2026-10-21 00:34:15 KST · SDK 8.0.426 · net48 · 오류 0/기존 경고 7 |
 | 소스·참조 | 빌드 입력 227개 · 소스/리소스 95개 · 고정 외부 참조 15개 전후 무변경 |
-| 고정 소스 재빌드 | 검토 후보 소스 커밋을 만든 뒤 별도 영수증으로 확정 |
+| 고정 소스 재빌드 | `949ebcc88792a9c05d2c96dfda97d1f77f84271a` · 2026-10-21 00:36:49 KST · 기존 관리 DLL 0개인 격리 소스에서 동일 18개 검사 PASS |
 | 전체 자동 검사 | 18개 검사 프로그램 PASS · Python 후보 검증기 회귀 20개 PASS |
 | 설정·패키지 | [DiceMaster] 네 키 기본 true · 정확히 DLL/cfg 두 파일 · CRC/내부 바이트 PASS |
 | DiceMaster.dll | 717312바이트 · SHA-256 `02ba6280037c80b0dc467dfa7564347f2bdd9eb9321467aeb7d00d8a1766ebed` |
 | DiceMaster.cfg | 12509바이트 · SHA-256 `7f77b7f23de885333f9ecdf5d402be506b759be391ac1bd37f2a76622b07702c` |
 | 설치 ZIP | 303887바이트 · SHA-256 `dbbf9f7421f0e20dc96c269f7c4a34c4d63ef61a31b79108a876ff8ef48a998d` |
-| 로컬 검토 후보 | `artifacts/issue-6/candidate/DiceMaster-source-candidate.zip` · `build-manifest.json` · `build.log` |
+| 설치 ZIP | `artifacts/releases/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip` · 원래 작업 폴더 `artifacts/issue-6/v1.0.7-alpha.1/`에도 동일 파일 제공 |
+| 영수증 | `artifacts/releases/v1.0.7-alpha.1/release-verification.json` · `reviewed-candidate-comparison.json` · `build-manifest.json` · `preview-verifier-tests.log` |
 | 실제 Windows·Unity·물리 장치·비용/할당량 | **미실행·사용자 확인 대기** |
 
 ### 이번 검사 프로그램 결과
@@ -69,7 +70,7 @@
 
 ## 설치·업데이트·복구
 
-Windows용 활협전과 BepInEx를 포함한 활협전용 모드 베이스가 필요하다. 설치 후보가 위 표에 확정된 뒤 다음 절차를 사용한다.
+Windows용 활협전과 BepInEx를 포함한 활협전용 모드 베이스가 필요하다. 위 표의 고정 소스 재빌드 설치 후보에 다음 절차를 사용한다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
 2. **업데이트는 후보 ZIP의 `plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg·단축키·배치·글자를 보존한다. 최초 설치는 ZIP의 config/plugins를 기존 BepInEx 아래에 넣는다. 새 네 키는 실행 시 기존 cfg에 추가된다.
@@ -81,3 +82,9 @@ ZIP은 DLL/cfg 두 파일만 포함하고 게임 DLL·게임 소스를 배포하
 ## 다음 실제 확인
 
 새 후보에서 네 기능·패드 도구/상세 이동·자동 표시의 입력 간섭 없음·분기 시간/20건/초기화·상점 연속 선택/설명 보존·미지원 구분·큰 한글/화면/스크롤을 확인해야 한다. 저장·로드·장면·OFF·실패/이전 값·숨김 조회 중단·실제 Windows 비용/할당량과 기존 #5/예약/주사위 회귀도 [확인표](ISSUE-6-WINDOWS-VALIDATION.md)에 남긴다. **이 확인이 남아 있는 동안 #6 전체 완료나 이슈 종료로 처리하지 않는다.**
+
+## 고정 소스와 검토 후보 동일성
+
+검토 후보와 고정 소스 재빌드의 DLL/cfg/ZIP 바이트·SHA-256, 빌드 입력 227개, 소스/리소스 95개, 고정 참조 15개, 18개 검사 프로그램 결과가 모두 일치했다. ZIP CRC·정확히 두 항목·내부 바이트와 cfg 네 기본 true도 다시 확인했다. 후보 검증기 Python 회귀는 20개 PASS다. 재빌드에는 기존 관리 모드 DLL·Git 디렉터리·게임 참조를 복사하지 않았다. 외부 참조는 무변경이다.
+
+빌드 소스는 위 커밋이며 이후 결과 보충 문서 커밋은 생산·검사·빌드 입력을 바꾸지 않는다. 공개 업로드·push·태그·실제 Windows 실행·이슈 종료는 수행하지 않았다.
