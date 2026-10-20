@@ -374,6 +374,7 @@ namespace DiceMaster.LiveLog
             Call(Parser(), "ClearCaches");
             ((IDictionary)Read(Parser(), "OptionResult")).Clear();
             Call(Cache(), "ClearDisplayCaches");
+            DisplayNames.RefreshMappings();
         }
 
         // Compatibility entry for already-successful source in the portable

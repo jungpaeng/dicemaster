@@ -19,6 +19,7 @@ namespace DiceMaster.EventSelection
 
         private EventResultPreview(string detail, bool retry)
         {
+            detail = DisplayNames.Text(detail);
             RichDetail = NormalizeRich(detail).Trim();
             if (RichDetail.Length == 0) RichDetail = "결과는 진행 후 확인";
             RichSummary = FitSummary(Spaces.Replace(RichDetail, " "), 160);
@@ -36,9 +37,12 @@ namespace DiceMaster.EventSelection
             if (string.IsNullOrEmpty(result)) return Unavailable;
             try
             {
+                DisplayNames.RefreshMappings();
+                int pending = DisplayNames.PendingNames;
                 var actions = PositionEventCache.GetDefinitionParser().ExtractActionsFromLua(result);
                 LuaParser.RefreshPreviewReads(actions);
-                return new EventResultPreview(LuaParser.Description(actions), false);
+                string detail = LuaParser.Description(actions);
+                return new EventResultPreview(detail, DisplayNames.PendingNames != pending);
             }
             catch (PreviewReadException error)
             {

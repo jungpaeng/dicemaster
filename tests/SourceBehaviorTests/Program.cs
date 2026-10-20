@@ -146,6 +146,90 @@ static class Program
                 "full display pipeline converts result titles after mapper masking: " + pair.Key);
         }
     }
+    sealed class DisplayNode
+    {
+        public string name = "", _devNote = "", _note = "", _id = "", _key = "";
+        public int _checkType, _constant, _groupType = 1, _logicOp, _compareOp, State, Value;
+        public object _flag, _relationship, _book, _talentData, _upgradeItemData, _gameTime, _libraryAchieve;
+        public object[] _value = Array.Empty<object>(), _items = Array.Empty<object>();
+    }
+    static void CheckLiteralDisplay(Assembly assembly)
+    {
+        Type mapper = assembly.GetType("DiceMaster.UiTextMapper", true);
+        string Literal(string s) => (string)Call(mapper, "TranslateLiteral", s);
+        string[] chinese = { "旗標", "常數", "時間", "好感度", "郁竹", "第二年十一月上旬", "第二年十二月上旬" };
+        foreach (string word in chinese)
+        {
+            string value = Literal(word);
+            Check(value != word && !value.Any(c => c >= '\u3400' && c <= '\u9fff'), "literal display reaches existing translation: " + word);
+            Check(Literal(value) == value, "literal translation is idempotent: " + word);
+        }
+        Type helper = assembly.GetType("DiceMaster.DataHelper", true);
+        int reads = (int)helper.GetField("FlagReads").GetValue(null);
+        const string expression = "GetFlag('E12003')";
+        Check(Literal(expression) == expression && (int)helper.GetField("FlagReads").GetValue(null) == reads,
+            "literal descriptions never evaluate GetFlag");
+        foreach (string id in new[] { "Flag_成功", "S_條件_1", "Relationship_Girl7_郁竹", "Book999_未知" })
+            Check(Literal(id) == id, "unresolved identifiers stay intact: " + id);
+        string rich = Literal("<color=#A3B86C>郁竹 好感度 +10</color>");
+        Check(rich == "<color=#A3B86C>욱죽 호감도 +10</color>", "translation preserves result color markup");
+        var dictionary = (Dictionary<string,string>)mapper.GetField("exactReplacements", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+        dictionary["Book123_羅漢拳譜"] = "Book123_나한권보";
+        Check(Literal("Book123_羅漢拳譜") == "Book123_나한권보" &&
+            (string)Call(mapper, "ApplyTranslations", "Book123_羅漢拳譜") == "Book123_나한권보",
+            "known Book display mapping runs before identifier shielding in both paths");
+        dictionary.Remove("Book123_羅漢拳譜");
+        var names = (Dictionary<string,string>)helper.GetField("Names").GetValue(null);
+        names["Character/girl7"] = "郁竹";
+        Type formatter = assembly.GetType("DiceMaster.EventSelection.PopupConditionText", true);
+        object Group(DisplayNode reference, string name) => new DisplayNode { name=name, _value=new object[] { reference } };
+        object Const(int n, string name) => Group(new DisplayNode { _constant=n },name);
+        // Use field names consumed by actual Comparison; game values are a boundary.
+        var flag = new DisplayNode { name="E12003", _devNote="小梅在唐門", State=0 };
+        var flagRef = new DisplayNode { _checkType=3, _flag=flag };
+        var comparison = new ConditionComparison { _value1=Group(flagRef,"旗標_E12003"), _value2=Const(1,"常數_1") };
+        string condition = (string)Call(formatter,"Condition", new DisplayNode { _items=new object[] { comparison } });
+        Check(condition.Contains("우소매") && condition.Contains("E12003") && !condition.Contains("旗標") && !condition.Contains("常數"),
+            "actual formatter and actual embedded translations connect for a Door flag");
+        var relation = new DisplayNode { name="Relationship_Girl7_郁竹", Value=10 };
+        comparison._value1=Group(new DisplayNode { _checkType=2, _relationship=relation },"好感度_郁竹");
+        comparison._value2=Const(50,"常數_50");
+        condition=(string)Call(formatter,"Condition",new DisplayNode { _items=new object[] { comparison } });
+        Check(condition.Contains("욱죽 호감도") && !condition.Contains("Relationship_Girl7"), "typed relationship name replaces raw asset identity");
+        Type displayNames=assembly.GetType("DiceMaster.LiveLog.DisplayNames",true);
+        names["Book/Name/123"]="羅漢拳譜";
+        string book=(string)Call(displayNames,"ReferenceName",new DisplayNode { _book=new DisplayNode { _id="123",name="Book123_羅漢拳譜" } },4);
+        Check(book.Contains("나한권보") && !book.Contains("Book123"),"typed book names use audited locale key");
+        names["PlayerTalent/Name/test"]="學問";
+        string talent=(string)Call(displayNames,"ReferenceName",new DisplayNode { _talentData=new DisplayNode { _id="test" } },10);
+        Check(!talent.Contains("test") && talent.Contains("레벨"),"typed talent locale name is connected");
+        names.Clear();
+        int pending=(int)displayNames.GetProperty("PendingNames").GetValue(null);
+        Check((string)Call(displayNames,"LookupName","Book/Name/late","late")=="late" &&
+            (int)displayNames.GetProperty("PendingNames").GetValue(null)!=pending,"unresolved names request a presentation retry");
+        names["Book/Name/late"]="羅漢拳譜";
+        Check((string)Call(displayNames,"LookupName","Book/Name/late","late")=="나한권보","late locale name resolves without an inventory singleton");
+        names.Clear();
+        // UiTextMapper was initialized without tables. New names become visible
+        // through the real loader; a translated prefix cannot hide a full name.
+        string root=Path.Combine(Path.GetTempPath(),"dicemaster-late-names-"+Guid.NewGuid().ToString("N"));
+        Type paths=assembly.GetType("BepInEx.Paths",true);
+        string original=(string)paths.GetProperty("GameRootPath").GetValue(null);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root,"DataTable","StoryMappingItem"));
+            File.WriteAllText(Path.Combine(root,"StringTable.csv"),"Character/fixtureperson,새 인물\n");
+            File.WriteAllText(Path.Combine(root,"DataTable","StoryMappingItem","late.json"),"{\"Key\":\"小師妹遲到測試\",\"Value\":\"fixtureperson\"}");
+            paths.GetProperty("GameRootPath").SetValue(null,root);
+            mapper.GetField("nextNameRefresh",BindingFlags.Static|BindingFlags.NonPublic).SetValue(null,0L);
+            Call(mapper,"RefreshNameMappings");
+            Check(Literal("小師妹遲到測試")=="새 인물","late external human-name mapping wins before partial prefix translation");
+            Check(Literal("fixtureperson")=="새 인물","late character ID mapping is added without singleton initialization");
+        }
+        finally { paths.GetProperty("GameRootPath").SetValue(null,original); Directory.Delete(root,true); }
+    }
+    sealed class ConditionComparison { public object _value1, _value2; public int _compareOp; }
+
     static void CheckNarrativeOutput(Assembly assembly)
     {
         Type patch = assembly.GetType("DiceMaster.OptionInfoPatch", true);
@@ -197,7 +281,7 @@ static class Program
         using var source = AssemblyDefinition.ReadAssembly(candidate);
         using var target = AssemblyDefinition.ReadAssembly(fixture);
         var copier = new PayloadCopier(source.MainModule, target.MainModule, type =>
-            type.FullName is "DiceMaster.EmbeddedTranslations.Display" or "DiceMaster.DicePatch" or "DiceMaster.UiTextMapper");
+            type.FullName is "DiceMaster.EmbeddedTranslations.Display" or "DiceMaster.DicePatch" or "DiceMaster.UiTextMapper" or "DiceMaster.LiveLog.DisplayNames" or "DiceMaster.EventSelection.PopupConditionText");
         copier.CopyMethod(source.MainModule.GetType("DiceMaster.OptionInfoPatch").Methods.Single(method => method.Name == "PrintToNarrativeLog"),
             target.MainModule.GetType("DiceMaster.OptionInfoPatch"));
         foreach (var type in Types(target.MainModule.Types))
@@ -254,6 +338,7 @@ static class Program
             CheckDisplayLabels(display);
             CheckTranslationLoader(assembly);
             CheckNarrativeOutput(assembly);
+            CheckLiteralDisplay(assembly);
         }
         Type dice = assembly.GetType("DiceMaster.DicePatch", true);
         Type plugin = assembly.GetType("DiceMaster.DicePlugin", true);

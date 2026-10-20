@@ -352,7 +352,8 @@ namespace DiceMaster
         static List<string> ExtractConditions(Mortal.Core.MissionCheckData value, out bool inPeriod) => throw new InvalidOperationException("Actual mission condition helper IL not installed");
         static bool IsValidMission(Mortal.Core.MissionCheckData value) => throw new InvalidOperationException("Actual mission validity helper IL not installed");
         public static bool GetMissionPeriod(Mortal.Core.MissionCheckData value, out string period) { period = "fixture period"; return true; }
-        static string GetLocalizedSystemText(string key, string fallback, string category, string original) => fallback;
+        public static readonly Dictionary<string,string> LocaleNames = new Dictionary<string,string>();
+        static string GetLocalizedSystemText(string key, string fallback, string category, string original) => LocaleNames.TryGetValue(key, out var value) ? value : fallback;
         static string FormatConditionValName(Mortal.Core.StatGroupVariable value) => value?.name ?? "?";
         static string GetCompareOperator(Mortal.Core.StatCompareType value) => new[] { "==", "!=", "<", "<=", ">", ">=" }[(int)value];
         static string GetLogicOperator(Mortal.Core.LogicOperatorType value) => "&&";

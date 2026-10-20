@@ -90,7 +90,17 @@ namespace DiceMaster.EventSelection
                     if (!string.IsNullOrWhiteSpace(translated) && translated != name)
                         return prefix == "Flag/Name/" ? translated + "(" + name + ")" : translated;
                 }
-                return raw;
+                if (flag)
+                {
+                    try
+                    {
+                        IList references = Items(value, "_value");
+                        if (references.Count > 0 && Read(references[0], "_flag") != null)
+                            return DisplayNames.ReferenceName(references[0], 3);
+                    }
+                    catch (Exception) { }
+                }
+                return DisplayNames.Text(name);
             }
             private static string NameHelper(string owner, string method, params object[] arguments)
             {
@@ -183,9 +193,7 @@ namespace DiceMaster.EventSelection
                     if (type < 0 || type > 16) return "미확인 · 지원하지 않는 값 유형 " + N(type);
                     string value = Current(() => SafeDisplayEvaluation.ReadReference(reference));
                     if (type == 0) return value;
-                    string[] fields = { "", "_stat", "_relationship", "_flag", "_book", "_misc", "_specialItem", "", "", "_gameTime",
-                        "_talentData", "_book", "_upgradeItemData", "_upgradeItemData", "_bookCollection", "_libraryAchieve" };
-                    string name = type > 0 && type < fields.Length ? RawName(Read(reference, fields[type])) : "";
+                    string name = DisplayNames.ReferenceName(reference, type);
                     return (string.IsNullOrEmpty(name) ? "값 유형 " + N(type) : name) + "(" + value + ")";
                 });
             }
@@ -224,12 +232,17 @@ namespace DiceMaster.EventSelection
             }
         }
 
-        public static string Condition(object condition) { return new Format().Condition(condition); }
+        public static string Condition(object condition) { DisplayNames.RefreshMappings(); return DisplayNames.Text(new Format().Condition(condition)); }
         public static string Event(object data, int? finalRate)
         { string summary; return Event(data, finalRate, out summary); }
         public static string Event(object data, int? finalRate, out string conditionSummary)
         {
-            try { return new Format().Event(data, finalRate, out conditionSummary); }
+            try
+            {
+                string detail = new Format().Event(data, finalRate, out conditionSummary);
+                conditionSummary = DisplayNames.Text(conditionSummary);
+                return DisplayNames.Text(detail);
+            }
             catch (Exception)
             {
                 conditionSummary = "이벤트 조건 미확인 · 읽기 실패";

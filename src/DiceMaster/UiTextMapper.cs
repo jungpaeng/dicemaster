@@ -976,9 +976,64 @@ public static class UiTextMapper
 		return true;
 	}
 
+	// Only explicit, known decorative Book names may be resolved before the
+	// identifier shield. Unknown IDs still round-trip unchanged.
+	private static string KnownDisplayNames(string text)
+	{
+		if (string.IsNullOrEmpty(text)) return text;
+		MatchCollection matches = Regex.Matches(text, @"(?<![A-Za-z0-9_])Book[0-9]+_[A-Za-z0-9_\u3400-\u9fff\uac00-\ud7af]+");
+		for (int i = matches.Count - 1; i >= 0; i--)
+		{
+			Match match = matches[i];
+			if (exactReplacements.TryGetValue(match.Value, out var value))
+				text = text.Remove(match.Index, match.Length).Insert(match.Index, value);
+		}
+		return text;
+	}
+
+	// Safe for popup/condition descriptions: dictionaries and string transforms
+	// only. In particular none of regexRules' GetFlag/GetDevelop evaluators run.
+	public static string TranslateLiteral(string text)
+	{
+		if (string.IsNullOrEmpty(text)) return text;
+		// A complete known human name must win before a translated prefix can
+		// hide it. Literal internal IDs keep their separate protection contract.
+		if (!Regex.IsMatch(text, @"^[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_\u3400-\u9fff\uac00-\ud7af]+$") &&
+			exactReplacements.TryGetValue(text, out var exactName)) return Display.PostTranslate(exactName);
+		string value = Display.PreTranslate(KnownDisplayNames(text));
+		lock (translationCacheLock)
+			foreach (var pair in orderedReplacements) value = value.Replace(pair.Key, pair.Value);
+		return Display.PostTranslate(value);
+	}
+
+	private static long nextNameRefresh;
+	public static void RefreshNameMappings()
+	{
+		long now = DateTime.UtcNow.Ticks;
+		lock (translationCacheLock)
+		{
+			if (now < nextNameRefresh) return;
+			nextNameRefresh = now + TimeSpan.FromSeconds(5).Ticks;
+			// A late file may add names without replacing embedded translations.
+			var names = new Dictionary<string, string>(exactReplacements);
+			LoadStoryMappingCharacterNames(names);
+			LoadRelationshipCharacterNames(names);
+			LoadCharacterIdMappings(names);
+			LoadBookNameMappings(names);
+			LoadDevelopNameMappings(names);
+			if (names.Count == exactReplacements.Count) return;
+			exactReplacements.Clear();
+			foreach (var pair in names) exactReplacements.Add(pair.Key, pair.Value);
+			orderedReplacements.Clear();
+			orderedReplacements.AddRange(exactReplacements);
+			orderedReplacements.Sort((a, b) => b.Key.Length.CompareTo(a.Key.Length));
+			translationCache.Clear();
+		}
+	}
+
 	public static string ApplyTranslations(string text)
 	{
-		text = Display.PreTranslate(text);
+		text = Display.PreTranslate(KnownDisplayNames(text));
 		if (string.IsNullOrEmpty(text))
 		{
 			return Display.PostTranslate(text);

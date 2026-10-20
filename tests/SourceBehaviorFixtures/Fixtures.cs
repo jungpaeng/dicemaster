@@ -100,7 +100,13 @@ namespace DiceMaster
         private static string GetLocalizedSystemText(string key, string defaultValue) => defaultValue;
     }
     // The mapper's optional dynamic flag-name lookup remains a game boundary.
-    public static class DataHelper { public static string GetFlagName(string id) => id; }
+    public static class DataHelper
+    {
+        public static int FlagReads;
+        public static readonly System.Collections.Generic.Dictionary<string,string> Names = new System.Collections.Generic.Dictionary<string,string>();
+        public static string GetFlagName(string id) { FlagReads++; return id; }
+        public static string GetLocalizedSystemText(string key, string fallback, string category, string original) => Names.TryGetValue(key, out var value) ? value : fallback;
+    }
     public class DicePlugin
     {
         public static DicePlugin Instance { get; set; } = new DicePlugin();
@@ -132,5 +138,56 @@ namespace DiceMaster.Gamepad
         public static string Hint() => "";
         public static int Tick(bool enabled, bool windowVisible, int current, float time, string cacheRoot) => current;
         public static string ConsumeWarning() => null;
+    }
+}
+
+// Locale/field/value boundaries for the actual condition/name formatter IL.
+// This suite checks translation integration; RealGameApiTests checks evaluation.
+namespace DiceMaster.LiveLog
+{
+    public static class LogBridge
+    {
+        public static object ReadFieldStrict(object value, string name)
+        {
+            if (value == null) return null;
+            var type = value.GetType();
+            for (var at = type; at != null; at = at.BaseType)
+            {
+                var field = at.GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly);
+                if (field != null) return field.GetValue(value);
+            }
+            return type.GetProperty(name)?.GetValue(value);
+        }
+        public static object CallDisplayHelper(string owner, string name, params object[] args)
+        {
+            var type = typeof(LogBridge).Assembly.GetType(owner, true);
+            foreach (var method in type.GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic))
+                if (method.Name == name && method.GetParameters().Length == args.Length) return method.Invoke(null, args);
+            throw new MissingMethodException(owner, name);
+        }
+    }
+    public static class PreviewState
+    {
+        public static string FlagDevNote(string id) => "";
+        public static bool LooksLikeFlagId(string id) => id.Length > 1 && char.IsLetter(id[0]) && char.IsDigit(id[1]);
+    }
+    public class RandomDisplayValueException : Exception { }
+    public class UnsupportedDisplayStatException : Exception { }
+    public static class SafeDisplayEvaluation
+    {
+        public static int ReadReference(object value)
+        {
+            int type = Convert.ToInt32(LogBridge.ReadFieldStrict(value, "_checkType"));
+            if (type == 0) return Convert.ToInt32(LogBridge.ReadFieldStrict(value, "_constant"));
+            string field = type == 3 ? "_flag" : "_relationship";
+            object target = LogBridge.ReadFieldStrict(value, field);
+            return Convert.ToInt32(LogBridge.ReadFieldStrict(target, type == 3 ? "State" : "Value"));
+        }
+        public static int ReadGroup(object value)
+        {
+            int result = 0;
+            foreach (var reference in (System.Collections.IEnumerable)LogBridge.ReadFieldStrict(value, "_value")) result += ReadReference(reference);
+            return result;
+        }
     }
 }

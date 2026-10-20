@@ -12,11 +12,14 @@ namespace DiceMaster.EventSelection
             if (body == null) return Unavailable;
             try
             {
+                DisplayNames.RefreshMappings();
+                int pending = DisplayNames.PendingNames;
                 var analysis = PreviewAnalyzer.Analyze(sourceName, body, DataHelper.ReadPreviewScript);
                 // This is a possible future path. Keep current-value hints
                 // out of cached display data and never run the game branch.
                 analysis.SnapshotAllowed = false;
-                return new EventResultPreview(PreviewDisplay.Describe(analysis), false);
+                string detail = PreviewDisplay.Describe(analysis);
+                return new EventResultPreview(detail, DisplayNames.PendingNames != pending);
             }
             catch (PreviewReadException error)
             {

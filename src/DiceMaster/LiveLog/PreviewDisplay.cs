@@ -143,15 +143,7 @@ namespace DiceMaster.LiveLog
         }
         private static string Flag(string key, int value)
         {
-            string note = PreviewState.LooksLikeFlagId(key) ? PreviewState.FlagDevNote(key) : key;
-            // TranslateDevNote itself resolves ID-shaped arguments through
-            // MissionManagerData.Instance. Only its pure dev-note branch is
-            // permitted here; unavailable notes retain the literal flag ID.
-            string name = string.IsNullOrEmpty(note) || PreviewState.LooksLikeFlagId(note) ? key :
-                Helper("FlagTranslations", "TranslateDevNote", note, value);
-            if (string.IsNullOrEmpty(name)) name = key;
-            if (!name.EndsWith("(" + key + ")", StringComparison.Ordinal)) name += "(" + key + ")";
-            return name;
+            return DisplayNames.FlagName(key, value);
         }
         private static string Local(string key, string fallback)
         { return Helper("DataHelper", "GetLocalizedSystemText", key, fallback, "시스템_미리보기", key); }

@@ -15,9 +15,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.16/DiceMaster-v1.0.6-alpha.16.zip) | 로그 이벤트 목록·조건 상세의 확정 미충족 회색 표시와 공통 판정 | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA16-RELEASE.md) |
+| [시험판 v1.0.6-alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.17) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.17/DiceMaster-v1.0.6-alpha.17.zip) | 조건·결과의 한국어 이름·날짜 표시 연결과 미확정 이름 재조회 | 전체 소스의 14개 자동 검사 통과. 고정 커밋·공개 파일 대조 후 게시하며 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA17-RELEASE.md) |
 
-alpha.16은 alpha.15의 팝업 조건·판정 표시, alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
+alpha.17은 조건·이벤트의 이름과 날짜, 팝업의 결과 요약·상세에 기존 한국어 번역을 연결합니다. 플래그·호감도·아이템 등의 표시 이름을 해석하고 이름 자료가 늦게 준비되면 다시 조회합니다. 번역이 없는 항목과 원본 ID는 남을 수 있습니다. 기존 회색 판정·예약·팝업 조작과 cfg를 유지합니다. [변경·검증 범위](docs/ISSUE-5-ALPHA17-RELEASE.md)
 
 **시험판의 조건 팝업 기본값은 OFF입니다.** 기존 cfg에 저장된 ON은 유지하므로 끄려면 조건 탭 상단 설정을 OFF로 바꾸세요. 새 cfg 또는 해당 키가 없는 cfg에만 OFF를 적용합니다.
 
@@ -118,7 +118,7 @@ alpha.16은 alpha.15의 팝업 조건·판정 표시, alpha.13의 조건 상세 
 
 ## 시험판의 조건·이벤트 선택
 
-공개 시험판은 **[v1.0.6-alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16)**입니다. 로그 이벤트 목록과 조건 상세의 분기에도 팝업과 같은 확정 미충족 회색 표시를 적용합니다. 기존 세 줄 팝업·전체 조건, 로그 열기와 체크포인트당 한 행·상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha16-로그-판정회색-표시-확인표)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.17)**입니다. 로그·팝업 조건과 예상 결과의 한국어 표시를 보완합니다. 기존 확정 미충족 회색 표시·세 줄 팝업·로그 열기·상세 분기 예약은 유지하며, 실제 Windows·장치 확인은 [배포 기록](docs/ISSUE-5-ALPHA17-RELEASE.md)에서 대기합니다.
 
 ### 로그 판정 표시
 
@@ -168,7 +168,7 @@ alpha.16은 alpha.15의 팝업 조건·판정 표시, alpha.13의 조건 상세 
 
 이벤트 상세에는 활성 조건 전체·기본 가중치·조건별 가중치 증감·최종 가중치를 표시합니다. 가중치는 확률 `%`가 아닙니다. 조건 분기는 앞 분기 우선순위·기본 분기·이번 실행 횟수 비교를 함께 보여줍니다. 난수는 **범위와 식·미확정**으로 표시하며 실제로 뽑힌 값처럼 보이는 표시용 예시값은 사용하지 않습니다. 표시를 위한 읽기가 RNG나 실행 횟수를 진행시키지 않습니다.
 
-요약·상세의 결과 효과색과 읽기 가능한 후보의 명시적인 조건 무시를 유지합니다. 전체 조건·결과는 휠·오른쪽 스틱으로 따로 읽고 ↑↓는 항목 이동입니다. 설명은 정적 분석 범위이며 후속 분기까지 모두 확정하지 않습니다. 표시 한도·순환·지원하지 않는 계산은 해당 위치에 미확인 사유를 남기고, 설명 형식화 실패만으로 이미 확인한 실행 자격을 바꾸지 않습니다. 회상·조건 설명에 내부 ID가 남을 수 있습니다. [조건·요약·판정 표시 범위](docs/ISSUE-5-POPUP-CONDITION-PARITY.md)
+요약·상세의 결과 효과색과 읽기 가능한 후보의 명시적인 조건 무시를 유지합니다. 전체 조건·결과는 휠·오른쪽 스틱으로 따로 읽고 ↑↓는 항목 이동입니다. 설명은 정적 분석 범위이며 후속 분기까지 모두 확정하지 않습니다. 표시 한도·순환·지원하지 않는 계산은 해당 위치에 미확인 사유를 남기고, 설명 형식화 실패만으로 이미 확인한 실행 자격을 바꾸지 않습니다. 번역 자료가 없는 이름과 식별용 내부 ID는 남을 수 있습니다. [조건·요약·판정 표시 범위](docs/ISSUE-5-POPUP-CONDITION-PARITY.md)
 
 지원하는 Switch 팝업은 비메인 Lua 코루틴에서 직접 문자열 리터럴로 호출하고, 결과를 지역 변수에 대입한 뒤 바로 정수 동등 비교 `if/elseif/else`로 분기하는 형식에 표시됩니다. 강릉 포위전의 **할 일 없이 그늘에서 쉰다** 뒤 대화를 진행해 도달하는 `Ch_3_6_4_002`가 한 예입니다. 선택할 분기가 둘 미만이거나 지원 밖 형식이면 팝업 없이 원래 판정으로 진행합니다. 이벤트 팝업도 지원하는 직접 리터럴 `Position` 호출에만 표시합니다.
 

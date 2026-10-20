@@ -34,6 +34,13 @@ namespace DiceMaster
                 int cachedReads = readKeys.Count;
                 Preview("actual_prefix_reward");
                 Check(readKeys.Count == cachedReads, "Successful preview definitions reuse the existing parser cache");
+                scripts["late_named_book"]="statmodifymanager.AddBook(\"late_translation\",1)";
+                var unnamed=Preview("late_named_book");
+                Check(Retry(unnamed) && Detail(unnamed).Contains("late_translation"),"missing decorative name requests retry without hiding the known item effect");
+                DataHelper.LocaleNames["Book/Name/late_translation"]="늦게 준비된 비급";
+                var named=Preview("late_named_book");
+                Check(!Retry(named) && Detail(named).Contains("늦게 준비된 비급"),"same cached script resolves a late locale name and clears presentation retry");
+                DataHelper.LocaleNames.Clear();
                 var branch = Preview("actual_prefix_branch");
                 Contains(Detail(branch), "popup_left", "Conditional result includes first arm");
                 Contains(Detail(branch), "popup_right", "Conditional result includes alternate arm");

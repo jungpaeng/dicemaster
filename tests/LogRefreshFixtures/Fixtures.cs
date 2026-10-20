@@ -122,6 +122,7 @@ namespace DiceMaster
     }
     public static class UiTextMapper
     {
+        private static string KnownDisplayNames(string text) => text;
         public static object translationCacheLock = new object();
         public static Dictionary<string, string> translationCache = new Dictionary<string, string>();
         public static Dictionary<string, string> exactReplacements = new Dictionary<string, string>();

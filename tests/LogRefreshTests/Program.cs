@@ -128,7 +128,7 @@ static class LogRefreshTests
                 ["DiceMaster.PositionEventCache"] = new[] { "GetPositionEventDesc", "GeneratePreviewDynamicDesc", "ClearDisplayCaches", "GetPositionEvents" },
                 ["DiceMaster.OptionInfoPatch"] = new[] { "MissionCheckData_Postfix" },
                 ["DiceMaster.DicePlugin"] = new[] { "ClearLogEntries" },
-                ["DiceMaster.UiTextMapper"] = new[] { "TryGetCachedTranslation", "CacheTranslation", "ApplyTranslations", "ConvertGetFlagExpression" }
+                ["DiceMaster.UiTextMapper"] = new[] { "TryGetCachedTranslation", "CacheTranslation", "KnownDisplayNames", "ApplyTranslations", "ConvertGetFlagExpression" }
             };
             foreach (var group in groups)
                 foreach (var name in group.Value) Install(Find(module, group.Key, name), Find(target, group.Key, name));

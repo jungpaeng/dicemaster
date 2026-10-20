@@ -53,22 +53,9 @@ namespace DiceMaster.LiveLog
         private static string NameById(string singleton, string field, string collectionType,
             string itemType, string id, string localePrefix)
         {
-            IList items = NameItems(OptionalField(ExistingSingleton(singleton), field), collectionType);
-            if (items == null) return id;
-            foreach (object item in items)
-            {
-                if (item == null || item.GetType().FullName != itemType) continue;
-                if (string.Equals(OptionalField(item, "_id") as string, id, StringComparison.Ordinal))
-                {
-                    try
-                    {
-                        return (string)LogBridge.CallDisplayHelper("DiceMaster.DataHelper", "GetLocalizedSystemText",
-                            localePrefix + id, id, "시스템_미리보기", id);
-                    }
-                    catch (Exception) { return id; }
-                }
-            }
-            return id;
+            // Locale keys are audited against the supplied game DLL. A name
+            // lookup does not depend on an inventory/player singleton being ready.
+            return DisplayNames.LookupName(localePrefix + id, id);
         }
 
         public static string TeamName(string id)
