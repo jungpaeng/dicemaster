@@ -3,6 +3,7 @@
  <ItemGroup>
   <Compile Include="../../src/DiceMaster/Information/InformationRuntime.cs" Link="InformationRuntime.cs" />
   <Compile Include="../../src/DiceMaster/Information/InformationRow.cs" Link="InformationRow.cs" />
+  <Compile Include="../../src/DiceMaster/Information/MapGuideSnapshot.cs" Link="MapGuideSnapshot.cs" />
   <Compile Include="../../src/DiceMaster/LiveLog/RefreshEngine.cs" Link="RefreshEngine.cs" />
   <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
   <Compile Include="../../src/DiceMaster/EventSelection/EventEligibilitySnapshot.cs" Link="EventEligibilitySnapshot.cs" />

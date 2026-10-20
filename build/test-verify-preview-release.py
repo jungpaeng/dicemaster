@@ -194,10 +194,10 @@ class PreviewValidationTests(unittest.TestCase):
                     with self.subTest(scope=scope, key=key, value=value), self.assertRaises(RuntimeError):
                         preview.validate_preview_candidate(manifest, scope)
 
-    def test_all_eighteen_prd6_programs_required_with_pass_evidence(self):
-        self.assertEqual(len(preview.PRD6_REQUIRED_TESTS), 18)
+    def test_all_twenty_prd6_programs_required_with_pass_evidence(self):
+        self.assertEqual(len(preview.PRD6_REQUIRED_TESTS), 20)
         self.assertEqual(preview.PRD6_REQUIRED_TESTS - preview.PRD5_REQUIRED_TESTS,
-                         {'MapInformationTests', 'ShopInformationTests',
+                         {'MapInformationTests', 'MapRouteTests', 'MapGuideRouteIntegrationTests', 'ShopInformationTests',
                           'BranchHistoryTests', 'InformationRuntimeTests'})
         for name in preview.PRD6_REQUIRED_TESTS:
             manifest = deepcopy(self.prd6)
@@ -216,7 +216,7 @@ class PreviewValidationTests(unittest.TestCase):
             with self.subTest(tests=tests), self.assertRaises(RuntimeError):
                 preview.validate_preview_candidate(manifest, 'prd6')
 
-    def test_prd6_accepts_actual_eighteen_suite_success_record_formats(self):
+    def test_prd6_accepts_actual_twenty_suite_success_record_formats(self):
         manifest = deepcopy(self.prd6)
         # These are the existing build/source_build.py result prefixes. The
         # lifecycle program has no PASS prefix; metadata supplements API PASS.
@@ -225,7 +225,7 @@ class PreviewValidationTests(unittest.TestCase):
             'METADATA CONTRACT: actual game/Harmony target signatures and pure description wrappers verified; native game NOT executed.',
             'PASS: 4265 managed behavior assertions and 1278 metadata contract assertions; native game runtime NOT executed.',
         ]
-        self.assertEqual(len(manifest['tests']), 18)
+        self.assertEqual(len(manifest['tests']), 20)
         preview.validate_preview_candidate(manifest, 'prd6')
 
     def test_prd6_rejects_metadata_only_wrong_suite_and_invalid_success_counts(self):

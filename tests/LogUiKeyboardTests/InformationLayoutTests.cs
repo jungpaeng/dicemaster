@@ -79,6 +79,9 @@ internal static partial class Program
             InformationRuntime.TestWaiting("waiting"); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1009);
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("게임 데이터 대기 중", StringComparison.Ordinal), "first-read waiting is visible without inventing a zero-candidate success");
+            InformationRuntime.TestGlobal(); GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(false, false, default, 1010);
+            Check(GUI.PassiveLabels.Count == 0, "no-selection snapshot with global rows never creates a selected-place panel");
             Check(InformationRuntime.TestErrors.Count == 0, "overlay boundaries complete without swallowed failures");
         }
         finally { Screen.width = width; Screen.height = height; InformationRuntime.TestMap(null); MapGuideSource.Selected = null; GUI.PassiveLabels.Clear(); }
@@ -104,7 +107,8 @@ namespace DiceMaster.Information
         public static readonly List<string> TestErrors = new List<string>();
         public static bool Enabled(int index) => TestFlags[index];
         private static void Failure(string source, Exception error) { TestErrors.Add(source + error); }
-        public static void TestMap(InformationRow row, string status = "") { map.Rows.Clear(); map.Visible = row != null; if (row != null) { MapGuideSource.CurrentAnchor = row.Anchor; MapGuideSource.CurrentId = row.Id; map.Rows.Add(new Row { Id = row.Id, Value = row, Status = status }); } }
+        public static void TestMap(InformationRow row, string status = "") { map.Rows.Clear(); map.Visible = row != null; if (row != null) { MapGuideSource.CurrentAnchor = row.Anchor; MapGuideSource.CurrentId = row.Id; var snapshot = new MapGuideSnapshot { Summary = row, HasSelection = true }; snapshot.Entries.Add(row); snapshot.Entries.Add(new InformationRow("other", "장소 무관", "임무", "대기", "상세")); map.Rows.Add(new Row { Id = row.Id, Value = snapshot, Status = status }); } }
         public static void TestWaiting(string id) { MapGuideSource.CurrentAnchor = MapGuideSource.Selected; MapGuideSource.CurrentId = id; map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = id, Status = "게임 데이터 대기 중" }); }
+        public static void TestGlobal() { var snapshot = new MapGuideSnapshot { HasSelection = false }; snapshot.Entries.Add(new InformationRow("global", "장소 무관", "임무", "대기", "상세")); map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = MapGuideSource.CurrentId, Value = snapshot }); }
     }
 }

@@ -11,6 +11,7 @@
     <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationLayout.cs" Link="InformationLayout.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationOverlay.cs" Link="InformationOverlay.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapGuideSnapshot.cs" Link="MapGuideSnapshot.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationRow.cs" Link="InformationRow.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogCursorScope.cs" Link="LogCursorScope.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />

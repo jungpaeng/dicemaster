@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable><DefineConstants>$(DefineConstants);MAP_ROUTE_INTEGRATION</DefineConstants></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../MapInformationTests/Boundaries.cs" Link="Boundaries.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapGuideSource.cs" Link="MapGuideSource.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapGuideSnapshot.cs" Link="MapGuideSnapshot.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapRoute*.cs" Link="%(Filename)%(Extension)" />
+    <Compile Include="../../src/DiceMaster/Information/OneShotProof.cs" Link="OneShotProof.cs" />
+    <Compile Include="../../src/DiceMaster/Information/InformationRow.cs" Link="InformationRow.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/RefreshEngine.cs" Link="RefreshEngine.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/SafeDisplayEvaluation.cs" Link="SafeDisplayEvaluation.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/PreviewSyntax.cs" Link="PreviewSyntax.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/PreviewConditions.cs" Link="PreviewConditions.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventEligibility.cs" Link="EventEligibility.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventEligibilitySnapshot.cs" Link="EventEligibilitySnapshot.cs" />
+  </ItemGroup>
+</Project>

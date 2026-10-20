@@ -654,7 +654,7 @@ namespace DiceMaster
             assertions += ParseCacheRegression.Run(); Console.WriteLine("PREVIEW bounded parse cache regression passed");
             assertions += TraversalRegression.Run(); Console.WriteLine("PREVIEW traversal regression passed");
             NamingSafety(); State(); Console.WriteLine("PREVIEW state-dependent estimates passed");
-            Cache(); LimitsAndRetry(); ShopUseRegression(); EventRetry(); EventResultPreviews(); SwitchResultPreviews(); Benchmark();
+            Cache(); LimitsAndRetry(); ShopUseRegression(); MapRouteRegression(); EventRetry(); EventResultPreviews(); SwitchResultPreviews(); Benchmark();
             Check(UnityEngine.Random.Calls == 0 && Mortal.Core.StatGroupVariable.OriginalReads == 0 && Mortal.Core.StatCompareItem.OriginalReads == 0, "Preview called original game RNG/evaluation chain");
             return assertions;
         }

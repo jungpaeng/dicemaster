@@ -34,8 +34,8 @@ namespace DiceMaster.Information {
  public static class ShopInformationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class BranchObservationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class MapGuideSource {
-  public static Func<bool> Enabled;public static bool Visible;public static string ContextKey="m";public static int Reads,Discoveries,Clears;public static bool Fail;
-  public static List<DisplayQuery> Discover(bool g,bool o){Discoveries++;return new(){new DisplayQuery("map",()=>{Reads++;if(Fail)throw new InvalidOperationException();return new InformationRow("map","장소","지도","가능","조건과 효과");})};}public static void Clear(){Clears++;}public static void ClearSnapshots(){Clears++;}
+  public static Func<bool> Enabled;public static bool Visible,NoSelectionSession;public static bool SessionVisible=>Visible||NoSelectionSession;public static string ContextKey="m";public static int Reads,Discoveries,Clears;public static bool Fail;
+  public static List<DisplayQuery> Discover(bool g,bool o){Discoveries++;if(!Visible&&(!NoSelectionSession||!g))return new();return new(){new DisplayQuery("map",()=>{Reads++;if(Fail)throw new InvalidOperationException();var snapshot=new MapGuideSnapshot{HasSelection=Visible,ContextKey=ContextKey,Summary=Visible?new InformationRow("map","장소","지도","가능","조건과 효과"):null};snapshot.Entries.Add(new InformationRow("mission/first","첫 임무",NoSelectionSession?"장소 무관":"선택 장소","발생 대기","첫 조건과 효과"));snapshot.Entries.Add(new InformationRow("event/second","둘째 이야기","기타 연결","확인 불가","둘째 조건과 효과"));return snapshot;})};}public static void Clear(){Clears++;}public static void ClearSnapshots(){Clears++;}
  }
  public static class ShopEffectSource {
   public static Func<bool> Enabled;public static bool Visible,Fail;public static string ContextKey="s";public static int Reads;public static string Summary;

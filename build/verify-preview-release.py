@@ -4,7 +4,7 @@ This prerelease-only path retains the original source-restoration verifier. The
 default --scope prd2 keeps its original candidate contract. Select --scope prd4
 explicitly for the reviewed log GUI/XInput candidate and its 12 test programs.
 Select --scope prd5 for the current-action event popup and its 14 test programs.
-Select --scope prd6 for read-only map/one-shot/branch/shop information and its 18 test programs.
+Select --scope prd6 for read-only map/one-shot/branch/shop information including bounded map routes.
 No scope claims historical runtime equivalence, feature completion or a
 Windows run of the candidate.
 No Git refs, network resources, installed plugins or game references are written.

@@ -56,7 +56,8 @@ namespace DiceMaster.Information
                 status = source.Status ?? "";
                 if (MapGuideSource.IsCurrent(source.Id))
                 {
-                    selected = source.Value as InformationRow;
+                    var snapshot = source.Value as MapGuideSnapshot;
+                    selected = snapshot != null && snapshot.HasSelection ? snapshot.Summary : null;
                     if (selected == null && status.Length != 0)
                     {
                         if (!ReferenceEquals(lastWaitingSource, source))

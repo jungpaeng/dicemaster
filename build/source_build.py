@@ -154,7 +154,7 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
                  'SourceBehaviorFixtures', 'SourceBehaviorTests',
                  'PreviewIntegrationFixtures', 'PreviewIntegrationTests',
                  'LogUiModelTests', 'LogUiWiringTests', 'LogUiKeyboardTests', 'LogOpenerIntegrationTests',
-                 'EventSelectionRuntimeTests', 'EventPopupTests', 'MapInformationTests', 'ShopInformationTests', 'BranchHistoryTests', 'InformationRuntimeTests'):
+                 'EventSelectionRuntimeTests', 'EventPopupTests', 'MapInformationTests', 'MapRouteTests', 'MapGuideRouteIntegrationTests', 'ShopInformationTests', 'BranchHistoryTests', 'InformationRuntimeTests'):
         outputs[name] = build(dotnet, 'tests/' + name + '/' + name + '.csproj',
                               work, name, log,
                               ['-p:GameReferences=' + str(reference_root)] if name == 'EventSelectionRuntimeTests' else ())
@@ -183,6 +183,8 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
     test('EventSelectionRuntimeTests', candidate)
     test('EventPopupTests')
     test('MapInformationTests')
+    test('MapRouteTests')
+    test('MapGuideRouteIntegrationTests')
     test('ShopInformationTests', reference_root)
     test('BranchHistoryTests', candidate, reference_root)
     test('InformationRuntimeTests', candidate, reference_root)

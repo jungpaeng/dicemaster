@@ -6,6 +6,10 @@
 
 2026-10-19 사용자가 공개 [v1.0.3-alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상은 아래 alpha.4 해시이며 현재 주석 정리 DLL을 새로 실행한 결과로 간주하지 않습니다. [사용자 확인과 기본 전환](#사용자-windows-확인과-기본-전환)에 근거 범위를 구분하고 [배포 기록](ISSUE-3-RELEASE.md)에 정식 게시·공개 다운로드·이슈 완료 결과를 기록했습니다. 이슈 #1·#2의 기능이나 상태는 추가 변경하지 않습니다.
 
+## 현재 지도 후속 후보 빌드
+
+main의 지도 후속은 기존 전체 소스 빌드에 MapRouteTests와 MapGuideRouteIntegrationTests를 포함한 20개 검사 프로그램을 등록한다. `build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/map-guidance-candidate/full-final`로 후보를 만들고, 커밋 확정 뒤 `verify-preview-release.py --scope prd6`로 해당 소스만 추출해 다시 검증한다. 선택적 `DICEMASTER_CORPUS_INDEX`는 개발자가 보유한 검증된 번체 자료 색인을 지정하며 게임 자료를 저장소·설치 ZIP에 포함하지 않는다. [현재 구현·최종 검사·파일·Windows 확인](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 실제 결과를 기록하며 아래 PRD #4 이전 후보의 수치·확인은 당시 이력이다.
+
 ## PRD #4 후보와 prerelease
 
 ### v1.0.5 정식 게시·동일 파일 승격 검증

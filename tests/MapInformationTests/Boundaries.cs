@@ -22,15 +22,18 @@ namespace Mortal.Core
     public class StatCompareItem { public int _compareOp; public StatGroupVariable _value1, _value2; }
     public class ConditionResultItem
     { public int _logicOp; public List<StatCompareItem> _items = new List<StatCompareItem>(); public bool Check() { Counters.GameCalls++; throw new Exception(); } }
+    public class ConditionResultData : UnityEngine.Object
+    { public List<ConditionResultItem> _items = new List<ConditionResultItem>(); }
     public class GameStat { public StatKind _type = StatKind.行動次數; public object _statAdditionData; public int _value = 3; public int FinalValue => _value; }
     public class PlayerStatData { public List<GameStat> _list = new List<GameStat> { new GameStat() }; }
     public class GameTime { public int Year = 1, Month = 5, Stage = 1; }
     public class GameTimeData { public GameTime GameTime = new GameTime(); }
     public class PlayerStatManagerData { public PlayerStatData _stats = new PlayerStatData(); public GameTimeData _gameTimeData = new GameTimeData(); }
     public class MissionCheckData : UnityEngine.Object
-    { public string _key = "start", _startScript = "mission"; public PositionType _position = PositionType.Hall; public bool _active = true, _dayCheck; public int _timeCheckType = 1; public GameTime _specificTime = new GameTime(), _minTime = new GameTime(), _maxTime = new GameTime(); public ConditionResultItem[] _conditions = Array.Empty<ConditionResultItem>(); }
+    { public string _key = "start", _startScript = "mission"; public PositionType _position = PositionType.Hall; public bool _active = true, _dayCheck, _beforeMainMission; public int _timeCheckType = 1; public GameTime _specificTime = new GameTime(), _minTime = new GameTime(), _maxTime = new GameTime(); public ConditionResultItem[] _conditions = Array.Empty<ConditionResultItem>(); }
     public class MissionData : UnityEngine.Object
     {
+        public string _name = "";
         private string key = "clear"; private MissionCheckData[] stages = Array.Empty<MissionCheckData>();
         public int CurrentReads, DefinitionReads; public bool BrokenCurrent;
         public string _currentKey { get { CurrentReads++; if (BrokenCurrent) throw new InvalidOperationException("unrelated current state must not be read"); return key; } set { key = value; } }
@@ -41,19 +44,34 @@ namespace Mortal.Core
         private List<MissionData> entries = new List<MissionData>(); public int ListReads;
         public List<MissionData> _list { get { ListReads++; return entries; } set { entries = value; } }
     }
+    public class TrackingMissions : Dictionary<string, MissionCheckData>, IDictionary
+    {
+        public int Enumerations;
+        IDictionaryEnumerator IDictionary.GetEnumerator()
+        { Enumerations++; return ((IDictionary)new Dictionary<string, MissionCheckData>(this)).GetEnumerator(); }
+    }
     public class MissionManagerData
     { public MissionData _main = new MissionData(); public SubMissions _subMissions = new SubMissions(); public MissionCheckData MainCheckData; public Dictionary<string,MissionCheckData> ActiveSubMissions = new Dictionary<string,MissionCheckData>(); public bool MainMissionStart; public PositionType MainMissionPosition; }
     public static class Counters { public static int GameCalls; }
 }
 namespace Mortal.Free
 {
-    public class FreePositionData : UnityEngine.Object { public string _defaultScript = "hall"; }
+    public class PositionConditionFlagItem
+    {
+        public Mortal.Core.ConditionResultItem _condition;
+        public void Execute() { Mortal.Core.Counters.GameCalls++; throw new Exception("Entry flag execution is forbidden"); }
+    }
+    public class FreePositionData : UnityEngine.Object
+    { public string _defaultScript = "hall"; public PositionConditionFlagItem[] _conditionFlags = Array.Empty<PositionConditionFlagItem>(); }
+    public class UnreadableEntryPositionData : FreePositionData
+    { public new PositionConditionFlagItem[] _conditionFlags { get { throw new InvalidOperationException("Entry boundary read failure"); } } }
     public class FreeManager { public bool IsProcessing; }
     public class PositionController : UnityEngine.Object
     {
         public bool isActiveAndEnabled = true, _active = true; public int _costAction = 1;
         public UnityEngine.GameObject gameObject = new UnityEngine.GameObject();
         public FreePositionData _positionData = new FreePositionData { name = "Hall" };
+        public string _scriptName = "stale-script-cache";
         public Mortal.Core.PositionType _position = Mortal.Core.PositionType.Hall;
         public Mortal.Core.MissionManagerData _missionsManager = new Mortal.Core.MissionManagerData();
         public Mortal.Core.PlayerStatManagerData _gameStatManager = new Mortal.Core.PlayerStatManagerData();
@@ -67,12 +85,23 @@ namespace Mortal.Story
     {
         public bool _toggleCondition = true; public Mortal.Core.ConditionResultItem _activeCondition;
         public int _defaultRate = 10; public RateItem[] _eventRateItem = Array.Empty<RateItem>();
-        public string ResultType { get; set; } = "A";
+        private string resultType = "A";
+        public int ResultReads;
+        public string ResultType { get { ResultReads++; return resultType; } set { resultType = value; } }
         public int GetRate() { Mortal.Core.Counters.GameCalls++; throw new Exception(); }
     }
     public class PositionResultData : UnityEngine.Object { public string _scriptPrefix = "result"; public List<PositionEventData> _list = new List<PositionEventData>(); }
     public class PositionResultConfig { public List<PositionResultData> _list = new List<PositionResultData>(); }
-    public class CheckPointManager { public static CheckPointManager Instance; public PositionResultConfig _position = new PositionResultConfig(); }
+    public class ConditionResultConfig { public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>(); }
+    public class CheckPointManager
+    {
+        public static CheckPointManager Instance { get; set; }
+        public PositionResultConfig _position = new PositionResultConfig();
+        public ConditionResultConfig _condition = new ConditionResultConfig();
+        public object[] _switchList = Array.Empty<object>();
+        public string Position(string key) { Mortal.Core.Counters.GameCalls++; throw new Exception("Game Position must not execute"); }
+        public bool Condition(string key) { Mortal.Core.Counters.GameCalls++; throw new Exception("Game Condition must not execute"); }
+    }
 }
 namespace DiceMaster.LiveLog
 {
@@ -161,3 +190,50 @@ namespace Mortal.Core
         public UnityEngine.UI.Text _source = new UnityEngine.UI.Text(); public UnityEngine.UI.Text[] _text = new[] { new UnityEngine.UI.Text() };
     }
 }
+
+#if !MAP_ROUTE_INTEGRATION
+namespace DiceMaster.Information
+{
+    // Provider tests isolate the route builder. The real builder/parser and
+    // its bounded preparation are covered by MapRouteTests and DLL linkage.
+    public enum MapRouteState { Met, NotMet, Unknown }
+    public class MapRouteEvent
+    {
+        public object Event; public string ResultScript, Id;
+        public MapRouteEvent(object target, string resultScript, string id = null) { Event = target; ResultScript = resultScript; Id = id; }
+    }
+    public class MapRouteEntry
+    {
+        public object Event; public string ResultScript, Pool, Id, Path;
+        public bool HasChoice; public MapRouteState Current = MapRouteState.Met;
+    }
+    public class MapRouteDefinitions
+    {
+        public static int Builds, Advances;
+        public static MapRouteState State = MapRouteState.Met;
+        public static bool Choice;
+        public readonly List<MapRouteEntry> Entries = new List<MapRouteEntry>();
+        private string root; private Func<string,ScriptReadResult> reader; private Func<string,IList<MapRouteEvent>> pools;
+        private bool done;
+        public bool IsPreparing { get; private set; } = true;
+        public bool IsPartial, HasReadFailure; public string Diagnostic = "";
+        public MapRouteDefinitions(string key, Func<string,ScriptReadResult> source, Func<string,IList<MapRouteEvent>> poolReader)
+        { root = key; reader = source; pools = poolReader; Builds++; }
+        public void Advance(float now, int maxWork = 8192)
+        {
+            Advances++;
+            if (!done)
+            {
+                var script = reader(root);
+                if (script.State != ScriptReadState.Success) throw new DataNotReadyException();
+                if (!string.IsNullOrEmpty(script.Text))
+                    foreach (var value in pools(script.Text)) Entries.Add(new MapRouteEntry { Event = value.Event, ResultScript = value.ResultScript, Id = value.Id, Pool = script.Text, Path = root + " -> " + script.Text });
+                done = true; IsPreparing = false;
+            }
+            foreach (var value in Entries) { value.Current = State; value.HasChoice = Choice; }
+        }
+        public void Clear() { Entries.Clear(); }
+    }
+}
+
+#endif

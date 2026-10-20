@@ -113,11 +113,12 @@ namespace DiceMaster.Information
             {
                 luaContext = LogBridge.Model.ContextId;
                 OptionHintSource.Clear(); OneShotProof.Clear(); Reset(hints);
+                MapGuideSource.ClearSnapshots(); Reset(map);
                 // Scene/load patches clear history separately; ordinary Lua keeps it.
             }
             bool mapVisible = focused && automaticVisible && MapGuideSource.Visible;
             Run(map, "지도 안내", MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1],
-                (enabled[0] || enabled[1]) && (mapVisible || detailPage == "지도 안내"), now,
+                (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
                 () => MapGuideSource.Discover(enabled[0], enabled[1]), manual);
             Run(shop, "상점 효과", ShopEffectSource.ContextKey,
                 enabled[3] && focused && (automaticVisible && ShopEffectSource.Visible || detailPage == "상점 효과"), now,
@@ -179,8 +180,31 @@ namespace DiceMaster.Information
             var rows = new List<LogItem>();
             foreach (DisplayRow source in page.Rows)
             {
+                var snapshot = source.Value as MapGuideSnapshot;
+                if (title == "지도 안내" && snapshot != null)
+                {
+                    foreach (InformationRow entry in snapshot.Entries) AddPublishedRow(rows, source, entry);
+                    if (snapshot.Entries.Count == 0 && snapshot.Summary != null) AddPublishedRow(rows, source, snapshot.Summary);
+                    continue;
+                }
                 var value = source.Value as InformationRow;
-                rows.Add(new LogItem { Id = source.Id, RawId = value?.Id ?? source.Id,
+                AddPublishedRow(rows, source, value);
+            }
+            if (rows.Count == 0)
+            {
+                bool on = title == "지도 안내" ? Enabled(0) || Enabled(1) : title == "상점 효과" ? Enabled(3) : Enabled(2);
+                bool waiting = on && (title == "지도 안내" ? MapGuideSource.Visible || Enabled(0) && MapGuideSource.SessionVisible : title == "상점 효과" && ShopEffectSource.Visible);
+                rows.Add(new LogItem { Id = "__empty__", Title = !on ? "기능 OFF" : waiting ? RefreshEngine.WaitingStatus :
+                    title == "지도 안내" ? "현재 지도 장소 없음" : title == "상점 효과" ? "현재 선택한 상점 물품 없음" : "실제 분기 기록 없음",
+                    Description = "현재 문맥의 자료만 조회합니다. 정보 조회는 게임 진행·예약·구매·사용을 실행하지 않습니다.",
+                    ReservationAllowed = false, RefreshState = waiting ? LogRefreshState.Waiting : LogRefreshState.Healthy });
+            }
+            LogBridge.Model.Publish(new LogSnapshot(LogBridge.Model.ContextId, title, rows));
+        }
+        private static void AddPublishedRow(List<LogItem> rows, DisplayRow source, InformationRow value)
+        {
+            if (value == null && source.Value is MapGuideSnapshot) return;
+            rows.Add(new LogItem { Id = value?.Id ?? source.Id, RawId = value?.Id ?? source.Id,
                     Title = value?.Title ?? (source.Status ?? "조회 대기"),
                     Text = value == null ? "" : value.Kind + " · " + value.Status,
                     Description = value?.Detail ?? "", Target = null, ReservationAllowed = false,
@@ -188,17 +212,6 @@ namespace DiceMaster.Information
                     RefreshState = string.IsNullOrEmpty(source.Status) ? LogRefreshState.Healthy :
                         source.Status == RefreshEngine.WaitingStatus ? LogRefreshState.Waiting :
                         value == null ? LogRefreshState.ReadFailure : LogRefreshState.RetainedFailure });
-            }
-            if (rows.Count == 0)
-            {
-                bool on = title == "지도 안내" ? Enabled(0) || Enabled(1) : title == "상점 효과" ? Enabled(3) : Enabled(2);
-                bool waiting = on && (title == "지도 안내" ? MapGuideSource.Visible : title == "상점 효과" && ShopEffectSource.Visible);
-                rows.Add(new LogItem { Id = "__empty__", Title = !on ? "기능 OFF" : waiting ? RefreshEngine.WaitingStatus :
-                    title == "지도 안내" ? "현재 지도 장소 없음" : title == "상점 효과" ? "현재 선택한 상점 물품 없음" : "실제 분기 기록 없음",
-                    Description = "현재 문맥의 자료만 조회합니다. 정보 조회는 게임 진행·예약·구매·사용을 실행하지 않습니다.",
-                    ReservationAllowed = false, RefreshState = waiting ? LogRefreshState.Waiting : LogRefreshState.Healthy });
-            }
-            LogBridge.Model.Publish(new LogSnapshot(LogBridge.Model.ContextId, title, rows));
         }
         internal static void Failure(string key, Exception error)
         {

@@ -1,5 +1,7 @@
 # PRD #6 — 새 후보 실제 Windows 확인표
 
+최신 지도 개선 후보의 설치 파일·대기 항목은 [v1.0.7-alpha.3 확인표](ISSUE-6-MAP-GUIDANCE-RELEASE.md#설치와-실제-windows-확인)를 따른다. 아래는 기존 후보의 당시 기록이며 새 파일의 확인으로 승계하지 않는다.
+
 **현재 공개 후보 v1.0.7-alpha.2:** [선택 장소 지도 안내·상점 사용 효과·공개 파일 검증·새 Windows 확인표](ISSUE-6-SELECTED-MAP-SHOP.md). 아래는 공개 alpha.1의 구현·파일·게시 당시 미실행 확인 기록으로 보존하며 새 수정 파일과 구분한다.
 
 [후보·설치·파일 확인](ISSUE-6-CANDIDATE.md) · [구현·지원 한계](ISSUE-6-IMPLEMENTATION.md) · [사용자 안내](../README.md) · [패드](GAMEPAD.md)
