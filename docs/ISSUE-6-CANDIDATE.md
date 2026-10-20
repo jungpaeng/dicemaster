@@ -1,0 +1,83 @@
+# 지도·1회성·분기·상점 정보 — v1.0.7-alpha.1 로컬 후보
+
+[사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [구현·지원 범위](ISSUE-6-IMPLEMENTATION.md) · [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [변경 이력](../CHANGELOG.md)
+
+상태: **로컬 후보 준비·자동 검증 중 / 새 사용자 Windows 확인 미실행**. 공개 Release·태그·Latest 변경·이슈 종료는 수행하지 않았다. 공개 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. 아래 최종 설치 파일·소스·해시는 자동 검증 영수증이 확정된 뒤 채운다. 이전 후보 파일·검사 수치·사용자 확인을 새 후보에 옮기지 않는다.
+
+## 이번 변경
+
+현재 지도 장소의 이야기·임무 후보와 진행 가능 수, 안전하게 증명한 1회성, 게임이 실제로 선택한 분기의 5초 알림·최신 20건 기록, 상점 선택 물품의 사용·학습 정보 조회를 추가한다. 게임 자동 화면은 이름·종류·상태만 제공하고 조건·효과는 기존 로그 도구의 **지도 안내 조회·분기 기록 조회·상점 효과 조회**에서 읽는다.
+
+기존 Tab 또는 같은 패드 L3/R3 겹침으로 로그를 연다. 해제·중립 뒤 Y 도구에서 조회를 고르고 ↑↓·왼쪽 스틱으로 항목 이동, 오른쪽 스틱으로 상세, B/Esc로 도구 복귀, LB/RB로 기존 탭에 이동한다. 새 조회 선택은 게임 실행·예약·구매·사용·학습을 만들지 않는다. 기존 팝업·로그 네 탭·미션 예약·주사위와 단일 XInput 소유권·다중 슬롯·해제/중립을 유지한다.
+
+## 설정과 의미
+
+| `[DiceMaster]` 키 | 기본값 | OFF 정리 |
+| --- | --- | --- |
+| EnableMapGuide | true | 지도 안내 표시·조회 스냅샷 |
+| EnableOneShotHints | true | 지도·선택지·이벤트 팝업 1회성 정보 |
+| EnableBranchNotices | true | 분기 알림·20건 메모리 기록·진행 중 관찰 |
+| EnableShopEffectInfo | true | 상점 요약·선택 물품 정보 스냅샷 |
+
+도구의 개별 변경은 즉시 적용·저장하고 다른 개별 값·기존 단축키·배치·글자를 보존한다. `EnableOptionInfo=false` 시작은 네 저장값을 보존하면서 모두 비활성화한다. 상위 옵션은 기존 재시작 규칙을 따른다. 개별 설정 읽기 실패는 그 기능만 끈다. ON은 현재 유효 문맥부터 읽으며 이전 알림을 재생하지 않는다.
+
+지도 후보 수는 인식한 관련 항목 수이며 실제 발생 보장이 아니다. `1회성`은 현재 활성 조건이 실행 뒤 꺼지는 것으로 증명한 항목이며 미독·첫 방문·유일 기회를 뜻하지 않는다. 미지원·동적·활성 조건 미연결은 확인 불가다. 현재 제공 게임의 선택지 버튼에는 원래 활성 조건 참조가 없어 선택지의 기본 판정은 확인 불가이며 interactable·미독만으로 추론하지 않는다. 양성 표시는 지도·실제 이벤트 팝업의 명시 활성 조건과 무조건 확정 상수 플래그 결과가 연결되는 범위에 적용한다. 상점 책/비급은 현재 알려진 조건·학습 소모·다음 단계의 정적 변화만 제공한다. 소모품 사용 효과 배열이 읽혀도 실제 사용 실행 경로가 미확인이면 적용 변화는 확인 불가다. 장비 착용·미래 강화·랜덤 최종값은 범위 밖이다.
+
+분기 알림은 최신 1건 5초, 기록은 최신순 20건을 메모리에만 보관하며 저장·로드·장면 전환·분기 OFF에서 모두 지운다. 같은 분기의 별도 실행은 별도 기록이고 같은 실행 관찰의 중복만 제거한다. 재실행·ON 뒤 복원하지 않는다.
+
+표시는 게임 RNG·판정/실행 횟수·예약·세이브·능력치·아이템을 변경하지 않는다. 현재 보이는 문맥만 정상 0.25초·실패 5초로 읽고 자동·상세 모두 숨김/OFF면 표시 조회는 0회다. 기존 캐시를 재사용해 정상 주기마다 Lua를 재분석하지 않는다. 데이터 대기·빈 대상·확인 불가·읽기 실패·같은 문맥 이전 값을 구분하고 대상 교체 때 오래된 자료를 버린다.
+
+## 로컬 설치 파일과 자동 검사
+
+| 최종 기록 항목 | 결과 |
+| --- | --- |
+| 후보 빌드 | 2026-10-21 00:34:15 KST · SDK 8.0.426 · net48 · 오류 0/기존 경고 7 |
+| 소스·참조 | 빌드 입력 227개 · 소스/리소스 95개 · 고정 외부 참조 15개 전후 무변경 |
+| 고정 소스 재빌드 | 검토 후보 소스 커밋을 만든 뒤 별도 영수증으로 확정 |
+| 전체 자동 검사 | 18개 검사 프로그램 PASS · Python 후보 검증기 회귀 20개 PASS |
+| 설정·패키지 | [DiceMaster] 네 키 기본 true · 정확히 DLL/cfg 두 파일 · CRC/내부 바이트 PASS |
+| DiceMaster.dll | 717312바이트 · SHA-256 `02ba6280037c80b0dc467dfa7564347f2bdd9eb9321467aeb7d00d8a1766ebed` |
+| DiceMaster.cfg | 12509바이트 · SHA-256 `7f77b7f23de885333f9ecdf5d402be506b759be391ac1bd37f2a76622b07702c` |
+| 설치 ZIP | 303887바이트 · SHA-256 `dbbf9f7421f0e20dc96c269f7c4a34c4d63ef61a31b79108a876ff8ef48a998d` |
+| 로컬 검토 후보 | `artifacts/issue-6/candidate/DiceMaster-source-candidate.zip` · `build-manifest.json` · `build.log` |
+| 실제 Windows·Unity·물리 장치·비용/할당량 | **미실행·사용자 확인 대기** |
+
+### 이번 검사 프로그램 결과
+
+| 검사 | 실제 결과 |
+| --- | --- |
+| LogRefreshTests | PASS: 23 assertions against installed DLL method bodies and boundary fixtures. |
+| LiveLogEngineTests | PASS: 16 refresh engine scenarios, 70 assertions. |
+| LifecycleTests | Lifecycle assertions passed: 4023 |
+| LiveLogIntegrationTests | PASS: 485 integration assertions using actual DLL parser, Action, refresh engine, bridge, lifecycle hook, pure wrapper, option-summary and dynamic helper IL; game/UI/compiler boundaries are fixtures. |
+| RealGameApiTests | METADATA CONTRACT: actual game/Harmony target signatures, paired hooks, exception preservation and pure description wrappers verified; Harmony/native game NOT executed. / PASS: 4265 managed behavior assertions and 1278 metadata contract assertions; Unity/random/data boundaries are managed fixtures, native game runtime NOT executed. |
+| GamepadTests | PASS: 262831 assertions. |
+| SourceBehaviorTests | PASS: 3541 source translation/parser/narrative/dice behavior assertions; actual mod IL and embedded translation data, Unity/loader/locale/game-table/narrative-sink/input boundaries are fixtures. Windows/UI/native NOT executed. |
+| PreviewIntegrationTests | PASS: 2101 preview integration assertions using actual DLL parser, Action, analyzer and description IL; script/state/translation boundaries are fixtures. |
+| LogUiModelTests | PASS: 444 log model assertions (full publications, status-only rows, navigation, identity, last-good/errors, context and activation tickets). |
+| LogUiWiringTests | PASS: 113 actual candidate GUI/publication/input wiring and package boundary assertions; Unity/native/Windows execution remains untested. |
+| LogUiKeyboardTests | PASS: LogUiKeyboardTests: 5821 checks passed; actual renderer/model/controller sources with explicit Unity/game boundaries and managed window/clip contract model (not native Unity execution). Physical keyboard navigation, cursor and managed pointer boundaries remain covered. |
+| LogOpenerIntegrationTests | PASS: LogOpenerIntegrationTests: 1839 assertions across 43 isolated scenarios; linked actual native hook/filter/bridge/controller/action-gate sources with only Win32/original-export/Unity boundaries simulated (not Windows/game runtime validation). |
+| EventSelectionRuntimeTests | PASS: event execution runtime 1393 assertions across 237 scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries) |
+| EventPopupTests | PASS: EventPopupTests: 2116 actual popup input/layout boundary checks; managed substitutes, not Windows Unity rendering. |
+| MapInformationTests | PASS: 85 map/one-shot managed boundary assertions; Unity/Windows runtime not executed. |
+| ShopInformationTests | PASS: ShopInformationTests 459 assertions; actual provider and refresh source with explicit Unity/game/Harmony fixtures. Actual metadata contracts checked when reference root supplied; Windows/Unity rendering/physical input NOT executed. |
+| BranchHistoryTests | PASS: BranchHistoryTests: 412 checks (actual-source history/observation, actual candidate DLL IL, supplied save/scene/result API metadata); game/Unity/display helpers are explicit fixtures, Windows/native not executed. |
+| InformationRuntimeTests | PASS: InformationRuntimeTests: 45 scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures. |
+
+준비 단계에서 #5 기준선 자동 검사와 API 메타데이터/IL을 조사한 결과는 새 #6 후보의 검증과 구분한다. 새 기능의 실제 소스·관리 대역·실제 제공 MoonSharp/참조 메타데이터를 사용한 자동 검사도 Windows 게임·물리 장치 실행을 대신하지 않는다. 최종 자동 영수증에는 실행한 검사·대역·미실행 경계를 남긴다.
+
+## 설치·업데이트·복구
+
+Windows용 활협전과 BepInEx를 포함한 활협전용 모드 베이스가 필요하다. 설치 후보가 위 표에 확정된 뒤 다음 절차를 사용한다.
+
+1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
+2. **업데이트는 후보 ZIP의 `plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg·단축키·배치·글자를 보존한다. 최초 설치는 ZIP의 config/plugins를 기존 BepInEx 아래에 넣는다. 새 네 키는 실행 시 기존 cfg에 추가된다.
+3. 설치 DLL 해시를 위 후보 값과 대조하고 [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)의 환경·관찰을 기록한다. 공개 GitHub Source code 압축 파일은 설치용이 아니다.
+4. 문제가 있으면 게임을 종료하고 백업 DLL/필요 cfg 또는 확인된 정식 v1.0.6으로 복구한다. v1.0.6에는 이번 네 정보 기능이 없으며 DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
+
+ZIP은 DLL/cfg 두 파일만 포함하고 게임 DLL·게임 소스를 배포하지 않는다. 새 영구 데이터는 기존 cfg의 네 bool뿐이다. 사용자 환경·실행 경로와 새 후보 해시를 기록하고 문제를 제보하되 전체 세이브·게임 소스를 기본으로 보내지 않는다.
+
+## 다음 실제 확인
+
+새 후보에서 네 기능·패드 도구/상세 이동·자동 표시의 입력 간섭 없음·분기 시간/20건/초기화·상점 연속 선택/설명 보존·미지원 구분·큰 한글/화면/스크롤을 확인해야 한다. 저장·로드·장면·OFF·실패/이전 값·숨김 조회 중단·실제 Windows 비용/할당량과 기존 #5/예약/주사위 회귀도 [확인표](ISSUE-6-WINDOWS-VALIDATION.md)에 남긴다. **이 확인이 남아 있는 동안 #6 전체 완료나 이슈 종료로 처리하지 않는다.**

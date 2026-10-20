@@ -14,6 +14,8 @@ internal static partial class Program
 
     private static void Main()
     {
+        InformationLayoutGeometry();
+        RendererInformationPages();
         RendererDeferredStartupLayout();
         WindowRootContract();
         RendererNativeWindowBounds();

@@ -11,6 +11,7 @@ using DiceMaster.EventSelection;
 using DiceMaster.Gamepad;
 using DiceMaster.LiveLog;
 using DiceMaster.LogUI;
+using DiceMaster.Information;
 using HarmonyLib;
 using Mortal.Core;
 using Mortal.Story;
@@ -87,6 +88,7 @@ public class DicePlugin : BaseUnityPlugin
 			{
 				_harmony.PatchAll(typeof(OptionInfoPatch));
 				EventSelectionRuntime.Install(_harmony);
+				InformationRuntime.Install(_harmony);
 			}
 		}
 		catch (Exception ex)
@@ -107,9 +109,14 @@ public class DicePlugin : BaseUnityPlugin
 	private void EnsureLogRenderer()
 	{
 		if (logRenderer != null) return;
-		logRenderer = new LogRenderer(LogBridge.Model, RefreshGameData, () => SetLogOpen(false));
+		logRenderer = new LogRenderer(LogBridge.Model, RefreshSelectedData, () => SetLogOpen(false));
 		logRenderer.TabChanged = tab => { currentTab = tab; RefreshLiveLogDisplay(); };
 		logRenderer.ReselectController = GamepadBridge.ReselectLogController;
+		logRenderer.InformationSettingLabel = InformationRuntime.SettingLabel;
+		logRenderer.ToggleInformationSetting = InformationRuntime.Toggle;
+		logRenderer.OneShotEventTag = InformationRuntime.EventTag;
+		logRenderer.OneShotOptionTag = InformationRuntime.OptionTag;
+		eventPopup.OneShotEventTag = InformationRuntime.EventTag;
 	}
 
 	private void SetLogOpen(bool open, int padOwner = -1)
@@ -150,7 +157,7 @@ public class DicePlugin : BaseUnityPlugin
 		logCursor.SetActive(modalOpen && Application.isFocused, logInputMode);
 		GameActionGate.SetLogState(modalOpen, Application.isFocused);
 		currentTab = logRenderer.CurrentTab;
-		RefreshLiveLogDisplay();
+		if (!showLogWindow || logRenderer.InformationPage == null) RefreshLiveLogDisplay();
 		SynchronizeLogContext();
 		// This runs even with dice adjustment disabled or the log closed: the
 		// shared owner must finish consuming held input before returning it.
@@ -171,6 +178,7 @@ public class DicePlugin : BaseUnityPlugin
 			eventPopup.Handle(frame.Command);
 			eventPopup.Scroll(frame.Scroll);
 		}
+		InformationRuntime.Tick(showLogWindow ? logRenderer.InformationPage : null, Application.isFocused, Time.unscaledTime, false, !showLogWindow && !EventSelectionRuntime.Waiting, !showLogWindow && EventSelectionRuntime.Waiting);
 		DicePatch.UpdateGamepad();
 		string gateWarning = GameActionGate.ConsumeWarning();
 		if (!string.IsNullOrEmpty(gateWarning)) LogWarning(gateWarning);
@@ -217,6 +225,7 @@ public class DicePlugin : BaseUnityPlugin
 		EventSelectionRuntime.SetLogVisible(false);
 		EventSelectionRuntime.Invalidate("모드 종료");
 		EventSelectionRuntime.WaitingChanged = null;
+		InformationRuntime.Clear();
 		logCursor.Release();
 		GameActionGate.SetLogState(false, false);
 		_harmony?.UnpatchSelf();
@@ -262,6 +271,7 @@ public class DicePlugin : BaseUnityPlugin
 			eventPopup.Draw();
 		}
 		else logCursor.Release();
+		InformationRuntime.Draw(showLogWindow, EventSelectionRuntime.Waiting, logRenderer.WindowRect, Time.unscaledTime);
 		DicePatch.DrawGamepadHint();
 	}
 
@@ -378,6 +388,13 @@ public class DicePlugin : BaseUnityPlugin
 	private void RefreshGameData()
 	{
 		LogBridge.Tick(this, manual: true);
+	}
+
+	private void RefreshSelectedData()
+	{
+		if (showLogWindow && logRenderer.InformationPage != null)
+			InformationRuntime.Tick(logRenderer.InformationPage, Application.isFocused, Time.unscaledTime, true, false, false);
+		else RefreshGameData();
 	}
 
 	internal void RefreshLiveLogDisplay()

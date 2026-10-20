@@ -26,6 +26,7 @@ namespace DiceMaster.LogUI
         private object detailTarget;
         private readonly HashSet<KeyCode> keys = new HashSet<KeyCode>();
         private readonly Dictionary<string, Rect> rowBounds = new Dictionary<string, Rect>();
+        public Func<object, string> OneShotEventTag { get; set; }
         private readonly Dictionary<string, string> plainTitles = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<LineKey, string> singleLines = new Dictionary<LineKey, string>();
         private static readonly Regex Markup = new Regex(@"</?(?:color|size|b|i|material)(?:=[^<>]*)?>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -238,7 +239,7 @@ namespace DiceMaster.LogUI
             scroll = position.y;
             foreach (EventCandidate row in EventSelectionRuntime.Candidates)
             {
-                string title = row.Title ?? "";
+                string title = (row.Title ?? "") + (OneShotEventTag?.Invoke(row.Target) ?? "");
                 if (!plainTitles.TryGetValue(title, out string plain))
                     plainTitles[title] = plain = Markup.Replace(title, "");
                 // A random or unsupported condition is unknown in either

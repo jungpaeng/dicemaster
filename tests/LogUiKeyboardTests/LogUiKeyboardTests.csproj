@@ -9,6 +9,7 @@
     <Compile Include="../../src/DiceMaster/LogUI/LogRenderer.cs" Link="LogRenderer.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/ImGuiPointerButton.cs" Link="ImGuiPointerButton.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogLayout.cs" Link="LogLayout.cs" />
+    <Compile Include="../../src/DiceMaster/Information/InformationLayout.cs" Link="InformationLayout.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogCursorScope.cs" Link="LogCursorScope.cs" />
     <Compile Include="../../src/DiceMaster/LogUI/LogModel.cs" Link="LogModel.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventEligibilitySnapshot.cs" Link="EventEligibilitySnapshot.cs" />

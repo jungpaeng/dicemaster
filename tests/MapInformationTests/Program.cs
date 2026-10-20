@@ -1,0 +1,199 @@
+using System;
+using System.Collections.Generic;
+using DiceMaster;
+using DiceMaster.Information;
+using DiceMaster.LiveLog;
+using DiceMaster.LuaParse;
+using Mortal.Core;
+using Mortal.Free;
+using Mortal.Story;
+using UnityEngine;
+using LuaAction = DiceMaster.LuaParse.Action;
+static class Program
+{
+    private static int assertions;
+    private static void Check(bool condition, string message) { assertions++; if (!condition) throw new Exception(message); }
+    private static StatGroupVariable Constant(int value) => new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = value } } };
+    private static StatGroupVariable Flag(FlagData flag) => new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 3, _flag = flag } } };
+    private static ConditionResultItem Compare(StatGroupVariable left, StatGroupVariable right, int op = 0) => new ConditionResultItem { _items = new List<StatCompareItem> { new StatCompareItem { _value1 = left, _value2 = right, _compareOp = op } } };
+    private static List<LuaAction> Result(params PreviewEffect[] effects) => new List<LuaAction> { new LuaAction { Analysis = new PreviewAnalysis { Effects = new List<PreviewEffect>(effects) } } };
+    private static PreviewEffect Set(string id, int value) => new PreviewEffect { Name = "SetFlag", Constants = new List<object> { id, value } };
+    private static PositionEventData Event(string name, ConditionResultItem condition) => new PositionEventData { name = name, _activeCondition = condition, ResultType = name };
+    private static void Proofs()
+    {
+        var flag = new FlagData { name = "F1", State = 0 };
+        var condition = Compare(Flag(flag), Constant(0));
+        Check(OneShotProof.Evaluate(condition, Result(Set("F1", 1))).Proven, "A definite SetFlag breaks the exact active flag condition");
+        Check(flag.State == 0 && Counters.GameCalls == 0, "Proof never applies effects or evaluates game conditions");
+        Check(!OneShotProof.Evaluate(condition, Result(Set("other", 1))).Proven, "An unrelated flag cannot prove once");
+        Check(!OneShotProof.Evaluate(Compare(Constant(0), Constant(1)), Result(Set("F1", 1))).Proven, "A condition already statically false is not a change proof");
+        var conjunction = Compare(Flag(flag), Constant(1));
+        conjunction._items.Add(new StatCompareItem { _value1 = Constant(0), _value2 = Constant(1) });
+        Check(!OneShotProof.Evaluate(conjunction, Result(Set("F1", 1))).Proven, "Changed true atom plus unrelated false atom cannot prove once");
+        var action = Set("F1", 1); action.Conditional = true;
+        Check(!OneShotProof.Evaluate(condition, Result(action)).Proven, "Conditional SetFlag cannot prove execution");
+        action.Conditional = false; action.Followup = true;
+        Check(!OneShotProof.Evaluate(condition, Result(action)).Proven, "Followup not guaranteed");
+        action.Followup = false;
+        Check(!OneShotProof.Evaluate(condition, Result(action, Set("F1", 0))).Proven, "Later restore cancels proof");
+        var add = new PreviewEffect { Name = "AddFlag", Constants = new List<object> { "F1", 1 } };
+        Check(!OneShotProof.Evaluate(condition, Result(add)).Proven, "State-dependent AddFlag cannot create constant proof");
+        Check(OneShotProof.Evaluate(condition, Result(Set("F1", 0), add)).Proven, "Constant set then add is safe arithmetic");
+        var nested = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 8, _negative = true, _statGroup = Flag(flag) } } };
+        Check(!OneShotProof.Evaluate(Compare(nested, Constant(1)), Result(Set("F1", 1))).Proven, "Audited nested-group reference ignores its negative flag");
+        var cycle = new StatGroupVariable(); cycle._value.Add(new StatValueReference { _checkType = 8, _statGroup = cycle });
+        Check(!OneShotProof.Evaluate(Compare(cycle, Constant(0)), Result(Set("F1", 1))).Proven, "Cyclic condition cannot prove once");
+        var or = Compare(Flag(flag), Constant(0)); or._logicOp = 1;
+        or._items.Add(new StatCompareItem { _value1 = Constant(1), _value2 = Constant(1) });
+        Check(!OneShotProof.Evaluate(or, Result(Set("F1", 1))).Proven, "OR with another true branch remains active");
+        var random = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 7 } } };
+        var unknownOr = Compare(Flag(flag), Constant(0)); unknownOr._logicOp = 1;
+        unknownOr._items.Add(new StatCompareItem { _value1 = random, _value2 = Constant(1) });
+        Check(!OneShotProof.Evaluate(unknownOr, Result(Set("F1", 1))).Proven, "Unknown OR alternative never becomes repeat or proven once");
+        var and = Compare(Flag(flag), Constant(0)); and._items.Add(unknownOr._items[1]);
+        Check(OneShotProof.Evaluate(and, Result(Set("F1", 1))).Proven, "Known changed false gate dominates AND without evaluating RNG");
+        Check(!OneShotProof.ForOption("option", Result(Set("F1", 1))).Proven && OneShotProof.CachedOptionTag("option").Contains("확인 불가"), "No activation evidence remains visibly unknown");
+        Check(OneShotProof.ForOption("option", condition, Result(Set("F1", 1))).Proven && OneShotProof.CachedOptionTag("option") == " · 1회성", "Option with explicit exact gate uses same proof");
+        OneShotProof.Clear(); Check(OneShotProof.CachedOptionTag("option") == "", "OFF/context clear removes cached hints");
+    }
+    private static InformationRow Row(bool guide = true, bool once = true)
+    { var queries = MapGuideSource.Discover(guide, once); Check(queries.Count == 1, "One registered visible map place"); return (InformationRow)queries[0].Read(); }
+    private static void Map()
+    {
+        MapGuideSource.Clear(); MapGuideSource.Enabled = () => true; Time.unscaledTime = 0;
+        Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0, "No hidden Unity search when no live place registered");
+        var controller = new PositionController(); MapGuideSource.Register(controller);
+        var zero = Compare(Constant(0), Constant(1)); var met = Compare(Constant(1), Constant(1));
+        var unknown = Compare(new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 7 } } }, Constant(1));
+        var denied = Event("denied", zero); var allowed = Event("allowed", met); var maybe = Event("maybe", unknown);
+        var broken = Event("broken", met); broken._eventRateItem = null;
+        var pool = new PositionResultData { name = "Hall", _list = new List<PositionEventData> { denied, allowed, maybe, broken } };
+        CheckPointManager.Instance = new CheckPointManager(); CheckPointManager.Instance._position._list.Add(pool);
+        DataHelper.Scripts["hall"] = "Hall";
+        var row = Row();
+        Check(row.Status == "후보 4 · 진행 가능 1", "Counts include denied/unknown/failure without claiming they are possible");
+        Check(row.AutoText.Contains("allowed") && !row.AutoText.Contains("denied") && !row.AutoText.Contains("fixture condition") && !row.AutoText.Contains("fixture effects"), "Automatic surface contains possible names/counts only");
+        Check(row.Detail.IndexOf("allowed") < row.Detail.IndexOf("denied") && row.Detail.IndexOf("denied") < row.Detail.IndexOf("maybe"), "Stable possible/impossible/unknown ordering");
+        Check(row.Detail.Contains("읽기 실패") && Counters.GameCalls == 0, "Failure is isolated and no GetRate/Check called");
+        int parses = LuaParser.Parses, reads = DataHelper.Reads, descriptions = LuaParser.Descriptions;
+        Row(); Time.unscaledTime = .25f; Row();
+        Check(LuaParser.Parses == parses && DataHelper.Reads == reads && LuaParser.Descriptions == descriptions, "Warm normal reads reuse source parser and effect description cache");
+        broken._eventRateItem = Array.Empty<RateItem>(); Time.unscaledTime = 4.99f; row = Row();
+        Check(row.Status.Contains("진행 가능 1"), "Failed candidate respects five second retry");
+        Time.unscaledTime = 5; row = Row(); Check(row.Status.Contains("진행 가능 2"), "Failed candidate recovers independently at five seconds");
+        controller._gameStatManager._stats._list[0]._value = 0; row = Row();
+        Check(row.Status.Contains("진행 가능 0") && row.Detail.Contains("행동 부족"), "Live action availability safely read");
+        controller._gameStatManager._stats._list[0]._value = 3;
+        var missionStage = new MissionCheckData { name = "stage", _conditions = new[] { met }, _dayCheck = true, _specificTime = new GameTime { Year = 1, Month = 5, Stage = 1 } };
+        controller._missionsManager._subMissions._list.Add(new MissionData { name = "mission", _currentKey = "start", _missions = new[] { missionStage } });
+        row = Row(); Check(row.Status.Contains("후보 5 · 진행 가능 3"), "Current matching mission is included without activation/auto reservation");
+        var unrelated = new MissionData { name = "other map", _currentKey = "start", BrokenCurrent = true,
+            _missions = new[] { new MissionCheckData { name = "hidden stage", _position = PositionType.Kitchen, _conditions = null } } };
+        controller._missionsManager._subMissions._list.Add(unrelated);
+        row = Row();
+        Check(unrelated.CurrentReads == 0 && row.Status.Contains("후보 5"), "Static location index never reads another map mission's throwing current state or broken condition");
+        int definitions = unrelated.DefinitionReads;
+        Time.unscaledTime += .25f; Row(); Row();
+        Check(unrelated.DefinitionReads == definitions && unrelated.CurrentReads == 0, "Warm map refresh neither rescans unrelated stage definitions nor evaluates unrelated current state");
+        var sameCountReplacement = new MissionData { name = "new local", _currentKey = "start", _missions = new[] { new MissionCheckData { name = "local", _conditions = new[] { met } } } };
+        controller._missionsManager._subMissions._list = new List<MissionData> { sameCountReplacement };
+        row = Row(); Check(row.Detail.Contains("new local") && !row.Detail.Contains("mission · stage"), "Replacing a same-count mission collection invalidates the location index");
+        controller._missionsManager._subMissions._list = new List<MissionData> { new MissionData { name = "mission", _currentKey = "start", _missions = new[] { missionStage } }, unrelated };
+        missionStage._specificTime.Month = 4; row = Row(); Check(row.Status.Contains("진행 가능 2") && row.Detail.Contains("기간 밖"), "Audited time enum 1 uses exact date");
+        var subsets = controller._missionsManager._subMissions;
+        subsets._list = null; float indexFailedAt = Time.unscaledTime;
+        row = Row(); int indexReads = subsets.ListReads;
+        Check(row.AutoText.Contains("게임 데이터 대기 중") && row.Detail.Contains("임무 정의"), "Mission-index source failure is an explicit diagnostic without invented candidates");
+        Time.unscaledTime = indexFailedAt + 1; Row();
+        Check(subsets.ListReads == indexReads, "Failed static mission-index source does not retry at the healthy .25-second cadence");
+        subsets._list = new List<MissionData> { sameCountReplacement };
+        Time.unscaledTime = indexFailedAt + 5; row = Row();
+        Check(row.Detail.Contains("new local") && subsets.ListReads > indexReads, "Mission definition index recovers at five seconds from its own replacement collection");
+        var actualMain = new MissionCheckData { name = "actual-main", _conditions = new[] { zero } };
+        controller._missionsManager.MainCheckData = actualMain;
+        controller._missionsManager.MainMissionStart = true; controller._missionsManager.MainMissionPosition = PositionType.Hall;
+        row = Row();
+        Check(row.Detail.Contains("actual-main") && row.Detail.Contains("주 임무 대기"), "MainCheckData identity refreshes location membership even when CurrentKey already advanced to clear");
+        controller._missionsManager.MainCheckData = null; controller._missionsManager.MainMissionStart = false;
+        row = Row(); Check(!row.Detail.Contains("actual-main"), "Replacing the staged main target removes its old place membership");
+        var changed = new FreePositionData { name = "Kitchen", _defaultScript = "kitchen" }; controller._positionData = changed; DataHelper.Scripts["kitchen"] = "";
+        row = Row(); Check(row.Title == "Kitchen" && !row.Detail.Contains("allowed"), "A changed place source discards previous candidate snapshots");
+        controller.gameObject.activeInHierarchy = false;
+        Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0, "Hidden map performs no candidate or source reads");
+        controller.gameObject.activeInHierarchy = true; MapGuideSource.Enabled = () => false;
+        reads = DataHelper.Reads; Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0 && DataHelper.Reads == reads, "OFF does not collect display data");
+        MapGuideSource.ClearSnapshots(); MapGuideSource.Enabled = () => true;
+        string emptyContext = MapGuideSource.ContextKey; MapGuideSource.ClearSnapshots(); Check(MapGuideSource.ContextKey == emptyContext, "Repeated OFF cleanup does not change map context");
+        Check(MapGuideSource.Visible && MapGuideSource.Discover(false, false).Count == 0, "Weak lifecycle handles allow ON without hidden object search");
+        var brokenPlace = new PositionController { _positionData = null };
+        MapGuideSource.Register(brokenPlace);
+        var independent = MapGuideSource.Discover(true, true);
+        Check(independent.Count == 2, "Null place data produces an independent waiting query rather than an empty map");
+        bool waiting = false;
+        try { independent[1].Read(); } catch (DataNotReadyException) { waiting = true; }
+        Check(waiting && independent[0].Read() is InformationRow, "Malformed place metadata cannot block another healthy place query");
+        string failedContext = MapGuideSource.ContextKey;
+        try { independent[1].Read(); } catch (DataNotReadyException) { }
+        Check(MapGuideSource.ContextKey == failedContext, "Repeated null metadata does not reset the failure retry context");
+        var engine = new RefreshEngine(); int healthyReads = 0, waitingReads = 0;
+        var scheduled = new List<DisplayQuery> {
+            new DisplayQuery("healthy", () => { healthyReads++; return independent[0].Read(); }),
+            new DisplayQuery("waiting", () => { waitingReads++; return independent[1].Read(); }) };
+        engine.Tick("map", true, true, 0, false, false, () => scheduled, values => { }, value => { });
+        engine.Tick("map", true, true, .25f, false, false, () => scheduled, values => { }, value => { });
+        Check(healthyReads == 2 && waitingReads == 1, "Metadata failures are read by the owning five-second row schedule, healthy rows remain at .25 seconds");
+        brokenPlace._positionData = new FreePositionData { name = "recovered", _defaultScript = "" };
+        engine.Tick("map", true, true, 5, false, false, () => scheduled, values => { }, value => { });
+        Check(waitingReads == 2 && ((InformationRow)independent[1].Read()).Title == "recovered", "Late map metadata recovers on its own retry and discards waiting subject identity");
+        MapGuideSource.Clear();
+        var waitingPlace = new PositionController { _positionData = new FreePositionData { name = "empty", _defaultScript = "" }, _missionsManager = null };
+        MapGuideSource.Register(waitingPlace); var waitingRow = Row();
+        Check(waitingRow.Status.StartsWith("후보 0 · 진행 가능 0") && waitingRow.AutoText.Contains("게임 데이터 대기 중"), "Synthetic missing mission diagnostic is not a recognized candidate and stays visible automatically");
+        waitingPlace._missionsManager = new MissionManagerData();
+        waitingPlace._positionData = new FreePositionData { name = "unreadable", _defaultScript = "missing-map-source" };
+        waitingRow = Row();
+        Check(waitingRow.Status.StartsWith("후보 0 · 진행 가능 0") && waitingRow.AutoText.Contains("게임 데이터 대기 중"), "Unready map-source diagnostic is excluded from count rather than masquerading as a zero-candidate success");
+        Check(Counters.GameCalls == 0, "All map/once operations preserve game evaluator counters");
+    }
+    private static void Options()
+    {
+        OptionHintSource.Clear(); OneShotProof.Clear(); OptionHintSource.Enabled = () => true;
+        var menu = new Fungus.MenuDialog(); Fungus.MenuDialog.ActiveMenuDialog = menu;
+        var button = new NormalOptionButton(); button.transform.Parent = menu.transform;
+        button._source.text = "O_first"; button._text[0].text = "original option";
+        LuaParser.Instance.OptionResult["O_first"] = Result(Set("F1", 1));
+        OptionHintSource.Observe(button);
+        Check(OptionHintSource.Visible, "Visible live menu/button requires no mouse hover");
+        var queries = OptionHintSource.Discover(); Check(queries.Count == 1, "Only currently visible option is discovered");
+        var proof = (OneShotResult)queries[0].Read();
+        Check(!proof.Proven && proof.Status.Contains("확인 불가"), "A rendered button boolean does not invent its activation condition");
+        OptionHintSource.RenderHints();
+        Check(button._text[0].text == "original option · 1회성 확인 불가", "Delayed cached tag reaches already-updated game option text");
+        int writes = button._text[0].Writes, parses = LuaParser.Parses;
+        OptionHintSource.RenderHints(); OptionHintSource.RenderHints();
+        Check(button._text[0].Writes == writes && LuaParser.Parses == parses, "Rendering warm hints neither rewrites same UI nor analyzes Lua");
+        var condition = Compare(Flag(new FlagData { name = "F1" }), Constant(0));
+        OneShotProof.ForOption("O_first", condition, Result(Set("F1", 1)));
+        OptionHintSource.RenderHints(); Check(button._text[0].text == "original option · 1회성", "Exact gate proof replaces unknown cached text without action execution");
+        OptionHintSource.Clear(); Check(button._text[0].text == "original option", "OFF/context clear restores only the appended annotation");
+        string context = OptionHintSource.ContextKey; OptionHintSource.Clear();
+        Check(OptionHintSource.ContextKey == context, "Already-empty clear does not reset scheduling each frame");
+        OptionHintSource.Enabled = () => false;
+        Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "OFF performs no option proof query");
+        OptionHintSource.Enabled = () => true; queries = OptionHintSource.Discover();
+        Check(queries.Count == 1, "Weak handle supports OFF to ON without game method replay");
+        queries[0].Read(); OptionHintSource.RenderHints();
+        button._text[0].text = "replacement by game";
+        OptionHintSource.Clear(); Check(button._text[0].text == "replacement by game", "Cleanup does not overwrite a newer external content update");
+        button._source.text = "O_second"; button._text[0].text = "second option";
+        LuaParser.Instance.OptionResult["O_second"] = Result(); OptionHintSource.Observe(button);
+        queries = OptionHintSource.Discover(); queries[0].Read(); OptionHintSource.RenderHints();
+        Check(button._text[0].text == "second option · 1회성 확인 불가" && !button._text[0].text.Contains("original"), "A reused button receives only its current key snapshot");
+        OptionHintSource.MenuCleared(menu);
+        Check(button._text[0].text == "second option" && OneShotProof.CachedOptionTag("O_second") == "", "Game menu Clear discards session proofs and restores UI");
+        menu.gameObject.activeInHierarchy = false; writes = button._text[0].Writes;
+        Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
+        OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
+    }
+    public static int Main() { Proofs(); Map(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+}

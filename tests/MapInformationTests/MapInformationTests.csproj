@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/DiceMaster/Information/OptionHintSource.cs" Link="OptionHintSource.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapGuideSource.cs" Link="MapGuideSource.cs" />
+    <Compile Include="../../src/DiceMaster/Information/OneShotProof.cs" Link="OneShotProof.cs" />
+    <Compile Include="../../src/DiceMaster/Information/InformationRow.cs" Link="InformationRow.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/RefreshEngine.cs" Link="RefreshEngine.cs" />
+    <Compile Include="../../src/DiceMaster/LiveLog/SafeDisplayEvaluation.cs" Link="SafeDisplayEvaluation.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventEligibility.cs" Link="EventEligibility.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/EventEligibilitySnapshot.cs" Link="EventEligibilitySnapshot.cs" />
+  </ItemGroup>
+</Project>

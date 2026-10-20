@@ -2,6 +2,27 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## PRD #6 — 네 정보 기능의 로컬 후보
+
+`v1.0.7-alpha.1`은 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6)의 로컬 구현·검증 후보다. 사용자가 2026-10-21 같은 채팅에서 “v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”라고 답해 #5 착수 조건을 충족했다. 확인 버전·파일·기준 커밋과 미제공 환경은 [#5 후속 기록](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)에, 새 구현·검사·한계는 [#6 구현 기록](ISSUE-6-IMPLEMENTATION.md)에 구분한다. 새 후보는 Windows 미실행이며 공개 Release·이슈 종료를 수행한 상태가 아니다.
+
+`InformationRuntime`은 기존 `RefreshEngine`을 기능별로 소유하고 `InformationRow`만 게시한다. 지도·상점의 `DisplayQuery`는 현재 소속·ID·문맥을 검증하고 숨은 전체 맵이나 게임 실행 경로를 탐색하지 않는다. 정상 0.25초·실패 5초와 숨김/OFF 표시 조회 0, 같은 문맥의 실패에만 이전 값 유지, 새 대상·로드·장면 뒤 스냅샷 폐기를 유지한다. Lua 정의·결과 분석은 기존 캐시로 재사용하며 GUI는 게시 문자열만 읽는다.
+
+| 경계 | 구현 계약 |
+| --- | --- |
+| 지도 | 살아 있는 현재 `PositionController`의 수명·선택을 관찰한다. 연결된 리터럴 Position 후보·고정 이야기·현재 위치의 임무를 읽고 가능/불가/불명을 구분한다. 원래 순서를 유지한 가능 우선 정렬과 후보 수를 게시한다. |
+| 1회성 | 현재 명시 활성 조건과 완전한 정적 결과에서 확정 상수 플래그 변경 후 조건이 거짓이 되는 경우만 증명한다. 읽음 기록으로 추정하지 않고 후속·선택·동적·미지원 경로는 불명으로 남긴다. NormalOptionButton에는 원래 활성 조건 참조가 없어 기본 선택지의 판정은 확인 불가이며 interactable·미독만으로 추론하지 않는다. 양성 증명은 지도·실제 이벤트 팝업의 명시 조건 경로다. |
+| 분기 | 원래 Position/Switch 결과 반환을 관찰한다. 실행 토큰으로 중복 관찰만 제거하고 별도 실제 호출은 별도 기록한다. 최신 20건·5초 알림은 메모리에서 관리하며 저장·로드·장면·OFF에서 지운다. 반환값·예외·#5 선택 권한을 변경하지 않는다. |
+| 상점 | `ShopPanel.OnItemHover(IGameItem)`는 게임의 `ShopItemPanel.OnSelect`와 포인터 콜백이 공유하는 관찰 경계다. 기존 `_dialogDesc`에 캐시 이름·종류·상태만 붙이고 교체·닫기·OFF에서 자기 표시만 복원한다. |
+
+표시용 `FreePositionData.GetActiveConditionResult/GetDialog`, `ConditionResultData.Execute`, `GetRate/GetResult/Check/Execute` 게임 체인을 호출하지 않는다. 책의 `Learn`·소모·Apply, 구매·아이템 사용·게임 이벤트 발생·세이브 API도 호출하지 않는다. 상점의 필드 해석은 실제 `MartialLearnCondition`의 묶음 간 AND·묶음 안 OR(빈 OR는 false), 소모 AND/첫 양수 OR, 중앙 50·비급 등급/25 경계·상한/하한을 현재 상태에만 적용한다. 로컬 사본에서 순서대로 계산하며 원본 필드와 RNG는 건드리지 않는다. 소모품은 정적 효과 배열을 읽지만 제공 참조에서 실제 사용 실행 경로가 확인되지 않으면 실제 적용 변화는 확인 불가다. 변환·연동 능력치·미지원 효과도 확정 최종값으로 안내하지 않는다.
+
+상위 `EnableOptionInfo`는 시작 시 고정하고 네 bool(`EnableMapGuide`, `EnableOneShotHints`, `EnableBranchNotices`, `EnableShopEffectInfo`)은 기본 true로 기존 cfg에 추가한다. 개별 변경 즉시 적용·저장과 실패 시 해당 기능 비활성화, OFF 정리·ON 과거 재생 없음 계약을 유지한다. 별도 이력 파일·세이브 필드·서버·원격 분석은 추가하지 않는다.
+
+기존 네 탭·예약·주사위·패드 소유권을 그대로 사용하면서 로그 도구에 지도 안내·분기 기록·상점 효과 조회를 추가한다. 새 정보 화면은 행 선택·상세 스크롤만 허용하고 실행 ticket을 만들지 않는다. 입력 한 번을 뒤의 게임·팝업·구매에 재사용하지 않는 기존 해제/중립 보호를 회귀 확인한다.
+
+자동 검사 등록·빌드·패키지 식별값은 [후보 안내](ISSUE-6-CANDIDATE.md)에 확정 결과만 기록한다. `ShopInformationTests`는 실제 상점 provider/patch/DTO/RefreshEngine 소스를 링크하고 제공 게임 DLL의 필드·콜백 서명을 Cecil로 확인한다. 명시적 Unity/Harmony/게임 경계 대역을 실제 Windows 실행으로 취급하지 않는다. 합성 시간·할당량 수치와 실제 Unity 프레임 비용을 구분하며 [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)에서 게임·로더·OS·패드·Steam Input·배율·실제 비용/할당량을 별도로 기록한다.
+
 ## 입력 경계 구조 정리
 
 alpha.8 이후 공통 포인터 처리와 입력 취소 정책을 단계별로 정리해 v1.0.6-alpha.9로 게시했다. 구현 커밋 `da1f362`·`360ca57`과 준비 문서를 포함하는 고정 소스·태그는 `af7bcd94ee1398717acec3066a0a907d588c49f9`다. 아래 검사·측정은 해당 소스 입력을 대상으로 한다. [alpha.9 배포 기록](ISSUE-5-ALPHA9-RELEASE.md)에 공개 파일·검증 상태를 기록하며 단일 net48 DLL·기존 IMGUI·설정·조작·Lua 판정과 한 번 소비 검증을 유지한다.

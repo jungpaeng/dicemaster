@@ -4,6 +4,7 @@ This prerelease-only path retains the original source-restoration verifier. The
 default --scope prd2 keeps its original candidate contract. Select --scope prd4
 explicitly for the reviewed log GUI/XInput candidate and its 12 test programs.
 Select --scope prd5 for the current-action event popup and its 14 test programs.
+Select --scope prd6 for read-only map/one-shot/branch/shop information and its 18 test programs.
 No scope claims historical runtime equivalence, feature completion or a
 Windows run of the candidate.
 No Git refs, network resources, installed plugins or game references are written.
@@ -19,6 +20,10 @@ import sys
 import tempfile
 import zipfile
 
+from information_contract import (PRD6_VALIDATION, WINDOWS_VALIDATION as PRD6_WINDOWS_VALIDATION,
+                                  RUNTIME_BOUNDARY as PRD6_RUNTIME_BOUNDARY,
+                                  IMPLEMENTATION_BASELINE as PRD6_IMPLEMENTATION_BASELINE,
+                                  REQUIRED_TESTS as PRD6_REQUIRED_TESTS)
 from source_build import (ARTIFACTS, BUILD, artifact_directory, digest, record,
                           run, write_json)
 
@@ -66,6 +71,41 @@ PRD5_REQUIRED_TESTS = PRD4_REQUIRED_TESTS | frozenset({
 })
 
 
+def _exact_contract(actual, expected):
+    # bool is a subclass of int in Python; ordinary dict equality would accept
+    # 0 as False. Evidence boundaries require exact JSON value types as well.
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(
+            _exact_contract(actual[key], expected[key]) for key in expected)
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(
+            _exact_contract(left, right) for left, right in zip(actual, expected))
+    return actual == expected
+
+
+def _valid_prd6_test_evidence(name, evidence):
+    """Recognize the actual suite's success records without accepting metadata alone."""
+    if not isinstance(evidence, list) or not evidence:
+        return False
+    succeeded = False
+    for line in evidence:
+        if not isinstance(line, str):
+            return False
+        text = line.strip()
+        if text.startswith('PASS:') and text[5:].strip():
+            succeeded = True
+        elif name == 'RealGameApiTests' and text.startswith('METADATA CONTRACT:') and text[18:].strip():
+            # This supplementary record is not proof the behavior suite passed.
+            continue
+        elif name == 'LifecycleTests' and re.fullmatch(r'Lifecycle assertions passed: [1-9][0-9]*', text):
+            succeeded = True
+        else:
+            return False
+    return succeeded
+
+
 def validate_preview_candidate(manifest, scope):
     """Reject a mismatched scope or evidence that overstates a preview build."""
     validation = manifest.get('candidate_validation')
@@ -107,6 +147,25 @@ def validate_preview_candidate(manifest, scope):
             if (not isinstance(evidence, list) or not evidence
                     or any(not isinstance(line, str) or not line.strip() for line in evidence)):
                 raise RuntimeError('PRD 5 preview test evidence is empty or malformed: ' + name)
+    elif scope == 'prd6':
+        for key, expected in (
+                ('candidate_validation', PRD6_VALIDATION),
+                ('windows_validation', PRD6_WINDOWS_VALIDATION),
+                ('implementation_baseline', PRD6_IMPLEMENTATION_BASELINE),
+                ('runtime_equivalence', PRD6_RUNTIME_BOUNDARY)):
+            if not _exact_contract(manifest.get(key), expected):
+                raise RuntimeError('PRD 6 preview must preserve its exact scope, user-confirmed v1.0.6 baseline and pending new-candidate Windows boundaries: ' + key)
+        for claim in ('windows_runtime_executed', 'historical_full_runtime_equivalence_claimed',
+                      'feature_or_issue_completion_claimed'):
+            if manifest.get(claim) is not False:
+                raise RuntimeError('PRD 6 preview requires explicit false for runtime/completion claims: ' + claim)
+        tests = manifest.get('tests')
+        if not isinstance(tests, dict) or not PRD6_REQUIRED_TESTS.issubset(tests):
+            raise RuntimeError('PRD 6 preview requires all 18 candidate test programs.')
+        for name in PRD6_REQUIRED_TESTS:
+            evidence = tests[name]
+            if not _valid_prd6_test_evidence(name, evidence):
+                raise RuntimeError('PRD 6 preview test evidence is empty, malformed or lacks a recognized suite-success record: ' + name)
     else:
         raise RuntimeError('Unsupported preview candidate scope: ' + str(scope))
     for claim in ('historical_full_runtime_equivalence_claimed', 'feature_or_issue_completion_claimed'):
@@ -117,8 +176,8 @@ def validate_preview_candidate(manifest, scope):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--scope', choices=('prd2', 'prd4', 'prd5'), default='prd2',
-                        help='Candidate validation contract (default: prd2). PRD 4 and PRD 5 require explicit selection.')
+    parser.add_argument('--scope', choices=('prd2', 'prd4', 'prd5', 'prd6'), default='prd2',
+                        help='Candidate validation contract (default: prd2). PRD 4, PRD 5 and PRD 6 require explicit selection.')
     parser.add_argument('--references', type=Path, required=True)
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--version', required=True)
@@ -188,7 +247,7 @@ def main():
             shutil.copyfile(archive, stage / package_name)
             shutil.copyfile(log, stage / 'verification.log')
             scope_boundaries = {}
-            if args.scope == 'prd5':
+            if args.scope in ('prd5', 'prd6'):
                 scope_boundaries = {name: manifest[name] for name in (
                     'runtime_equivalence', 'implementation_baseline', 'windows_validation')}
                 historical = 'historical_source_restoration_windows_validation'
@@ -207,6 +266,7 @@ def main():
                 'zip_file_list_and_crc': 'pass', 'candidate_validation': validation,
                 'historical_full_runtime_equivalence_claimed': False,
                 'feature_or_issue_completion_claimed': False,
+                **({'windows_runtime_executed': False} if args.scope == 'prd6' else {}),
                 **scope_boundaries,
             })
             output.parent.mkdir(parents=True, exist_ok=True)

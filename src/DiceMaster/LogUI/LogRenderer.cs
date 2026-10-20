@@ -53,13 +53,19 @@ namespace DiceMaster.LogUI
         public Action ReselectController { get; set; }
         public Action<string> TabChanged { get; set; }
         public string CurrentTab => Tabs[currentTabIndex];
+        private string informationPage;
+        public string InformationPage => informationPage;
+        public Func<int, string> InformationSettingLabel { get; set; }
+        public Action<int> ToggleInformationSetting { get; set; }
+        public Func<object, string> OneShotEventTag { get; set; }
+        public Func<string, string> OneShotOptionTag { get; set; }
         public Rect WindowRect => window;
-        private LogTabState State => model.Tab(CurrentTab);
-        private bool IsChoiceTab => currentTabIndex == 0;
-        private bool IsEventTab => currentTabIndex == 2;
-        private bool IsConditionTab => currentTabIndex == 1;
-        private bool HasPopupSetting => currentTabIndex == 1 || IsEventTab;
-        private bool HasStoryReadState => currentTabIndex < 2;
+        private LogTabState State => model.Tab(informationPage ?? CurrentTab);
+        private bool IsChoiceTab => informationPage == null && currentTabIndex == 0;
+        private bool IsEventTab => informationPage == null && currentTabIndex == 2;
+        private bool IsConditionTab => informationPage == null && currentTabIndex == 1;
+        private bool HasPopupSetting => IsConditionTab || IsEventTab;
+        private bool HasStoryReadState => informationPage == null && currentTabIndex < 2;
         private bool SupportsReservation => State.SupportsReservation;
         private IList<LogItem> VisibleRows => IsEventTab ? State.VisibleRows : State.Snapshot.Rows;
         private float RowHeight => renderedFont * 2f + 14f;
@@ -138,6 +144,7 @@ namespace DiceMaster.LogUI
             // but it does not navigate out of the tools opened by a touch.
             if (!preserveNavigationArea)
             {
+                informationPage = null;
                 area = Area.List;
                 ensureVisible = true;
                 manualListScroll = false;
@@ -159,7 +166,7 @@ namespace DiceMaster.LogUI
             string selected = State.SelectedId;
             if (observedSelection != null && selected == null)
             {
-                ResetInputFocus(preserveNavigationArea: area == Area.PopupSetting);
+                ResetInputFocus(preserveNavigationArea: informationPage != null || area == Area.PopupSetting);
                 GamepadBridge.CancelLogInput();
                 invalidated = true;
             }
@@ -195,6 +202,8 @@ namespace DiceMaster.LogUI
 
         private void EnterTools()
         {
+            informationPage = null;
+            observedSelection = State.SelectedId; observedBranch = State.SelectedBranchId; cachedSnapshot = null;
             if (area == Area.Tools) return;
             toolsReturnArea = area == Area.ConditionDetails ? area : Area.List;
             area = Area.Tools; toolIndex = 0; ensureVisible = true;
@@ -258,6 +267,7 @@ namespace DiceMaster.LogUI
             if (command == LogPadCommand.Back)
             {
                 CancelPending();
+                if (informationPage != null) { informationPage = null; observedSelection = State.SelectedId; observedBranch = State.SelectedBranchId; cachedSnapshot = null; area = Area.Tools; ensureVisible = true; return; }
                 if (area == Area.Tools) { ReturnFromTools(); return; }
                 if (area == Area.ConditionDetails) { area = Area.List; return; }
                 close?.Invoke();
@@ -425,7 +435,7 @@ namespace DiceMaster.LogUI
             // focus between an accepted pointer down and its matching release.
             if (releaseTextFocus && pointerIdentity == null && Event.current.type == EventType.Layout)
             { GUI.FocusControl(null); releaseTextFocus = false; }
-            string summary = "문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary();
+            string summary = "문맥 " + model.ContextId + " · " + (informationPage ?? CurrentTab) + " · " + Summary();
             float width = Math.Max(1, window.width - Math.Max(8, chromeFont * .55f) * 2);
             layout = LogLayout.Calculate(window, chromeFont,
                 TextHeight(summary, statusStyle, width),
@@ -436,7 +446,7 @@ namespace DiceMaster.LogUI
             for (int index = 0; index < Tabs.Length; index++)
             {
                 int tabIndex = index;
-                bool active = area != Area.Tools && index == currentTabIndex;
+                bool active = informationPage == null && area != Area.Tools && index == currentTabIndex;
                 SafeButton((active ? "● " : "") + Tabs[index], "tab:" + index, () => SwitchTab(tabIndex), active, chrome: true);
             }
             SafeButton(area == Area.Tools ? "● 도구" : "도구 [Y]", "tools", () => { EnterTools(); releaseTextFocus = true; }, area == Area.Tools, chrome: true);
@@ -502,7 +512,7 @@ namespace DiceMaster.LogUI
         private void DrawOverflowChrome()
         {
             if (layout == null || !layout.CompactChrome) return;
-            Label("문맥 " + model.ContextId + " · " + CurrentTab + " · " + Summary(), statusStyle);
+            Label("문맥 " + model.ContextId + " · " + (informationPage ?? CurrentTab) + " · " + Summary(), statusStyle);
             if (!string.IsNullOrEmpty(InputHint)) Label(InputHint, statusStyle);
             if (IsConditionTab && (area == Area.List || area == Area.ConditionDetails))
             {
@@ -526,7 +536,7 @@ namespace DiceMaster.LogUI
                 if (!first) GUILayout.Space(ChoiceGap);
                 first = false;
                 GUILayout.BeginVertical(boxStyle);
-                string heading = !string.IsNullOrWhiteSpace(row.Text) ? Display.TranslateLabel(row.Text) : Title(row);
+                string heading = (!string.IsNullOrWhiteSpace(row.Text) ? Display.TranslateLabel(row.Text) : Title(row)) + (OneShotOptionTag?.Invoke(row.RawId) ?? "");
                 GUILayout.Label(heading, titleStyle);
                 Label(RowState(row), statusStyle);
                 GUILayout.Label("원본 ID: " + row.RawId, literalStyle);
@@ -548,7 +558,7 @@ namespace DiceMaster.LogUI
             float paneHeight = Math.Max(1, BodyHeight - (HasPopupSetting ? DrawPopupSetting() : 0));
             GUILayout.BeginHorizontal(GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
             GUILayout.BeginVertical(GUILayout.Width(listWidth), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
-            string listTitle = CurrentTab == "조건" ? "체크포인트" : "목록";
+            string listTitle = IsConditionTab ? "체크포인트" : "목록";
             Display.Label((area == Area.List ? "▶ " : "") + listTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
             Vector2 list = BeginListScroll(Math.Max(1, paneHeight - headingHeight));
             State.ListScroll = list.y;
@@ -594,7 +604,7 @@ namespace DiceMaster.LogUI
             GUILayout.EndVertical();
             GUILayout.BeginVertical(boxStyle, GUILayout.ExpandWidth(true), GUILayout.Height(paneHeight), GUILayout.ExpandHeight(true));
             LogItem selectedRow = State.Selected;
-            string detailTitle = CurrentTab == "조건" ? "조건 상세" : "상세";
+            string detailTitle = IsConditionTab ? "조건 상세" : "상세";
             Display.Label((area == Area.ConditionDetails ? "▶ " : "") + detailTitle, chromeTitleStyle, new[] { GUILayout.Height(headingHeight) });
             Vector2 detail = BeginScroll(State.DetailScroll, Math.Max(1, paneHeight - headingHeight - 10));
             State.DetailScroll = detail.y;
@@ -620,7 +630,7 @@ namespace DiceMaster.LogUI
                 }
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
-                if (CurrentTab == "조건" && selectedRow.ConditionDetails != null)
+                if (IsConditionTab && selectedRow.ConditionDetails != null)
                     DrawConditionDetails(selectedRow.ConditionDetails);
                 else if (IsEventTab)
                 {
@@ -789,7 +799,7 @@ namespace DiceMaster.LogUI
             "현재 미션 단계가 없거나 설명 조회에 필요한 게임 자료를 얻지 못했습니다. 미션 미완료·조건 미충족을 뜻하지 않습니다. 이 탭을 연 동안 재조회하며 새로고침으로 다시 확인할 수 있습니다." :
             "설명 조회에 필요한 게임 자료를 아직 얻지 못했습니다. 이 탭을 연 동안 재조회하며 새로고침으로 다시 확인할 수 있습니다.";
 
-        private int ToolCount => 19;
+        private int ToolCount => InformationSettingLabel == null ? 19 : 26;
         private void DrawTools()
         {
             Vector2 scroll = BeginScroll(toolScroll, BodyHeight);
@@ -837,7 +847,11 @@ namespace DiceMaster.LogUI
                 case 15: return "이전 영역으로 돌아가기";
                 case 16: return "로그 창 닫기";
                 case 17: return "이벤트 선택 팝업 사용: " + (ConfigManager.EnableEventSelectionPopup.Value ? "ON" : "OFF");
-                default: return "조건 분기 선택 팝업 사용: " + (ConfigManager.EnableSwitchSelectionPopup.Value ? "ON" : "OFF");
+                case 18: return "조건 분기 선택 팝업 사용: " + (ConfigManager.EnableSwitchSelectionPopup.Value ? "ON" : "OFF");
+                case 19: return "지도 안내 조회";
+                case 20: return "분기 기록 조회";
+                case 21: return "상점 효과 조회";
+                default: return InformationSettingLabel?.Invoke(index - 22) ?? "정보 설정 대기";
             }
         }
 
@@ -867,6 +881,10 @@ namespace DiceMaster.LogUI
                 case 16: close?.Invoke(); break;
                 case 17: ConfigManager.EnableEventSelectionPopup.Value = !ConfigManager.EnableEventSelectionPopup.Value; break;
                 case 18: ConfigManager.EnableSwitchSelectionPopup.Value = !ConfigManager.EnableSwitchSelectionPopup.Value; break;
+                case 19: OpenInformation("지도 안내"); break;
+                case 20: OpenInformation("분기 기록"); break;
+                case 21: OpenInformation("상점 효과"); break;
+                default: if (index >= 22 && index < 26) ToggleInformationSetting?.Invoke(index - 22); break;
             }
             if (layoutInitialized && hasViewport)
             {
@@ -945,7 +963,8 @@ namespace DiceMaster.LogUI
 
         private void SwitchTab(int index)
         {
-            if (index == currentTabIndex && area == Area.List) return;
+            if (informationPage == null && index == currentTabIndex && area == Area.List) return;
+            informationPage = null;
             CancelPending();
             currentTabIndex = index;
             releaseTextFocus = true;
@@ -955,6 +974,13 @@ namespace DiceMaster.LogUI
             cachedSnapshot = null;
             ensureVisible = true;
             TabChanged?.Invoke(CurrentTab);
+        }
+
+        private void OpenInformation(string page)
+        {
+            CancelPending(); informationPage = page; area = Area.List;
+            observedSelection = observedBranch = null; cachedSnapshot = null;
+            ensureVisible = true; manualListScroll = false;
         }
 
         private void CancelPending()
@@ -1077,6 +1103,7 @@ namespace DiceMaster.LogUI
 
         private string Hint()
         {
+            if (informationPage != null) return "현재: " + informationPage + " · 읽기 전용 · ↑↓ 항목 이동 / 오른쪽 스틱 상세 / B 도구로 / LB·RB 탭";
             if (area == Area.Tools) return "현재: 도구 · ↑↓ 이동 / A 작동 / B 이전 영역 / LB·RB 탭";
             if (area == Area.PopupSetting) return "현재: 팝업 설정 · A / Enter 켜기·끄기 / ↓ 목록 / LB·RB 탭 / Y 도구 / B 닫기";
             if (IsChoiceTab) return "현재: 선택지 읽기 · ↑↓·오른쪽 스틱 본문 스크롤 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
