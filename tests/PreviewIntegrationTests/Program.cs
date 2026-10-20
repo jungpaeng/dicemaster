@@ -18,7 +18,7 @@ static class Program
         using var source = AssemblyDefinition.ReadAssembly(args[0]);
         using var target = AssemblyDefinition.ReadAssembly(args[1]);
         var copier = new PayloadCopier(source.MainModule, target.MainModule,
-            type => type.Namespace == "DiceMaster.LuaParse" || (!baseline && (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "EventResultPreview", "CheckpointReservation", "CheckpointReservationStore" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI")));
+            type => type.Namespace == "DiceMaster.LuaParse" || (!baseline && (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "PopupConditionText", "EventResultPreview", "CheckpointReservation", "CheckpointReservationStore" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI")));
         PreviewFixtureBoundary.Install(target.MainModule);
         if (!baseline)
         {

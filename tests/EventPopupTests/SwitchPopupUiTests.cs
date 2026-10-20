@@ -26,7 +26,7 @@ internal static partial class Program
             Click(popup, text => RowCaption(text, id), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
             Check(EventSelectionRuntime.Commands == 0, "First switch row press only selects");
             Draw(popup);
-            Check(GUILayout.LiteralLabels.Contains("분기 조건") && !GUILayout.LiteralLabels.Contains("발동 조건"),
+            Check(GUILayout.LiteralLabels.Contains("조건 상세") && !GUILayout.LiteralLabels.Contains("발동 조건") && !GUILayout.LiteralLabels.Contains("분기 조건"),
                 "Switch detail describes branch conditions");
             Check(GUILayout.LiteralLabels.Contains(forced ? "[A / Enter] 조건 무시하고 이번만 진행" : "[A / Enter] 이 분기로 진행"),
                 "Switch confirmation preserves the displayed normal or forced intent");
@@ -51,7 +51,8 @@ internal static partial class Program
         {
             var popup = Start(); EventSelectionRuntime.IsSwitch = true;
             EventCandidate candidate = EventSelectionRuntime.Candidates[0];
-            candidate.Summary = "A10005(A10005)(0) = 0(0) | 랜덤값0_30(??) <= 10(10)";
+            candidate.Summary = (state != EventEligibilityState.Unknown ? "" : reason == EventEligibilityReason.ReadFailure ? "! " : "? ")
+                + "A10005(A10005)(0) = 0(0) | 랜덤값0_30(??) <= 10(10)";
             candidate.Eligibility = new EventEligibilitySnapshot(state, reason, null, candidate.Summary,
                 reason != EventEligibilityReason.ReadFailure);
             candidate.CanSelect = state == EventEligibilityState.Eligible;
@@ -75,7 +76,7 @@ internal static partial class Program
             var condition = GUILayout.Controls.Single(control => !control.Button && control.Text == candidate.Summary);
             Check(before.Rect == after.Rect && after.Text.StartsWith("▶ ") && EventSelectionRuntime.Commands == 0,
                 "Selecting a Switch branch preserves the next same-point touch target: " + state + "/" + reason);
-            Check(GUILayout.LiteralLabels.IndexOf("분기 조건") < GUILayout.LiteralLabels.IndexOf(candidate.Summary)
+            Check(GUILayout.LiteralLabels.IndexOf("조건 상세") < GUILayout.LiteralLabels.IndexOf(candidate.Summary)
                 && GUILayout.LiteralLabels.IndexOf(candidate.Summary) < GUILayout.LiteralLabels.IndexOf("예상 결과")
                 && !condition.RichText && condition.VisibleRect.height > 0,
                 "The full literal Switch condition is visible before even very long result detail: " + state + "/" + reason);
@@ -110,7 +111,7 @@ internal static partial class Program
             Check(before.Rect == after.Rect && GUILayout.LiteralLabels.Contains(candidate.Summary),
                 "Long full conditions are retained without changing the selected row geometry at " + size + " font=" + font);
             Check(GUILayout.ScrollViews.All(view => view.Viewport.width > 0 && view.Viewport.height > 0)
-                && GUILayout.ScrollViews[1].Controls.First(control => control.Text == "분기 조건").VisibleRect.height > 0,
+                && GUILayout.ScrollViews[1].Controls.First(control => control.Text == "조건 상세").VisibleRect.height > 0,
                 "Switch conditions lead an independently scrollable readable detail viewport at " + size + " font=" + font);
             foreach (var control in GUILayout.Controls.Where(control => InstructionCaption(control.Text) || control.Text.StartsWith("로그 열기")))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f,

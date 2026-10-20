@@ -247,13 +247,11 @@ namespace DiceMaster.LogUI
                 string title = row.Title ?? "";
                 if (!plainTitles.TryGetValue(title, out string plain))
                     plainTitles[title] = plain = Markup.Replace(title, "");
-                // Unknown random/unsupported conditions are not evidence that a
-                // Switch branch is false. Preserve the event popup's existing
-                // availability treatment while dimming only known unmet branches.
-                bool muted = EventSelectionRuntime.IsSwitch
-                    ? row.Eligibility?.State == EventEligibilityState.Ineligible : !row.CanSelect;
+                // A random or unsupported condition is unknown in either
+                // decision kind, rather than evidence that it is false.
+                bool muted = row.Eligibility?.State == EventEligibilityState.Ineligible;
                 Row(row.Id, plain, row.ResultSummaryRich, contentWidth, muted,
-                    EventSelectionRuntime.IsSwitch ? row.Summary : null);
+                    Reason(row));
             }
             Rect last = GUILayoutUtility.GetLastRect();
             GUILayout.EndScrollView();
@@ -271,12 +269,17 @@ namespace DiceMaster.LogUI
             string selectionExplanation = EventSelectionRuntime.IsSwitch
                 ? "분기를 선택하면 예상 결과와 분기 조건을 확인할 수 있습니다."
                 : "이벤트를 선택하면 예상 결과와 발동 조건을 확인할 수 있습니다.";
-            string conditionHeading = EventSelectionRuntime.IsSwitch ? "분기 조건" : "발동 조건";
+            string conditionHeading = "조건 상세";
+            string reason = choice == null ? "" : DetailReason(choice);
+            string conditions = choice?.ConditionDetail ?? choice?.Summary ?? "";
+            bool separateReason = choice != null && !string.IsNullOrEmpty(reason) && choice.Summary != conditions;
+            if (choice != null && choice.Summary == conditions) conditions = Reason(choice);
             float detailContentHeight = choice == null ? text.CalcHeight(new GUIContent(selectionExplanation), contentWidth)
-                : text.CalcHeight(new GUIContent("예상 결과"), contentWidth)
-                    + text.CalcHeight(new GUIContent(EventResultPreview.PlainText(choice.ResultDetailRich)), contentWidth)
+                : (separateReason ? text.CalcHeight(new GUIContent(reason), contentWidth) + 8 : 0)
                     + text.CalcHeight(new GUIContent(conditionHeading), contentWidth)
-                    + text.CalcHeight(new GUIContent(choice.Summary), contentWidth) + 16;
+                    + text.CalcHeight(new GUIContent(conditions), contentWidth)
+                    + text.CalcHeight(new GUIContent("예상 결과"), contentWidth)
+                    + text.CalcHeight(new GUIContent(EventResultPreview.PlainText(choice.ResultDetailRich)), contentWidth) + 16;
             maximumDetailScroll = Math.Max(0, detailContentHeight - detailHeight);
             detailScroll = Mathf.Clamp(detailScroll, 0, maximumDetailScroll);
             Vector2 detail = GUILayout.BeginScrollView(new Vector2(0, detailScroll), false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, GUILayout.Height(detailHeight));
@@ -284,21 +287,18 @@ namespace DiceMaster.LogUI
             if (choice == null) DetailLabel(selectionExplanation, text, contentWidth);
             else
             {
-                if (EventSelectionRuntime.IsSwitch)
+                GUIStyle conditionStyle = choice.Eligibility?.State == EventEligibilityState.Ineligible ? mutedText : text;
+                if (separateReason)
                 {
-                    DetailLabel(conditionHeading, text, contentWidth);
-                    DetailLabel(choice.Summary, choice.Eligibility?.State == EventEligibilityState.Ineligible ? mutedText : text, contentWidth);
+                    DetailLabel(reason, conditionStyle, contentWidth);
                     GUILayout.Space(8);
                 }
+                DetailLabel(conditionHeading, text, contentWidth);
+                DetailLabel(conditions, conditionStyle, contentWidth);
+                GUILayout.Space(8);
                 DetailLabel("예상 결과", text, contentWidth);
                 DetailLabel(choice.ResultDetailRich, resultText, contentWidth);
                 GUILayout.Space(8);
-                if (!EventSelectionRuntime.IsSwitch)
-                {
-                    DetailLabel(conditionHeading, text, contentWidth);
-                    DetailLabel(choice.Summary, text, contentWidth);
-                    GUILayout.Space(8);
-                }
             }
             GUILayout.EndScrollView();
             if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, chrome);
@@ -316,6 +316,27 @@ namespace DiceMaster.LogUI
             Event evt = Event.current;
             if (IsUp(evt) || evt.type == EventType.TouchLeave) pointerControl = null;
             if (bounds.Contains(evt.mousePosition) && (evt.type == EventType.MouseDown || evt.type == EventType.MouseUp || evt.type == EventType.ScrollWheel)) evt.Use();
+        }
+
+        private static string Reason(EventCandidate choice)
+        {
+            string summary = choice.Summary ?? "";
+            bool unreadable = choice.Target == null || string.IsNullOrEmpty(choice.Result)
+                || choice.Eligibility?.CanUseResult == false;
+            string marker = unreadable ? "!" : choice.Eligibility?.State == EventEligibilityState.Unknown ? "?" : null;
+            if (marker == null || summary.StartsWith(marker, StringComparison.Ordinal)) return summary;
+            return marker + " " + (string.IsNullOrEmpty(summary)
+                ? unreadable ? "대상/결과 확인 필요" : "판정 미확정" : summary);
+        }
+
+        private static string DetailReason(EventCandidate choice)
+        {
+            bool unreadable = choice.Target == null || string.IsNullOrEmpty(choice.Result)
+                || choice.Eligibility?.CanUseResult == false;
+            if (!unreadable && choice.Eligibility?.State == EventEligibilityState.Eligible) return "";
+            string reason = Reason(choice);
+            int separator = reason.IndexOf(" · ", StringComparison.Ordinal);
+            return separator < 0 ? reason : reason.Substring(0, separator);
         }
 
         private string OneLine(string value, GUIStyle style, float width)
@@ -369,7 +390,7 @@ namespace DiceMaster.LogUI
             {
                 titleLine = "<color=#B3B3B3>" + titleLine + "</color>";
             }
-            // Events own two lines, Switch branches three. Condition excerpts
+            // Both decisions own three lines. Condition excerpts
             // stay one line; the selected detail shows the complete plain text
             // before results. Selection never changes row geometry.
             // Literal titles are escaped before
@@ -377,11 +398,8 @@ namespace DiceMaster.LogUI
             // The result's own colors also survive selected-row highlighting.
             string caption = marker + "<b>" + titleLine + "</b>"
                 + "\n<color=#FFFFFF>" + ResultLine(resultRich, lineWidth) + "</color>";
-            if (condition != null)
-            {
-                string conditionLine = EventResultPreview.Escape(OneLine("조건: " + condition, rowMeasure, lineWidth));
-                caption += "\n<color=" + (muted ? "#B3B3B3" : "#FFFFFF") + ">" + conditionLine + "</color>";
-            }
+            string conditionLine = EventResultPreview.Escape(OneLine("조건: " + (condition ?? ""), rowMeasure, lineWidth));
+            caption += "\n<color=" + (muted ? "#B3B3B3" : "#FFFFFF") + ">" + conditionLine + "</color>";
             SafeButton(caption, "row:" + id,
                 () => {
                     if (selected == id)

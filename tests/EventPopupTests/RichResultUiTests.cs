@@ -41,7 +41,7 @@ internal static partial class Program
         GUILayout.ControlRecord result = GUILayout.Controls.Single(control => !control.Button && control.Text == candidate.ResultDetailRich);
         GUILayout.ControlRecord conditions = GUILayout.Controls.Single(control => !control.Button && control.Text == candidate.Summary);
         Check(result.RichText && !conditions.RichText
-            && GUILayout.Controls.Where(control => !control.Button && (control.Text == "예상 결과" || control.Text == "발동 조건")).All(control => !control.RichText),
+            && GUILayout.Controls.Where(control => !control.Button && (control.Text == "예상 결과" || control.Text == "조건 상세")).All(control => !control.RichText),
             "Only the prepared result body interprets rich colors; conditions and headings retain literal styles");
         Check(GUILayout.LiteralLabels.Contains("[A / Enter] 이 이벤트로 진행"),
             "The literal confirm instruction retains its action meaning and keyboard/gamepad shortcut");
@@ -61,21 +61,24 @@ internal static partial class Program
         {
             var popup = Start(); EventCandidate candidate = EventSelectionRuntime.Candidates[1];
             candidate.State = state; candidate.CanForce = state != "판정 미확인 · 조회 실패";
+            bool known = state == "조건 미충족" || state == "최종 가중치 0";
+            candidate.Eligibility = new EventEligibilitySnapshot(known ? EventEligibilityState.Ineligible : EventEligibilityState.Unknown,
+                known ? EventEligibilityReason.ConditionsNotMet : EventEligibilityReason.Unsupported, null, candidate.Summary, candidate.CanForce);
             candidate.ResultSummaryRich = "<color=#A3B86C>동전 +100</color>";
             Draw(popup);
             GUILayout.ControlRecord before = GUILayout.Controls.Single(control => control.Button && RowCaption(control.Text, "blocked"));
             string[] lines = before.Text.Split('\n');
-            Check(before.Enabled && lines.Length == 2 && lines[0].Contains("<color=#B3B3B3>") && !before.Text.Contains(state)
+            Check(before.Enabled && lines.Length == 3 && (lines[0].Contains("<color=#B3B3B3>") == known) && !before.Text.Contains(state)
                 && !lines[1].Contains("#B3B3B3") && lines[1].Contains("#A3B86C"),
-                "Ineligible titles are visibly gray without status text while the selectable row keeps effect colors: " + state + " " + pair);
+                "Only known unmet titles are gray while unknown titles and all rich effects retain their colors: " + state + " " + pair);
             Vector2 point = Point(popup, text => RowCaption(text, "blocked"));
             Pointer(popup, pair.Item1, pair.Item3, point); Pointer(popup, pair.Item2, pair.Item4, point);
             Draw(popup);
             GUILayout.ControlRecord selected = GUILayout.Controls.Single(control => control.Button && RowCaption(control.Text, "blocked"));
-            Check(selected.Text.StartsWith("▶ ", StringComparison.Ordinal) && selected.Text.Contains("#B3B3B3")
+            Check(selected.Text.StartsWith("▶ ", StringComparison.Ordinal) && (selected.Text.Contains("#B3B3B3") == known)
                 && selected.TextColor.r == 1 && selected.TextColor.g == 1 && selected.TextColor.b == 0
                 && selected.Rect.height == before.Rect.height && EventSelectionRuntime.Commands == 0,
-                "The first pointer gesture selects a gray row without executing or changing its height: " + state + " " + pair);
+                "The first pointer gesture selects without executing or changing row height: " + state + " " + pair);
             Pointer(popup, pair.Item1, pair.Item3, point); Pointer(popup, pair.Item2, pair.Item4, point);
             Check(candidate.CanForce ? EventSelectionRuntime.Commands == 1 && EventSelectionRuntime.Forced
                     && EventSelectionRuntime.Selected == "blocked" : EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0,
@@ -104,18 +107,18 @@ internal static partial class Program
             candidate.ResultDetailRich = "<color=#A3B86C>" + new string('상', 6000) + "</color>";
             candidate.ResultDetail = EventResultPreview.PlainText(candidate.ResultDetailRich);
             Draw(popup);
-            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
+            GUILayout.ControlRecord before = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).First();
             string summary = before.Text.Split('\n')[1];
             Check(summary.Contains("…") && summary.Contains("#A3B86C")
                 && Regex.Matches(summary, "<color=").Count == Regex.Matches(summary, "</color>").Count,
                 "Summary ellipsis retains and closes effect-color spans at " + dimensions + " font=" + font);
             Check(!EventResultPreview.PlainText(summary).Any(char.IsSurrogate)
-                && before.Rect.height <= (font + 4) * 2 + 1,
+                && before.Rect.height <= (font + 4) * 3 + 1,
                 "Color tag length cannot add wrapped row lines or leave a split emoji at " + dimensions + " font=" + font);
             popup.Handle(LogPadCommand.Down); Draw(popup); Draw(popup);
-            GUILayout.ControlRecord selected = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 2).First();
+            GUILayout.ControlRecord selected = GUILayout.Controls.Where(control => control.Button && control.Text.Split('\n').Length == 3).First();
             Check(selected.Rect.height == before.Rect.height && selected.Rect.y == before.Rect.y,
-                "Two-line colored rows keep stable geometry on selection at " + dimensions + " font=" + font);
+                "Three-line colored rows keep stable geometry on selection at " + dimensions + " font=" + font);
             foreach (GUILayout.ControlRecord control in GUILayout.Controls.Where(control => InstructionCaption(control.Text)))
                 Check(control.VisibleRect.height >= control.Rect.height - .1f,
                     "Confirm/recovery shortcut instructions remain visible as text at " + dimensions + " font=" + font);

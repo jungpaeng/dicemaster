@@ -57,6 +57,7 @@ namespace Mortal.Story
     {
         public string name, ResultType;
         public bool Eligible = true, Unknown, Broken;
+        public string Summary = "summary", Detail = "detail";
         public int Rate = 10, RealCalls, DisplayCalls;
         public Func<int> ActualRate;
         public int GetRate() { RealCalls++; return ActualRate == null ? Rate : ActualRate(); }
@@ -152,6 +153,23 @@ namespace DiceMaster.EventSelection
         internal static EventResultPreview Read(string result)
         { Reads.Add(result); return Reader == null ? new EventResultPreview("preview:" + result) : Reader(result); }
     }
+    // Condition formatting is an explicit boundary in this real-MoonSharp
+    // execution fixture. RealGameApiTests execute the actual named-expression
+    // formatter against the supplied game data types; this stub only supplies
+    // stable descriptions and deliberate description failures to the runtime.
+    public static class PopupConditionText
+    {
+        public static string Condition(object value)
+        {
+            try
+            {
+                bool ignored;
+                string text = EventResultPreview.PlainText(DiceMaster.DataHelper.ExtractConditions((Mortal.Core.ConditionResultItem)value, out ignored));
+                return string.IsNullOrWhiteSpace(text) ? "조건 설명이 비어 있습니다." : text;
+            }
+            catch (Exception) { return "조건 설명을 읽지 못했습니다."; }
+        }
+    }
     public enum EventEligibilityState { Unknown, Eligible, Ineligible }
     public enum EventEligibilityReason { None, ConditionsNotMet, ZeroWeight, Random, Unsupported, ReadFailure }
     public sealed class EventEligibilitySnapshot
@@ -160,11 +178,11 @@ namespace DiceMaster.EventSelection
         public EventEligibilityReason Reason;
         public EventEligibilityState State;
         public EventEligibilitySnapshot() { }
-        public EventEligibilitySnapshot(EventEligibilityState state, EventEligibilityReason reason, int? rate, string summary, bool canUseResult = true)
-        { State = state; IsEligible = state == EventEligibilityState.Eligible; Reason = reason; Summary = summary; CanUseResult = canUseResult; }
-        public string StatusText = "state", Summary = "summary";
-        public static EventEligibilitySnapshot Unreadable(string summary = "unreadable")
-            => new EventEligibilitySnapshot { CanUseResult = false, Reason = EventEligibilityReason.ReadFailure, Summary = summary };
+        public EventEligibilitySnapshot(EventEligibilityState state, EventEligibilityReason reason, int? rate, string summary, bool canUseResult = true, string detail = null)
+        { State = state; IsEligible = state == EventEligibilityState.Eligible; Reason = reason; Summary = summary; Detail = detail ?? summary; CanUseResult = canUseResult; }
+        public string StatusText = "state", Summary = "summary", Detail = "detail";
+        public static EventEligibilitySnapshot Unreadable(string summary = "unreadable", string detail = null)
+            => new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.ReadFailure, null, summary, false, detail);
     }
     public static class EventEligibility
     {
@@ -172,10 +190,13 @@ namespace DiceMaster.EventSelection
         {
             var target = (Mortal.Story.PositionEventData)value;
             target.DisplayCalls++;
-            return new EventEligibilitySnapshot { IsEligible = target.Eligible && !target.Unknown && !target.Broken && target.Rate > 0,
-                CanUseResult = !target.Broken, Reason = target.Broken ? EventEligibilityReason.ReadFailure :
+            var reason = target.Broken ? EventEligibilityReason.ReadFailure :
                 target.Unknown ? EventEligibilityReason.Random : !target.Eligible ? EventEligibilityReason.ConditionsNotMet :
-                target.Rate <= 0 ? EventEligibilityReason.ZeroWeight : EventEligibilityReason.None };
+                target.Rate <= 0 ? EventEligibilityReason.ZeroWeight : EventEligibilityReason.None;
+            var state = target.Broken || target.Unknown ? EventEligibilityState.Unknown :
+                target.Eligible && target.Rate > 0 ? EventEligibilityState.Eligible : EventEligibilityState.Ineligible;
+            return new EventEligibilitySnapshot(state, reason, target.Unknown || target.Broken ? null : target.Rate,
+                target.Summary, !target.Broken, target.Detail);
         }
     }
 }

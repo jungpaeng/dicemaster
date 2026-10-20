@@ -73,19 +73,19 @@ namespace DiceMaster.EventSelection
                 }
                 return new EventEligibilitySnapshot(eligible ? EventEligibilityState.Eligible : EventEligibilityState.Ineligible,
                     eligible ? EventEligibilityReason.None : EventEligibilityReason.ConditionsNotMet, null,
-                    (eligible ? "현재 조건 충족 · " : "현재 조건 미충족 · ") + text);
+                    eligible ? text : "미충족 · " + text, detail: text);
             }
             catch (RandomDisplayValueException)
-            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "난수 조건은 원래 판정 전에 확정할 수 없습니다. " + text); }
+            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "? 난수 · " + text, detail: text); }
             catch (UnsupportedDisplayStatException)
-            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "지원하지 않는 조건 계산입니다. " + text); }
+            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "? 미지원 계산 · " + text, detail: text); }
             catch (InvalidOperationException error)
             {
                 if (error.Message.StartsWith("Unknown display", StringComparison.Ordinal))
-                    return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "지원하지 않는 조건 계산입니다. " + text);
-                return EventEligibilitySnapshot.Unreadable("분기 조건을 읽지 못했습니다. " + text);
+                    return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "? 미지원 계산 · " + text, detail: text);
+                return EventEligibilitySnapshot.Unreadable("! 분기 조건 확인 필요", text);
             }
-            catch (Exception) { return EventEligibilitySnapshot.Unreadable("분기 조건을 읽지 못했습니다. " + text); }
+            catch (Exception) { return EventEligibilitySnapshot.Unreadable("! 분기 조건 확인 필요", text); }
         }
 
         private static string SwitchConditionText(object condition, bool countMode, int nextCount)
@@ -98,8 +98,7 @@ namespace DiceMaster.EventSelection
                     int op = Convert.ToInt32(Field(condition, "_compareOp"));
                     return "이번 실행 횟수 " + nextCount + " " + operators[op] + " " + Convert.ToInt32(Field(condition, "_value"));
                 }
-                bool ignored;
-                string text = EventResultPreview.PlainText(DataHelper.ExtractConditions((Mortal.Core.ConditionResultItem)condition, out ignored));
+                string text = PopupConditionText.Condition(condition);
                 return string.IsNullOrWhiteSpace(text) ? "조건 설명이 비어 있습니다." : text;
             }
             catch (Exception) { return "조건 설명을 읽지 못했습니다."; }
@@ -119,10 +118,13 @@ namespace DiceMaster.EventSelection
                         items.Count == 0 ? "앞 분기가 없는 기본 분기입니다." : "앞의 1~" + items.Count + "번 분기 조건이 모두 미충족일 때 진행합니다.") :
                     SwitchCondition(items[index], action.SwitchUseCount, unchecked(count + 1));
                 EventEligibilitySnapshot snapshot;
-                if (!condition.CanUseResult || previousFailure) snapshot = EventEligibilitySnapshot.Unreadable("이 분기 또는 앞 분기의 조건을 읽지 못했습니다. " + condition.Summary);
-                else if (previousTrue) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, null, "앞 분기가 먼저 선택됩니다. " + condition.Summary);
+                if (!condition.CanUseResult || previousFailure) snapshot = EventEligibilitySnapshot.Unreadable("! 이 분기 또는 앞 분기 확인 필요",
+                    "이 분기 또는 앞 분기의 조건을 읽지 못했습니다.\n" + condition.Detail);
+                else if (previousTrue) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, null,
+                    "앞 분기 우선 · " + condition.Detail, detail: "앞 분기가 먼저 선택됩니다.\n" + condition.Detail);
                 else if (!condition.IsEligible && condition.Reason == EventEligibilityReason.ConditionsNotMet) snapshot = condition;
-                else if (previousUnknown) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Unknown, previousUnknownReason, null, "앞 분기의 판정이 확정되지 않았습니다. " + condition.Summary);
+                else if (previousUnknown) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Unknown, previousUnknownReason, null,
+                    "? 앞 분기 미확정 · " + condition.Detail, detail: "앞 분기의 판정이 확정되지 않았습니다.\n" + condition.Detail);
                 else snapshot = condition;
                 result.Add(snapshot);
                 previousFailure |= !condition.CanUseResult;

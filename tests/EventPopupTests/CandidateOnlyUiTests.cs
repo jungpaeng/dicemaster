@@ -125,20 +125,20 @@ internal static partial class Program
             var row = GUILayout.ScrollViews[0].Controls.First(control => control.Button);
             string title = row.Text.Split('\n')[0];
             Check(title.StartsWith("  <b>") && title.EndsWith("</b>") && title.Contains("…")
-                && row.Text.Split('\n').Length == 2 && !GUILayout.Buttons.Any(text => text.Contains("정상 발동 가능") || text.Contains("발동 불가")),
+                && row.Text.Split('\n').Length == 3 && !GUILayout.Buttons.Any(text => text.Contains("정상 발동 가능") || text.Contains("발동 불가")),
                 "The full event heading is bold and eligibility labels are absent at " + dimensions + " font=" + font);
             var measure = new GUIStyle { fontSize = font, fontStyle = FontStyle.Bold };
             var normal = new GUIStyle { fontSize = font };
             string literal = EventResultPreview.PlainText(title).Substring(2);
             Check(measure.CalcSize(new GUIContent(literal)).x > normal.CalcSize(new GUIContent(literal)).x
                 && measure.CalcSize(new GUIContent(literal)).x + normal.CalcSize(new GUIContent("  ")).x <= row.Rect.width + .1f
-                && row.Rect.height <= (font + 4) * 2 + .1f,
+                && row.Rect.height <= (font + 4) * 3 + .1f,
                 "Bold glyph width, rather than normal width, bounds the title to one line at " + dimensions + " font=" + font);
             popup.Handle(LogPadCommand.Down); Draw(popup); Draw(popup);
             var selected = GUILayout.ScrollViews[0].Controls.First(control => control.Button);
             Check(selected.Text.StartsWith("▶ <b>") && selected.Text.Split('\n')[0].Substring(2) == title.Substring(2)
                 && selected.Rect.height == row.Rect.height && selected.Rect.y == row.Rect.y,
-                "Selection preserves the exact truncated bold heading and two-line geometry at " + dimensions + " font=" + font);
+                "Selection preserves the exact truncated bold heading and three-line geometry at " + dimensions + " font=" + font);
         }
 
         var literalPopup = Start();

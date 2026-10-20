@@ -75,14 +75,24 @@ namespace DiceMaster
     // copied from the candidate; these helpers do not inspect game state.
     public static class DataHelper
     {
-        public static string GetLocalizedSystemText(string key, string fallback, string category, string original) => fallback;
-        public static string FormatConditionValName(object value) => "fixture";
+        public static int ExpandedNameReads;
+        public static string GetLocalizedSystemText(string key, string fallback, string category, string original) =>
+            key == "Flag/Name/PopupFlag001" ? "자기 참조 GetFlag('PopupFlag001')" : fallback;
+        public static string FormatConditionValName(object value) { ExpandedNameReads++; return "fixture"; }
         public static string GetCompareOperator(object operation)
         {
             string[] names = { "=", "≠", "<", "≤", ">", "≥" };
             return names[System.Convert.ToInt32(operation)];
         }
         public static string GetLogicOperator(object operation) => System.Convert.ToInt32(operation) == 0 ? "AND" : "OR";
+    }
+    public static class TimeTranslations
+    {
+        public static string TranslateChineseTimeExpression(string value) => value == "目前時間" ? "현재 시간" : value;
+    }
+    public static class PlayerinfoTranslations
+    {
+        public static string TranslatePlayerstats(string value) => value == "學問" ? "학문" : value;
     }
     public static class RichText
     {

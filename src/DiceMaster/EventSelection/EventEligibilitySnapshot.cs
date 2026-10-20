@@ -10,15 +10,16 @@ namespace DiceMaster.EventSelection
         public readonly EventEligibilityState State;
         public readonly EventEligibilityReason Reason;
         public readonly int? Rate;
-        public readonly string StatusText, Summary;
+        public readonly string StatusText, Summary, Detail;
         public readonly bool CanUseResult;
         public bool IsEligible { get { return State == EventEligibilityState.Eligible; } }
 
         public EventEligibilitySnapshot(EventEligibilityState state, EventEligibilityReason reason,
-            int? rate, string summary, bool canUseResult = true)
+            int? rate, string summary, bool canUseResult = true, string detail = null)
         {
             State = state; Reason = reason; Rate = rate;
             Summary = summary ?? "";
+            Detail = detail ?? Summary;
             CanUseResult = canUseResult;
             StatusText = state == EventEligibilityState.Eligible ? "정상 발동 가능" :
                 state == EventEligibilityState.Ineligible ? "발동 불가 · " +
@@ -26,7 +27,7 @@ namespace DiceMaster.EventSelection
                 reason == EventEligibilityReason.ReadFailure ? "판정 미확인 · 조회 실패" : "판정 미확인";
         }
 
-        public static EventEligibilitySnapshot Unreadable(string summary = "이벤트 자료를 읽지 못했습니다.")
-        { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.ReadFailure, null, summary, false); }
+        public static EventEligibilitySnapshot Unreadable(string summary = "이벤트 자료를 읽지 못했습니다.", string detail = null)
+        { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.ReadFailure, null, summary, false, detail); }
     }
 }

@@ -17,7 +17,8 @@ namespace DiceMaster.EventSelection
     {
         public string Id, Title, Result = "mock-result", State = "정상 발동 가능", Summary = "현재 조건 충족";
         public string ResultSummary = "예상 효과 요약", ResultDetail = "예상 효과 상세";
-        private string resultSummaryRich, resultDetailRich;
+        private string resultSummaryRich, resultDetailRich, conditionDetail;
+        public string ConditionDetail { get => conditionDetail ?? Summary; set => conditionDetail = value; }
         public string ResultSummaryRich { get => resultSummaryRich ?? EventResultPreview.Escape(ResultSummary); set => resultSummaryRich = value; }
         public string ResultDetailRich { get => resultDetailRich ?? EventResultPreview.Escape(ResultDetail); set => resultDetailRich = value; }
         public bool CanSelect, CanForce;
@@ -68,7 +69,8 @@ internal static partial class Program
                 Eligibility = new EventEligibilitySnapshot(EventEligibilityState.Eligible, EventEligibilityReason.None, null, "현재 조건 충족") },
             new EventCandidate { Id = "blocked", Title = "미충족 후보", State = "발동 불가 · 조건 미충족", CanForce = true,
                 Eligibility = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, null, "현재 조건 미충족") },
-            new EventCandidate { Id = "broken", Title = "읽기 실패 후보" }
+            new EventCandidate { Id = "broken", Title = "읽기 실패 후보", Summary = "! 대상/결과 확인 필요",
+                Eligibility = EventEligibilitySnapshot.Unreadable() }
         };
         Input.Held.Clear(); Application.isFocused = true; Input.touchCount = 0; Input.PointerSampleActive = false;
         Screen.width = 1920; Screen.height = 1080;
@@ -153,6 +155,7 @@ internal static partial class Program
         CandidateOnlyRegressions();
         KeyboardContextualConfirmation();
         SwitchPopupRegressions();
+        ConditionParityRegressions();
         PopupLogControlRegressions();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
@@ -536,7 +539,7 @@ internal static partial class Program
                     pair + " first row click selects without requesting an event: " + candidate);
                 Draw(popup);
                 Check(GUILayout.Buttons.Any(text => text.StartsWith("▶ ") && RowCaption(text, candidate)
-                    && text.Split('\n').Length == 2 && !text.Contains("클릭·터치")),
+                    && text.Split('\n').Length == 3 && !text.Contains("클릭·터치")),
                     "Selected row keeps two content lines without repeated pointer instructions: " + candidate);
                 Click(popup, text => RowCaption(text, candidate), pair.Item1, pair.Item2, pair.Item3, pair.Item4);
                 Check(candidate == "broken" ? EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0

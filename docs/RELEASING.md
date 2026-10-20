@@ -4,6 +4,12 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 선택 팝업의 조건·판정 표시 통일 — v1.0.6-alpha.15 prerelease 준비
+
+사용자의 구현·커밋·새 prerelease 요청에 따라 이벤트·조건 팝업의 목록을 제목·결과 요약·조건 요약의 고정 3줄로 맞췄다. 상세는 필요한 짧은 판단 이유 → 전체 조건 → 전체 결과 순서다. 이벤트의 활성 조건·기본/조건별/최종 가중치를 보강하고, 미확정 `?`와 대상·결과 확인 실패 `!`를 구분한다. 이름 변환과 조건 설명은 표시용 난수 샘플·게임 판정 실행을 거치지 않으며 실행 권한과 예약·Lua·터치·로그 포커스 흐름을 보존한다. [변경·설치·검증](ISSUE-5-ALPHA15-RELEASE.md) · [표시 설계·회귀 근거](ISSUE-5-POPUP-CONDITION-PARITY.md).
+
+소스 커밋을 고정한 뒤 별도 스냅샷 재빌드로 전체 14개 검사·입력·DLL/cfg/ZIP 바이트를 대조하고 main과 새 태그를 atomic push한다. 게시 전 원격 main과 기존 38개 Release·태그·자산을 보관했으며 Latest v1.0.5·이슈 #2 closed·#4 closed·#5 open의 보존을 확인한다. 현재 이 절은 게시 준비 기록이며 고정 재빌드·게시·익명 공개 다운로드 검증 결과는 완료 후 별도 문서 커밋으로 보충한다. 실제 Windows·Unity 화면·물리 패드·터치는 확인 대기다.
+
 ## 팝업 중 로그 열기·조건 분기 설명 — v1.0.6-alpha.14 prerelease
 
 사용자의 구현·검증 후 커밋·새 prerelease 요청에 따라 **2026-10-20 12:28:24 KST에 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.14/DiceMaster-v1.0.6-alpha.14.zip). 이벤트·조건 팝업에서 버튼·설정된 로그 열기 키·패드의 양쪽 스틱 클릭으로 로그를 열고, 닫을 때까지 로그가 입력을 소유하며 대기 중인 팝업의 Lua 판정을 보류하도록 연결한다. 조건 팝업은 목록에 조건 요약을 표시하고 전체 조건을 상세의 결과보다 먼저 보여주며 확정 미충족 분기를 회색으로 구분한다. 구현·회귀 검사·README·준비 문서를 포함한 고정 소스·주석 태그는 `3c9aa94512add361818511fe1f57d5987a5855d2`이며 main과 태그를 함께 atomic push했다. [변경·설치·검증](ISSUE-5-ALPHA14-RELEASE.md) · [입력·표시 설계와 회귀](ISSUE-5-POPUP-LOG-CONDITIONS.md).

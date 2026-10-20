@@ -53,7 +53,7 @@ static partial class RealGameApiTests
                 VerifyMetadataContract(candidate, root);
                 metadataAssertions += assertions - before;
             }
-            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "CheckpointReservation", "CheckpointReservationStore" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
+            new PayloadCopier(candidate.MainModule, destination.MainModule, type => (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "CheckpointReservation", "CheckpointReservationStore", "PopupConditionText" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             if (destination.MainModule.GetType("DiceMaster.LiveLog.SafeDisplayEvaluation") == null)
                 throw new InvalidDataException("Candidate does not contain SafeDisplayEvaluation.");
         }
@@ -78,6 +78,7 @@ static partial class RealGameApiTests
         {
             TestSafeEvaluation();
             TestEventEligibility();
+            TestPopupConditionText();
             if (fixture.GetType("DiceMaster.LiveLog.RandomPreview") != null) TestRandomPreview();
         }
         Console.WriteLine($"PASS: {assertions - metadataAssertions} managed behavior assertions and {metadataAssertions} metadata contract assertions; Unity/random/data boundaries are managed fixtures, native game runtime NOT executed.");

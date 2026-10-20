@@ -547,7 +547,10 @@ namespace DiceMaster
             candidate._defaultRate = -3; AssertState(candidate, "Ineligible", "ZeroWeight", true);
             candidate._defaultRate = 10; candidate._toggleCondition = true; candidate._activeCondition = condition;
             AssertState(candidate, "Ineligible", "ConditionsNotMet", true);
-            Check(((string)Member(Evaluate(candidate), "Summary")).Contains("3 ≥ 8"), "Event condition shortage summary lost actual structured values/operator");
+            string shortage = (string)Member(Evaluate(candidate), "Summary");
+            Check(shortage.StartsWith("미충족 · ") && shortage.Contains("[3] (현재 3)") &&
+                shortage.Contains(" >= ") && shortage.Contains("[8] (현재 8)"),
+                "Event condition shortage summary lost original expression/current values/operator");
             comparison._value1 = Number(9); AssertState(candidate, "Eligible", "None", true);
             comparison._value1._value[0]._checkType = 7;
             comparison._value1._value[0]._randomMin = 1; comparison._value1._value[0]._randomMax = 10;

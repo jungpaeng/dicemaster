@@ -122,7 +122,7 @@ static class LogRefreshTests
             target = fixtures.MainModule;
             new PayloadCopier(module, target, type => (type.Namespace == "DiceMaster.LiveLog" ||
                 type.Namespace == "DiceMaster.EventSelection" && (type.Name.StartsWith("EventEligibility") || type.Name.StartsWith("EventEligibilityReason") ||
-                    type.Name == "CheckpointReservation" || type.Name == "CheckpointReservationStore") ||
+                    type.Name == "CheckpointReservation" || type.Name == "CheckpointReservationStore" || type.Name == "PopupConditionText") ||
                 new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             var groups = new Dictionary<string, string[]> {
                 ["DiceMaster.PositionEventCache"] = new[] { "GetPositionEventDesc", "GeneratePreviewDynamicDesc", "ClearDisplayCaches", "GetPositionEvents" },

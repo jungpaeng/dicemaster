@@ -80,6 +80,49 @@ internal static class Program
         EventSelectionRuntime.CompletePosition(handle, null);
         Check(EventSelectionRuntime.Token == 0 && random.RealCalls == 0, "runtime does not itself roll random");
     }
+    private static void ConditionInformationDoesNotAuthorize()
+    {
+        foreach (string kind in new[] { "eligible", "blocked", "unknown", "unreadable" })
+        {
+            var target = Event("target", kind != "blocked");
+            target.Unknown = kind == "unknown"; target.Broken = kind == "unreadable";
+            target.Summary = "short reason:" + kind;
+            target.Detail = "complete condition:" + kind + "\nweight adjustment:10";
+            Begin(target, Event("other"));
+            DynValue co; Engine("return checkpointmanager.Position('action')", out co);
+            co.Coroutine.Resume();
+            EventCandidate candidate = null;
+            foreach (var item in EventSelectionRuntime.Candidates)
+                if (ReferenceEquals(item.Target, target)) candidate = item;
+            Check(candidate != null && candidate.Summary == target.Summary && candidate.ConditionDetail == target.Detail,
+                kind + ": event candidates keep the compact reason and full condition detail separate");
+            Check(candidate.Eligibility.State == (kind == "eligible" ? EventEligibilityState.Eligible :
+                    kind == "blocked" ? EventEligibilityState.Ineligible : EventEligibilityState.Unknown) &&
+                    target.RealCalls == 0 && CheckPointManager.Instance.PositionCalls == 0,
+                kind + ": display metadata preserves strict classification without a gameplay read");
+            if (kind == "unreadable")
+            {
+                Check(!EventSelectionRuntime.Select(candidate.Id, false) && !EventSelectionRuntime.Select(candidate.Id, true),
+                    "unreadable condition detail cannot authorize either normal or forced execution");
+                EventSelectionRuntime.ContinueRandom();
+                DynValue result = co.Coroutine.Resume();
+                Check(result.String == "original" && CheckPointManager.Instance.OriginalCalls == 1 && target.RealCalls == 0,
+                    "unreadable display can still resume the original path exactly once");
+                continue;
+            }
+            bool force = kind != "eligible";
+            Check(!EventSelectionRuntime.Select(candidate.Id, !force), kind + ": readable condition text does not offer the wrong authority mode");
+            Check(EventSelectionRuntime.Select(candidate.Id, force), kind + ": matching strict authority accepts the request");
+            target.Summary = "description changed"; target.Detail = "조건 설명을 읽지 못했습니다.";
+            EventSelectionRuntime.Tick(true, 1);
+            DynValue completed = co.Coroutine.Resume();
+            Check(completed.String == "story_target" && CheckPointManager.Instance.PositionCalls == 1 &&
+                    CheckPointManager.Instance.OriginalCalls == 0 && target.RealCalls == 0,
+                kind + ": changing or losing description text never replaces execution eligibility or repeats the game action");
+            Check(candidate.ConditionDetail.StartsWith("complete condition:", StringComparison.Ordinal),
+                kind + ": already published candidate text stays immutable after a later description refresh");
+        }
+    }
     private static void Admissions()
     {
         Begin(Event("single")); Check(!Wait() && !EventSelectionRuntime.Waiting, "single eligible passes through");
@@ -450,7 +493,7 @@ internal static class Program
     }
     public static void Run()
     {
-        Normal(); ForceAndRandom(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards(); HardCancellationBeforeLuaContinuation(); DelayedSchemeObservation(); RefreshCannotReplaceConfirmation(); ModalResetPolicyBoundaries();
+        Normal(); ForceAndRandom(); ConditionInformationDoesNotAuthorize(); Admissions(); ChangesAndCancellation(); VisibilityAndFailures(); ResultPreviews(); GateSyntax(); ActualLuaAndGuards(); HardCancellationBeforeLuaContinuation(); DelayedSchemeObservation(); RefreshCannotReplaceConfirmation(); ModalResetPolicyBoundaries();
         scenarios += PopupExecutionRegression.Run(Check);
         scenarios += SwitchExecutionRegression.Run(Check);
         scenarios += ReservationExecutionRegression.Run(Check);

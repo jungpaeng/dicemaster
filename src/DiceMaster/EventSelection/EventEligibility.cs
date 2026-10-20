@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using DiceMaster.LiveLog;
 
 namespace DiceMaster.EventSelection
@@ -14,6 +12,26 @@ namespace DiceMaster.EventSelection
 
         public static EventEligibilitySnapshot Evaluate(object eventData)
         {
+            // Description failures cannot change a decision established by the
+            // strict reader. Presentation never supplies execution authority.
+            EventEligibilitySnapshot decision = EvaluateState(eventData);
+            string conditionSummary, detail;
+            try { detail = PopupConditionText.Event(eventData, decision.Rate, out conditionSummary); }
+            catch (Exception) { conditionSummary = detail = "조건 설명을 읽지 못했습니다."; }
+            if (string.IsNullOrWhiteSpace(conditionSummary)) conditionSummary = "조건 설명을 읽지 못했습니다.";
+            if (string.IsNullOrWhiteSpace(detail)) detail = conditionSummary;
+            string summary = decision.IsEligible ? conditionSummary :
+                decision.Reason == EventEligibilityReason.ConditionsNotMet ? "미충족 · " + conditionSummary :
+                decision.Reason == EventEligibilityReason.ZeroWeight ? "가중치 0" :
+                decision.Reason == EventEligibilityReason.Random ? "? 난수 · " + conditionSummary :
+                decision.Reason == EventEligibilityReason.Unsupported ? "? 미지원 계산 · " + conditionSummary :
+                "! 대상/결과 확인 필요 · " + conditionSummary;
+            return new EventEligibilitySnapshot(decision.State, decision.Reason, decision.Rate,
+                summary, decision.CanUseResult, detail);
+        }
+
+        private static EventEligibilitySnapshot EvaluateState(object eventData)
+        {
             if (eventData == null) return EventEligibilitySnapshot.Unreadable();
             try
             {
@@ -22,7 +40,7 @@ namespace DiceMaster.EventSelection
                     object condition = Read(eventData, "_activeCondition");
                     if (!SafeDisplayEvaluation.CheckCondition(condition))
                         return new EventEligibilitySnapshot(EventEligibilityState.Ineligible,
-                            EventEligibilityReason.ConditionsNotMet, 0, UnmetSummary(condition));
+                            EventEligibilityReason.ConditionsNotMet, 0, "조건 미충족");
                 }
                 int rate = SafeDisplayEvaluation.ReadEventRate(eventData);
                 return rate > 0 ? new EventEligibilitySnapshot(EventEligibilityState.Eligible,
@@ -56,23 +74,5 @@ namespace DiceMaster.EventSelection
         { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported,
             null, "지원하지 않는 조건·가중치 계산으로 발동 자격을 확정할 수 없습니다."); }
 
-        private static string UnmetSummary(object condition)
-        {
-            IList items = Read(condition, "_items") as IList;
-            if (items == null || items.Count == 0) return "활성 조건이 충족되지 않았습니다.";
-            var unmet = new List<string>();
-            for (int index = 0; index < items.Count && unmet.Count < 3; index++)
-            {
-                object comparison = items[index];
-                if (SafeDisplayEvaluation.CheckComparison(comparison)) continue;
-                int left = SafeDisplayEvaluation.ReadGroup(Read(comparison, "_value1"));
-                int right = SafeDisplayEvaluation.ReadGroup(Read(comparison, "_value2"));
-                int op = Convert.ToInt32(Read(comparison, "_compareOp"));
-                string[] operators = { "=", "≠", "<", "≤", ">", "≥" };
-                unmet.Add("조건 " + (index + 1) + ": " + left + " " + operators[op] + " " + right);
-            }
-            return unmet.Count == 0 ? "활성 조건이 충족되지 않았습니다." :
-                "미충족 · " + string.Join(" / ", unmet.ToArray());
-        }
     }
 }

@@ -319,6 +319,34 @@ static class Program
         Check(Calls(Method(runtime, "Refresh")).Any(c => c.DeclaringType.FullName == resultPreview && c.Name == "Read") &&
                 !Calls(Method(popup, "Draw")).Any(c => c.DeclaringType.FullName == resultPreview && c.Name == "Read" || c.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser"),
             "actual result text is prepared outside OnGUI and the popup only consumes prepared descriptions");
+        const string candidate = "DiceMaster.EventSelection.EventCandidate";
+        const string eligibility = "DiceMaster.EventSelection.EventEligibility";
+        const string eligibilitySnapshot = "DiceMaster.EventSelection.EventEligibilitySnapshot";
+        const string conditionText = "DiceMaster.EventSelection.PopupConditionText";
+        Check(Type(eligibilitySnapshot).Fields.Any(field => field.Name == "Detail" && field.IsInitOnly && field.FieldType.FullName == "System.String") &&
+                Method(candidate, "get_ConditionDetail").Body.Instructions.Any(instruction => instruction.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == eligibilitySnapshot && field.Name == "Detail"),
+            "delivered event and Switch candidates expose immutable full condition details separately from their list summaries");
+        Check(Calls(Method(eligibility, "Evaluate")).Any(call => call.DeclaringType.FullName == eligibility && call.Name == "EvaluateState") &&
+                Calls(Method(eligibility, "Evaluate")).Any(call => call.DeclaringType.FullName == conditionText && call.Name == "Event") &&
+                Calls(Method(runtime, "SwitchConditionText")).Any(call => call.DeclaringType.FullName == conditionText && call.Name == "Condition"),
+            "actual event eligibility and Switch refresh both prepare the common named-condition formatter outside OnGUI");
+        Check(!Calls(Method(runtime, "SwitchConditionText")).Any(call => call.DeclaringType.FullName == "DiceMaster.DataHelper" ||
+                    call.DeclaringType.FullName == "DiceMaster.LiveLog.RandomPreview") &&
+                !types.Where(type => type.FullName == conditionText || type.FullName.StartsWith(conditionText + "/", StringComparison.Ordinal))
+                    .SelectMany(type => type.Methods).SelectMany(Calls).Any(call => call.DeclaringType.FullName == "DiceMaster.LiveLog.RandomPreview" ||
+                    call.DeclaringType.FullName == "DiceMaster.DataHelper" ||
+                    call.DeclaringType.Namespace.StartsWith("Mortal.", StringComparison.Ordinal) &&
+                        new[] { "GetRate", "GetResult", "GetValue", "Check", "Execute" }.Contains(call.Name)),
+            "popup condition formatting cannot sample the display RNG or invoke gameplay condition, rate, result or counter methods");
+        Check(!types.Where(type => type.FullName == popup || type.FullName.StartsWith(popup + "/", StringComparison.Ordinal))
+                .SelectMany(type => type.Methods).SelectMany(Calls).Any(call =>
+                    call.DeclaringType.FullName == conditionText || call.DeclaringType.FullName == eligibility ||
+                    call.DeclaringType.FullName == "DiceMaster.LiveLog.SafeDisplayEvaluation"),
+            "both popup layouts consume prepared metadata without condition reads during Unity layout, repaint or input callbacks");
+        Check(Calls(Method(popup, "Draw")).Any(call => call.DeclaringType.FullName == candidate && call.Name == "get_ConditionDetail") &&
+                !Calls(Method(popup, "Row")).Any(call => call.DeclaringType.FullName == runtime && call.Name == "get_IsSwitch"),
+            "the delivered shared popup consumes complete detail text and uses one row layout for events and Switch branches");
         Check(new[] { "Escape", "PlainText", "FitSummary", "NormalizeRich" }.All(name =>
                 !Calls(Method(resultPreview, name)).Any(c => c.DeclaringType.FullName == "DiceMaster.LuaParse.LuaParser" ||
                     c.DeclaringType.FullName == "DiceMaster.DataHelper" || c.DeclaringType.FullName.StartsWith("Mortal."))),

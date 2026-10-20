@@ -21,6 +21,7 @@ namespace DiceMaster.EventSelection
         { Id = id; Title = title; Result = result; Target = target; Eligibility = eligibility; this.preview = preview ?? EventResultPreview.Pending; Revision = revision; }
         public string State => Eligibility.StatusText;
         public string Summary => Eligibility.Summary;
+        public string ConditionDetail => Eligibility.Detail;
         public string ResultSummary => preview.Summary;
         public string ResultDetail => preview.Detail;
         public string ResultSummaryRich => preview.RichSummary;

@@ -187,13 +187,21 @@ static partial class RealGameApiTests
                 .Where(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original))
                 .Select(call => (Method: method, Call: call))).ToArray();
         Check(allRiskyCalls.Length == 0, "display and direct-selection validation must use pure audited reads, with no original API fallback: " + string.Join("; ", allRiskyCalls));
-        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting", "DiceMaster.EventSelection.EventEligibility" }
+        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting", "DiceMaster.EventSelection.EventEligibility", "DiceMaster.EventSelection.PopupConditionText" }
             .Select(name => candidate.MainModule.GetType(name) ?? throw new InvalidDataException("Missing preview payload " + name)).ToArray();
         foreach (var method in AllTypes(evaluators).SelectMany(type => type.Methods).Where(method => method.HasBody))
             Check(!Calls(method).Any(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original) ||
                 (call.DeclaringType.FullName == "Mortal.Core.ConditionResultData" && call.Name == "Execute") ||
                 (call.DeclaringType.FullName == "Mortal.Core.StatValueReference" && call.Name == "GetValue") ||
                 call.DeclaringType.FullName == "UnityEngine.Random"), "safe evaluator contains no original risky call " + method.FullName);
+        foreach (var method in AllTypes(new[] { candidate.MainModule.GetType("DiceMaster.EventSelection.PopupConditionText") }).SelectMany(type => type.Methods).Where(method => method.HasBody))
+        {
+            Check(!Calls(method).Any(call => call.DeclaringType.FullName.StartsWith("DiceMaster.LiveLog.RandomPreview") ||
+                call.DeclaringType.FullName == "System.Random"), "popup explanations must not use sampled narrative values " + method.FullName);
+            Check(!method.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Ldstr && instruction.Operand is string name &&
+                (name == "FormatConditionValName" || name == "GetFlagName" || name == "ApplyTranslations")),
+                "popup name lookups must not enter unbounded flag-expression expansion " + method.FullName);
+        }
         var randomPreview = candidate.MainModule.GetType("DiceMaster.LiveLog.RandomPreview");
         var independentRandom = randomPreview.Fields.Where(field => field.FieldType.FullName == "System.Random").ToArray();
         Eq(1, independentRandom.Length, "exactly one mod-owned independent RNG instance");
