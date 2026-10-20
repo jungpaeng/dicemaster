@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using DiceMaster.LiveLog;
 
 namespace DiceMaster.Information
@@ -20,7 +21,7 @@ namespace DiceMaster.Information
                 TableGates = TableGates == null ? null : new Dictionary<string, PreviewCondition>(TableGates, StringComparer.Ordinal) }; }
         }
         private sealed class Plan
-        { internal MapRouteSyntax Syntax; internal bool Failed; internal float Retry; }
+        { internal MapRouteSyntax Syntax; internal bool Failed; internal float Retry; internal bool? PassiveProof; }
         private sealed class Frame
         {
             internal int At, End;
@@ -63,6 +64,7 @@ namespace DiceMaster.Information
         private readonly List<MapRouteEntry> entries = new List<MapRouteEntry>();
         private readonly List<string> reasons = new List<string>();
         private int admitted, choices, characters, tokens;
+        private int resourceBudget, poolBudget;
         private bool limited, cleared;
         public int WorkCount { get; private set; }
         public int ScriptReadCount { get; private set; }
@@ -80,6 +82,38 @@ namespace DiceMaster.Information
                 if (reasons.Count > 0) text += (text.Length == 0 ? "" : " · ") + string.Join(" · ", reasons);
                 return text;
             }
+        }
+        // The route reader has already incrementally prepared these tokens.
+        // Only this small, closed, straight-line subset may enter the existing
+        // synchronous proof analyzer during passive map display. It contains
+        // no followup, choice, snapshot call, nested argument or user function.
+        // Larger/unsupported results remain available to explicit log detail.
+        public bool CanBuildBoundedProof(string script)
+        {
+            Plan plan;
+            if (script == null || !plans.TryGetValue(script, out plan) || plan.Syntax == null) return false;
+            if (plan.PassiveProof.HasValue) return plan.PassiveProof.Value;
+            var syntax = plan.Syntax; var t = syntax.Tokens;
+            if (!syntax.Ready) return false;
+            return (plan.PassiveProof = SmallProof(syntax)).Value;
+        }
+        private static bool SmallProof(MapRouteSyntax syntax)
+        {
+            var t = syntax.Tokens;
+            if (syntax.Limited || syntax.Malformed || syntax.Source.Length > 8192 || t.Count > 256 || Encoding.UTF8.GetByteCount(syntax.Source) > 8192) return false;
+            bool flag = false;
+            for (int at = 0; at < t.Count;)
+            {
+                if (t[at].Text == ";") { at++; continue; }
+                if (at + 4 >= t.Count || t[at].Text != "statmodifymanager" || t[at + 1].Text != "." || t[at + 3].Text != "(" || !syntax.Closes.TryGetValue(at + 3, out int close)) return false;
+                string name = t[at + 2].Text;
+                if (name != "SetFlag" && name != "AddFlag" && name != "Player" && name != "Character" && name != "SetPlayer" && name != "SetCharacter" && name != "AddBook" && name != "AddMisc" && name != "AddSpecial" && name != "RemoveBook" && name != "RemoveMisc" && name != "RemoveSpecial" && name != "AddTalent") return false;
+                flag |= name == "SetFlag";
+                for (int i = at + 4; i < close; i++)
+                    if (!t[i].IsString && t[i].Text != "," && t[i].Text != "-" && !int.TryParse(t[i].Text, NumberStyles.None, CultureInfo.InvariantCulture, out int number)) return false;
+                at = close + 1;
+            }
+            return flag;
         }
         public MapRouteDefinitions(string rootScript, Func<string, ScriptReadResult> scriptReader,
             Func<string, IList<MapRouteEvent>> poolReader, MapRouteLimits policy = null)
@@ -106,6 +140,7 @@ namespace DiceMaster.Information
         public void Advance(float now, int maxWork = 8192)
         {
             if (cleared || limited && WorkCount >= limits.MaxWork) return;
+            resourceBudget = poolBudget = 1;
             if (float.IsNaN(now) || float.IsInfinity(now)) now = 0;
             int budget = Math.Min(Math.Max(0, maxWork), Math.Max(0, limits.MaxWork - WorkCount));
             int blocked = 0;
@@ -130,6 +165,8 @@ namespace DiceMaster.Information
             }
             if (plan.Syntax != null) return plan;
             if (plan.Failed && now < plan.Retry) { blocked = true; return plan; }
+            if (resourceBudget <= 0) { blocked = true; return plan; }
+            resourceBudget--;
             ScriptReadCount++;
             ScriptReadResult read;
             try { read = reader == null ? null : reader(script); } catch (Exception) { read = null; }
@@ -531,6 +568,8 @@ namespace DiceMaster.Information
                 if (!poolDefinitions.TryGetValue(job.Pool, out job.PoolItems))
                 {
                     float retry; if (poolRetries.TryGetValue(job.Pool, out retry) && now < retry) return false;
+                    if (poolBudget <= 0) return false;
+                    poolBudget--;
                     used = 1; PoolReadCount++;
                     try
                     {

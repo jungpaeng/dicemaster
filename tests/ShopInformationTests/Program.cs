@@ -77,14 +77,15 @@ internal static class Program
         item._effects = new[] { new ItemEffect { _value = 12 } }; row = Row();
         Assert(row.Status == "사용 경로 미확인", "unmapped execution not guaranteed"); Contains(row.Detail, "+12", "static effect still readable");
         Contains(row.AutoText, "+12", "static consumable effect appears directly");
-        Contains(row.AutoText, "사용 실행 경로", "direct consumable effect keeps actual-use uncertainty");
+        Contains(row.AutoText, "효과 자료:", "direct consumable summary distinguishes static data from an actual use result");
+        Assert(!row.AutoText.Contains("사용 실행 경로", StringComparison.Ordinal) && !row.AutoText.Contains("\n", StringComparison.Ordinal), "consumable summary does not paste diagnostic paragraphs");
         Contains(row.Detail, "사용 실행 경로", "runtime mapping limitation explicit"); Assert(!row.Available, "unverified effect unavailable");
         item._effects = new[] { new ItemEffect { _statType = (GameStatType)999 } }; row = Row(); Assert(row.Status == "효과 해석 미지원", "unknown enum not effect none");
-        Assert(!row.AutoText.Contains("효과 없음", StringComparison.Ordinal) && (row.AutoText.Contains("미지원", StringComparison.Ordinal) || row.AutoText.Contains("확인 불가", StringComparison.Ordinal) || row.AutoText.Contains("해석할 수 없음", StringComparison.Ordinal)), "unsupported direct effect is not fabricated zero");
+        Assert(!row.AutoText.Contains("효과 없음", StringComparison.Ordinal) && (row.AutoText.Contains("미지원", StringComparison.Ordinal) || row.AutoText.Contains("확인 불가", StringComparison.Ordinal) || row.AutoText.Contains("미확인", StringComparison.Ordinal) || row.AutoText.Contains("해석할 수 없음", StringComparison.Ordinal)), "unsupported direct effect is not fabricated zero");
         item._effects = null;
         try { Row(); Assert(false, "missing array must wait"); } catch (DataNotReadyException) { assertions++; }
         Select(new Misc()); row = Row(); Assert(row.Status == "사용 경로 미연결", "unmapped use not no effect");
-        Assert(row.AutoText.Contains("효과가 없", StringComparison.Ordinal) && row.AutoText.Contains("뜻", StringComparison.Ordinal), "unmapped direct explanation distinguishes missing evidence from no effect");
+        Assert(row.AutoText == "사용 효과 미확인" && !row.AutoText.Contains("효과 없음", StringComparison.Ordinal), "unmapped compact summary distinguishes missing evidence from no effect");
     }
 
     private static void FoodUses()
@@ -92,7 +93,8 @@ internal static class Program
         NewContext();
         Func<string,string,string,DiceMaster.LuaParse.Action> use = (method,id,text) => new DiceMaster.LuaParse.Action {
             Description = text, Analysis = new PreviewAnalysis { Effects = new List<PreviewEffect> {
-                new PreviewEffect { Name = method, Constants = new List<object> { id } } } } };
+                new PreviewEffect { Name = method, Constants = new List<object> { id }, FixtureDescription = "버림: " + id + " x1" },
+                new PreviewEffect { Name = "Player", FixtureDescription = text } } } };
         DiceMaster.LuaParse.LuaParser.Options = new Dictionary<string,List<DiceMaster.LuaParse.Action>> {
             { "O_food", new List<DiceMaster.LuaParse.Action> { use("RemoveMisc","same","체력 +8") } },
             { "O_drink", new List<DiceMaster.LuaParse.Action> { use("RemoveSpecial","same","내력 +12") } },
@@ -102,7 +104,7 @@ internal static class Program
         Contains(row.Detail, "체력 +8", "actual stock Misc resolves food-use effects");
         Assert(!row.Detail.Contains("내력 +12",StringComparison.Ordinal), "same ID in different item kinds cannot cross-match");
         Assert(row.Status == "사용 효과 자료 확인" && row.AutoText.Contains("+8",StringComparison.Ordinal), "known effect is visible directly as well as in the log");
-        Contains(row.AutoText, "사용 효과:\n", "direct food effect has a human heading and separate lines");
+        Assert(row.AutoText.StartsWith("사용: ", StringComparison.Ordinal) && !row.AutoText.Contains("\n", StringComparison.Ordinal), "direct food effect is a compact single line");
         Assert(!row.AutoText.Contains("O_food", StringComparison.Ordinal), "automatic effect text omits raw option identity");
         int parses = DiceMaster.LuaParse.LuaParser.Parses, reads = DiceMaster.DataHelper.Reads;
         for (int i=0;i<100;i++) Row();
@@ -118,7 +120,7 @@ internal static class Program
         ShopUseEffects.Clear(); Select(new Misc { _id = "partial" }); row = Row();
         Assert(row.Status == "사용 효과 일부 확인" && !row.Available, "partial analysis remains uncertain despite known effects");
         Contains(row.AutoText, "체력 +8", "partial analysis still exposes supported numeric effects");
-        Contains(row.AutoText, "가능한 변화\n", "branch possibility heading survives inline formatting");
+        Contains(row.AutoText, "가능:", "compact branch possibility remains explicit");
         Contains(row.AutoText, "조건 미확정", "partial direct effect preserves uncertainty");
         Contains(row.AutoText, PreviewDisplay.PartialStatus + " 주석", "only the leading analysis status is removed");
         Assert(!row.AutoText.Contains("\n" + PreviewDisplay.PartialStatus + "\n", StringComparison.Ordinal), "analysis status does not displace the effect at the top");
@@ -126,7 +128,16 @@ internal static class Program
         var incomplete = ShopUseEffects.Find("misc", "same", DiceMaster.LuaParse.LuaParser.Options, true);
         Assert(!incomplete.Known, "incomplete menu discovery never becomes fully known");
         Contains(incomplete.InlineText, "체력 +8", "incomplete menu discovery preserves the matched numeric effect");
-        Contains(incomplete.InlineText, "일부 경로는 확인 불가", "incomplete menu warning remains in direct explanation");
+        Assert(incomplete.InlineText.Length <= 180 && !incomplete.InlineText.Contains("\n", StringComparison.Ordinal), "incomplete menu still gives a compact effect summary");
+        Contains(incomplete.Detail, "분석 한계", "complete analysis limitation remains in detailed log");
+        var longParts = new List<string>(); for (int i = 0; i < 40; i++) longParts.Add("능력치" + i + " +" + (i + 100));
+        var longUse = use("RemoveMisc", "long-use", "가능한 변화\n" + string.Join(" | ", longParts));
+        DiceMaster.LuaParse.LuaParser.Options.Add("O_long", new List<DiceMaster.LuaParse.Action> { longUse });
+        ShopUseEffects.Clear(); Select(new Misc { _id = "long-use" }); row = Row();
+        Assert(row.AutoText.Length <= 180 && !row.AutoText.Contains("\n", StringComparison.Ordinal) && row.AutoText.Contains("외 ", StringComparison.Ordinal), "long consumable effect lists are bounded by whole items with an omitted count");
+        Contains(row.AutoText, "능력치0 +100", "first actual use effect stays visible");
+        Assert(!row.AutoText.Contains("버림:", StringComparison.Ordinal) && longUse.Analysis.Effects.Count == 2 && longUse.Analysis.SnapshotAllowed, "short use summary omits self-consumption without mutating cached analysis");
+        Contains(row.Detail, "능력치39 +139", "full omitted use effect remains in the log");
         Select(new Misc { _id = "unmapped" }); row = Row();
         Assert(row.Status == "사용 경로 미연결" && !row.Available, "unmapped is not falsely called no effect or unusable");
         DiceMaster.DataHelper.State = ScriptReadState.Waiting; ShopUseEffects.Clear();
@@ -144,20 +155,45 @@ internal static class Program
             new MartialLearnCompareItem { _stat = new MartialStatReference { _stat = stat }, _value = 25, _compareOp = 5 } } });
         level._consumable.Add(new MartialLearnConsumable { _consumable = new List<MartialModifyStat> { Effect(costStat, -3) } });
         Select(book); var row = Row();
-        Contains(row.AutoText, "학습 효과:\n", "direct book description starts with learning effects");
-        Contains(row.AutoText, "+5 (30 → 35)", "next learning effect appears directly");
-        Contains(row.AutoText, "-3 (10 → 7)", "direct learning cost remains visible");
-        Contains(row.AutoText, "≥ 25", "direct learning condition remains visible");
-        Contains(row.AutoText, "현재 학습점 2 / 필요 10", "direct learning progress remains visible");
-        Before(row.AutoText, "+5 (30 → 35)", "학습 1회 소모", "next effects precede learning cost");
-        Before(row.AutoText, "+5 (30 → 35)", "학습 조건:", "next effects precede learning conditions");
-        Assert(row.AutoText.Contains("조건을 기준", StringComparison.Ordinal) && row.AutoText.Contains("실제 학습량", StringComparison.Ordinal) && row.AutoText.Contains("예측하지", StringComparison.Ordinal), "direct book explanation retains projection and learning uncertainty");
-        Assert(stat._value == 30 && costStat._value == 10 && book._currentLevelPoint == 2 && book._currentMartialLevel == 0, "inline book effect does not learn or consume");
+        Contains(row.AutoText, "Knowledge+", "native shop summary shows growth direction instead of a next-level transcript");
+        Assert(!row.AutoText.Contains("학습 조건", StringComparison.Ordinal) && !row.AutoText.Contains("학습점", StringComparison.Ordinal) && !row.AutoText.Contains("소모", StringComparison.Ordinal) && !row.AutoText.Contains("\n", StringComparison.Ordinal), "book summary excludes condition/cost/progress paragraphs");
+        Contains(row.Detail, "+5 (30 → 35)", "full next-level applied projection stays in log");
+        Contains(row.Detail, "-3 (10 → 7)", "full learning cost stays in log");
+        Contains(row.Detail, "≥ 25", "full learning condition stays in log");
+        Contains(row.Detail, "현재 학습점 2 / 필요 10", "full learning progress stays in log");
+        Assert(stat._value == 30 && costStat._value == 10 && book._currentLevelPoint == 2 && book._currentMartialLevel == 0, "short book summary never learns or consumes");
         int reads = SafeDisplayEvaluation.Reads; ShopEffectSource.RenderSummary(row.AutoText); ShopEffectSource.RenderSummary(row.AutoText);
         Assert(SafeDisplayEvaluation.Reads == reads, "book render does not reevaluate effects or costs");
         book._currentMartialLevel = 1; row = Row();
-        Contains(row.AutoText, "최대 학습 레벨", "completed book explains that no next level remains");
-        Assert(!row.AutoText.Contains("+5", StringComparison.Ordinal), "completed book does not retain previous next effect");
+        Contains(row.AutoText, "학습 완료", "completed book has a short completion label");
+        Assert(!row.AutoText.Contains("+5", StringComparison.Ordinal), "completed book does not invent a next applied delta");
+
+        var vitality = new GameStat { _type = GameStatType.Vitality };
+        var hidden = new GameStat { _type = GameStatType.Vitality, _property = 9 };
+        var first = new MartialLevelData(); first._levelupStats.AddRange(new[] { Effect(stat, 5), Effect(vitality, -2), Effect(hidden, 99) });
+        var second = new MartialLevelData(); second._levelupStats.AddRange(new[] { Effect(new GameStat(), -3), Effect(stat, 0) });
+        book = new Book { _currentMartialLevel = 1, _martialLevelData = new[] { first, second, new MartialLevelData(), new MartialLevelData() } };
+        var curve = new UnityEngine.AnimationCurve { Start = 0, End = 10 };
+        book._relationStatConvert = new[] {
+            new BookLevelStatConvertData { _book = book, _relationStat = new MartialStatReference { _stat = stat }, _curve = curve },
+            new BookLevelStatConvertData { _book = book, _relationStat = new MartialStatReference { _stat = hidden }, _curve = new UnityEngine.AnimationCurve { End = 99 } } };
+        Select(book); row = Row();
+        Contains(row.AutoText, "Knowledge [2/10]", "current/full curve bonuses use source book level with game-compatible midpoint-to-even rounding");
+        Contains(row.AutoText, "Knowledge+", "first distinct growth direction is included"); Contains(row.AutoText, "Vitality-", "another stat negative direction is included");
+        Assert(!row.AutoText.Contains("Knowledge-", StringComparison.Ordinal) && !row.AutoText.Contains("99", StringComparison.Ordinal), "growth stats deduplicate by stat key and hidden stats are omitted");
+        Assert(curve.Reads == 2 && book._currentMartialLevel == 1 && stat._value == 30, "summary uses read-only curve evaluation rather than gameplay conversion/reference methods");
+        int curveReads = curve.Reads; ShopEffectSource.RenderSummary(row.AutoText); ShopEffectSource.RenderSummary(row.AutoText);
+        Assert(curve.Reads == curveReads, "native description renderer never reevaluates even curve math");
+        book._currentMartialLevel = 4; row = Row(); Contains(row.AutoText, "Knowledge [10/10]", "learned book related current/max figures update at refresh");
+        Contains(row.AutoText, "학습 완료", "related figures remain visible for completed books");
+        curve.End = float.NaN; row = Row();
+        Assert(row.Status == "학습 완료" && !row.Available && row.Detail.Contains("일부 자료", StringComparison.Ordinal) && !row.AutoText.Contains("NaN", StringComparison.Ordinal), "unsupported related curve never fabricates a numeric bonus and retains detailed uncertainty");
+
+        string whole = "very-long-effect-name-" + new string('x', 180) + " +123";
+        string compact = ShopEffectSource.ShortParts(new[] { "체력 +8", whole, "내력 +12" });
+        Assert(compact == "체력 +8 외 2개" && compact.Length <= 180 && !compact.Contains("+12", StringComparison.Ordinal), "summary omits whole effect items and reports count without cutting numbers");
+        compact = ShopEffectSource.ShortParts(new[] { whole });
+        Assert(compact == "효과 1개 (상세 조회)", "a single unfit item is represented by a complete count rather than a cut label/value");
     }
 
     private static void Conditions()
@@ -230,6 +266,16 @@ internal static class Program
             Assert(core.MainModule.GetType("Mortal.Core.Consumables").Fields.Any(f=>f.Name=="_effects"&&f.FieldType.FullName=="Mortal.Core.ItemEffect[]"), "real consumable field");
             var book=core.MainModule.GetType("Mortal.Core.Book");
             Assert(book.Fields.Any(f=>f.Name=="_martialLevelData"&&f.FieldType.FullName=="Mortal.Core.MartialLevelData[]"),"real level field");
+            Assert(book.Fields.Any(f=>f.Name=="_relationStatConvert"&&f.FieldType.FullName=="Mortal.Core.BookLevelStatConvertData[]"), "real related-stat conversion field");
+            var related = core.MainModule.GetType("Mortal.Core.BookLevelStatConvertData");
+            Assert(related.Fields.Any(f=>f.Name=="_book"&&f.FieldType.FullName=="Mortal.Core.Book") && related.Fields.Any(f=>f.Name=="_relationStat"&&f.FieldType.FullName=="Mortal.Core.MartialStatReference"), "related summary reads the exact source book/reference fields");
+            Assert(related.Methods.Single(m=>m.Name=="GetValue").Body.Instructions.Any(i=>i.Operand is MethodReference m&&m.Name=="get_CurrentMartialLevel"), "native curve current input is source book level");
+            Assert(related.Methods.Single(m=>m.Name=="GetMax").Body.Instructions.Any(i=>i.Operand is MethodReference m&&m.Name=="get_MaxLevel"), "native curve max input is source book max level");
+            var convert = core.MainModule.GetType("Mortal.Core.CurveStatConvertData");
+            Assert(convert.Fields.Any(f=>f.Name=="_curve"&&f.FieldType.FullName=="UnityEngine.AnimationCurve"), "native read-only curve field");
+            var calculate = convert.Methods.Single(m=>m.Name=="GetResult"&&m.Parameters.Count==1);
+            Assert(calculate.Body.Instructions.Any(i=>i.Operand is MethodReference m&&m.DeclaringType.FullName=="UnityEngine.Mathf"&&m.Name=="InverseLerp") && calculate.Body.Instructions.Any(i=>i.Operand is MethodReference m&&m.DeclaringType.FullName=="UnityEngine.AnimationCurve"&&m.Name=="Evaluate"), "native curve normalization/evaluation contract");
+            Assert(core.MainModule.GetType("Mortal.Core.MartialStatReference").Methods.Single(m=>m.Name=="IsHiddenStat").Body.Instructions.Any(i=>i.OpCode.Code==Mono.Cecil.Cil.Code.Ldc_I4_S&&Convert.ToInt32(i.Operand)==9), "native hidden-stat property value is nine");
             var shop=story.MainModule.GetType("Mortal.Story.ShopPanel");
             foreach (string stock in new[] { "get_Books", "get_Miscs", "get_Specials" })
                 Assert(shop.Methods.Single(m=>m.Name=="Init").Body.Instructions.Any(i=>i.Operand is MethodReference m&&m.Name==stock), "actual shop stock route " + stock);

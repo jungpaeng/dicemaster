@@ -10,6 +10,10 @@ namespace DiceMaster.EventSelection
     {
         private static object Read(object target, string field) { return LogBridge.ReadFieldStrict(target, field); }
 
+        // Passive map notices need the decision, not the popup's full condition
+        // description. Keep both surfaces on exactly the same strict reader.
+        public static EventEligibilitySnapshot EvaluateCurrent(object eventData) => EvaluateState(eventData);
+
         public static EventEligibilitySnapshot Evaluate(object eventData)
         {
             // Description failures cannot change a decision established by the

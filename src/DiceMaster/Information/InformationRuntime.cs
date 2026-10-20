@@ -117,9 +117,10 @@ namespace DiceMaster.Information
                 // Scene/load patches clear history separately; ordinary Lua keeps it.
             }
             bool mapVisible = focused && automaticVisible && MapGuideSource.Visible;
-            Run(map, "지도 안내", MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1],
+            bool mapDetails = detailPage == "지도 안내";
+            Run(map, "지도 안내", MapKey(mapDetails),
                 (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
-                () => MapGuideSource.Discover(enabled[0], enabled[1]), manual);
+                () => MapGuideSource.Discover(enabled[0], enabled[1], mapDetails), manual, () => MapKey(mapDetails));
             Run(shop, "상점 효과", ShopEffectSource.ContextKey,
                 enabled[3] && focused && (automaticVisible && ShopEffectSource.Visible || detailPage == "상점 효과"), now,
                 ShopEffectSource.Discover, manual);
@@ -158,15 +159,16 @@ namespace DiceMaster.Information
             if (proof.Failed) throw new InvalidOperationException("One-shot proof read failed");
             return proof;
         }
+        private static string MapKey(bool details) => MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + details;
         private static void Run(Page page, string title, string key, bool visible, float now,
-            Func<List<DisplayQuery>> discover, bool manual)
+            Func<List<DisplayQuery>> discover, bool manual, Func<string> currentKey = null)
         {
             if (page.Context != key)
             { Reset(page); page.Context = key; Publish(page, title); }
             page.Visible = visible;
             page.Engine.Tick(title, visible, true, now, false, manual, discover, rows =>
             {
-                string current = title == "지도 안내" ? MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1] :
+                string current = currentKey != null ? currentKey() :
                     title == "상점 효과" ? ShopEffectSource.ContextKey : title == "분기 기록" ? BranchHistory.ContextKey : key;
                 if (current != key) { Reset(page); page.Context = current; Publish(page, title); return; }
                 page.Rows = rows; Publish(page, title);
@@ -224,6 +226,8 @@ namespace DiceMaster.Information
         { if (failures.Remove(key)) DicePlugin.LogInfo("Information 복구 · " + key); }
         public static string EventTag(object item) => Enabled(1) ? OneShotProof.CachedEventTag(item) : "";
         public static string OptionTag(string key) => Enabled(1) ? OneShotProof.CachedOptionTag(key) : "";
+        public static string EventDetail(object item) => Enabled(1) ? OneShotProof.CachedEventDetail(item) : "";
+        public static string OptionDetail(string key) => Enabled(1) ? OneShotProof.CachedOptionDetail(key) : "";
         internal static void ResetDisplays()
         {
             Reset(map); Reset(shop); Reset(hints);

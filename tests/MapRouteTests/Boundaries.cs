@@ -16,7 +16,8 @@ namespace DiceMaster.LiveLog
     public sealed class UnsupportedDisplayStatException : Exception { }
     public static class SafeDisplayEvaluation
     {
-        public static bool CheckConditionData(object value) { return ((Mortal.Core.ConditionResultData)value).Current; }
+        public static int ConditionReads;
+        public static bool CheckConditionData(object value) { ConditionReads++; return ((Mortal.Core.ConditionResultData)value).Current; }
         public static bool CheckCondition(object value) { return ((Mortal.Core.ConditionResultItem)value).Current; }
     }
 }

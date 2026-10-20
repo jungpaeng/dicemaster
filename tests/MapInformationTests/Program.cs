@@ -52,12 +52,44 @@ static class Program
         Check(!OneShotProof.Evaluate(unknownOr, Result(Set("F1", 1))).Proven, "Unknown OR alternative never becomes repeat or proven once");
         var and = Compare(Flag(flag), Constant(0)); and._items.Add(unknownOr._items[1]);
         Check(OneShotProof.Evaluate(and, Result(Set("F1", 1))).Proven, "Known changed false gate dominates AND without evaluating RNG");
-        Check(!OneShotProof.ForOption("option", Result(Set("F1", 1))).Proven && OneShotProof.CachedOptionTag("option").Contains("확인 불가"), "No activation evidence remains visibly unknown");
+        Check(!OneShotProof.ForOption("option", Result(Set("F1", 1))).Proven && OneShotProof.CachedOptionTag("option") == "", "No activation evidence adds no noisy automatic badge");
+        Check(OneShotProof.CachedOptionDetail("option").Contains("1회성 확인 불가") && OneShotProof.CachedOptionDetail("option").Contains("활성 조건"), "Unknown option proof remains available in explicit detail");
         Check(OneShotProof.ForOption("option", condition, Result(Set("F1", 1))).Proven && OneShotProof.CachedOptionTag("option") == " · 1회성", "Option with explicit exact gate uses same proof");
         OneShotProof.Clear(); Check(OneShotProof.CachedOptionTag("option") == "", "OFF/context clear removes cached hints");
+        var target = Event("proof-cache", condition);
+        DiceMaster.PositionEventCache.Parser.Actions["proof_result"] = Result(Set("F1", 1));
+        OneShotResult first = OneShotProof.ForEvent(target, "proof_result");
+        Check(first.Proven && OneShotProof.CachedEventTag(target) == " · 1회성", "Exact event proof supplies the positive-only badge");
+        OneShotResult cached;
+        Check(OneShotProof.TryGetEvent(target, "proof_result", out cached) && ReferenceEquals(first, cached) && ReferenceEquals(first, OneShotProof.ForEvent(target, "proof_result")), "Warm proof reuses definition evidence rather than re-evaluating results");
+        flag.State = 19;
+        Check(OneShotProof.TryGetEvent(target, "proof_result", out cached) && ReferenceEquals(first, cached), "Definition proof does not depend on live pre-result flag values");
+        target._activeCondition = Compare(Flag(flag), Constant(1));
+        Check(!OneShotProof.TryGetEvent(target, "proof_result", out cached) && OneShotProof.CachedEventTag(target) == "", "Replacing active condition discards the old badge and proof");
+        Check(!OneShotProof.ForEvent(target, "proof_result").Proven && OneShotProof.CachedEventTag(target) == "" && OneShotProof.CachedEventDetail(target).Contains("확인 불가"), "Unknown event proof is visible only as detail");
+        Check(!OneShotProof.TryGetEvent(target, "other_result", out cached), "Changing the result script invalidates cached definition evidence");
+        target._toggleCondition = false;
+        Check(!OneShotProof.ForEvent(target, "proof_result").Proven && OneShotProof.CachedEventTag(target) == "", "Missing active condition adds no automatic failure or unknown label");
+        OneShotProof.Clear();
+        Check(!OneShotProof.TryGetEvent(target, "proof_result", out cached) && OneShotProof.CachedEventDetail(target) == "", "Context cleanup removes both detail and definition cache");
+    }
+    private static void Presentation()
+    {
+        var notices = new List<string> {
+            MapGuidePresentation.Notice("약초 찾기", "보조 임무", 0, true, true, "대기 등록"),
+            MapGuidePresentation.Notice("사형과 대화", "주 임무", 0, false, true, "조건 충족 · 대기 미확인"),
+            MapGuidePresentation.Notice("문파 방문", "1회성 이야기", 1, false, false, "진행 불가"),
+            MapGuidePresentation.Notice("나머지 이야기", "1회성 이야기", 2, false, false, "경로 확인 필요") };
+        string text = MapGuidePresentation.Summary(notices, true, false);
+        Check(text.Contains("약초 찾기 · 보조 임무 · 진행 가능") && text.Contains("사형과 대화 · 주 임무 · 발생 조건 충족"), "Notice distinguishes ready waiting missions from currently met stage candidates in plain language");
+        Check(text.Contains("문파 방문 · 1회성 이야기 · 지금 진행 불가") && !text.Contains("나머지 이야기") && text.Contains("외 1개"), "Automatic notice bounds complete entries rather than cutting statuses midway");
+        Check(text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && !text.Contains("단계 후보") && !text.Contains("확인 불가"), "Compact notice keeps the detail path and omits analysis jargon");
+        Check(MapGuidePresentation.Summary(new List<string>(), true, true).StartsWith("이 장소의 안내를 확인하는 중"), "Preparing is distinct from confirmed empty");
+        Check(MapGuidePresentation.Summary(new List<string>(), true, false).StartsWith("확인된 임무·1회성 이야기 없음"), "Empty notice describes only recognized supported items");
+        Check(MapGuidePresentation.Summary(new List<string>(), false, true) == "", "One-shot-only mode does not create an empty or unknown noise panel");
     }
     private static MapGuideSnapshot Snapshot(bool guide = true, bool once = true)
-    { var queries = MapGuideSource.Discover(guide, once); Check(queries.Count == 1, "One observed session has one scheduled query"); return (MapGuideSnapshot)queries[0].Read(); }
+    { var queries = MapGuideSource.Discover(guide, once, true); Check(queries.Count == 1, "One observed session has one scheduled query"); return (MapGuideSnapshot)queries[0].Read(); }
     private static string Details(MapGuideSnapshot value)
     { var text = new System.Text.StringBuilder(); foreach (var row in value.Entries) text.AppendLine(row.Title + " · " + row.Kind + " · " + row.Status + "\n" + row.Detail); return text.ToString(); }
     private static InformationRow Entry(MapGuideSnapshot value, string name)
@@ -303,13 +335,25 @@ static class Program
         var proof = (OneShotResult)queries[0].Read();
         Check(!proof.Proven && proof.Status.Contains("확인 불가"), "A rendered button boolean does not invent its activation condition");
         OptionHintSource.RenderHints();
-        Check(button._text[0].text == "original option · 1회성 확인 불가", "Delayed cached tag reaches already-updated game option text");
+        Check(button._text[0].text == "original option", "Unproven options keep their original game text");
         int writes = button._text[0].Writes, parses = LuaParser.Parses;
-        OptionHintSource.RenderHints(); OptionHintSource.RenderHints();
+        int labelReads = button._text[0].Reads;
+        for (int frame = 0; frame < 1000; frame++) OptionHintSource.RenderHints();
+        Check(button._text[0].Reads == labelReads, "1000 warm renders do not reread unchanged option label text");
         Check(button._text[0].Writes == writes && LuaParser.Parses == parses, "Rendering warm hints neither rewrites same UI nor analyzes Lua");
         var condition = Compare(Flag(new FlagData { name = "F1" }), Constant(0));
         OneShotProof.ForOption("O_first", condition, Result(Set("F1", 1)));
         OptionHintSource.RenderHints(); Check(button._text[0].text == "original option · 1회성", "Exact gate proof replaces unknown cached text without action execution");
+        button.isActiveAndEnabled = false; labelReads = button._text[0].Reads;
+        OneShotProof.ForOption("O_first", Result(Set("F1", 1)));
+        OptionHintSource.RenderHints();
+        Check(!OptionHintSource.Visible && button._text[0].Reads == labelReads, "Inactive controls are neither visible requests nor render-time label reads");
+        button.isActiveAndEnabled = true; OptionHintSource.RenderHints();
+        Check(button._text[0].text == "original option", "An expired proof removes only its owned badge when the control becomes visible");
+        Fungus.MenuDialog.ActiveMenuDialog = new Fungus.MenuDialog(); labelReads = button._text[0].Reads;
+        OptionHintSource.RenderHints();
+        Check(!OptionHintSource.Visible && button._text[0].Reads == labelReads, "Controls belonging to a different active menu perform no hint work");
+        Fungus.MenuDialog.ActiveMenuDialog = menu;
         OptionHintSource.Clear(); Check(button._text[0].text == "original option", "OFF/context clear restores only the appended annotation");
         string context = OptionHintSource.ContextKey; OptionHintSource.Clear();
         Check(OptionHintSource.ContextKey == context, "Already-empty clear does not reset scheduling each frame");
@@ -323,12 +367,12 @@ static class Program
         button._source.text = "O_second"; button._text[0].text = "second option";
         LuaParser.Instance.OptionResult["O_second"] = Result(); OptionHintSource.Observe(button);
         queries = OptionHintSource.Discover(); queries[0].Read(); OptionHintSource.RenderHints();
-        Check(button._text[0].text == "second option · 1회성 확인 불가" && !button._text[0].text.Contains("original"), "A reused button receives only its current key snapshot");
+        Check(button._text[0].text == "second option" && !button._text[0].text.Contains("original"), "A reused unknown button has no noisy annotation or stale name");
         OptionHintSource.MenuCleared(menu);
         Check(button._text[0].text == "second option" && OneShotProof.CachedOptionTag("O_second") == "", "Game menu Clear discards session proofs and restores UI");
         menu.gameObject.activeInHierarchy = false; writes = button._text[0].Writes;
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Map(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main() { Proofs(); Presentation(); Map(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

@@ -59,6 +59,8 @@ namespace DiceMaster.LogUI
         public Action<int> ToggleInformationSetting { get; set; }
         public Func<object, string> OneShotEventTag { get; set; }
         public Func<string, string> OneShotOptionTag { get; set; }
+        public Func<object, string> OneShotEventDetail { get; set; }
+        public Func<string, string> OneShotOptionDetail { get; set; }
         public Rect WindowRect => window;
         private LogTabState State => model.Tab(informationPage ?? CurrentTab);
         private bool IsChoiceTab => informationPage == null && currentTabIndex == 0;
@@ -541,6 +543,8 @@ namespace DiceMaster.LogUI
                 Label(RowState(row), statusStyle);
                 GUILayout.Label("원본 ID: " + row.RawId, literalStyle);
                 Label(row.Description, textStyle);
+                string oneShotDetail = OneShotOptionDetail?.Invoke(row.RawId);
+                if (!string.IsNullOrEmpty(oneShotDetail)) Label(oneShotDetail, literalStyle);
                 GUILayout.EndVertical();
             }
             GUILayout.EndScrollView();
@@ -634,6 +638,8 @@ namespace DiceMaster.LogUI
                     DrawConditionDetails(selectedRow.ConditionDetails);
                 else if (IsEventTab)
                 {
+                    string oneShotDetail = OneShotEventDetail?.Invoke(selectedRow.Target);
+                    if (!string.IsNullOrEmpty(oneShotDetail)) Label(oneShotDetail, literalStyle);
                     if (selectedRow.EventEligibility != null && !string.IsNullOrEmpty(selectedRow.EventEligibility.Detail))
                     {
                         Label(CurrentJudgment(selectedRow) ? "조건 상세" : "조건 상세 · 이전 조회 설명", statusStyle);

@@ -12,9 +12,9 @@ namespace DiceMaster.Information
     public sealed class OneShotResult
     {
         public readonly bool Proven, Failed;
-        public readonly string Status, Detail;
+        public readonly string Status, Detail, DetailText;
         internal OneShotResult(bool proven, string detail, bool failed = false)
-        { Proven = proven; Failed = failed; Status = proven ? "1회성" : failed ? "1회성 읽기 실패" : "1회성 확인 불가"; Detail = detail; }
+        { Proven = proven; Failed = failed; Status = proven ? "1회성" : failed ? "1회성 읽기 실패" : "1회성 확인 불가"; Detail = detail; DetailText = Status + ": " + detail; }
     }
 
     // A local proof of the PRD's meaning: after this known result completes,
@@ -23,16 +23,28 @@ namespace DiceMaster.Information
     public static class OneShotProof
     {
         private static readonly Dictionary<object, OneShotResult> events = new Dictionary<object, OneShotResult>();
+        private sealed class EventDefinition
+        {
+            internal string Script;
+            internal bool Toggle;
+            internal object Condition, Items;
+            internal int Count;
+        }
+        private static readonly Dictionary<object, EventDefinition> eventDefinitions = new Dictionary<object, EventDefinition>();
         private static readonly Dictionary<string, OneShotResult> options = new Dictionary<string, OneShotResult>(StringComparer.Ordinal);
         private static readonly HashSet<string> independentEffects = new HashSet<string>(StringComparer.Ordinal)
         { "Player", "Character", "SetPlayer", "SetCharacter", "AddBook", "AddMisc", "AddSpecial", "RemoveBook", "RemoveMisc", "RemoveSpecial", "AddTalent" };
         public static OneShotResult Unknown(string reason = "활성 조건과 실행 후 변화를 안전하게 연결하지 못했습니다. 반복 가능 판정이 아닙니다.")
         { return new OneShotResult(false, reason); }
         public static string CachedEventTag(object target)
-        { OneShotResult value; return target != null && events.TryGetValue(target, out value) ? (value.Proven ? " · 1회성" : " · " + value.Status) : ""; }
+        { OneShotResult value; return target != null && events.TryGetValue(target, out value) && value.Proven ? " · 1회성" : ""; }
         public static string CachedOptionTag(string key)
-        { OneShotResult value; return key != null && options.TryGetValue(key, out value) ? (value.Proven ? " · 1회성" : " · " + value.Status) : ""; }
-        public static void Clear() { events.Clear(); options.Clear(); }
+        { OneShotResult value; return key != null && options.TryGetValue(key, out value) && value.Proven ? " · 1회성" : ""; }
+        public static string CachedEventDetail(object target)
+        { OneShotResult value; return target != null && events.TryGetValue(target, out value) ? value.DetailText : ""; }
+        public static string CachedOptionDetail(string key)
+        { OneShotResult value; return key != null && options.TryGetValue(key, out value) ? value.DetailText : ""; }
+        public static void Clear() { events.Clear(); eventDefinitions.Clear(); options.Clear(); }
         public static void ClearOptions() { options.Clear(); }
         public static OneShotResult ForOption(string key, IList<LuaAction> actions)
         { return ForOption(key, null, actions); }
@@ -44,16 +56,53 @@ namespace DiceMaster.Information
         }
         public static OneShotResult ForEvent(object target, string resultScript)
         {
+            OneShotResult cached;
+            if (TryGetEvent(target, resultScript, out cached)) return cached;
             OneShotResult result;
+            EventDefinition definition = null;
             try
             {
-                if (target == null || !(bool)Field(target, "_toggleCondition")) result = Unknown("명시적인 활성 조건이 없어 실행 후 비활성화를 증명하지 못했습니다.");
+                definition = Definition(target, resultScript);
+                if (definition == null || !definition.Toggle) result = Unknown("명시적인 활성 조건이 없어 실행 후 비활성화를 증명하지 못했습니다.");
                 else if (string.IsNullOrEmpty(resultScript)) result = Unknown("실제 결과 스크립트 연결을 확인하지 못했습니다.");
-                else result = Evaluate(Field(target, "_activeCondition"), PositionEventCache.GetDefinitionParser().ExtractActionsFromLua(resultScript));
+                else result = Evaluate(definition.Condition, PositionEventCache.GetDefinitionParser().ExtractActionsFromLua(resultScript));
             }
             catch (Exception) { result = new OneShotResult(false, "1회성 판별 자료를 읽지 못했습니다.", true); }
-            if (target != null) events[target] = result;
+            if (target != null)
+            {
+                events[target] = result;
+                if (!result.Failed && definition != null) eventDefinitions[target] = definition;
+                else eventDefinitions.Remove(target);
+            }
             return result;
+        }
+
+        // The proof reads definition data and constant result effects, never
+        // live flag values. Reuse it within the current Lua/map session. A new
+        // result or replaced condition invalidates it; failures remain retryable.
+        public static bool TryGetEvent(object target, string resultScript, out OneShotResult result)
+        {
+            result = null;
+            EventDefinition previous;
+            if (target == null || !eventDefinitions.TryGetValue(target, out previous)) return false;
+            try
+            {
+                EventDefinition current = Definition(target, resultScript);
+                if (current != null && current.Script == previous.Script && current.Toggle == previous.Toggle &&
+                    ReferenceEquals(current.Condition, previous.Condition) && ReferenceEquals(current.Items, previous.Items) && current.Count == previous.Count &&
+                    events.TryGetValue(target, out result) && !result.Failed) return true;
+            }
+            catch (Exception) { }
+            events.Remove(target); eventDefinitions.Remove(target); result = null;
+            return false;
+        }
+        private static EventDefinition Definition(object target, string script)
+        {
+            if (target == null) return null;
+            bool toggle = (bool)Field(target, "_toggleCondition");
+            object condition = toggle ? Field(target, "_activeCondition") : null;
+            object items = condition == null ? null : Field(condition, "_items");
+            return new EventDefinition { Script = script, Toggle = toggle, Condition = condition, Items = items, Count = (items as IList)?.Count ?? -1 };
         }
 
         public static OneShotResult Evaluate(object activeCondition, IList<LuaAction> actions)

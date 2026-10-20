@@ -116,7 +116,10 @@ public class DicePlugin : BaseUnityPlugin
 		logRenderer.ToggleInformationSetting = InformationRuntime.Toggle;
 		logRenderer.OneShotEventTag = InformationRuntime.EventTag;
 		logRenderer.OneShotOptionTag = InformationRuntime.OptionTag;
+		logRenderer.OneShotEventDetail = InformationRuntime.EventDetail;
+		logRenderer.OneShotOptionDetail = InformationRuntime.OptionDetail;
 		eventPopup.OneShotEventTag = InformationRuntime.EventTag;
+		eventPopup.OneShotEventDetail = InformationRuntime.EventDetail;
 	}
 
 	private void SetLogOpen(bool open, int padOwner = -1)

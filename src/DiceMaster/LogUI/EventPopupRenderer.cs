@@ -27,6 +27,7 @@ namespace DiceMaster.LogUI
         private readonly HashSet<KeyCode> keys = new HashSet<KeyCode>();
         private readonly Dictionary<string, Rect> rowBounds = new Dictionary<string, Rect>();
         public Func<object, string> OneShotEventTag { get; set; }
+        public Func<object, string> OneShotEventDetail { get; set; }
         private readonly Dictionary<string, string> plainTitles = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<LineKey, string> singleLines = new Dictionary<LineKey, string>();
         private static readonly Regex Markup = new Regex(@"</?(?:color|size|b|i|material)(?:=[^<>]*)?>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -267,6 +268,9 @@ namespace DiceMaster.LogUI
             string conditionHeading = "조건 상세";
             string reason = choice == null ? "" : DetailReason(choice);
             string conditions = choice?.ConditionDetail ?? choice?.Summary ?? "";
+            // The delegate returns prepared proof text only. A switch branch
+            // has no event activation evidence and never requests this detail.
+            string oneShotDetail = choice == null || EventSelectionRuntime.IsSwitch ? "" : OneShotEventDetail?.Invoke(choice.Target) ?? "";
             bool separateReason = choice != null && !string.IsNullOrEmpty(reason) && choice.Summary != conditions;
             if (choice != null && choice.Summary == conditions) conditions = Reason(choice);
             float detailContentHeight = choice == null ? text.CalcHeight(new GUIContent(selectionExplanation), contentWidth)
@@ -274,7 +278,8 @@ namespace DiceMaster.LogUI
                     + text.CalcHeight(new GUIContent(conditionHeading), contentWidth)
                     + text.CalcHeight(new GUIContent(conditions), contentWidth)
                     + text.CalcHeight(new GUIContent("예상 결과"), contentWidth)
-                    + text.CalcHeight(new GUIContent(EventResultPreview.PlainText(choice.ResultDetailRich)), contentWidth) + 16;
+                    + text.CalcHeight(new GUIContent(EventResultPreview.PlainText(choice.ResultDetailRich)), contentWidth) + 16
+                    + (oneShotDetail.Length == 0 ? 0 : text.CalcHeight(new GUIContent(oneShotDetail), contentWidth) + 8);
             maximumDetailScroll = Math.Max(0, detailContentHeight - detailHeight);
             detailScroll = Mathf.Clamp(detailScroll, 0, maximumDetailScroll);
             Vector2 detail = GUILayout.BeginScrollView(new Vector2(0, detailScroll), false, false, GUIStyle.none, GUI.skin.verticalScrollbar, GUIStyle.none, GUILayout.Height(detailHeight));
@@ -294,6 +299,11 @@ namespace DiceMaster.LogUI
                 DetailLabel("예상 결과", text, contentWidth);
                 DetailLabel(choice.ResultDetailRich, resultText, contentWidth);
                 GUILayout.Space(8);
+                if (oneShotDetail.Length != 0)
+                {
+                    DetailLabel(oneShotDetail, text, contentWidth);
+                    GUILayout.Space(8);
+                }
             }
             GUILayout.EndScrollView();
             if (!string.IsNullOrEmpty(status)) GUILayout.Label(status, chrome);

@@ -2,6 +2,10 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## 현재 후속 — 짧은 상점 효과·지도 비용·1회성 표시
+
+사용자 피드백에 따라 상점 AutoText를 조활 0.3.33 기준의 짧은 수치/성장 방향으로 바꾸고 학습 전문을 Detail에만 둔다. 지도는 Discover의 details 모드와 Runtime 문맥을 구분하여 명시적 상세에서만 전체 조건/결과를 준비하며, 자동 경로는 공통 조건 조회·정의 증명을 재사용한다. 자동 배지는 Proven만, Unknown/실패는 캐시된 상세 delegate로 게시한다. [현재 수정·검사·Windows 확인](ISSUE-6-ALPHA4-RELEASE.md)을 따른다. 아래 alpha.3과 상점의 긴 설명은 당시 기록이다.
+
 ## 지도 안내 개선 — v1.0.7-alpha.3 prerelease
 
 [2026-10-21 03:26:15 KST 공개 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3). 소스 `9a9b6176e038595d55d72ef152a7df0910fb3a4e`의 고정 재빌드에서 20개 검사와 검토 후보의 입력·결과·패키지 바이트 일치를 확인했다. 새 Windows 확인과 #6 완료는 대기다.

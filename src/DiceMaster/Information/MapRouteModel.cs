@@ -6,6 +6,32 @@ namespace DiceMaster.Information
 {
     public enum MapRouteState { Unknown, Met, NotMet }
 
+    // Owned by one scheduled map read. Shared tails/pools often have exactly
+    // the same gate, so neither its predicate nor checkpoint graph is read
+    // again for each terminal. Never keep this object across refresh ticks.
+    public sealed class MapRouteRead
+    {
+        private PreviewConditions.Reader reader;
+        private readonly Dictionary<PreviewCondition, PreviewConditionState> values = new Dictionary<PreviewCondition, PreviewConditionState>();
+        private readonly Dictionary<Func<bool>, bool> completeness = new Dictionary<Func<bool>, bool>();
+        internal bool Incomplete(Func<bool> check)
+        {
+            if (check == null) return false;
+            bool value; if (!completeness.TryGetValue(check, out value)) { value = check(); completeness.Add(check, value); }
+            return value;
+        }
+        internal PreviewConditionState Current(PreviewCondition gate)
+        {
+            PreviewConditionState state;
+            if (!values.TryGetValue(gate, out state))
+            {
+                if (reader == null) reader = PreviewConditions.CreateReader();
+                state = reader.Current(gate); values.Add(gate, state);
+            }
+            return state;
+        }
+    }
+
     // Definition DTOs retain no sampled game values or execution authority.
     public sealed class MapRouteEvent
     {
@@ -29,33 +55,34 @@ namespace DiceMaster.Information
         private readonly List<MapRoutePath> paths = new List<MapRoutePath>();
         private readonly Func<bool> incomplete;
         private bool omittedPaths;
+        private string pathText;
         public IList<MapRoutePath> Paths { get { return paths.AsReadOnly(); } }
         public string Path
-        { get { var text = new List<string>(); foreach (var p in paths) if (!text.Contains(p.Description)) text.Add(p.Description); return string.Join("\n", text); } }
+        { get { if (pathText == null) { var text = new List<string>(); foreach (var p in paths) if (!text.Contains(p.Description)) text.Add(p.Description); pathText = string.Join("\n", text); } return pathText; } }
         public bool HasChoice { get { foreach (var p in paths) if (p.HasChoice) return true; return false; } }
         public MapRouteState Current
         {
-            get
-            {
-                // One fresh bounded checkpoint snapshot per published entry.
-                // The reader never calls the game's Switch/Condition chain.
-                var reader = PreviewConditions.CreateReader(); bool unknown = omittedPaths || incomplete != null && incomplete();
+            get { return ReadCurrent(new MapRouteRead()); }
+        }
+        public MapRouteState ReadCurrent(MapRouteRead read)
+        {
+                if (read == null) throw new ArgumentNullException("read");
+                bool unknown = omittedPaths || read.Incomplete(incomplete);
                 foreach (var path in paths)
                 {
                     if (path.Uncertain) { unknown = true; continue; }
-                    var state = reader.Current(path.Gate);
+                    var state = read.Current(path.Gate);
                     if (state == PreviewConditionState.Met) return MapRouteState.Met;
                     unknown |= state == PreviewConditionState.Unknown;
                 }
                 return unknown || paths.Count == 0 ? MapRouteState.Unknown : MapRouteState.NotMet;
-            }
         }
         internal MapRouteEntry(MapRouteEvent item, string pool, Func<bool> hasIncompletePaths = null)
         { Event = item.Target; ResultScript = item.ResultScript; Pool = pool; Id = item.Id.Length == 0 ? pool + ":" + item.ResultScript : item.Id; incomplete = hasIncompletePaths; }
         internal bool Add(MapRoutePath path)
         {
             foreach (var p in paths) if (p.Identity == path.Identity) return true;
-            if (paths.Count < 32) { paths.Add(path); return true; }
+            if (paths.Count < 32) { paths.Add(path); pathText = null; return true; }
             omittedPaths = true; return false;
         }
     }

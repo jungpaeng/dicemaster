@@ -191,6 +191,30 @@ static class Program
         Check(updateCalls.Any(c => c.Name == "GetKeyDown"), "keyboard open entry point retained");
         Check(Calls(Method(plugin, "OnGUI")).Any(c => c.DeclaringType.FullName == renderer && c.Name == "Draw"), "actual OnGUI calls replacement renderer");
         const string runtime = "DiceMaster.EventSelection.EventSelectionRuntime", popup = "DiceMaster.LogUI.EventPopupRenderer";
+        const string information = "DiceMaster.Information.InformationRuntime", proof = "DiceMaster.Information.OneShotProof";
+        var informationWiring = Calls(Method(plugin, "EnsureLogRenderer")).ToArray();
+        Check(informationWiring.Any(call => call.DeclaringType.FullName == renderer && call.Name == "set_OneShotOptionDetail") &&
+                new[] { renderer, popup }.All(owner => informationWiring.Any(call => call.DeclaringType.FullName == owner && call.Name == "set_OneShotEventDetail")) &&
+                informationWiring.Count(call => call.DeclaringType.FullName == information && call.Name == "EventDetail") == 2 &&
+                informationWiring.Any(call => call.DeclaringType.FullName == information && call.Name == "OptionDetail"),
+            "the delivered plugin wires cached proof explanations into choice bodies and both selected event detail views");
+        Check(Calls(Method(renderer, "DrawChoices")).Any(call => call.DeclaringType.FullName == renderer && call.Name == "get_OneShotOptionDetail") &&
+                Calls(Method(renderer, "DrawListDetail")).Any(call => call.DeclaringType.FullName == renderer && call.Name == "get_OneShotEventDetail") &&
+                WithinType(Method(popup, "Draw")).SelectMany(Calls).Any(call => call.DeclaringType.FullName == popup && call.Name == "get_OneShotEventDetail"),
+            "actual render methods consume prepared proof diagnostics in their existing scrollable bodies");
+        foreach (string kind in new[] { "Event", "Option" })
+        {
+            var accessor = Method(information, kind + "Detail");
+            Check(Calls(accessor).Any(call => call.DeclaringType.FullName == proof && call.Name == "Cached" + kind + "Detail") &&
+                    !Calls(accessor).Any(call => call.DeclaringType.FullName == proof && (call.Name == "ForEvent" || call.Name == "ForOption")),
+                "the delivered " + kind + " detail accessor reads the proof cache rather than reevaluating evidence");
+            var cacheCalls = WithinType(Method(proof, "Cached" + kind + "Detail")).SelectMany(Calls).ToArray();
+            Check(!cacheCalls.Any(call => call.DeclaringType.Namespace.StartsWith("Mortal.", StringComparison.Ordinal) ||
+                        call.DeclaringType.Namespace.StartsWith("DiceMaster.LuaParse", StringComparison.Ordinal) ||
+                        call.DeclaringType.FullName == "DiceMaster.PositionEventCache" || call.DeclaringType.FullName == "DiceMaster.DataHelper" ||
+                        call.DeclaringType.FullName == proof && new[] { "Field", "Evaluate", "ForEvent", "ForOption", "Definition" }.Contains(call.Name)),
+                "the delivered cached " + kind + " proof diagnostic contains no game, parser, condition or resource-read calls");
+        }
         const string resetPolicy = "DiceMaster.LogUI.ModalInputResetPolicy", resetEffects = "DiceMaster.LogUI.ModalInputReset";
         bool SuppliesResetReason(MethodDefinition caller, string reason)
         {

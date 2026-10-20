@@ -52,7 +52,7 @@ internal static partial class Program
             int measures = GUIStyle.Measurements;
             for (int i = 0; i < 1000; i++) { GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, i); }
             Check(GUIStyle.Measurements == measures + 1, "1000 GUI calls measure the unchanged panel once");
-            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("선택 장소\n", StringComparison.Ordinal), "one named selected-place panel only");
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("선택 장소: 선택 장소\n", StringComparison.Ordinal), "one explicitly named selected-place panel only");
             Rect stable = GUI.PassiveLabels[0].Rect;
             InformationRuntime.Draw(false, false, default, 1001);
             Check(GUI.PassiveLabels[1].Rect == stable, "stable repaint retains exact placement");
@@ -62,12 +62,22 @@ internal static partial class Program
             MapGuideSource.Selected = null; InformationRuntime.Draw(false, false, default, 1003);
             Check(GUI.PassiveLabels.Count == 0, "deselected place has no panel");
             MapGuideSource.Selected = new object();
-            InformationRuntime.TestMap(new InformationRow("map/two", "새 장소", "지도", "", "조건과 효과", new string('가', 2000), MapGuideSource.Selected));
+            var notices = new List<string>();
+            for (int i = 0; i < 10; i++) notices.Add(MapGuidePresentation.Notice(new string('가', 200) + i, "보조 임무", 0, true, true, "대기 등록"));
+            InformationRuntime.TestMap(new InformationRow("map/two", "새 장소", "지도", "", "조건과 효과", MapGuidePresentation.Summary(notices, true, false), MapGuideSource.Selected));
             InformationRuntime.Draw(false, false, default, 1004);
-            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Length <= 180, "long automatic names are bounded; complete text stays in log");
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("외 7개") && GUI.PassiveLabels[0].Text.EndsWith("자세히: 로그 → 도구 → 지도 안내"), "long lists keep complete statuses, remaining count and detail path");
             measures = GUIStyle.Measurements; Screen.width = 800; Screen.height = 600;
             GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1005);
-            Check(GUIStyle.Measurements == measures + 1 && GUI.PassiveLabels[0].Rect.width <= 800, "resize invalidates cached geometry once");
+            Check(GUIStyle.Measurements > measures && GUI.PassiveLabels[0].Rect.width <= 800, "resize recomputes bounded whole-row geometry");
+            var passiveStyle = new GUIStyle(GUI.skin.box) { fontSize = Math.Min(24, Math.Max(12, DiceMaster.Config.ConfigManager.LogFontSize.Value)), wordWrap = true, richText = false };
+            Check(passiveStyle.CalcHeight(new GUIContent(GUI.PassiveLabels[0].Text), GUI.PassiveLabels[0].Rect.width) <= GUI.PassiveLabels[0].Rect.height + .01f,
+                "small-screen map notice fits its actual box height instead of clipping the final rows");
+            Check(GUI.PassiveLabels[0].Text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && GUI.PassiveLabels[0].Text.Contains("상세에서 확인"),
+                "height fitting omits whole entries and retains the complete detail navigation hint");
+            measures = GUIStyle.Measurements;
+            InformationRuntime.Draw(false, false, default, 1005.1f);
+            Check(GUIStyle.Measurements == measures, "warm fitted notice performs no additional text measurement");
             measures = GUIStyle.Measurements; GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(true, false, new Rect(20, 20, 700, 500), 1006);
             InformationRuntime.Draw(false, true, default, 1007);

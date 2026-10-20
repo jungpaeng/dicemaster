@@ -25,8 +25,15 @@ namespace DiceMaster.Information
                 right = topRight; avoid = occlusion; Content.text = value;
                 float margin = Math.Min(12, Math.Max(0, (Math.Min(Screen.width, Screen.height) - 1) * .5f));
                 var viewport = new Rect(margin, margin, Math.Max(1, Screen.width - margin * 2), Math.Max(1, Screen.height - margin * 2));
-                float width = Math.Min(viewport.width, Math.Min(420, Math.Max(160, Screen.width * .35f)));
-                float height = Math.Min(viewport.height * .35f, Math.Max(1, style.CalcHeight(Content, width)));
+                float width = Math.Min(viewport.width, Math.Min(420, Math.Max(160, Screen.width * (topRight ? .35f : .5f))));
+                float maximumHeight = viewport.height * .35f;
+                float measured = style.CalcHeight(Content, width);
+                if (!topRight && measured > maximumHeight)
+                {
+                    Content.text = MapGuidePresentation.Fit(value, candidate => style.CalcHeight(new GUIContent(candidate), width), maximumHeight);
+                    measured = style.CalcHeight(Content, width);
+                }
+                float height = Math.Min(maximumHeight, Math.Max(1, measured));
                 var preferred = new Rect(topRight ? viewport.x + viewport.width - width : viewport.x, viewport.y, width, height);
                 obstacles.Clear();
                 if (occlusion.width > 0 && occlusion.height > 0) obstacles.Add(occlusion);
@@ -72,19 +79,18 @@ namespace DiceMaster.Information
             }
             var latest = Enabled(2) ? BranchHistory.Latest(now) : null;
             if (selected == null && latest == null) { lastMapRow = null; mapText = null; return; }
-            int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 64);
+            int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 24);
             if (informationStyle == null || informationFont != font)
-            { informationFont = font; informationStyle = new GUIStyle(GUI.skin.box) { fontSize = font, wordWrap = true, richText = false }; }
+            { informationFont = font; informationStyle = new GUIStyle(GUI.skin.box) { fontSize = font, wordWrap = true, richText = false, alignment = TextAnchor.UpperLeft }; }
             if (selected != null && !string.IsNullOrEmpty(selected.AutoText))
             {
                 if (!ReferenceEquals(lastMapRow, selected) || lastMapStatus != status)
                 {
                     lastMapRow = selected; lastMapStatus = status;
                     string heading = selected.Title.Length <= 48 ? selected.Title : selected.Title.Substring(0, 45) + "…";
-                    string text = heading + (status.Length == 0 ? "" : " · " + status) + "\n" + selected.AutoText;
-                    // Keep automatic UI compact; full names/conditions/effects
-                    // stay available in the existing scrollable log tools.
-                    mapText = text.Length <= 180 ? text : text.Substring(0, 177) + "…";
+                    // The provider already limits complete notice rows. Never
+                    // cut through a status or through the detail navigation hint.
+                    mapText = "선택 장소: " + heading + (status.Length == 0 ? "" : " · " + status) + "\n" + selected.AutoText;
                 }
                 DrawPassive(mapLabel, mapText, false, default(Rect), selected.Available && status.Length == 0);
             }
@@ -93,6 +99,7 @@ namespace DiceMaster.Information
         private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available)
         {
             label.Prepare(text, informationStyle, right, occlusion);
+            if (string.IsNullOrEmpty(label.Content.text)) return;
             informationStyle.normal.textColor = available ? new Color(.75f, 1f, .8f) : new Color(1f, .88f, .55f);
             GUI.Label(label.Rect, label.Content, informationStyle);
         }

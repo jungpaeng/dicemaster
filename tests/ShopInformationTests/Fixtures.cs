@@ -5,6 +5,12 @@ namespace UnityEngine
 {
     public class Object { }
     public class Behaviour : Object { public bool isActiveAndEnabled = true; }
+    public sealed class AnimationCurve
+    {
+        public float Start, End = 10;
+        public int Reads;
+        public float Evaluate(float value) { Reads++; return Start + (End - Start) * value; }
+    }
 }
 namespace UnityEngine.UI
 {
@@ -53,8 +59,12 @@ namespace Mortal.Core
         public bool _martial = true;
         public int _currentMartialLevel, _currentLevelPoint, _martialLevel = 1;
         public MartialLevelData[] _martialLevelData = Array.Empty<MartialLevelData>();
+        public BookLevelStatConvertData[] _relationStatConvert = Array.Empty<BookLevelStatConvertData>();
         public bool Learn(int n) { throw new Exception("Learning mutation"); }
     }
+    public class CurveStatConvertData { public UnityEngine.AnimationCurve _curve = new UnityEngine.AnimationCurve(); }
+    public sealed class BookLevelStatConvertData : CurveStatConvertData
+    { public Book _book; public MartialStatReference _relationStat; public float GetResult() { throw new Exception("Game conversion chain"); } }
     public sealed class Misc : ItemData { }
     public sealed class SpecialItem : ItemData { }
     public sealed class GameStat
@@ -106,12 +116,15 @@ namespace DiceMaster.LiveLog
     public enum PreviewAnalysisState { Supported, Partial, Unsupported, NoEffects, Waiting, ReadFailure }
     public class PreviewEffect
     {
-        public string Owner = "statmodifymanager", Name, ValidationError;
+        public string Owner = "statmodifymanager", Name, ValidationError, FixtureDescription;
         public bool Followup;
         public List<object> Constants = new List<object>();
     }
+    public class PreviewIssue { }
     public class PreviewAnalysis
     {
+        public bool SnapshotAllowed = true, RootConditional, StoppedAtChoice;
+        public List<PreviewIssue> Issues = new List<PreviewIssue>();
         public List<PreviewEffect> Effects = new List<PreviewEffect>();
         public PreviewAnalysisState State = PreviewAnalysisState.Supported;
     }
@@ -119,6 +132,8 @@ namespace DiceMaster.LiveLog
     {
         public const string PartialStatus = "추가 영향 가능", UnsupportedStatus = "결과는 진행 후 확인";
         public static void Validate(PreviewAnalysis value) { }
+        public static string Describe(PreviewAnalysis value)
+        { var parts = new List<string>(); foreach (var effect in value.Effects) if (!string.IsNullOrEmpty(effect.FixtureDescription)) parts.Add(effect.FixtureDescription); return parts.Count == 0 ? "확인된 효과 없음" : string.Join("\n", parts); }
     }
 }
 namespace DiceMaster.LuaParse

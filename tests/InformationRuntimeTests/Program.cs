@@ -14,7 +14,7 @@ static class Program {
   var mapRows=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
   Check(mapRows.Count==2&&mapRows[0].Id=="mission/first"&&mapRows[1].Id=="event/second","one scheduled snapshot publishes separate stable map entries");
   Check(mapRows.All(x=>x.Target==null&&!x.ReservationAllowed&&!x.CanReserve),"each grouped map row has no execution or reservation authority");
-  Check(mapRows[0].Description=="첫 조건과 효과"&&mapRows[1].Description=="둘째 조건과 효과","row detail belongs to that item rather than aggregate summary");
+  Check(MapGuideSource.DetailReads==0&&mapRows.All(x=>x.Description=="상세에서 확인"),"automatic map requests do not prepare log-only condition and effect text");
   InformationRuntime.Tick(null,true,1.05f);Check(MapGuideSource.Reads==1,"healthy budget .25");
   InformationRuntime.Tick(null,true,1.1f,false,false);Check(MapGuideSource.Reads==1,"log occlusion hides automatic game information");
   InformationRuntime.Tick("지도 안내",false,1.2f);Check(MapGuideSource.Reads==1,"unfocused detail stops map reads as well as automatic display");
@@ -36,7 +36,7 @@ static class Program {
   Check(ConfigManager.EnableBranchNotices.Value&&ConfigManager.EnableShopEffectInfo.Value,"independent settings retained");
   ShopEffectSource.Visible=true;InformationRuntime.Tick(null,true,11);Check(ShopEffectSource.Reads==1,"current shop queried");
   var row=LogBridge.Model.Tab("상점 효과").Snapshot.Rows[0];Check(row.Target==null&&!row.ReservationAllowed&&!row.CanReserve,"readonly publications never issue reservation authority");
-  Check(ShopEffectSource.Summary.Contains("근력 +5")&&ShopEffectSource.Summary.Contains("\n"),"shop receives multiline effect content instead of an analysis-only label");
+  Check(ShopEffectSource.Summary=="학습: 근력 +5","shop receives the compact effect summary without full conditions");
   InformationRuntime.Tick("상점 효과",true,11.1f);Check(ShopEffectSource.Reads==1,"automatic and detail share same snapshot budget");
   ShopEffectSource.Fail=true;InformationRuntime.Tick(null,true,11.26f);
   Check(ShopEffectSource.Summary.StartsWith(RefreshEngine.RetainedFailureStatus+"\n")&&ShopEffectSource.Summary.Contains("근력 +5"),"retained shop effect is explicitly stale before the effect text");
@@ -51,6 +51,20 @@ static class Program {
   ConfigManager.EnableOptionInfo.Value=false;InformationRuntime.RefreshSettings();Check(InformationRuntime.Enabled(3),"parent startup restart contract latched");
   InformationRuntime.Clear();InformationRuntime.Install(new HarmonyLib.Harmony());Check(Enumerable.Range(0,4).All(i=>!InformationRuntime.Enabled(i)),"parent off on startup suppresses saved true values");
   Check(ConfigManager.EnableShopEffectInfo.Value,"parent suppression preserves individual setting");
+  ConfigManager.EnableOptionInfo.Value=true;ConfigManager.EnableMapGuide.Value=true;ConfigManager.EnableOneShotHints.Value=true;
+  InformationRuntime.Install(new HarmonyLib.Harmony());MapGuideSource.Visible=true;MapGuideSource.NoSelectionSession=false;MapGuideSource.ContextKey="detail-mode-test";
+  int modeReads=MapGuideSource.Reads,detailReads=MapGuideSource.DetailReads;
+  InformationRuntime.Tick(null,true,30);
+  Check(MapGuideSource.Reads==modeReads+1&&MapGuideSource.DetailReads==detailReads,"passive map uses the lightweight provider mode");
+  InformationRuntime.Tick("지도 안내",true,30.01f);
+  Check(MapGuideSource.Reads==modeReads+2&&MapGuideSource.DetailReads==detailReads+1,"opening map detail upgrades immediately without waiting for the automatic refresh interval");
+  var details=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
+  Check(details[0].Description=="첫 조건과 효과"&&details[1].Description=="둘째 조건과 효과","explicit detail belongs to its individual map entry");
+  InformationRuntime.Tick("지도 안내",true,30.02f);
+  Check(MapGuideSource.DetailReads==detailReads+1,"detail mode keeps the healthy quarter-second budget");
+  InformationRuntime.Tick(null,true,30.03f);
+  Check(MapGuideSource.Reads==modeReads+3&&MapGuideSource.DetailReads==detailReads+1,"closing detail returns to lightweight mode and stops detailed work");
+  Check(InformationRuntime.OptionTag("O_unknown")==""&&InformationRuntime.EventTag(new object())==""&&InformationRuntime.OptionDetail("O_unknown").Contains("확인 불가"),"automatic badges and cached detail diagnostics use separate APIs");
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
  }

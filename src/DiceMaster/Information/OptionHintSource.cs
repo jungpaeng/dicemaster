@@ -19,6 +19,7 @@ namespace DiceMaster.Information
             internal WeakReference Control;
             internal MenuDialog Menu;
             internal string Key;
+            internal string LastTag;
             internal Text[] Labels;
             internal string[] Original, Applied;
         }
@@ -32,11 +33,12 @@ namespace DiceMaster.Information
         {
             get
             {
-                if (!IsEnabled || Active == null) return false;
+                MenuDialog menu = Active;
+                if (!IsEnabled || menu == null) return false;
                 foreach (Option option in options)
                 {
                     var control = option.Control.Target as NormalOptionButton;
-                    if (control != null && control.isActiveAndEnabled && control.gameObject.activeInHierarchy) return true;
+                    if (control != null && control.isActiveAndEnabled && control.gameObject.activeInHierarchy && control.transform.IsChildOf(menu.transform)) return true;
                 }
                 return false;
             }
@@ -61,7 +63,7 @@ namespace DiceMaster.Information
             var source = OneShotProof.Field(control, "_source") as Text;
             var labels = OneShotProof.Field(control, "_text") as Text[];
             if (source == null || labels == null || string.IsNullOrEmpty(source.text) || !source.text.StartsWith("O_", StringComparison.Ordinal)) return;
-            option.Menu = menu; option.Key = source.text; option.Labels = labels;
+            option.Menu = menu; option.Key = source.text; option.Labels = labels; option.LastTag = null;
             option.Original = new string[labels.Length]; option.Applied = new string[labels.Length];
             for (int index = 0; index < labels.Length; index++) if (labels[index] != null) option.Original[index] = labels[index].text;
         }
@@ -94,13 +96,17 @@ namespace DiceMaster.Information
         }
         public static void RenderHints()
         {
-            if (!IsEnabled || Active == null) return;
+            MenuDialog menu = Active;
+            if (!IsEnabled || menu == null) return;
             foreach (Option option in options)
             {
                 // These are captured UI references and cached proof text only.
                 // This path never reads _source, conditions, scripts, or actions.
-                if (option.Key == null || option.Labels == null || !ReferenceEquals(option.Menu, Active)) continue;
+                var control = option.Control.Target as NormalOptionButton;
+                if (control == null || !control.isActiveAndEnabled || !control.gameObject.activeInHierarchy ||
+                    !control.transform.IsChildOf(menu.transform) || option.Key == null || option.Labels == null || !ReferenceEquals(option.Menu, menu)) continue;
                 string tag = OneShotProof.CachedOptionTag(option.Key);
+                if (option.LastTag == tag) continue;
                 for (int index = 0; index < option.Labels.Length; index++)
                 {
                     Text text = option.Labels[index]; if (text == null) continue;
@@ -110,6 +116,7 @@ namespace DiceMaster.Information
                     if (text.text != value) text.text = value;
                     option.Applied[index] = value;
                 }
+                option.LastTag = tag;
             }
         }
         private static void Restore(Option option)

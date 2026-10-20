@@ -90,6 +90,7 @@ internal static partial class Program
     private static void Main()
     {
         PointerButtonAdapterContracts();
+        OneShotDetailPresentation();
         var popup = Start();
         popup.Handle(LogPadCommand.Activate);
         Check(EventSelectionRuntime.Commands == 0 && EventSelectionRuntime.Attempts == 0, "Unselected A cannot silently choose the original random decision");

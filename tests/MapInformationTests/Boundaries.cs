@@ -15,7 +15,7 @@ namespace Mortal.Core
 {
     public enum PositionType { 無, Hall, Kitchen }
     public enum StatKind { 行動次數 = 19 }
-    public class FlagData : UnityEngine.Object { public int State; }
+    public class FlagData : UnityEngine.Object { private int state; public int StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
     public class StatValueReference
     { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup; }
     public class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
@@ -156,8 +156,9 @@ namespace DiceMaster.EventSelection
 {
     public static class PopupConditionText
     {
-        public static string Condition(object condition) => "fixture condition";
-        public static string Event(object target, int? rate, out string summary) { summary = "fixture condition"; return summary; }
+        public static int EventDescriptions, ConditionDescriptions;
+        public static string Condition(object condition) { ConditionDescriptions++; return "fixture condition"; }
+        public static string Event(object target, int? rate, out string summary) { EventDescriptions++; summary = "fixture condition"; return summary; }
     }
 }
 namespace DiceMaster
@@ -176,7 +177,7 @@ namespace DiceMaster
 
 namespace UnityEngine.UI
 {
-    public class Text : UnityEngine.Object { private string content = ""; public int Writes; public string text { get => content; set { content = value; Writes++; } } }
+    public class Text : UnityEngine.Object { private string content = ""; public int Writes, Reads; public string text { get { Reads++; return content; } set { content = value; Writes++; } } }
 }
 namespace Fungus
 {
@@ -197,6 +198,7 @@ namespace DiceMaster.Information
     // Provider tests isolate the route builder. The real builder/parser and
     // its bounded preparation are covered by MapRouteTests and DLL linkage.
     public enum MapRouteState { Met, NotMet, Unknown }
+    public class MapRouteRead { }
     public class MapRouteEvent
     {
         public object Event; public string ResultScript, Id;
@@ -206,6 +208,7 @@ namespace DiceMaster.Information
     {
         public object Event; public string ResultScript, Pool, Id, Path;
         public bool HasChoice; public MapRouteState Current = MapRouteState.Met;
+        public MapRouteState ReadCurrent(MapRouteRead read) => Current;
     }
     public class MapRouteDefinitions
     {
@@ -217,6 +220,7 @@ namespace DiceMaster.Information
         private bool done;
         public bool IsPreparing { get; private set; } = true;
         public bool IsPartial, HasReadFailure; public string Diagnostic = "";
+        public bool CanBuildBoundedProof(string script) => true;
         public MapRouteDefinitions(string key, Func<string,ScriptReadResult> source, Func<string,IList<MapRouteEvent>> poolReader)
         { root = key; reader = source; pools = poolReader; Builds++; }
         public void Advance(float now, int maxWork = 8192)

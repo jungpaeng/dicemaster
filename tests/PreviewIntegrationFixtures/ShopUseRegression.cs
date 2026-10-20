@@ -16,7 +16,7 @@ namespace DiceMaster
             string detail = (string)Member(result, "Detail");
             Check(detail.Contains("8") && detail.Contains("O_food") && !detail.Contains("O_drink") && !detail.Contains("O_other"), "actual shop association and parser preserve selected item identity: " + detail);
             string inline = (string)Member(result, "InlineText");
-            Check(inline.StartsWith("사용 효과:\n") && inline.Contains("8") && !inline.Contains("O_food"), "direct shop explanation exposes actual effects without raw option identity: " + inline);
+            Check(inline.StartsWith("사용: ") && inline.Contains("8") && !inline.Contains("O_food") && !inline.Contains("\n") && inline.Length <= 180, "compact shop hint exposes actual effects in a short line without raw option identity: " + inline);
             result = Invoke(Type("Information.ShopUseEffects"), null, "Find", "special", "food", options, false);
             detail = (string)Member(result, "Detail");
             Check(detail.Contains("12") && detail.Contains("O_drink") && !detail.Contains("O_food"), "same ID with different stock type cannot leak another effect");
@@ -25,14 +25,15 @@ namespace DiceMaster
             result = Invoke(Type("Information.ShopUseEffects"), null, "Find", "misc", "food", options, true);
             Check(!(bool)Member(result,"Known") && ((string)Member(result,"Detail")).Contains("분석 한계"), "partial option discovery remains explicit");
             inline = (string)Member(result,"InlineText");
-            Check(inline.Contains("8") && inline.Contains("일부 경로는 확인 불가"), "partial discovery preserves known numeric effects and uncertainty directly");
+            detail = (string)Member(result,"Detail");
+            Check(inline.Contains("8") && !inline.Contains("분석 한계") && detail.Contains("분석 한계"), "partial discovery keeps the numeric summary and full route diagnostics in detail");
             string conditional = "--index:O_conditional_food\nif statcomparemanager.Check(\"gate\") then\nstatmodifymanager.RemoveMisc(\"food\")\nstatmodifymanager.SetPlayer(\"money\",5)\nend\n";
             options = Invoke(Type("LuaParse.LuaParser"), Parser, "ExtractOptionActionsFromLua", "shop-conditional-parser-regression", conditional);
             result = Invoke(Type("Information.ShopUseEffects"), null, "Find", "misc", "food", options, false);
             detail = (string)Member(result,"Detail");
             Check(detail.Contains("조건") || detail.Contains("미확정") || detail.Contains("확인"), "conditional use retains actual formatter uncertainty");
             inline = (string)Member(result,"InlineText");
-            Check(inline.Contains("5") && inline.Contains("가능한 변화"), "direct conditional shop effects keep possibility headings");
+            Check(inline.Contains("5") && inline.Contains("가능:"), "compact conditional shop effects keep a short possibility marker");
             // A small authored example with the same API shape as an actual
             // food-use option. This is not the game's dialogue or full script.
             string sugarcane = "--index:O_test_sugarcane\n" +
@@ -44,9 +45,9 @@ namespace DiceMaster
             detail = (string)Member(result,"Detail"); inline = (string)Member(result,"InlineText");
             Check(!(bool)Member(result,"Known") && (string)Member(result,"Status") == "사용 효과 일부 확인", "presentation syntax does not falsely turn the whole option fully known");
             Check(detail.Contains("O_test_sugarcane") && detail.Contains(Status("PartialStatus")) && detail.Contains("50"), "full log keeps partial diagnostic, route identity and the supported sugarcane-shaped effect");
-            Check(inline.StartsWith("사용 효과:\n") && inline.Contains("50") && inline.Contains("가능한 변화"), "partial sugarcane-shaped option shows the numeric effect and its possibility directly: " + inline);
+            Check(inline.StartsWith("사용: ") && inline.Contains("50") && inline.Contains("가능:"), "partial sugarcane-shaped option shows the numeric effect and its possibility directly: " + inline);
             Check(!inline.Contains("O_test_sugarcane") && !inline.Contains("\n" + Status("PartialStatus") + "\n") && !inline.Contains("\n" + Status("UnsupportedStatus") + "\n"), "direct effect does not stop at analysis status or expose raw option identifiers");
-            Check(inline.Contains("확인 불가") && inline.Contains("달라질 수"), "direct known effects do not erase execution uncertainty");
+            Check(!inline.Contains("\n") && inline.Length <= 180 && detail.Contains(Status("PartialStatus")) && detail.Contains("확정하지 않음"), "compact hints retain short uncertainty while the complete explanation stays in detail");
             Check(Mortal.Core.StatGroupVariable.OriginalReads == 0 && UnityEngine.Random.Calls == 0, "shop integration never executes original game checks or RNG");
         }
     }

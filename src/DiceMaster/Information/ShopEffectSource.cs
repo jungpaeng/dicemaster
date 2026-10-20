@@ -125,7 +125,7 @@ namespace DiceMaster.Information
             // Keep its lines, remove formatter markup, and never query the game here.
             string plain = descriptionTags.Replace(text, "").Replace("\r\n", "\n").Replace("\r", "\n")
                 .Replace("<", "〈").Replace(">", "〉").Replace("\0", "");
-            string next = original + (original.Length == 0 ? "" : "\n\n") + plain;
+            string next = original + (original.Length == 0 ? "" : "\n") + plain;
             if (current != next) description.text = next;
             appended = next;
             summaryInput = text;
@@ -308,6 +308,118 @@ namespace DiceMaster.Information
                 }
             }
         }
+        // Same concise contents as the supplied study-panel hint: related
+        // current/full-level bonuses and one sign per visible player stat.
+        // No condition/cost/progress transcript belongs in the native shop box.
+        internal static string ShortParts(IList<string> values, int max = 180) => ShopUseEffects.ShortParts(values, max);
+        private static string SummaryStat(object reference, bool playerOnly, out string key)
+        {
+            key = "";
+            Exact(reference, "MartialStatReference");
+            int type = Number(reference, "_type");
+            if (type == 1)
+            {
+                object stat = Field(reference, "_stat"); Exact(stat, "GameStat");
+                if (Number(stat, "_property") == 9) return null;
+                key = "stat/" + EnumKey(Field(stat, "_type"));
+                return StatName(Field(stat, "_type"));
+            }
+            if (playerOnly) return null;
+            if (type == 3)
+            {
+                object talent = Field(reference, "_talent"); Exact(talent, "PlayerTalentData");
+                key = "talent/" + Identity(talent);
+                return DisplayNames.LookupName("PlayerTalent/Name/" + Identity(talent), Identity(talent));
+            }
+            if (type == 2)
+            {
+                object relationship = Field(reference, "_relationship"); Exact(relationship, "RelationshipStat");
+                key = "Character/" + EnumKey(Field(relationship, "_type"));
+                return DisplayNames.LookupName(key, EnumKey(Field(relationship, "_type")));
+            }
+            if (type >= 4 && type <= 6)
+            {
+                object target = Field(reference, type == 4 ? "_book" : type == 5 ? "_misc" : "_specialItem");
+                string kind = type == 4 ? "Book" : type == 5 ? "Misc" : "Special";
+                Exact(target, type == 4 ? "Book" : type == 5 ? "Misc" : "SpecialItem");
+                key = kind + "/Name/" + Identity(target); return ItemName(target, kind);
+            }
+            if (type >= 7 && type <= 10)
+            {
+                string name = new[] { "confucianism", "taoism", "buddhism", "xingyi" }[type - 7];
+                key = "PlayerStat/" + name; return DisplayNames.LookupName(key, name);
+            }
+            throw new UnsupportedEffectException();
+        }
+        private static int CurveBonus(object convert, int level)
+        {
+            // Supplied BookLevelStatConvertData.GetMin/GetMax/GetValue are
+            // fixed fields; CurveStatConvertData.GetResult normalizes 0..max
+            // then evaluates this curve. Avoid every gameplay getter chain.
+            object source = Field(convert, "_book"); Exact(source, "Book");
+            int max = List(source, "_martialLevelData").Count;
+            var curve = Field(convert, "_curve") as AnimationCurve;
+            if (curve == null || curve.GetType() != typeof(AnimationCurve)) throw new UnsupportedEffectException();
+            float normalized = max == 0 ? 0f : Math.Max(0f, Math.Min(1f, (float)level / max));
+            float result = curve.Evaluate(normalized);
+            if (float.IsNaN(result) || float.IsInfinity(result) || result < int.MinValue || result >= 2147483648f)
+                throw new UnsupportedEffectException();
+            return checked((int)Math.Round(result, MidpointRounding.ToEven));
+        }
+        private static string BookSummary(object book, IList levels, int current, out bool complete)
+        {
+            var parts = new List<string>(); complete = true;
+            object raw = Field(book, "_relationStatConvert");
+            IList converts = raw == null ? null : List(book, "_relationStatConvert");
+            if (converts != null) foreach (object convert in converts)
+            {
+                if (Gone(convert)) continue;
+                try
+                {
+                    Exact(convert, "BookLevelStatConvertData");
+                    string ignored;
+                    string name = SummaryStat(Field(convert, "_relationStat"), false, out ignored);
+                    if (name == null) continue;
+                    object source = Field(convert, "_book"); Exact(source, "Book");
+                    int sourceLevel = Number(source, "_currentMartialLevel");
+                    parts.Add(name + " [" + CurveBonus(convert, sourceLevel) + "/" + CurveBonus(convert, levels.Count) + "]");
+                }
+                catch (UnsupportedEffectException) { complete = false; }
+                catch (DataNotReadyException) { complete = false; }
+            }
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var directions = new List<string>();
+            int work = 0;
+            foreach (object level in levels)
+            {
+                if (++work > 2048) { complete = false; break; }
+                try
+                {
+                    Exact(level, "MartialLevelData");
+                    foreach (object effect in List(level, "_levelupStats"))
+                    {
+                        if (++work > 2048) { complete = false; break; }
+                        try
+                        {
+                            Exact(effect, "MartialModifyStat");
+                            int delta = Number(effect, "_value");
+                            if (delta == 0) continue;
+                            string key;
+                            string name = SummaryStat(Field(effect, "_stat"), true, out key);
+                            if (name == null || !seen.Add(key)) continue;
+                            directions.Add(name + (delta > 0 ? "+" : "-"));
+                        }
+                        catch (UnsupportedEffectException) { complete = false; }
+                        catch (DataNotReadyException) { complete = false; }
+                    }
+                }
+                catch (UnsupportedEffectException) { complete = false; }
+                catch (DataNotReadyException) { complete = false; }
+            }
+            foreach (string direction in directions) parts.Add(direction);
+            if (current == levels.Count) parts.Add("학습 완료");
+            return parts.Count == 0 ? complete ? "표시할 학습 효과 없음" : "학습 효과 미확인" : ShortParts(parts);
+        }
         private static InformationRow Read(object selected, string observedTitle, string id)
         {
             try { return ReadKnown(selected, observedTitle, id); }
@@ -316,7 +428,7 @@ namespace DiceMaster.Information
                 string name = Plain(DisplayNames.Text(string.IsNullOrWhiteSpace(observedTitle) ? Identity(selected) : observedTitle));
                 string kind = Kind(selected);
                 return new InformationRow(id, name, kind, "효과 해석 미지원", "이 물품의 조건·효과에 아직 해석하지 못하는 자료가 있음. 효과가 없거나 사용할 수 없다는 뜻이 아님. 게임 판정이나 사용·학습은 실행하지 않음.",
-                    "사용·학습 효과:\n이 물품의 효과를 아직 해석할 수 없음. 효과가 없거나 사용할 수 없다는 뜻은 아님.", selected);
+                    "사용·학습 효과 미확인", selected);
             }
         }
         private static InformationRow ReadKnown(object selected, string observedTitle, string id)
@@ -341,7 +453,10 @@ namespace DiceMaster.Information
                     status = "사용 경로 미확인"; known = false;
                     detail.AppendLine("현재 실제 적용 변화는 확인 불가 · 제공된 게임 코드에서 이 효과 자료의 사용 실행 경로를 확인하지 못함. 자료상 수치를 실제 사용 결과로 단정하지 않음.");
                 }
-                inline = detail.ToString();
+                var brief = new List<string>();
+                foreach (object effect in effects)
+                    brief.Add(StatName(Field(effect, "_statType")) + " " + (Number(effect, "_value") > 0 ? "+" : "") + Number(effect, "_value"));
+                inline = effects.Count == 0 ? "표시할 사용 효과 없음" : "효과 자료: " + ShortParts(brief, 173);
             }
             else if (selected.GetType().FullName == "Mortal.Core.Misc" || selected.GetType().FullName == "Mortal.Core.SpecialItem")
             {
@@ -354,7 +469,7 @@ namespace DiceMaster.Information
                 int current = Number(selected, "_currentMartialLevel");
                 if (current < 0 || current > levels.Count) throw new UnsupportedEffectException();
                 if (current == levels.Count)
-                { status = "학습 완료"; detail.AppendLine("최대 학습 레벨 · 확인된 다음 학습 효과 없음"); inline = "학습 효과:\n학습 완료 · 최대 학습 레벨\n다음 학습 효과 없음"; }
+                { status = "학습 완료"; detail.AppendLine("최대 학습 레벨 · 확인된 다음 학습 효과 없음"); }
                 else
                 {
                     object level = levels[current]; Exact(level, "MartialLevelData");
@@ -373,12 +488,17 @@ namespace DiceMaster.Information
                     known = condition.HasValue && !evaluation.Unknown;
                     status = !condition.HasValue ? "학습 조건 일부 미지원" : evaluation.Unknown ? "학습 효과 일부 미지원" : condition.Value ? "학습 조건 충족" : "학습 조건 미충족";
                     detail.AppendLine("학습량·실제 레벨 도달·후속 이벤트는 예측하지 않음. 학습·소모·능력치 변경을 실행하지 않은 조회.");
-                    inline = "학습 효과:\n다음 레벨 도달 시 · 아래 소모와 조건을 기준으로 한 변화:\n" + changes + progress + "\n" + costs + conditions
-                        + "학습 조건: " + (condition.HasValue ? condition.Value ? "충족" : "미충족" : "일부 확인 불가")
-                        + "\n학습 조건·필요 학습점을 충족해야 적용됨. 실제 학습량·레벨 도달 시점은 예측하지 않음.";
+                }
+                bool complete;
+                inline = BookSummary(selected, levels, current, out complete);
+                detail.Insert(0, "상점 학습 요약: " + inline + "\n\n");
+                if (!complete)
+                {
+                    known = false; if (status != "학습 완료") status = "학습 효과 일부 미지원";
+                    detail.AppendLine("관련 능력치·성장 방향 일부 자료는 확인하지 못했습니다. 확인된 짧은 요약만 상점에 표시합니다.");
                 }
             }
-            else { status = "효과 조회 미지원"; known = false; detail.AppendLine("미지원 물품 종류 · 장비 착용·강화·동적 효과는 조회 범위 밖"); inline = "사용·학습 효과:\n이 물품 종류의 효과는 아직 조회할 수 없음. 장비 착용·강화 효과는 지원 범위 밖."; }
+            else { status = "효과 조회 미지원"; known = false; detail.AppendLine("미지원 물품 종류 · 장비 착용·강화·동적 효과는 조회 범위 밖"); inline = "사용·학습 효과 미확인"; }
             name = Plain(DisplayNames.Text(name));
             return new InformationRow(id, name, kind, status, detail.ToString().TrimEnd(), (inline ?? detail.ToString()).TrimEnd(), selected, known);
         }

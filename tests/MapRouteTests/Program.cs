@@ -167,9 +167,43 @@ internal static class Program
         Check(d.Entries.Count == 2 && d.Entries.Any(x => x.Pool == "second"), "terminal result to literal submenu to next pool followed");
         Check(d.Entries.First(x => x.Pool == "second").Current == MapRouteState.Unknown, "post-event descendants never inherit current state certainty");
         d = Build(Use("clear")); d.Clear(); d.Advance(100); Check(d.Entries.Count == 0 && !d.IsPreparing, "lifecycle clear releases all route state");
+        SharedGateAndProofBudget();
         Corpus();
         Check(manager.GameplayCalls == 0 && manager.RngCalls == 0 && manager.Counter == 0, "no gameplay condition/Position/RNG/counter changes");
         Console.WriteLine("PASS: MapRouteTests " + checks + " actual-route/syntax/current-reader assertions; resource/stat/game boundaries are explicit fixtures; Lua/Windows/native not executed.");
+    }
+    private static void SharedGateAndProofBudget()
+    {
+        var d = new MapRouteDefinitions("root", key => ScriptReadResult.Success(key == "root" ? "if checkpointmanager.Condition('gate') then " + Use("shared") + " end" : ""),
+            key => Enumerable.Range(0, 32).Select(i => new MapRouteEvent(new object(), "shared_result", "shared/" + i)).ToArray());
+        for (int i = 0; i < 1000 && d.IsPreparing; i++) d.Advance(0, 128);
+        int before = SafeDisplayEvaluation.ConditionReads;
+        foreach (var entry in d.Entries) Check(entry.Current == MapRouteState.Met, "independent legacy-shaped current read");
+        int separate = SafeDisplayEvaluation.ConditionReads - before;
+        before = SafeDisplayEvaluation.ConditionReads; var snapshot = new MapRouteRead();
+        foreach (var entry in d.Entries) Check(entry.ReadCurrent(snapshot) == MapRouteState.Met, "shared snapshot preserves current route state");
+        Check(separate == 32 && SafeDisplayEvaluation.ConditionReads - before == 1, "production shared-tail session reduces 32 repeated checkpoint condition reads to one");
+        var bodies = new Dictionary<string, bool>
+        {
+            { "statmodifymanager.SetFlag('f',1)", true },
+            { "statmodifymanager.SetFlag('f',1);statmodifymanager.AddBook('b',1)", true },
+            { "if true then statmodifymanager.SetFlag('f',1) end", false },
+            { "statmodifymanager.SetFlag('f',1);luamanager.SetNextScript('later')", false },
+            { "statmodifymanager.SetFlag('f',unknown_callback())", false },
+            { "statmodifymanager:SetFlag('f',1)", false },
+            { new string(' ', 8200) + "statmodifymanager.SetFlag('f',1)", false },
+            { "function unused() statmodifymanager.SetFlag('f',1) end", false }
+        };
+        foreach (var pair in bodies)
+        {
+            d = Build(Use("proof"), new Dictionary<string, string> { { "proof_result", pair.Key } });
+            Check(d.CanBuildBoundedProof("proof_result") == pair.Value, "passive proof only admits small closed straight-line effects");
+            int parses = d.ParseCount;
+            bool identical = true;
+            for (int i = 0; i < 100; i++) identical &= d.CanBuildBoundedProof("proof_result") == pair.Value;
+            Check(identical, "passive proof preflight result reused");
+            Check(d.ParseCount == parses, "passive proof checks never build new syntax");
+        }
     }
     private static void Corpus()
     {

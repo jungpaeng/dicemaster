@@ -8,6 +8,8 @@
 
 ## 현재 지도 후속 후보 빌드
 
+현재 상점 요약·지도 비용·1회성 자동 문구 수정 후보는 같은 20개 프로그램과 고정 커밋 재빌드·실제 DLL 연결·ZIP 검증을 사용한다. `--output-dir artifacts/issue-6/compact-information-candidate/full-final`로 이전 후보 산출물과 분리한다. [현재 구현·검사·식별값](ISSUE-6-ALPHA4-RELEASE.md)을 따른다. 아래 지도 개선 경로·수치는 alpha.3 당시 기록이다.
+
 main의 지도 후속은 기존 전체 소스 빌드에 MapRouteTests와 MapGuideRouteIntegrationTests를 포함한 20개 검사 프로그램을 등록한다. `build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/map-guidance-candidate/full-final`로 후보를 만들고, 커밋 확정 뒤 `verify-preview-release.py --scope prd6`로 해당 소스만 추출해 다시 검증한다. 선택적 `DICEMASTER_CORPUS_INDEX`는 개발자가 보유한 검증된 번체 자료 색인을 지정하며 게임 자료를 저장소·설치 ZIP에 포함하지 않는다. [현재 구현·최종 검사·파일·Windows 확인](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 실제 결과를 기록하며 아래 PRD #4 이전 후보의 수치·확인은 당시 이력이다.
 
 ## PRD #4 후보와 prerelease

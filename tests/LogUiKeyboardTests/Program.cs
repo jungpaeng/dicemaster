@@ -16,6 +16,7 @@ internal static partial class Program
     {
         InformationLayoutGeometry();
         RendererInformationPages();
+        RendererOneShotDetails();
         RendererDeferredStartupLayout();
         WindowRootContract();
         RendererNativeWindowBounds();

@@ -17,6 +17,7 @@ namespace UnityEngine
         public static bool visible;
     }
     public enum FontStyle { Normal, Bold }
+    public enum TextAnchor { UpperLeft, UpperCenter, UpperRight, MiddleLeft, MiddleCenter, MiddleRight, LowerLeft, LowerCenter, LowerRight }
     public struct Vector2 { public float x, y; public Vector2(float x, float y) { this.x = x; this.y = y; } }
     public struct Rect : IEquatable<Rect>
     {
@@ -53,7 +54,7 @@ namespace UnityEngine
     public sealed class GUIStyleState { public Color textColor; }
     public sealed class GUIStyle
     {
-        public int fontSize; public bool richText, wordWrap; public RectOffset padding, margin; public FontStyle fontStyle;
+        public int fontSize; public bool richText, wordWrap; public RectOffset padding, margin; public FontStyle fontStyle; public TextAnchor alignment;
         public float fixedWidth, fixedHeight;
         public GUIStyleState normal = new GUIStyleState();
         public static GUIStyle none = new GUIStyle();
@@ -61,7 +62,7 @@ namespace UnityEngine
         public GUIStyle(GUIStyle source)
         {
             fontSize = source.fontSize; richText = source.richText; wordWrap = source.wordWrap;
-            padding = source.padding; margin = source.margin; fontStyle = source.fontStyle;
+            padding = source.padding; margin = source.margin; fontStyle = source.fontStyle; alignment = source.alignment;
             fixedWidth = source.fixedWidth; fixedHeight = source.fixedHeight;
             normal.textColor = source.normal.textColor;
         }

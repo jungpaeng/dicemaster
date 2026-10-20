@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DiceMaster;
 using DiceMaster.Information;
+using DiceMaster.EventSelection;
 using DiceMaster.LiveLog;
 using DiceMaster.LuaParse;
 using Mortal.Core;
@@ -26,9 +27,9 @@ internal static class Program
     { foreach (var row in value.Entries) if (row.Title == title) return row; return null; }
     private static bool HasStatus(MapGuideSnapshot value, string text)
     { foreach (var row in value.Entries) if (row.Status.Contains(text, StringComparison.Ordinal)) return true; return false; }
-    private static MapGuideSnapshot Read()
+    private static MapGuideSnapshot Read(bool details = true)
     {
-        var queries = MapGuideSource.Discover(true, true);
+        var queries = MapGuideSource.Discover(true, true, details);
         Check(queries.Count == 1, "One provider query owns summary and every detail entry");
         return (MapGuideSnapshot)queries[0].Read();
     }
@@ -97,6 +98,7 @@ internal static class Program
         Check(MapGuideSource.Discover(true, true).Count == 0 && DataHelper.Reads == beforeHidden, "OFF stops the integrated route/provider query");
         Check(Counters.GameCalls == 0 && onceFlag.State == 0 && controller._gameStatManager._stats._list[0]._value == 3 && controller._scriptName == "old-click-cache", "Integration never calls game Position/Condition/Check, applies effects, consumes action points or initializes the click cache");
         Limits();
+        PassiveCosts();
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
     }
     private static void Limits()
@@ -113,7 +115,7 @@ internal static class Program
         foreach (var row in value.Entries) if (row.Title.StartsWith("large-", StringComparison.Ordinal)) count++;
         foreach (var entry in pool._list) nativeResultReads += entry.ResultReads;
         Check(count == 256 && nativeResultReads == 256 && pool._list[256].ResultReads == 0 && pool._list[4999].ResultReads == 0, "Native pool boundary materializes only 256 entries before the engine's overflow sentinel");
-        Check(HasStatus(value, "경로 일부 확인 불가") || HasStatus(value, "경로 읽기 실패"), "Oversized native pool retains explicit incomplete status instead of reporting a complete zero");
+        Check(HasStatus(value, "경로 일부 확인 불가") || HasStatus(value, "경로 읽기 실패") || HasStatus(value, "경로 준비 중"), "Oversized native pool retains explicit incomplete/preparing status instead of reporting a complete zero");
         bool limitDetail = false; foreach (var row in value.Entries) if (row.Detail.Contains("풀 항목 상한", StringComparison.Ordinal)) limitDetail = true;
         Check(limitDetail, "The 257th sentinel activates the production route item-limit diagnostic");
         manager._position._list.Clear();
@@ -128,5 +130,67 @@ internal static class Program
         var activity = Find(value, "beyond_root");
         Check(activity != null && !activity.Available && activity.Status.Contains("내부 경로 확인 필요", StringComparison.Ordinal), "Incomplete or failed route discovery preserves the default activity as unknown rather than a healthy possible fixed story");
         Check(Counters.GameCalls == 0, "Bounded pool materialization never evaluates game entry or event methods");
+    }
+    private static void PassiveCosts()
+    {
+        MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true;
+        var manager = CheckPointManager.Instance = new CheckPointManager();
+        var flag = new FlagData { name = "passive-flag", State = 0 };
+        var pool = new PositionResultData { name = "PassivePool", _scriptPrefix = "passive_result" };
+        for (int i = 0; i < 256; i++) pool._list.Add(new PositionEventData { name = "passive-" + i, ResultType = "shared", _activeCondition = IsZero(flag) });
+        manager._position._list.Add(pool);
+        DataHelper.Scripts["passive_root"] = "local r=checkpointmanager.Position('PassivePool');luamanager.SetNextScript(r)";
+        DataHelper.Scripts["passive_result_shared"] = new string(' ', 25000) + "unknown_callback()";
+        var controller = new PositionController { _positionData = new FreePositionData { name = "Passive", _defaultScript = "passive_root" } };
+        MapGuideSource.Select(controller);
+        int parses = LuaParser.Parses, descriptions = LuaParser.Descriptions, eventText = PopupConditionText.EventDescriptions, conditionText = PopupConditionText.ConditionDescriptions;
+        MapGuideSnapshot value = null;
+        for (int i = 0; i < 20; i++)
+        {
+            int before = DataHelper.Reads;
+            Time.unscaledTime += .25f; value = Read(false);
+            Check(DataHelper.Reads - before <= 1, "Passive preparation admits at most one resource load per scheduled tick");
+        }
+        int count = 0; foreach (var row in value.Entries) if (row.Title.StartsWith("passive-", StringComparison.Ordinal)) count++;
+        Check(count == 256, "Passive work limits preserve every original event row for explicit detail");
+        Check(LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && PopupConditionText.EventDescriptions == eventText && PopupConditionText.ConditionDescriptions == conditionText,
+            "Passive large-result display never enters the synchronous full analyzer, effect formatter or popup condition formatter");
+        Check(flag.StateReads == 0, "Ordinary/unproved passive rows never recursively reread 256 event conditions");
+        int resources = DataHelper.Reads;
+        for (int i = 0; i < 40; i++) { Time.unscaledTime += .25f; value = Read(false); }
+        Check(DataHelper.Reads == resources && LuaParser.Parses == parses && flag.StateReads == 0, "Warm passive event refresh has no resource, parser or hidden-condition work");
+        PositionEventCache.Parser.Actions["passive_result_shared"] = new List<LuaAction> { new LuaAction { Analysis = new PreviewAnalysis { Effects = new List<PreviewEffect> {
+            new PreviewEffect { Name = "SetFlag", Constants = new List<object> { "passive-flag", 1 } } } } } };
+        value = Read(true);
+        Check(PopupConditionText.EventDescriptions > eventText && LuaParser.Descriptions > descriptions && flag.StateReads > 0,
+            "Opening explicit detail still reads full conditions/effects and builds the unchanged strict proof");
+        eventText = PopupConditionText.EventDescriptions; descriptions = LuaParser.Descriptions;
+        int priorReads = flag.StateReads;
+        value = Read(false);
+        Check(flag.StateReads - priorReads > 0 && flag.StateReads - priorReads <= 32, "Cached positive proofs reevaluate at most sixteen representative event snapshots per passive tick");
+        Check(PopupConditionText.EventDescriptions == eventText && LuaParser.Descriptions == descriptions && value.Summary.AutoText.Contains("passive-0", StringComparison.Ordinal),
+            "Positive passive opportunity names remain visible without detailed formatters");
+        foreach (var data in pool._list)
+        {
+            data._eventRateItem = new RateItem[200];
+            for (int i = 0; i < 200; i++) data._eventRateItem[i] = new RateItem { Condition = data._activeCondition, Rate = 1 };
+        }
+        priorReads = flag.StateReads; value = Read(false);
+        Check(flag.StateReads == priorReads && !Find(value, "passive-0").Available, "Passive rate graph preflight rejects wide recursive work before any current flag getter runs");
+        var shared = new FlagData { name = "shared-mission", State = 0 }; var condition = IsZero(shared);
+        var overflow = new FlagData { name = "overflow-mission", State = 0 };
+        for (int i = 0; i < 17; i++)
+        {
+            var stage = new MissionCheckData { name = "perf-stage-" + i, _startScript = "expensive_mission_result", _conditions = new[] { i == 16 ? IsZero(overflow) : condition } };
+            controller._missionsManager._subMissions._list.Add(new MissionData { name = "perf-mission-" + i, _name = "perf-logical-" + i, _currentKey = "start", _missions = new[] { stage } });
+        }
+        for (int i = 0; i < 3; i++) Read(false);
+        int sharedBefore = shared.StateReads, overflowBefore = overflow.StateReads;
+        parses = LuaParser.Parses; descriptions = LuaParser.Descriptions; conditionText = PopupConditionText.ConditionDescriptions;
+        value = Read(false);
+        Check(shared.StateReads - sharedBefore == 1 && overflow.StateReads == overflowBefore, "Shared mission condition is read once and seventeenth candidate is deferred within the same passive snapshot");
+        Check(LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && PopupConditionText.ConditionDescriptions == conditionText,
+            "Mission passive status never analyzes start scripts or formats full conditions");
+        Check(Counters.GameCalls == 0 && flag.State == 0 && shared.State == 0, "Passive optimization does not execute conditions/RNG or mutate flags");
     }
 }
