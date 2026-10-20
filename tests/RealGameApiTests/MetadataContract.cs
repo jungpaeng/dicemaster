@@ -187,7 +187,7 @@ static partial class RealGameApiTests
                 .Where(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original))
                 .Select(call => (Method: method, Call: call))).ToArray();
         Check(allRiskyCalls.Length == 0, "display and direct-selection validation must use pure audited reads, with no original API fallback: " + string.Join("; ", allRiskyCalls));
-        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting", "DiceMaster.EventSelection.EventEligibility", "DiceMaster.EventSelection.PopupConditionText" }
+        var evaluators = new[] { "DiceMaster.LiveLog.SafeDisplayEvaluation", "DiceMaster.LiveLog.RandomPreview", "DiceMaster.LiveLog.PreviewFormatting", "DiceMaster.EventSelection.EventEligibility", "DiceMaster.EventSelection.SwitchEligibility", "DiceMaster.EventSelection.PopupConditionText" }
             .Select(name => candidate.MainModule.GetType(name) ?? throw new InvalidDataException("Missing preview payload " + name)).ToArray();
         foreach (var method in AllTypes(evaluators).SelectMany(type => type.Methods).Where(method => method.HasBody))
             Check(!Calls(method).Any(call => wrappers.Any(wrapper => call.DeclaringType.FullName == wrapper.Owner && call.Name == wrapper.Original) ||
@@ -202,6 +202,16 @@ static partial class RealGameApiTests
                 (name == "FormatConditionValName" || name == "GetFlagName" || name == "ApplyTranslations")),
                 "popup name lookups must not enter unbounded flag-expression expansion " + method.FullName);
         }
+        var switchEligibility = candidate.MainModule.GetType("DiceMaster.EventSelection.SwitchEligibility");
+        var sharedSwitchEntry = switchEligibility.Methods.Single(method => method.Name == "Evaluate");
+        Check(sharedSwitchEntry.IsPublic && sharedSwitchEntry.IsStatic &&
+            ParametersAre(sharedSwitchEntry, "System.Object", "System.Boolean", "System.Int32&"),
+            "shared Switch display evaluator has a pool-only read contract independent of popup execution state");
+        foreach (var method in switchEligibility.Methods.Where(method => method.HasBody))
+            Check(!Calls(method).Any(call => call.DeclaringType.FullName.StartsWith("DiceMaster.LiveLog.RandomPreview") ||
+                call.DeclaringType.FullName == "System.Random" || call.Name == "SetValue" ||
+                call.DeclaringType.FullName.StartsWith("DiceMaster.EventSelection.EventSelectionRuntime")),
+                "shared Switch display evaluation cannot sample narrative RNG, write game fields or enter popup execution " + method.FullName);
         var randomPreview = candidate.MainModule.GetType("DiceMaster.LiveLog.RandomPreview");
         var independentRandom = randomPreview.Fields.Where(field => field.FieldType.FullName == "System.Random").ToArray();
         Eq(1, independentRandom.Length, "exactly one mod-owned independent RNG instance");

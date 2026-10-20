@@ -323,15 +323,21 @@ static class Program
         const string eligibility = "DiceMaster.EventSelection.EventEligibility";
         const string eligibilitySnapshot = "DiceMaster.EventSelection.EventEligibilitySnapshot";
         const string conditionText = "DiceMaster.EventSelection.PopupConditionText";
+        const string switchEligibility = "DiceMaster.EventSelection.SwitchEligibility";
         Check(Type(eligibilitySnapshot).Fields.Any(field => field.Name == "Detail" && field.IsInitOnly && field.FieldType.FullName == "System.String") &&
                 Method(candidate, "get_ConditionDetail").Body.Instructions.Any(instruction => instruction.Operand is FieldReference field &&
                     field.DeclaringType.FullName == eligibilitySnapshot && field.Name == "Detail"),
             "delivered event and Switch candidates expose immutable full condition details separately from their list summaries");
         Check(Calls(Method(eligibility, "Evaluate")).Any(call => call.DeclaringType.FullName == eligibility && call.Name == "EvaluateState") &&
                 Calls(Method(eligibility, "Evaluate")).Any(call => call.DeclaringType.FullName == conditionText && call.Name == "Event") &&
-                Calls(Method(runtime, "SwitchConditionText")).Any(call => call.DeclaringType.FullName == conditionText && call.Name == "Condition"),
+                Calls(Method(switchEligibility, "ConditionText")).Any(call => call.DeclaringType.FullName == conditionText && call.Name == "Condition"),
             "actual event eligibility and Switch refresh both prepare the common named-condition formatter outside OnGUI");
-        Check(!Calls(Method(runtime, "SwitchConditionText")).Any(call => call.DeclaringType.FullName == "DiceMaster.DataHelper" ||
+        Check(new[] { "RefreshSwitch", "PrepareSwitchSelection" }.All(name => Calls(Method(runtime, name)).Any(call =>
+                    call.DeclaringType.FullName == switchEligibility && call.Name == "Evaluate")) &&
+                Type(bridge).Methods.SelectMany(Calls).Any(call => call.DeclaringType.FullName == switchEligibility && call.Name == "Evaluate") &&
+                !Type(runtime).Methods.Any(method => new[] { "SwitchCondition", "SwitchConditionText", "SwitchEligibility" }.Contains(method.Name)),
+            "popup refresh, confirmation validation and condition-log publication share one Switch judgment implementation");
+        Check(!Calls(Method(switchEligibility, "ConditionText")).Any(call => call.DeclaringType.FullName == "DiceMaster.DataHelper" ||
                     call.DeclaringType.FullName == "DiceMaster.LiveLog.RandomPreview") &&
                 !types.Where(type => type.FullName == conditionText || type.FullName.StartsWith(conditionText + "/", StringComparison.Ordinal))
                     .SelectMany(type => type.Methods).SelectMany(Calls).Any(call => call.DeclaringType.FullName == "DiceMaster.LiveLog.RandomPreview" ||
@@ -489,6 +495,25 @@ static class Program
                 Calls(conditionBlocks).Any(c => c.DeclaringType.FullName == renderer && c.Name == "SafeButton") &&
                 !Calls(conditionBlocks).Any(c => new[] { "Select", "Reserve", "Split" }.Contains(c.Name)),
             "delivered condition branches must render full title/context/body in spaced blocks with identity-based selectable headings and no parsing or render-time reservation");
+        Check(Type("DiceMaster.LogUI.LogConditionBranch").Fields.Any(field => field.Name == "Eligibility" && field.IsInitOnly &&
+                    field.FieldType.FullName == eligibilitySnapshot) &&
+                conditionBlocks.Body.Instructions.Any(instruction => instruction.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == "DiceMaster.LogUI.LogConditionBranch" && field.Name == "Eligibility") &&
+                Calls(conditionBlocks).Any(call => call.DeclaringType.FullName == renderer && call.Name == "MutedJudgment") &&
+                Calls(conditionBlocks).Any(call => call.DeclaringType.FullName == renderer && call.Name == "JudgmentStatus"),
+            "condition detail consumes immutable shared Switch judgments for muted known-false titles and explicit unknown/failure labels");
+        Check(!Type(renderer).Methods.SelectMany(Calls).Any(call => call.DeclaringType.FullName == switchEligibility ||
+                    call.DeclaringType.FullName == conditionText || call.DeclaringType.FullName == eligibility),
+            "log rendering consumes prepared condition judgments without evaluating conditions or sampling display values during OnGUI");
+        Check(types.Where(type => type.FullName == bridge || type.FullName.StartsWith(bridge + "/", StringComparison.Ordinal))
+                    .SelectMany(type => type.Methods).Where(method => method.HasBody).SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == "GetPositionEventResultDesc") &&
+                !types.Where(type => type.FullName == bridge || type.FullName.StartsWith(bridge + "/", StringComparison.Ordinal))
+                    .SelectMany(type => type.Methods).Where(method => method.HasBody).SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == "GetPositionEventDesc") &&
+                WithinTypeTree(Method(renderer, "DrawListDetail"), types).SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.Operand is FieldReference field && field.DeclaringType.FullName == eligibilitySnapshot && field.Name == "Detail"),
+            "event log displays strict named condition details and result-only cached text without a sampled condition duplicate");
         Check(Method(bridge, "Publish").Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
                     field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "ConditionDetails") &&
                 Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.FullName == bridge && c.Name == "MapConditionDetails") &&
@@ -615,6 +640,25 @@ static class Program
                 pointerInstructions.Any(i => i.Operand is FieldReference f && f.DeclaringType.FullName == renderer && f.Name == "pointerIdentity"),
             "actual row pointer transaction must store its down-time ticket before deferring an identity/context-checked release action");
         Check(Type(plugin).Fields.Any(f => f.FieldType.FullName == renderer), "plugin retains renderer instance across frames");
+        Check(Type("DiceMaster.LogUI.LogConditionBranch").Fields.Any(field => field.Name == "Eligibility" && field.IsInitOnly &&
+                    field.FieldType.FullName == eligibilitySnapshot) &&
+                conditionBlocks.Body.Instructions.Any(instruction => instruction.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == "DiceMaster.LogUI.LogConditionBranch" && field.Name == "Eligibility") &&
+                Calls(conditionBlocks).Any(call => call.DeclaringType.FullName == renderer && call.Name == "MutedJudgment") &&
+                Calls(conditionBlocks).Any(call => call.DeclaringType.FullName == renderer && call.Name == "JudgmentStatus"),
+            "condition detail consumes immutable shared Switch judgments for muted known-false titles and explicit unknown/failure labels");
+        Check(!Type(renderer).Methods.SelectMany(Calls).Any(call => call.DeclaringType.FullName == switchEligibility ||
+                    call.DeclaringType.FullName == conditionText || call.DeclaringType.FullName == eligibility),
+            "log rendering consumes prepared condition judgments without evaluating conditions or sampling display values during OnGUI");
+        Check(types.Where(type => type.FullName == bridge || type.FullName.StartsWith(bridge + "/", StringComparison.Ordinal))
+                    .SelectMany(type => type.Methods).Where(method => method.HasBody).SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == "GetPositionEventResultDesc") &&
+                !types.Where(type => type.FullName == bridge || type.FullName.StartsWith(bridge + "/", StringComparison.Ordinal))
+                    .SelectMany(type => type.Methods).Where(method => method.HasBody).SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == "GetPositionEventDesc") &&
+                WithinTypeTree(Method(renderer, "DrawListDetail"), types).SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.Operand is FieldReference field && field.DeclaringType.FullName == eligibilitySnapshot && field.Name == "Detail"),
+            "event log displays strict named condition details and result-only cached text without a sampled condition duplicate");
         Check(Method(bridge, "Publish").Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference field &&
                 field.DeclaringType.FullName == "DiceMaster.LogUI.LogItem" && field.Name == "IsStatusOnly") &&
                 Calls(Method(bridge, "Publish")).Any(c => c.DeclaringType.FullName == "DiceMaster.LogUI.LogSnapshot" && c.Name == ".ctor"),

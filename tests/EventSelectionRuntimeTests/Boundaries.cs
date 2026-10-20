@@ -10,6 +10,18 @@ namespace DiceMaster.LiveLog
 {
     public sealed class RandomDisplayValueException : InvalidOperationException { }
     public sealed class UnsupportedDisplayStatException : InvalidOperationException { }
+    // Shared Switch evaluation reads only fixture fields at this boundary.
+    // RealGameApiTests separately exercise the delivered bridge's strict reader.
+    public static class LogBridge
+    {
+        public static object ReadFieldStrict(object value, string name)
+        {
+            if (value == null) throw new InvalidOperationException("Missing display value.");
+            var field = value.GetType().GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+            if (field == null) throw new MissingFieldException(value.GetType().FullName, name);
+            return field.GetValue(value);
+        }
+    }
     public static class SafeDisplayEvaluation
     {
         public static bool CheckCondition(object value)

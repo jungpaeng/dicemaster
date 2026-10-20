@@ -546,11 +546,9 @@ namespace DiceMaster.LiveLog
                         // Capture each real branch once at the normal refresh
                         // boundary. Never infer groups from formatted lines or
                         // evaluate descriptions a second time for the model.
-                        LogConditionDetails details = MapConditionDetails(
-                            (LogConditionDetails)Call(TypeFor("DiceMaster.DataHelper"), "DescribeSwitchCheckpoint", key), Translate);
                         object config;
                         object pool = ResolveSwitch(manager, key, out config);
-                        if (pool != null && (bool)Read(pool, "_useCount")) details = DescribeCountBranches(pool);
+                        LogConditionDetails details = pool == null ? null : DescribeSwitchBranches(pool);
                         return new Value { Key = title, RawId = key, Data = pool,
                             Description = details == null ? "" : details.DescriptionFallback,
                             ConditionDetails = details,
@@ -613,7 +611,7 @@ namespace DiceMaster.LiveLog
                             try
                             {
                                 PrepareEventDefinition(data);
-                                value.Description = Translate((string)Call(Cache(), "GetPositionEventDesc", data));
+                                value.Description = Translate((string)Call(Cache(), "GetPositionEventResultDesc", data));
                                 CaptureEventAnalysis(value, data);
                                 partialEvents.Remove(id);
                                 return value;
@@ -698,23 +696,32 @@ namespace DiceMaster.LiveLog
             return null;
         }
 
-        private static LogConditionDetails DescribeCountBranches(object pool)
+        private static LogConditionDetails DescribeSwitchBranches(object pool)
         {
-            IList items = Read(pool, "_countItems") as IList;
+            bool useCount = (bool)Read(pool, "_useCount");
+            IList items = Read(pool, useCount ? "_countItems" : "_items") as IList;
+            // Preserve the legacy absent-list description contract without
+            // inventing a fallback branch or a verdict for unavailable data.
+            if (items == null && !useCount) return new LogConditionDetails("", null);
             if (items == null) throw new DataNotReadyException();
-            int next = unchecked((int)Read(pool, "_count") + 1);
-            string[] operators = { "=", "≠", "<", "≤", ">", "≥" };
+            int count;
+            List<EventEligibilitySnapshot> states = SwitchEligibility.Evaluate(pool, useCount, out count);
             var branches = new List<LogConditionBranch>();
-            for (int index = 0; index < items.Count; index++)
+            var descriptions = new List<string>();
+            for (int index = 0; index < states.Count; index++)
             {
-                int op = Convert.ToInt32(Read(items[index], "_compareOp"));
-                if (op < 0 || op >= operators.Length) throw new InvalidOperationException("Unreadable Switch comparison.");
-                string description = "이번 실행 횟수 " + next + " " + operators[op] + " " + Convert.ToInt32(Read(items[index], "_value"));
-                branches.Add(new LogConditionBranch("분기 " + (index + 1),
-                    index == 0 ? "이 조건을 만족하면" : "앞 분기가 모두 불충족일 때 검사", description));
+                EventEligibilitySnapshot state = states[index];
+                // A failed read retains the complete last-good publication;
+                // random/unsupported verdicts are fresh Unknown snapshots.
+                if (!state.CanUseResult) throw new InvalidOperationException("Switch display judgment read failed.");
+                bool fallback = index == items.Count;
+                branches.Add(new LogConditionBranch((fallback ? "그 외 (분기 " : "분기 ") + (index + 1) + (fallback ? ")" : ""),
+                    fallback ? "위 분기가 모두 불충족일 때" : index == 0 ? "이 조건을 만족하면" : "앞 분기가 모두 불충족일 때 검사",
+                    state.Detail, "", null, state));
+                descriptions.Add(state.Detail);
             }
-            branches.Add(new LogConditionBranch("그 외 (분기 " + (items.Count + 1) + ")", "위 분기가 모두 불충족일 때", ""));
-            return new LogConditionDetails("실행 횟수를 위에서부터 검사하며, 처음 만족한 분기로 진행합니다.", branches);
+            return new LogConditionDetails(useCount ? "다음 실행 횟수를 위에서부터 검사하며, 처음 만족한 분기로 진행합니다." :
+                "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.", branches, string.Join("\n", descriptions));
         }
 
         private static List<CheckpointReservation> BuildConditionChoices(object manager, object config, object pool, string name)
@@ -805,7 +812,7 @@ namespace DiceMaster.LiveLog
             if (details == null) return null;
             var branches = new List<LogConditionBranch>();
             foreach (LogConditionBranch branch in details.Branches)
-                branches.Add(new LogConditionBranch(transform(branch.Title), transform(branch.Context), transform(branch.Description), branch.Id, branch.Target));
+                branches.Add(new LogConditionBranch(transform(branch.Title), transform(branch.Context), transform(branch.Description), branch.Id, branch.Target, branch.Eligibility));
             return new LogConditionDetails(transform(details.Hint), branches, transform(details.DescriptionFallback));
         }
 
@@ -891,7 +898,7 @@ namespace DiceMaster.LiveLog
                         {
                             CheckpointReservation choice = value.SwitchChoices[index];
                             LogConditionBranch branch = modelRow.ConditionDetails.Branches[index];
-                            branches.Add(new LogConditionBranch(branch.Title, branch.Context, branch.Description, choice.Result, choice));
+                            branches.Add(new LogConditionBranch(branch.Title, branch.Context, branch.Description, choice.Result, choice, branch.Eligibility));
                         }
                         modelRow.ConditionDetails = new LogConditionDetails(modelRow.ConditionDetails.Hint, branches,
                             modelRow.ConditionDetails.DescriptionFallback);

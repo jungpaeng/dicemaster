@@ -20,6 +20,7 @@ internal static partial class Program
         RendererNavigation();
         RendererWithoutSearch();
         RendererPopupSettings();
+        RendererJudgmentPresentation();
         RendererMissionStatusRows();
         RendererWaitingStatusExplanation();
         RendererDirectListReservations();
@@ -1673,8 +1674,9 @@ internal static partial class Program
                         && box.Controls.Exists(control => !control.Button && control.Text == branch.Context),
                         "branch block has real geometry and its supplied condition/fallback context");
                     Check(!box.Controls.Exists(control => control.Button)
-                        && box.Controls.Count == (branch.Description.Length == 0 ? 2 : 3),
-                        "branch body lines stay within one read-only block rather than becoming fake branches or controls");
+                        && box.Controls.Count == (branch.Description.Length == 0 ? 3 : 4)
+                        && box.Controls.Exists(control => !control.Button && control.Text == "? 판정 미확인"),
+                        "branch body lines and unknown judgment stay within one read-only block rather than becoming fake branches or controls");
                     if (branch.Description.Length > 0)
                         Check(box.Controls.Exists(control => !control.Button && control.Text == branch.Description),
                             "complete branch description retains line breaks and the existing | operator text");
@@ -1886,8 +1888,8 @@ internal static partial class Program
                 }
                 else
                 {
-                    string eligibilityCaption = tab == "이벤트" ? "판정 미확인 · " : "";
-                    string healthyCaption = "▶ " + healthy.Title + (storyRead ? "\n읽음 정보 없음" : tab == "이벤트" ? "\n판정 미확인" : "");
+                    string eligibilityCaption = tab == "이벤트" ? "? 판정 미확인 · " : "";
+                    string healthyCaption = "▶ " + healthy.Title + (storyRead ? "\n읽음 정보 없음" : tab == "이벤트" ? "\n? 판정 미확인" : "");
                     Check(pane.Controls.Exists(control => control.Button && control.Text == healthyCaption),
                         tab + ": healthy caption keeps only applicable story-read information without a trailing blank status row");
                     Check(!GUILayout.ScrollViews[1].Controls.Exists(control => !control.Button && string.IsNullOrEmpty(control.Text)),

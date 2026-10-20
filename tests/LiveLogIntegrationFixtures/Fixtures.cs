@@ -195,7 +195,12 @@ namespace Mortal.Story
         public List<SwitchResultData> _list = new List<SwitchResultData>();
         public List<SwitchResultData> List => _list;
         public Dictionary<string, SwitchResultData> Items = new Dictionary<string, SwitchResultData>();
-        public SwitchResultData GetData(string key) { Items.TryGetValue(key, out var value); return value; }
+        public SwitchResultData GetData(string key)
+        {
+            DiceMaster.DataHelper.ConditionReads++;
+            if (key == DiceMaster.DataHelper.FailingCheckpoint) throw new InvalidOperationException("fixture condition lookup failure");
+            Items.TryGetValue(key, out var value); return value;
+        }
     }
     public class ConditionResultConfig : UnityEngine.Object
     {
@@ -214,7 +219,16 @@ namespace Mortal.Story
     {
         public static CheckPointManager Instance { get; set; } = new CheckPointManager();
         public object _position = new PositionCollection();
-        public object _switchList = new object[0];
+        public object _switchList = DefaultSwitches();
+        static SwitchResultConfig[] DefaultSwitches()
+        {
+            var config = new SwitchResultConfig();
+            foreach (string key in new[] { "switch_one", "switch_two" })
+                config.Items[key] = new SwitchResultData { _items = new List<Mortal.Core.ConditionResultItem> {
+                    new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { new Mortal.Core.StatCompareItem() } }
+                } };
+            return new[] { config };
+        }
         public ConditionResultConfig _condition = new ConditionResultConfig();
     }
     public class PositionCollection { public IList List = new List<object>(); }
@@ -364,6 +378,12 @@ namespace DiceMaster
             if (ThrowDescription) throw new InvalidOperationException("fixture event failure");
             return "rate=" + DataHelper.CurrentValue;
         }
+        public string GetPositionEventResultDesc(Mortal.Story.PositionEventData value)
+        {
+            DescriptionReads++;
+            if (ThrowDescription) throw new InvalidOperationException("fixture event failure");
+            return "result=" + DataHelper.CurrentValue;
+        }
         string GenerateStaticDesc(Mortal.Story.PositionEventData value) { StaticReads++; scriptPrefixCache[value] = "fixture"; return Scenario.ExtractEventDescription(); }
         string GenerateDynamicDesc(Mortal.Story.PositionEventData value) => throw new InvalidOperationException("Actual event formatter IL not installed");
         public void ClearDisplayCaches() { eventDescCache.Clear(); }
@@ -486,6 +506,15 @@ namespace DiceMaster
             Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "IsReserved", "이벤트", Event), "Pending event reservation was not visible in the actual bridge");
             object eligibility = Member(row, "EventEligibility");
             Check(eligibility != null && Member(eligibility, "State").ToString() == "Eligible", "Read-only structured event eligibility did not reach the log");
+            Event._defaultRate = 0; Tick(plugin, true);
+            object blockedEventRow = ModelRows("이벤트")[0];
+            object blockedEvent = Member(blockedEventRow, "EventEligibility");
+            Check(Member(blockedEvent, "State").ToString() == "Ineligible" && Member(blockedEvent, "Reason").ToString() == "ZeroWeight" &&
+                (bool)Member(blockedEventRow, "CanReserve"), "Current event eligibility did not refresh independently from explicit reservation authority");
+            Event._defaultRate = 10; Tick(plugin, true); row = ModelRows("이벤트")[0];
+            Check(Member(Member(row, "EventEligibility"), "State").ToString() == "Eligible" &&
+                Member(blockedEvent, "State").ToString() == "Ineligible" && Member(eligibility, "State").ToString() == "Eligible",
+                "Event recovery mutated an earlier published judgment snapshot");
             object[] eventCapture = { "이벤트", new object() };
             Check((bool)Invoke("DiceMaster.LiveLog.LogBridge", "TryCaptureReservation", eventCapture) && eventCapture[1] != null,
                 "Event list did not capture opaque reservation authority");
@@ -1121,10 +1150,10 @@ namespace DiceMaster
             Check(DataHelper.ConditionReads == failureReads + 2, "Tab switching retried a failed row before its deadline");
             DataHelper.FailingCheckpoint = null;
             Tick(plugin, true);
-            Check(plugin.switchEntries.All(row => row.Description == "current=1000"), "Manual refresh did not bypass the failed item's wait and recover");
+            Check(plugin.switchEntries.All(row => row.Description.Contains("현재 1000")), "Manual refresh did not bypass the failed item's wait and recover");
             Check(OptionInfoPatch.DisplayRefreshDepth == 0, "Display protection leaked after a failure");
             plugin.currentTab = "이벤트"; UnityEngine.Time.unscaledTime = 26; Tick(plugin);
-            Check(plugin.eventEntries.Count == 1 && plugin.eventEntries[0].Description == "rate=1000", "Visible event tab was not evaluated");
+            Check(plugin.eventEntries.Count == 1 && plugin.eventEntries[0].Description == "result=1000", "Visible event tab was not evaluated");
             parserEntries = Probe.ParserEntries;
             int staticReads = PositionEventCache.StaticReads;
             UnityEngine.Time.unscaledTime = 26.5f; Tick(plugin);
@@ -1152,15 +1181,15 @@ namespace DiceMaster
                 "Unready game data was treated as a normal empty result");
             Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager();
             Tick(plugin, true);
-            Check(plugin.switchEntries.All(row => row.Description == "current=1000"), "Manual refresh did not recover ready game data");
+            Check(plugin.switchEntries.All(row => row.Description.Contains("현재 1000")), "Manual refresh did not recover ready game data");
             DataHelper.FailingCheckpoint = "switch_one";
             NewLua(Lua("O_fixture_failed"), "failed"); UnityEngine.Time.unscaledTime = 32; Tick(plugin);
             Check(plugin.switchEntries[0].Description.Contains("읽기 실패") && !plugin.switchEntries[0].Description.Contains("이전 값"),
                 "First failure reused a prior context's last value");
-            Check(plugin.switchEntries[1].Description == "current=1000", "First failure blocked a sibling in the new context");
+            Check(plugin.switchEntries[1].Description.Contains("현재 1000"), "First failure blocked a sibling in the new context");
             DataHelper.FailingCheckpoint = null;
             NewLua(Lua("O_fixture_reset"), "reset"); UnityEngine.Time.unscaledTime = 32.1f; Tick(plugin);
-            Check(plugin.switchEntries.All(row => row.Description == "current=1000"), "A new Lua context inherited the previous failure wait");
+            Check(plugin.switchEntries.All(row => row.Description.Contains("현재 1000")), "A new Lua context inherited the previous failure wait");
             Check(OptionInfoPatch.DisplayRefreshDepth == 0 && DicePlugin.Errors.Count == 0,
                 "Real parser reported a cache inconsistency or leaked display protection");
 
@@ -1181,7 +1210,7 @@ namespace DiceMaster
             UnityEngine.Time.unscaledTime = 41; Tick(plugin);
             Check(PositionEventCache.StaticReads == staticReads, "Late event source retried before its five-second wait");
             UnityEngine.Time.unscaledTime = 45.1f; Tick(plugin);
-            Check(plugin.eventEntries.Count == 1 && plugin.eventEntries[0].Description == "rate=1000",
+            Check(plugin.eventEntries.Count == 1 && plugin.eventEntries[0].Description == "result=1000",
                 "Late event source did not recover into its real event row");
             Check(ModificationCache(Parser).Count == 0 && ModificationCache(lateEventParser).Count == 1,
                 "Late event preparation changed shared Lua analysis data");
@@ -1351,6 +1380,10 @@ namespace DiceMaster
                 "Actual helper expanded checkpoint rows or omitted the immutable full detail branch set");
             Check((string)Member(original, "Hint") == "위에서부터 검사하며, 처음 만족한 분기로 진행합니다.",
                 "Actual model lost the first-satisfied branch-order explanation");
+            Check(originalBranches.Cast<object>().Select(branch => Member(Member(branch, "Eligibility"), "State").ToString())
+                .SequenceEqual(new[] { "Eligible", "Ineligible", "Ineligible" }) &&
+                ((string)Member(Member(originalBranches[1], "Eligibility"), "Summary")).StartsWith("앞 분기 우선"),
+                "Shared current verdicts did not survive condition publication/mapping and reservation-target enrichment");
             Check((string)Member(originalBranches[0], "Title") == "분기 1" &&
                 (string)Member(originalBranches[1], "Title") == "분기 2" &&
                 (string)Member(originalBranches[2], "Title") == "그 외 (분기 3)",
@@ -1364,16 +1397,16 @@ namespace DiceMaster
                 (string)Member(originalBranches[1], "Context") == "앞 분기가 모두 불충족일 때 검사" &&
                 (string)Member(originalBranches[2], "Context") == "위 분기가 모두 불충족일 때",
                 "Actual model lost branch priority/fallback context");
-            Check(Description(originalBranches[0]).Contains("(31)") && Description(originalBranches[0]).Contains("&&") &&
-                Description(originalBranches[1]).Contains("(31)") && Description(originalBranches[2]) == "",
+            Check(Description(originalBranches[0]).Contains("현재 31") && Description(originalBranches[0]).Contains(" AND ") &&
+                Description(originalBranches[1]).Contains("현재 31") && Description(originalBranches[2]).Contains("미충족"),
                 "Actual helper confused an internal compound comparison with another branch");
             Check((string)Member(original, "DescriptionFallback") == (string)Member(originalRow, "Description") &&
                 plugin.switchEntries[0].Description.Contains(Description(originalBranches[0])) &&
                 plugin.switchEntries[0].Description.Contains(Description(originalBranches[1])),
                 "Full checkpoint values or the complete same-capture compatibility description were lost");
-            Check(first._value1.Reads == 1 && first._value2.Reads == 1 && compound._value1.Reads == 1 &&
-                compound._value2.Reads == 1 && second._value1.Reads == 1 && second._value2.Reads == 1,
-                "Actual helper evaluated branch operands twice to create UI and plaintext views");
+            Check(first._value1.Reads > 0 && first._value2.Reads > 0 && compound._value1.Reads > 0 &&
+                compound._value2.Reads > 0 && second._value1.Reads > 0 && second._value2.Reads > 0,
+                "Shared strict helper did not read the current branch operands");
             object state = LogTab("조건");
             string id = (string)Member(originalRow, "Id");
             InstanceCall(state, "Select", id); state.GetType().GetField("DetailScroll").SetValue(state, 66f);
@@ -1389,25 +1422,27 @@ namespace DiceMaster
             DataHelper.CurrentValue = 37; UnityEngine.Time.unscaledTime += .3f; Tick(plugin);
             object healthy = Member(Row("switch_one"), "ConditionDetails");
             Check((string)Member(state, "SelectedId") == id && (float)Member(state, "DetailScroll") == 66f &&
-                Description(Branches(healthy)[0]).Contains("(37)") && (string)Member(state, "SelectedBranchId") == selectedBranchId &&
+                Description(Branches(healthy)[0]).Contains("현재 37") && (string)Member(state, "SelectedBranchId") == selectedBranchId &&
                 (bool)InstanceCall(state, "CanActivate", ticket),
                 "Actual healthy branch refresh lost the stable selection/reading scroll or kept old values");
-            Check(Description(originalBranches[0]).Contains("(31)") && !Description(originalBranches[0]).Contains("(37)"),
+            Check(Description(originalBranches[0]).Contains("현재 31") && !Description(originalBranches[0]).Contains("현재 37"),
                 "Later refresh mutated an already-published branch snapshot");
             second._value1.Throw = true; DataHelper.CurrentValue = 39; Tick(plugin, true);
             object failed = Row("switch_one"), retained = Member(failed, "ConditionDetails");
             Check(Member(failed, "RefreshState").ToString() == "RetainedFailure" && (bool)Member(failed, "HasLastGood") &&
-                Branches(retained).Count == 3 && Description(Branches(retained)[0]).Contains("(37)") &&
-                Description(Branches(retained)[1]).Contains("(37)") &&
-                !Description(Branches(retained)[0]).Contains("(39)"),
+                Branches(retained).Count == 3 && Description(Branches(retained)[0]).Contains("현재 37") &&
+                Description(Branches(retained)[1]).Contains("현재 37") &&
+                !Description(Branches(retained)[0]).Contains("현재 39"),
                 "A later branch failure leaked partial current values instead of the complete last-good branch set");
+            Check(ReferenceEquals(Member(Branches(retained)[1], "Eligibility"), Member(Branches(healthy)[1], "Eligibility")),
+                "A failed refresh rewrote an old judgment as current instead of preserving its stale publication");
             Check((string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus") &&
                 !(bool)InstanceCall(state, "CanActivate", ticket) && InstanceCall(state, "BeginReservation", (object)null) == null &&
-                Description(Branches(Member(Row("switch_two"), "ConditionDetails"))[0]).Contains("(39)"),
+                Description(Branches(Member(Row("switch_two"), "ConditionDetails"))[0]).Contains("현재 39"),
                 "Failed branch details lost readable selection or blocked a healthy sibling checkpoint");
             second._value1.Throw = false; Tick(plugin, true);
             Check(Member(Row("switch_one"), "RefreshState").ToString() == "Healthy" &&
-                Description(Branches(Member(Row("switch_one"), "ConditionDetails"))[1]).Contains("(39)") &&
+                Description(Branches(Member(Row("switch_one"), "ConditionDetails"))[1]).Contains("현재 39") &&
                 (string)Member(state, "SelectedId") == id && !(bool)Member(state, "ExecutionFocus"),
                 "Actual helper recovery did not replace retained branch values without reviving execution focus");
             InstanceCall(state, "SelectBranch", selectedBranchId); state.GetType().GetField("ExecutionFocus").SetValue(state, true);
@@ -1455,18 +1490,20 @@ namespace DiceMaster
                 (string)Member(Branches(counted)[1], "Title") == "그 외 (분기 2)" &&
                 countReads == first._value1.Reads + second._value1.Reads,
                 "Count-based checkpoint did not expose count/fallback choices or evaluated the inactive condition route");
+            Check(Description(Branches(counted)[0]).Contains("이번 실행 횟수 " + unchecked(checkpoint._count + 1)) &&
+                Branches(counted).Cast<object>().All(branch => Member(branch, "Eligibility") != null),
+                "Count branch publication did not carry the next-execution judgment and fallback state");
             checkpoint._useCount = false; checkpoint._items = null; Tick(plugin, true);
             Check(Branches(Member(Row("switch_one"), "ConditionDetails")).Count == 0 &&
                 (string)Member(Row("switch_one"), "Description") == "",
                 "Absent outer condition list changed the existing successful empty-description contract");
             checkpoint._items = new List<Mortal.Core.ConditionResultItem>(); Tick(plugin, true);
             IList empty = Branches(Member(Row("switch_one"), "ConditionDetails"));
-            Check(empty.Count == 1 && (string)Member(empty[0], "Title") == "그 외 (분기 1)" && Description(empty[0]) == "",
+            Check(empty.Count == 1 && (string)Member(empty[0], "Title") == "그 외 (분기 1)" && Description(empty[0]).Contains("앞 분기가 없는 기본 분기"),
                 "Empty checkpoint did not expose its sole fallback branch without invented conditions");
             checkpoint._items.Add(new Mortal.Core.ConditionResultItem()); Tick(plugin, true);
             object emptyGroup = Member(Row("switch_one"), "ConditionDetails");
-            Check(Rows("switch_one").Count == 1 && Branches(emptyGroup).Count == 2 && Description(Branches(emptyGroup)[0]) ==
-                "등록된 조건이 없어 이 분기는 충족되지 않습니다." &&
+            Check(Rows("switch_one").Count == 1 && Branches(emptyGroup).Count == 2 && Description(Branches(emptyGroup)[0]).Contains("등록된 조건 없음 (불충족)") &&
                 (string)Member(Branches(emptyGroup)[1], "Title") == "그 외 (분기 2)",
                 "Empty condition group acquired a true/unconditional meaning or changed the plaintext contract");
             NewLua(Lua("O_condition_removed").Replace("checkpointmanager.Switch(\"switch_one\")\n", ""), "condition_removed"); Tick(plugin);

@@ -182,6 +182,37 @@ namespace DiceMaster
             UiTextMapper.CacheTranslation("plain text", "translated");
             Check(UiTextMapper.TryGetCachedTranslation("plain text", out string plain) && plain == "translated", "Pure translation cache disabled");
 
+            // This method is installed from the delivered candidate by the
+            // harness. Reflection avoids adding a same-name fixture stub that
+            // could accidentally satisfy these checks without candidate IL.
+            var resultMethod = typeof(PositionEventCache).GetMethod("GetPositionEventResultDesc");
+            Check(resultMethod != null, "Candidate result-only cache method was not installed");
+            string ResultOnly(Mortal.Story.PositionEventData target) =>
+                (string)resultMethod.Invoke(cache, new object[] { target });
+            int staticBefore = PositionEventCache.StaticCalls, dynamicBefore = PositionEventCache.DynamicCalls;
+            Check(ResultOnly(null) == "" && PositionEventCache.StaticCalls == staticBefore &&
+                PositionEventCache.DynamicCalls == dynamicBefore, "Null result-only reads must not generate descriptions");
+            var resultEvent = new Mortal.Story.PositionEventData { State = 0 };
+            Check(ResultOnly(resultEvent) == "fixed result" && PositionEventCache.StaticCalls == staticBefore + 1 &&
+                PositionEventCache.DynamicCalls == dynamicBefore, "First result-only read must prepare only the static result");
+            resultEvent.State = 2;
+            Check(ResultOnly(resultEvent) == "fixed result" && PositionEventCache.StaticCalls == staticBefore + 1 &&
+                PositionEventCache.DynamicCalls == dynamicBefore, "Result-only rereads must reuse the cache without dynamic condition reads");
+            bool priorThrowDynamic = PositionEventCache.ThrowDynamic;
+            string isolatedResult;
+            try
+            {
+                PositionEventCache.ThrowDynamic = true;
+                isolatedResult = ResultOnly(new Mortal.Story.PositionEventData());
+            }
+            finally { PositionEventCache.ThrowDynamic = priorThrowDynamic; }
+            Check(isolatedResult == "fixed result" && PositionEventCache.StaticCalls == staticBefore + 2 &&
+                PositionEventCache.DynamicCalls == dynamicBefore, "Broken dynamic conditions must not prevent a fresh result-only cache read");
+            string originalDescription = cache.GetPositionEventDesc(resultEvent);
+            Check(originalDescription.Contains("G3000(2) green") && originalDescription.Contains("fixed result") &&
+                PositionEventCache.StaticCalls == staticBefore + 2 && PositionEventCache.DynamicCalls == dynamicBefore + 1,
+                "Original description reads must retain live dynamic conditions and share the same cached static result");
+
             return assertions;
         }
     }

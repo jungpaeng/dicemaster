@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.cs" Link="EventSelectionRuntime.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.Switch.cs" Link="EventSelectionRuntime.Switch.cs" />
+    <Compile Include="../../src/DiceMaster/EventSelection/SwitchEligibility.cs" Link="SwitchEligibility.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventSelectionRuntime.Reservations.cs" Link="EventSelectionRuntime.Reservations.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/CheckpointReservation.cs" Link="CheckpointReservation.cs" />
     <Compile Include="../../src/DiceMaster/EventSelection/EventSwitchSite.cs" Link="EventSwitchSite.cs" />

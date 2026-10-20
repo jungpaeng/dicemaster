@@ -87,7 +87,7 @@ static class LiveLogIntegrationTests
         target = fixtures.MainModule;
         var module = source.MainModule;
         new PayloadCopier(module, target, type => type.Namespace == "DiceMaster.LuaParse" || type.Namespace == "DiceMaster.EventSelection" && new[] {
-            "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "PopupConditionText",
+            "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "PopupConditionText", "SwitchEligibility",
             "CheckpointReservation", "CheckpointReservationStore"
         }.Contains(type.Name) || (type.Namespace == "DiceMaster.LiveLog" || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
         // The fixture project deliberately has no duplicate model definitions.

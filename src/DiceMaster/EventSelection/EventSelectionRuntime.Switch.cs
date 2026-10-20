@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using DiceMaster.LiveLog;
 using Mortal.Story;
 using UnityEngine;
 
@@ -48,97 +47,10 @@ namespace DiceMaster.EventSelection
             return result > 0 && result <= items.Count ? items[result - 1] : result == items.Count + 1 ? action.SwitchPool : null;
         }
 
-        private static EventEligibilitySnapshot SwitchCondition(object condition, bool countMode, int nextCount)
-        {
-            // Keep the condition alongside its verdict, including unknown/read
-            // failures. A result description alone cannot explain this route.
-            string text = SwitchConditionText(condition, countMode, nextCount);
-            try
-            {
-                bool eligible;
-                if (!countMode) eligible = SafeDisplayEvaluation.CheckCondition(condition);
-                else
-                {
-                    int right = Convert.ToInt32(Field(condition, "_value"));
-                    switch (Convert.ToInt32(Field(condition, "_compareOp")))
-                    {
-                        case 0: eligible = nextCount == right; break;
-                        case 1: eligible = nextCount != right; break;
-                        case 2: eligible = nextCount < right; break;
-                        case 3: eligible = nextCount <= right; break;
-                        case 4: eligible = nextCount > right; break;
-                        case 5: eligible = nextCount >= right; break;
-                        default: throw new InvalidOperationException("Unreadable Switch comparison.");
-                    }
-                }
-                return new EventEligibilitySnapshot(eligible ? EventEligibilityState.Eligible : EventEligibilityState.Ineligible,
-                    eligible ? EventEligibilityReason.None : EventEligibilityReason.ConditionsNotMet, null,
-                    eligible ? text : "미충족 · " + text, detail: text);
-            }
-            catch (RandomDisplayValueException)
-            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "? 난수 · " + text, detail: text); }
-            catch (UnsupportedDisplayStatException)
-            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "? 미지원 계산 · " + text, detail: text); }
-            catch (InvalidOperationException error)
-            {
-                if (error.Message.StartsWith("Unknown display", StringComparison.Ordinal))
-                    return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "? 미지원 계산 · " + text, detail: text);
-                return EventEligibilitySnapshot.Unreadable("! 분기 조건 확인 필요", text);
-            }
-            catch (Exception) { return EventEligibilitySnapshot.Unreadable("! 분기 조건 확인 필요", text); }
-        }
-
-        private static string SwitchConditionText(object condition, bool countMode, int nextCount)
-        {
-            try
-            {
-                if (countMode)
-                {
-                    string[] operators = { "=", "≠", "<", "≤", ">", "≥" };
-                    int op = Convert.ToInt32(Field(condition, "_compareOp"));
-                    return "이번 실행 횟수 " + nextCount + " " + operators[op] + " " + Convert.ToInt32(Field(condition, "_value"));
-                }
-                string text = PopupConditionText.Condition(condition);
-                return string.IsNullOrWhiteSpace(text) ? "조건 설명이 비어 있습니다." : text;
-            }
-            catch (Exception) { return "조건 설명을 읽지 못했습니다."; }
-        }
-
-        private static List<EventEligibilitySnapshot> SwitchEligibility(ActionContext action, out int count)
-        {
-            count = (int)Field(action.SwitchPool, "_count");
-            IList items = SwitchItems(action);
-            var result = new List<EventEligibilitySnapshot>();
-            bool previousTrue = false, previousUnknown = false, previousFailure = false;
-            EventEligibilityReason previousUnknownReason = EventEligibilityReason.None;
-            for (int index = 0; index <= items.Count; index++)
-            {
-                EventEligibilitySnapshot condition = index == items.Count ?
-                    new EventEligibilitySnapshot(EventEligibilityState.Eligible, EventEligibilityReason.None, null,
-                        items.Count == 0 ? "앞 분기가 없는 기본 분기입니다." : "앞의 1~" + items.Count + "번 분기 조건이 모두 미충족일 때 진행합니다.") :
-                    SwitchCondition(items[index], action.SwitchUseCount, unchecked(count + 1));
-                EventEligibilitySnapshot snapshot;
-                if (!condition.CanUseResult || previousFailure) snapshot = EventEligibilitySnapshot.Unreadable("! 이 분기 또는 앞 분기 확인 필요",
-                    "이 분기 또는 앞 분기의 조건을 읽지 못했습니다.\n" + condition.Detail);
-                else if (previousTrue) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, null,
-                    "앞 분기 우선 · " + condition.Detail, detail: "앞 분기가 먼저 선택됩니다.\n" + condition.Detail);
-                else if (!condition.IsEligible && condition.Reason == EventEligibilityReason.ConditionsNotMet) snapshot = condition;
-                else if (previousUnknown) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Unknown, previousUnknownReason, null,
-                    "? 앞 분기 미확정 · " + condition.Detail, detail: "앞 분기의 판정이 확정되지 않았습니다.\n" + condition.Detail);
-                else snapshot = condition;
-                result.Add(snapshot);
-                previousFailure |= !condition.CanUseResult;
-                previousTrue |= condition.IsEligible;
-                if (!previousUnknown && condition.State == EventEligibilityState.Unknown) previousUnknownReason = condition.Reason;
-                previousUnknown |= condition.State == EventEligibilityState.Unknown;
-            }
-            return result;
-        }
-
         private static void RefreshSwitch(ActionContext action, float now, int previewBudget)
         {
             int count;
-            List<EventEligibilitySnapshot> states = SwitchEligibility(action, out count);
+            List<EventEligibilitySnapshot> states = SwitchEligibility.Evaluate(action.SwitchPool, action.SwitchUseCount, out count);
             action.SwitchCount = count;
             var result = new List<EventCandidate>();
             for (int index = 0; index < states.Count; index++)
@@ -212,7 +124,7 @@ namespace DiceMaster.EventSelection
             EventCandidate confirmed = action.SelectedCandidate;
             action.SelectedId = null; action.SelectedCandidate = null;
             int branch, count;
-            var states = SwitchEligibility(action, out count);
+            var states = SwitchEligibility.Evaluate(action.SwitchPool, action.SwitchUseCount, out count);
             if (confirmed == null || !int.TryParse(confirmed.Result, out branch) || branch < 1 || branch > states.Count ||
                 action.SwitchSite.Body(branch) == null || confirmed.Revision != count || !ReferenceEquals(SwitchTarget(action, branch), confirmed.Target))
             { Status = "분기 대상 또는 실행 횟수가 바뀌었습니다. 다시 선택하세요."; RefreshSwitch(action, Time.unscaledTime, 0); return false; }

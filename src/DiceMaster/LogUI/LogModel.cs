@@ -14,11 +14,14 @@ namespace DiceMaster.LogUI
     {
         public readonly string Title, Context, Description, Id;
         public readonly object Target;
+        public readonly EventEligibilitySnapshot Eligibility;
         public bool CanReserve { get { return Target != null; } }
         public LogConditionBranch(string title, string context, string description)
             : this(title, context, description, "", null) { }
         public LogConditionBranch(string title, string context, string description, string id, object target)
-        { Title = title ?? ""; Context = context ?? ""; Description = description ?? ""; Id = id ?? ""; Target = target; }
+            : this(title, context, description, id, target, null) { }
+        public LogConditionBranch(string title, string context, string description, string id, object target, EventEligibilitySnapshot eligibility)
+        { Title = title ?? ""; Context = context ?? ""; Description = description ?? ""; Id = id ?? ""; Target = target; Eligibility = eligibility; }
     }
 
     public sealed class LogConditionDetails

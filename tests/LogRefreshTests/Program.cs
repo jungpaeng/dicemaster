@@ -122,7 +122,7 @@ static class LogRefreshTests
             target = fixtures.MainModule;
             new PayloadCopier(module, target, type => (type.Namespace == "DiceMaster.LiveLog" ||
                 type.Namespace == "DiceMaster.EventSelection" && (type.Name.StartsWith("EventEligibility") || type.Name.StartsWith("EventEligibilityReason") ||
-                    type.Name == "CheckpointReservation" || type.Name == "CheckpointReservationStore" || type.Name == "PopupConditionText") ||
+                    type.Name == "CheckpointReservation" || type.Name == "CheckpointReservationStore" || type.Name == "PopupConditionText" || type.Name == "SwitchEligibility") ||
                 new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI"));
             var groups = new Dictionary<string, string[]> {
                 ["DiceMaster.PositionEventCache"] = new[] { "GetPositionEventDesc", "GeneratePreviewDynamicDesc", "ClearDisplayCaches", "GetPositionEvents" },
@@ -132,6 +132,13 @@ static class LogRefreshTests
             };
             foreach (var group in groups)
                 foreach (var name in group.Value) Install(Find(module, group.Key, name), Find(target, group.Key, name));
+            // The log now consumes the result-only cache entry so its strict
+            // condition detail is not followed by a sampled duplicate condition.
+            // Copy only this new method; the fixture still owns static/dynamic
+            // description generation and cache-state observation boundaries.
+            new PayloadCopier(module, target, _ => false).CopyMethod(
+                Find(module, "DiceMaster.PositionEventCache", "GetPositionEventResultDesc"),
+                target.GetType("DiceMaster.PositionEventCache"));
             fixtures.Write(output);
         }
         var assembly = System.Reflection.Assembly.LoadFile(output);

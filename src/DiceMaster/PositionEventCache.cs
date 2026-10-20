@@ -88,6 +88,19 @@ public class PositionEventCache
 		}
 	}
 
+	// The live log already owns a strict eligibility/condition snapshot. Read
+	// only result text here so sampled dynamic conditions cannot contradict it.
+	public string GetPositionEventResultDesc(PositionEventData eventData)
+	{
+		if (eventData == null) return "";
+		if (!eventDescCache.TryGetValue(eventData, out var value))
+		{
+			value = GenerateStaticDesc(eventData);
+			eventDescCache[eventData] = value;
+		}
+		return value;
+	}
+
 	public int GetPositionEventRate(PositionEventData eventData)
 	{
 		return OptionInfoPatch.PreviewReadEventRate(eventData);

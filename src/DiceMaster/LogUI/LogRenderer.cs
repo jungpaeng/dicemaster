@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using DiceMaster.Config;
+using DiceMaster.EventSelection;
 using DiceMaster.Gamepad;
 using DiceMaster.LiveLog;
 using UnityEngine;
@@ -14,6 +16,7 @@ namespace DiceMaster.LogUI
     {
         private enum Area { List, Tools, PopupSetting, ConditionDetails }
         private static readonly string[] Tabs = { "선택지", "조건", "이벤트", "미션" };
+        private static readonly Regex ColorMarkup = new Regex(@"</?color(?:=[^<>]*)?>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
         private const string ConditionListHint = "현재: 체크포인트 목록 · ↑↓ 항목 이동 / A · Enter · → 상세 분기 선택 / 목록 맨 위에서 ↑ 팝업 설정 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구 / X 새로고침 / B 닫기";
         private const string ConditionDetailHint = "현재: 조건 상세 · ↑↓ 분기 이동 / A · Enter · 선택된 분기 다시 클릭·터치 예약·해제 / ← · B 체크포인트 목록 / 오른쪽 스틱 본문 / LB·RB 탭 / Y 도구";
         private readonly LogModel model;
@@ -31,7 +34,7 @@ namespace DiceMaster.LogUI
         private long pointerContext;
         private ReservationTicket pointerReservation;
         private Action pendingAction;
-        private GUIStyle textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle, branchStyle, statusStyle, boxStyle, windowStyle;
+        private GUIStyle textStyle, literalStyle, mutedConditionStyle, literalStatusStyle, mutedStatusStyle, titleStyle, buttonStyle, selectedStyle, branchStyle, statusStyle, boxStyle, windowStyle;
         private GUIStyle chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle;
         private bool releaseTextFocus;
         private LogSnapshot cachedSnapshot;
@@ -382,8 +385,13 @@ namespace DiceMaster.LogUI
             textStyle = new GUIStyle(GUI.skin.label) { fontSize = font, richText = true, wordWrap = true, padding = new RectOffset(4, 4, 4, 4) };
             textStyle.normal.textColor = Color.white;
             literalStyle = new GUIStyle(textStyle) { richText = false };
+            mutedConditionStyle = new GUIStyle(literalStyle);
+            mutedConditionStyle.normal.textColor = new Color(.7f, .7f, .7f);
             titleStyle = new GUIStyle(textStyle) { fontStyle = FontStyle.Bold };
             statusStyle = new GUIStyle(textStyle) { fontSize = Math.Max(12, chromeFont - 1) };
+            literalStatusStyle = new GUIStyle(statusStyle) { richText = false };
+            mutedStatusStyle = new GUIStyle(literalStatusStyle);
+            mutedStatusStyle.normal.textColor = new Color(.7f, .7f, .7f);
             buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = font, richText = true, wordWrap = true, padding = new RectOffset(6, 6, 6, 6) };
             buttonStyle.normal.textColor = Color.white;
             selectedStyle = new GUIStyle(buttonStyle) { fontStyle = FontStyle.Bold };
@@ -398,7 +406,7 @@ namespace DiceMaster.LogUI
             // GUILayout includes inherited skin margins in its minimum sizes.
             // Our measured rectangles budget padding explicitly, so margins
             // must not make a supposedly fixed pane grow past its clip area.
-            foreach (GUIStyle style in new[] { textStyle, literalStyle, titleStyle, buttonStyle, selectedStyle,
+            foreach (GUIStyle style in new[] { textStyle, literalStyle, mutedConditionStyle, literalStatusStyle, mutedStatusStyle, titleStyle, buttonStyle, selectedStyle,
                 branchStyle, statusStyle, boxStyle, windowStyle, chromeTitleStyle, chromeButtonStyle, chromeSelectedStyle, scrollStyle })
             {
                 style.margin = new RectOffset(0, 0, 0, 0);
@@ -562,7 +570,8 @@ namespace DiceMaster.LogUI
                 }
                 bool selected = row.Id == State.SelectedId;
                 string state = RowState(row);
-                string caption = (selected && area == Area.List ? "▶ " : "") + Title(row) +
+                string caption = (selected && area == Area.List ? "▶ " : "") +
+                    JudgmentTitle(Title(row), IsEventTab && MutedJudgment(row, row.EventEligibility)) +
                     (RowReserved(row) ? " (예약 중)" : "") +
                     (string.IsNullOrEmpty(state) ? "" : "\n" + state);
                 if (!row.CanSelect) caption += "\n원본 ID: " + Escape(row.RawId);
@@ -596,7 +605,7 @@ namespace DiceMaster.LogUI
                     "목록에서 대상을 선택하세요.\n자동 갱신으로 대상이 없어지면 다시 선택해야 합니다.", textStyle);
             else
             {
-                GUILayout.Label(Title(selectedRow), titleStyle);
+                GUILayout.Label(JudgmentTitle(Title(selectedRow), IsEventTab && MutedJudgment(selectedRow, selectedRow.EventEligibility)), titleStyle);
                 string state = RowState(selectedRow);
                 if (!string.IsNullOrEmpty(state)) Label(state, statusStyle);
                 if (selectedRow.RefreshState == LogRefreshState.Waiting)
@@ -609,12 +618,23 @@ namespace DiceMaster.LogUI
                         "해당 미션의 조건 통과를 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다." :
                         "조건을 무시하고 다음 해당 판정에 한 번 적용하도록 예약합니다. 즉시 실행하거나 행동을 재개하는 기능은 아닙니다.", statusStyle);
                 }
-                if (IsEventTab && selectedRow.EventEligibility != null && !string.IsNullOrEmpty(selectedRow.EventEligibility.Summary))
-                    Label((selectedRow.RefreshState == LogRefreshState.Healthy ? "" : "이전 조회 설명: ") + selectedRow.EventEligibility.Summary, statusStyle);
                 GUILayout.Label("원본 ID: " + selectedRow.RawId, literalStyle);
                 if (!string.IsNullOrEmpty(selectedRow.Text)) Label(selectedRow.Text, textStyle);
                 if (CurrentTab == "조건" && selectedRow.ConditionDetails != null)
                     DrawConditionDetails(selectedRow.ConditionDetails);
+                else if (IsEventTab)
+                {
+                    if (selectedRow.EventEligibility != null && !string.IsNullOrEmpty(selectedRow.EventEligibility.Detail))
+                    {
+                        Label(CurrentJudgment(selectedRow) ? "조건 상세" : "조건 상세 · 이전 조회 설명", statusStyle);
+                        Label(selectedRow.EventEligibility.Detail, MutedJudgment(selectedRow, selectedRow.EventEligibility) ? mutedConditionStyle : literalStyle);
+                    }
+                    if (!string.IsNullOrEmpty(selectedRow.Description))
+                    {
+                        Label("예상 결과", statusStyle);
+                        Label(selectedRow.Description, textStyle);
+                    }
+                }
                 else Label(selectedRow.Description, textStyle);
             }
             GUILayout.EndScrollView();
@@ -659,6 +679,7 @@ namespace DiceMaster.LogUI
                 return;
             }
             float statusHeight = ConditionReservationStatusHeight(textWidth);
+            float judgmentHeight = TextHeight("?", literalStatusStyle, textWidth);
             bool first = true;
             foreach (LogConditionBranch branch in details.Branches)
             {
@@ -668,7 +689,9 @@ namespace DiceMaster.LogUI
                 // Only its structured identity is an action target; localized
                 // text and visual line positions never establish a branch.
                 GUILayout.BeginVertical(boxStyle, GUILayout.MinWidth(1), GUILayout.MaxWidth(paneWidth), GUILayout.ExpandWidth(true));
-                if (string.IsNullOrEmpty(branch.Id)) BoundedLabel(branch.Title, titleStyle, textWidth);
+                bool muted = MutedJudgment(State.Selected, branch.Eligibility);
+                string title = JudgmentTitle(branch.Title, muted);
+                if (string.IsNullOrEmpty(branch.Id)) BoundedLabel(title, titleStyle, textWidth);
                 else
                 {
                     string id = branch.Id;
@@ -676,12 +699,25 @@ namespace DiceMaster.LogUI
                     // Selection changes only color. Keep identical heading
                     // text/font and a status block for every branch so the
                     // next touch lands on the same physical heading.
-                    SafeButton(branch.Title, BranchIdentity(id), () => ActivateBranch(id), selected, maxWidth: textWidth);
+                    SafeButton(title, BranchIdentity(id), () => ActivateBranch(id), selected, maxWidth: textWidth);
                     Display.Label(ConditionReservationStatus(branch), statusStyle, new[] {
                         GUILayout.MinWidth(1), GUILayout.MaxWidth(textWidth), GUILayout.ExpandWidth(true), GUILayout.Height(statusHeight) });
                 }
-                if (!string.IsNullOrEmpty(branch.Context)) BoundedLabel(branch.Context, statusStyle, textWidth);
-                if (!string.IsNullOrEmpty(branch.Description)) BoundedLabel(branch.Description, textStyle, textWidth);
+                string judgment = JudgmentStatus(branch.Eligibility, CurrentJudgment(State.Selected), false);
+                GUIStyle conditionStatusStyle = muted ? mutedStatusStyle : literalStatusStyle;
+                // A predecessor's fresh judgment can change without replacing
+                // this branch. Reserve one line even when the normal branch
+                // needs no status so its next tap stays at the same position.
+                if (!string.IsNullOrEmpty(branch.Id))
+                {
+                    if (string.IsNullOrEmpty(judgment)) GUILayout.Space(judgmentHeight);
+                    else Display.Label(FitJudgment(judgment, conditionStatusStyle, textWidth), conditionStatusStyle, new[] {
+                        GUILayout.MinWidth(1), GUILayout.MaxWidth(textWidth), GUILayout.ExpandWidth(true), GUILayout.Height(judgmentHeight) });
+                }
+                else if (!string.IsNullOrEmpty(judgment)) BoundedLabel(judgment, conditionStatusStyle, textWidth);
+                if (!string.IsNullOrEmpty(branch.Context)) BoundedLabel(branch.Context, conditionStatusStyle, textWidth);
+                if (!string.IsNullOrEmpty(branch.Description))
+                    BoundedLabel(branch.Description, muted ? mutedConditionStyle : branch.Eligibility == null ? textStyle : literalStyle, textWidth);
                 GUILayout.EndVertical();
                 if (!string.IsNullOrEmpty(branch.Id)) branchRects[branch.Id] = GUILayoutUtility.GetLastRect();
             }
@@ -950,6 +986,47 @@ namespace DiceMaster.LogUI
         private static string Title(LogItem row) => string.IsNullOrWhiteSpace(row.Title) ?
             string.IsNullOrWhiteSpace(row.Text) ? Escape(row.RawId) : Display.TranslateLabel(row.Text) : Display.TranslateLabel(row.Title);
         private static string Escape(string value) => (value ?? "").Replace("<", "＜").Replace(">", "＞");
+        private bool CurrentJudgment(LogItem row) => row != null && !State.PublicationFailed && row.RefreshState == LogRefreshState.Healthy;
+        private bool MutedJudgment(LogItem row, EventEligibilitySnapshot eligibility) => CurrentJudgment(row)
+            && eligibility != null && eligibility.CanUseResult && eligibility.State == EventEligibilityState.Ineligible;
+        private static string JudgmentTitle(string value, bool muted) => muted
+            ? "<color=#B3B3B3>" + ColorMarkup.Replace(value ?? "", "") + "</color>" : value ?? "";
+        private static string JudgmentStatus(EventEligibilitySnapshot eligibility, bool current, bool showEligible)
+        {
+            if (!current || eligibility == null) return "? 판정 미확인";
+            string summary = eligibility.Summary ?? "";
+            int separator = summary.IndexOf(" · ", StringComparison.Ordinal);
+            if (separator >= 0) summary = summary.Substring(0, separator);
+            int newline = summary.IndexOfAny(new[] { '\r', '\n' });
+            if (newline >= 0) summary = summary.Substring(0, newline);
+            summary = summary.Trim();
+            if (!eligibility.CanUseResult || eligibility.Reason == EventEligibilityReason.ReadFailure)
+                return MarkJudgment(summary, "!", "대상/결과 확인 필요");
+            if (eligibility.State == EventEligibilityState.Unknown)
+                return MarkJudgment(summary, "?", eligibility.Reason == EventEligibilityReason.Random ? "난수" :
+                    eligibility.Reason == EventEligibilityReason.Unsupported ? "미지원 계산" : "판정 미확인");
+            if (eligibility.State == EventEligibilityState.Ineligible)
+                return string.IsNullOrEmpty(summary) ? eligibility.Reason == EventEligibilityReason.ZeroWeight ? "가중치 0" : "조건 미충족" : summary;
+            return showEligible ? eligibility.StatusText : "";
+        }
+        private static string MarkJudgment(string value, string marker, string fallback)
+        {
+            value = value.TrimStart('?', '!', ' ');
+            return marker + " " + (string.IsNullOrEmpty(value) ? fallback : value);
+        }
+        private static string FitJudgment(string value, GUIStyle style, float width)
+        {
+            if (style.CalcSize(new GUIContent(value)).x <= width) return value;
+            int low = 0, high = value.Length;
+            while (low < high)
+            {
+                int middle = (low + high + 1) / 2;
+                if (style.CalcSize(new GUIContent(value.Substring(0, middle) + "…")).x <= width) low = middle;
+                else high = middle - 1;
+            }
+            if (low > 0 && char.IsHighSurrogate(value[low - 1])) low--;
+            return value.Substring(0, low) + "…";
+        }
         private string RowState(LogItem row)
         {
             // Event/mission publications have no story-read mapping. Unknown
@@ -961,8 +1038,7 @@ namespace DiceMaster.LogUI
                 string.IsNullOrEmpty(status) ? read : read + " · " + status;
             if (IsEventTab)
             {
-                string eligibility = row.RefreshState != LogRefreshState.Healthy || State.PublicationFailed || row.EventEligibility == null ?
-                    "판정 미확인" : row.EventEligibility.StatusText;
+                string eligibility = JudgmentStatus(row.EventEligibility, CurrentJudgment(row), true);
                 result = eligibility + (string.IsNullOrEmpty(result) ? "" : " · " + result);
             }
             foreach (string state in row.AnalysisStates)
