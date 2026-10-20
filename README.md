@@ -15,7 +15,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| 시험판 준비 v1.0.6-alpha.14 | 선택 팝업에서 로그 열기·입력 포커스 전환, 조건 분기의 조건 표시와 미충족 회색 구분 | 게시 준비 중. 고정 소스 재빌드·공개 파일 대조와 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA14-RELEASE.md) |
+| [시험판 v1.0.6-alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.14/DiceMaster-v1.0.6-alpha.14.zip) | 선택 팝업에서 로그 열기·입력 포커스 전환, 조건 분기의 조건 표시와 미충족 회색 구분 | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA14-RELEASE.md) |
 
 alpha.14는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
 
@@ -118,7 +118,7 @@ alpha.14는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원
 
 ## 시험판의 조건·이벤트 선택
 
-**v1.0.6-alpha.14 게시를 준비 중**입니다. 선택 팝업에서 큰 로그를 열고 닫을 수 있으며, 조건 분기 팝업에는 실제 조건과 미충족 회색 구분을 추가합니다. 조건 목록은 체크포인트당 한 행과 상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha14-팝업로그-포커스조건-표시-확인표)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14)**입니다. 선택 팝업에서 큰 로그를 열고 닫을 수 있으며, 조건 분기 팝업에는 실제 조건과 미충족 회색 구분을 추가합니다. 조건 목록은 체크포인트당 한 행과 상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha14-팝업로그-포커스조건-표시-확인표)에서 대기합니다.
 
 ### 예약과 설정
 
@@ -143,7 +143,7 @@ alpha.14는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원
 
 ### 선택 팝업의 조작과 지원 범위
 
-팝업 상단의 **로그 열기**를 클릭·터치하거나 기존 `LogMenuToggleKey`(기본 Tab)를 눌러 큰 로그를 엽니다. `EnableGamepadLogOpen=true`이면 팝업 대기 중에도 같은 패드의 **L3/R3 클릭 겹침**으로 열 수 있습니다. 큰 로그가 열린 동안에는 로그만 입력을 받고 대기 중인 선택 판정·예약 소비·설정 OFF 후 원래 판정 실행은 로그를 닫을 때까지 기다립니다. 로그를 닫으면 유효한 팝업 선택·읽던 스크롤 위치로 돌아오고, 닫기에 쓴 B/Esc나 누른 채인 A는 진행에 재사용하지 않습니다. 버튼을 놓고 스틱·트리거를 중립으로 돌린 뒤 새로 조작하세요.
+팝업 상단의 **로그 열기**를 클릭·터치하거나 기존 `LogMenuToggleKey`(기본 Tab)를 눌러 큰 로그를 엽니다. `EnableGamepadLogOpen=true`이면 팝업 대기 중에도 같은 패드의 **L3/R3 클릭 겹침**으로 열 수 있습니다. 큰 로그가 열린 동안에는 로그만 입력을 받고, 대기 중인 팝업의 Lua 흐름과 그 판정에서의 예약 소비·설정 OFF 후 원래 판정 실행은 로그를 닫을 때까지 기다립니다. 로그를 닫으면 유효한 팝업 선택·읽던 스크롤 위치로 돌아오고, 닫기에 쓴 B/Esc나 누른 채인 A는 진행에 재사용하지 않습니다. 버튼을 놓고 스틱·트리거를 중립으로 돌린 뒤 새로 조작하세요.
 
 패드 열기를 끄려면 `EnableGamepadLogOpen=false`로 설정합니다. 이 옵션은 로그 열기 조합만 끄며, 열린 로그·대기 팝업의 입력 차단이나 패드 탐색까지 끄는 옵션은 아닙니다. 큰 로그를 여는 것만으로 원래 판정이나 다른 이벤트가 실행되지 않습니다.
 

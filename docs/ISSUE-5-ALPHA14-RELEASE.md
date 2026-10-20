@@ -1,13 +1,13 @@
 # v1.0.6-alpha.14 — 팝업에서 로그 열기와 분기 조건 표시
 
-상태: **게시 준비 · 후보 전체 소스 빌드와 14개 검사 통과 · 새 DLL의 실제 Windows·장치 확인 대기**. alpha.13 이후 선택 팝업에서 큰 로그를 열어 확인하고 돌아올 수 있게 하며, 조건 분기 팝업에 실제 조건과 미충족 회색 구분을 추가한다. 고정 소스 재빌드·커밋·게시와 익명 공개 파일 대조는 아직 진행 전이다.
+상태: **2026-10-20 12:28:24 KST prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. alpha.13 이후 선택 팝업에서 큰 로그를 열어 확인하고 돌아올 수 있게 하며, 조건 분기 팝업에 실제 조건과 미충족 회색 구분을 추가한다. 소스·주석 태그는 `3c9aa94512add361818511fe1f57d5987a5855d2`이며 후보·고정 재빌드·익명 공개 파일의 바이트·해시를 대조했다.
 
-설치 ZIP은 게시 후 연결한다. 현재 공개 시험판은 [v1.0.6-alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.13), [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)은 v1.0.5다.
+**[이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.14/DiceMaster-v1.0.6-alpha.14.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest)
 
 ## 사용자에게 달라진 점
 
 - 이벤트·조건 분기 팝업 상단의 **로그 열기**로 큰 로그를 연다. 기존 `LogMenuToggleKey`(기본 Tab)도 사용하며, `EnableGamepadLogOpen=true`이면 팝업 대기 중 같은 패드 L3/R3 클릭 겹침으로도 연다.
-- 큰 로그가 열린 동안에는 로그만 조작한다. 대기 중 실제 이벤트·조건 판정과 예약 소비, 팝업 OFF 뒤 원래 판정 실행도 로그를 닫을 때까지 기다린다. 닫으면 기존의 유효한 팝업 선택·읽던 위치로 돌아오며 닫기 B/Esc·누른 채인 A를 진행에 재사용하지 않는다. 버튼 해제·스틱/트리거 중립 뒤 새 입력을 받는다.
+- 큰 로그가 열린 동안에는 로그만 조작한다. 대기 중인 팝업의 Lua 흐름과 그 판정에서의 예약 소비, 팝업 OFF 뒤 원래 판정 실행도 로그를 닫을 때까지 기다린다. 닫으면 기존의 유효한 팝업 선택·읽던 위치로 돌아오며 닫기 B/Esc·누른 채인 A를 진행에 재사용하지 않는다. 버튼 해제·스틱/트리거 중립 뒤 새 입력을 받는다.
 - 조건 분기 행에 **조건 요약**을 더하고, 선택 상세에는 **전체 분기 조건을 예상 결과보다 먼저** 표시한다. 긴 조건은 목록에서 줄이고 상세에서 모두 읽는다. 여러 조건·앞 분기 우선순위·기본 분기·이번 실행 횟수 비교를 유지한다.
 - 미충족이나 앞 분기 우선으로 선택되지 않는 분기는 **제목·조건을 회색**으로 표시한다. 난수·미지원은 판정 미확인으로 구분하며 미충족으로 단정하지 않는다. 결과 효과색과 읽기 가능한 결과의 기존 A/Enter 명시 조건 무시를 유지한다. 실제 대상·결과 읽기 실패는 실행을 막는다.
 
@@ -72,22 +72,26 @@ alpha.13으로 복구하면 이번 팝업 로그 열기 보완·조건 표시 �
 
 ## 파일 확인과 게시 기록
 
-아래는 검토 후보의 파일 식별값이다. 고정 소스 재빌드·공개 다운로드와의 대조는 아직 대기다. 후보 ZIP은 게시 때 설치 파일 이름으로 복사하며 바이트를 바꾸지 않는다.
+아래 파일은 검토 후보·고정 소스 재빌드·익명 공개 다운로드의 바이트·해시가 일치한다. 소스 커밋은 [3c9aa94512add361818511fe1f57d5987a5855d2](https://github.com/jungpaeng/dicemaster/commit/3c9aa94512add361818511fe1f57d5987a5855d2)다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
-| `DiceMaster-source-candidate.zip` | 270,258 | `a8eb1d88c616b6eef22e1c77283ae1e9c145d19924089a8cbb11ed9b0d972733` |
+| `DiceMaster-v1.0.6-alpha.14.zip` | 270,258 | `a8eb1d88c616b6eef22e1c77283ae1e9c145d19924089a8cbb11ed9b0d972733` |
 | `DiceMaster.dll` | 641,024 | `3d206a91ce3724e407fc229ec1f727bde6d0f574a6695ff4ef51ae8a7558e95e` |
 | `DiceMaster.cfg` | 11,761 | `435d221a32f505ce079c01c4afb9ecf39f4bbe29d5dd8d7ca8e3975f2a9b5400` |
 
 | 게시 항목 | 현재 기록 |
 | --- | --- |
-| 고정 소스·주석 태그 커밋 | 대기 |
-| 고정 소스 재빌드·14개 검사·후보 대조 | 대기 |
-| 게시 시각·Release / asset ID | 미게시 |
-| 공개 상태·익명 다운로드·해시 대조 | 미게시 |
+| 고정 소스·주석 태그 커밋 | `3c9aa94512add361818511fe1f57d5987a5855d2` |
+| 고정 소스 재빌드·14개 검사·후보 대조 | 2026-10-20 12:27:31 KST 완료. 191개 입력·78개 소스/리소스·전체 검사 결과와 DLL/cfg/ZIP 바이트 일치 |
+| 게시 시각 | 2026-10-20 12:28:24 KST |
+| Release / asset ID | `417969778` / `658150525` |
+| 공개 상태 | `draft=false`·`prerelease=true`·`make_latest=false` |
+| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 익명 공개 페이지·다운로드 대조 통과 |
 | 사전 원격 main | `182f356f95f19742f374d14f17af883c124c5110` |
-| 기존 Release·태그·자산 | 사전 37개 Release·37개 태그·자산 보관. 게시 후 보존 확인 대기 |
-| Latest 정식·이슈 상태 | 사전 v1.0.5 · #2 closed·#4 closed·#5 open. 게시 후 보존 확인 대기 |
+| 기존 Release·태그·자산 | 사전 기존 37개 Release·37개 태그·자산 보관, 게시 후 보존 확인 |
+| Latest 정식·게시 전후 이슈 상태 | v1.0.5 · #2 closed·#4 closed·#5 open 유지. 이 작업은 이슈를 변경하지 않음 |
 
-후보 영수증은 로컬 `artifacts/popup-log-conditions/full/candidate/`와 `artifacts/popup-log-conditions/full/verification.json`, 전체 로그는 `artifacts/popup-log-conditions/full/build-run.log`에 보존한다. 고정 소스·게시·익명 검증은 완료 후 별도로 기록한다. 이전 alpha.13 파일이나 자동 검사 결과를 이번 변경 DLL의 근거로 대신 사용하지 않는다.
+고정 소스 `3c9aa94512add361818511fe1f57d5987a5855d2`를 기존 모드 DLL 0개인 별도 소스 스냅샷에서 재빌드하고 2026-10-20 12:27:31 KST 같은 14개 검사 프로그램을 통과했다. 검토 후보와 191개 입력·78개 소스/리소스·전체 검사 결과와 DLL/cfg/ZIP 바이트가 일치했다. 구현·검사·README를 `origin/main`에 반영하고 고정 커밋을 가리키는 주석 태그로 새 버전을 게시했다. 기존 37개 Release·태그·자산과 Latest 정식 v1.0.5를 보존했으며 이슈 #5는 종료하지 않았다.
+
+후보 영수증은 로컬 `artifacts/popup-log-conditions/full/candidate/`와 `artifacts/popup-log-conditions/full/verification.json`, 전체 로그는 `artifacts/popup-log-conditions/full/build-run.log`에 보존한다. 고정 소스·게시·익명 검증은 `artifacts/releases/v1.0.6-alpha.14/`의 `release-verification.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`에 보존한다. 고정 검사 영수증의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 검사 시점이다. 이 게시 결과 보충은 별도 main 문서 커밋으로 반영하며 빌드 소스·태그·공개 자산을 변경하지 않는다. 이전 alpha.13 파일이나 자동 검사 결과를 이번 변경 DLL의 근거로 대신 사용하지 않는다.

@@ -6,11 +6,13 @@
 
 ## 팝업 중 로그 열기·조건 분기 설명 — v1.0.6-alpha.14 prerelease
 
-사용자의 구현·검증 후 커밋·새 prerelease 요청에 따라 alpha.14를 준비한다. 이벤트·조건 팝업에서 버튼·설정된 로그 열기 키·패드의 양쪽 스틱 클릭으로 로그를 열고, 닫을 때까지 로그가 입력과 대기 판정을 소유하도록 연결한다. 조건 팝업은 목록에 조건 요약을 표시하고 전체 조건을 상세의 결과보다 먼저 보여주며 확정 미충족 분기를 회색으로 구분한다. [변경·설치·검증](ISSUE-5-ALPHA14-RELEASE.md) · [입력·표시 설계와 회귀](ISSUE-5-POPUP-LOG-CONDITIONS.md).
+사용자의 구현·검증 후 커밋·새 prerelease 요청에 따라 **2026-10-20 12:28:24 KST에 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.14)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.14/DiceMaster-v1.0.6-alpha.14.zip). 이벤트·조건 팝업에서 버튼·설정된 로그 열기 키·패드의 양쪽 스틱 클릭으로 로그를 열고, 닫을 때까지 로그가 입력을 소유하며 대기 중인 팝업의 Lua 판정을 보류하도록 연결한다. 조건 팝업은 목록에 조건 요약을 표시하고 전체 조건을 상세의 결과보다 먼저 보여주며 확정 미충족 분기를 회색으로 구분한다. 구현·회귀 검사·README·준비 문서를 포함한 고정 소스·주석 태그는 `3c9aa94512add361818511fe1f57d5987a5855d2`이며 main과 태그를 함께 atomic push했다. [변경·설치·검증](ISSUE-5-ALPHA14-RELEASE.md) · [입력·표시 설계와 회귀](ISSUE-5-POPUP-LOG-CONDITIONS.md).
 
-후보 전체 소스 빌드·14개 검사 프로그램을 통과했다. 191개 빌드 입력·78개 소스/리소스와 DLL/cfg/ZIP·정확히 두 설치 파일·CRC·내부 바이트를 확인했다. 커밋 후 별도 소스 스냅샷 재빌드와 후보의 전체 입력·검사 결과·파일 바이트 일치를 확인한 뒤 게시한다. 실제 Windows·Unity 화면·물리 패드·터치 확인은 대기다.
+후보 전체 소스 빌드와 고정 소스의 별도 스냅샷 재빌드에서 각각 14개 검사 프로그램을 통과했다. 고정 재빌드는 2026-10-20 12:27:31 KST에 기존 모드 DLL 0개에서 완료했고 검토 후보와 191개 빌드 입력·78개 소스/리소스·DLL/cfg/ZIP·전체 검사 결과가 일치했다. Release `417969778`·asset `658150525`, `draft=false`·`prerelease=true`·`make_latest=false`다. 게시 후 익명 공개 페이지·다운로드에서 ZIP CRC·정확히 두 파일·내부 바이트·SHA-256과 고정 태그를 확인했다.
 
-사전 원격 main은 `182f356f95f19742f374d14f17af883c124c5110`로 로컬 기준과 같고 alpha.14 Release·태그는 미사용이다. 기존 37개 Release·태그·자산, Latest 정식 v1.0.5와 이슈 #2 closed·#4 closed·#5 open을 보관했다. 실제 고정 재빌드·게시·익명 다운로드 결과는 실행 후 기록한다.
+사전 원격 main `182f356f95f19742f374d14f17af883c124c5110`와 기존 37개 Release·태그·자산을 보관하고 게시 후 보존을 확인했다. Latest 정식 v1.0.5와 이슈 #2 closed·#4 closed·#5 open도 유지했다. 실제 Windows·Unity 화면·물리 패드·터치 확인과 이슈 #5 완료는 대기다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.14/`의 `release-verification.json`·`build-manifest.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 고정 검사 영수증의 `published=false`와 소스 태그의 준비 문구는 게시 전 검사 시점이며 이후 게시 결과와 구분한다. 이 결과 보충은 별도 main 문서 커밋이며 빌드 소스·태그·공개 자산은 변경하지 않는다.
 
 ## 조건 상세에서 분기 예약 — v1.0.6-alpha.13 prerelease
 
