@@ -1,5 +1,7 @@
 # 지도·1회성·분기·상점 정보 — v1.0.7-alpha.1 prerelease
 
+**현재 로컬 후속:** [선택 장소 지도 안내·상점 사용 효과 수정과 새 Windows 확인표](ISSUE-6-SELECTED-MAP-SHOP.md). 아래는 공개 v1.0.7-alpha.1의 구현·파일·미실행 확인 기록으로 보존하며 새 수정 후보와 구분한다.
+
 [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [구현·지원 범위](ISSUE-6-IMPLEMENTATION.md) · [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [변경 이력](../CHANGELOG.md)
 
 상태: **[prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1) 게시·자동 검사·고정 소스 재빌드·익명 공개 ZIP 검증 완료 / 새 사용자 Windows 확인 미실행**. 2026-10-21 00:46:36 KST에 게시했으며 Latest 정식 v1.0.6과 이슈 #6 open을 유지한다. 공개 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. 아래 최종 설치 파일·소스·해시는 검토 후보와 고정 소스 재빌드에서 일치했다. 이전 후보 파일·검사 수치·사용자 확인을 새 후보에 옮기지 않는다.

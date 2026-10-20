@@ -1,5 +1,7 @@
 # PRD #6 — 지도·1회성·실제 분기·상점 정보 구현 기록
 
+**현재 로컬 후속:** [선택 장소 지도 안내·상점 사용 효과 수정과 새 Windows 확인표](ISSUE-6-SELECTED-MAP-SHOP.md). 아래는 공개 v1.0.7-alpha.1의 구현·파일·미실행 확인 기록으로 보존하며 새 수정 후보와 구분한다.
+
 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6) · [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [후보·설치·자동 검사](ISSUE-6-CANDIDATE.md) · [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)
 
 상태: **[v1.0.7-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1) 게시·자동 검사·고정 소스 재빌드·익명 공개 ZIP 검증 완료 / 사용자 Windows 확인 미실행**. 이 문서는 실제 구현 경계와 남은 확인을 기록한다. GitHub 이슈 #6은 open으로 유지하며 자동 검사·게시 결과·해시·소스 식별값은 [후보·게시 기록](ISSUE-6-CANDIDATE.md)에 기록했다.

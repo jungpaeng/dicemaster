@@ -84,19 +84,25 @@ namespace DiceMaster.Information
         private static bool hasClock;
         private static float lastClock;
         private static double elapsed;
-        private static PositionController selected;
-        public static Func<bool> Enabled;
-        private static bool IsEnabled { get { try { return Enabled == null || Enabled(); } catch (Exception) { return false; } } }
-        public static string ContextKey { get { return generation.ToString(CultureInfo.InvariantCulture) + "/" + (selected == null ? "" : selected.GetInstanceID().ToString(CultureInfo.InvariantCulture)); } }
-        public static bool Visible
+        private static WeakReference selection;
+        private static Place selectedPlace;
+        private static int selectionVersion;
+        private static string selectionId = "";
+        private static PositionController Selected
         {
             get
             {
-                if (!IsEnabled) return false;
-                foreach (Place place in places) if (Live(place) != null) return true;
-                return false;
+                var value = selection == null ? null : selection.Target as PositionController;
+                return value != null && value.isActiveAndEnabled && value.gameObject.activeInHierarchy ? value : null;
             }
         }
+        public static bool IsCurrent(InformationRow row) { return row != null && IsEnabled && Selected != null && selectedPlace != null && ReferenceEquals(row.Anchor, Selected) && row.Id == SelectionKey(selectedPlace); }
+        private static string SelectionKey(Place place) { return selectionId; }
+        public static bool IsCurrent(string id) { return IsEnabled && Selected != null && id == selectionId; }
+        public static Func<bool> Enabled;
+        private static bool IsEnabled { get { try { return Enabled == null || Enabled(); } catch (Exception) { return false; } } }
+        public static string ContextKey { get { return generation.ToString(CultureInfo.InvariantCulture) + "/" + (Selected == null ? "" : Selected.GetInstanceID().ToString(CultureInfo.InvariantCulture)); } }
+        public static bool Visible { get { return IsEnabled && Selected != null; } }
         private static PositionController Live(Place place)
         {
             var controller = place.Controller.Target as PositionController;
@@ -107,42 +113,46 @@ namespace DiceMaster.Information
             if (controller == null) return;
             foreach (Place place in places) if (ReferenceEquals(place.Controller.Target, controller)) return;
             places.Add(new Place { Controller = new WeakReference(controller), Id = checked(++sequence) });
-            generation++;
         }
         public static void Select(PositionController controller)
         {
-            if (!IsEnabled) return;
+            if (controller == null) return;
             Register(controller);
-            selected = controller;
+            if (selection != null && ReferenceEquals(selection.Target, controller)) return;
+            selection = new WeakReference(controller);
+            foreach (Place place in places) if (ReferenceEquals(place.Controller.Target, controller)) { selectedPlace = place; break; }
+            selectionVersion++; selectionId = "map/" + selectedPlace.Id + "/" + selectionVersion; generation++;
         }
         public static void Deselect(PositionController controller)
-        { if (ReferenceEquals(selected, controller)) selected = null; }
+        {
+            if (selection == null || !ReferenceEquals(selection.Target, controller)) return;
+            selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
+        }
         public static void Clear()
-        { places.Clear(); scripts.Clear(); missionIndices.Clear(); selected = null; hasClock = false; elapsed = 0; generation++; }
+        { places.Clear(); scripts.Clear(); missionIndices.Clear(); selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; }
         public static void ClearSnapshots()
         {
             // Used for OFF: retain weak lifecycle handles, never parsed data.
-            bool changed = scripts.Count != 0 || missionIndices.Count != 0 || selected != null;
+            bool changed = scripts.Count != 0 || missionIndices.Count != 0;
             foreach (Place place in places)
             {
                 changed |= place.Definition != null || place.Data != null || place.PositionConfig != null || place.Reads.Count != 0;
                 place.Definition = null; place.Reads.Clear(); place.Data = place.PositionConfig = null;
             }
-            scripts.Clear(); missionIndices.Clear(); selected = null; if (changed) generation++;
+            scripts.Clear(); missionIndices.Clear(); if (changed) generation++;
         }
         public static List<DisplayQuery> Discover(bool guide, bool oneShot)
         {
             var result = new List<DisplayQuery>();
             if (!IsEnabled || !guide && !oneShot) return result;
-            for (int index = places.Count - 1; index >= 0; index--)
-                if (places[index].Controller.Target == null || places[index].Controller.Target as PositionController == null) places.RemoveAt(index);
-            foreach (Place place in places)
-            {
-                PositionController controller = Live(place);
-                if (controller == null) continue;
-                Place captured = place;
-                result.Add(new DisplayQuery("map/" + place.Id, () => ReadCurrentPlace(captured, controller, guide, oneShot)));
-            }
+            PositionController controller = Selected;
+            Place captured = selectedPlace;
+            if (controller == null || captured == null || !ReferenceEquals(Live(captured), controller)) return result;
+            int version = selectionVersion;
+            result.Add(new DisplayQuery(SelectionKey(captured), () => {
+                if (version != selectionVersion || !ReferenceEquals(Selected, controller)) throw new DataNotReadyException();
+                return ReadCurrentPlace(captured, controller, guide, oneShot);
+            }));
             return result;
         }
         private static object ReadCurrentPlace(Place place, PositionController controller, bool guide, bool oneShot)
@@ -354,7 +364,7 @@ namespace DiceMaster.Information
             string auto = guide ? status + (names.Count == 0 ? "" : "\n" + string.Join(" · ", names)) : "";
             if (oneShot && hints.Count > 0) auto += (auto.Length == 0 ? "" : "\n") + string.Join(" · ", hints);
             string detail = "후보 수는 현재 인식한 관련 항목 수이며 실제 발생을 보장하지 않습니다.\n\n" + (ordered.Count == 0 ? "연결된 이야기·임무 후보 없음" : details.ToString());
-            return new InformationRow("map/" + place.Id, Plain(title), "지도", status, detail, auto, controller, possible > 0);
+            return new InformationRow(SelectionKey(place), Plain(title), "지도", status, detail, auto, controller, possible > 0);
         }
         private static Candidate Event(PositionController controller, EventDefinition entry, bool guide, bool oneShot)
         {

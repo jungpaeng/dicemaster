@@ -3,6 +3,7 @@
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <Compile Include="../../src/DiceMaster/Information/ShopEffectSource.cs" Link="ShopEffectSource.cs" />
+    <Compile Include="../../src/DiceMaster/Information/ShopUseEffects.cs" Link="ShopUseEffects.cs" />
     <Compile Include="../../src/DiceMaster/Information/ShopInformationPatches.cs" Link="ShopInformationPatches.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationRow.cs" Link="InformationRow.cs" />
     <Compile Include="../../src/DiceMaster/LiveLog/RefreshEngine.cs" Link="RefreshEngine.cs" />

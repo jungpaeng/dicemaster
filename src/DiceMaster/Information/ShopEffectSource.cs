@@ -76,6 +76,8 @@ namespace DiceMaster.Information
         {
             if (value == null) return "물품";
             if (value.GetType().FullName == "Mortal.Core.Consumables") return "소모품";
+            if (value.GetType().FullName == "Mortal.Core.Misc") return "일반 물품";
+            if (value.GetType().FullName == "Mortal.Core.SpecialItem") return "특수 물품";
             if (value.GetType().FullName == "Mortal.Core.Book") return Flag(value, "_martial") ? "비급" : "책";
             return "물품";
         }
@@ -105,7 +107,7 @@ namespace DiceMaster.Information
         }
         public static void Clear()
         {
-            Restore(); panel = null; item = null; description = null; original = ""; title = ""; observedId = ""; generation++;
+            ShopUseEffects.Clear(); Restore(); panel = null; item = null; description = null; original = ""; title = ""; observedId = ""; generation++;
         }
         public static void RenderSummary(string text)
         {
@@ -304,7 +306,7 @@ namespace DiceMaster.Information
             {
                 string name = Plain(DisplayNames.Text(string.IsNullOrWhiteSpace(observedTitle) ? Identity(selected) : observedTitle));
                 string kind = Kind(selected);
-                return new InformationRow(id, name, kind, "확인 불가", "미지원·동적 효과 자료 · 게임 판정이나 사용·학습을 실행하지 않고 조회를 중단함.", name + " · " + kind + " · 확인 불가", selected);
+                return new InformationRow(id, name, kind, "효과 해석 미지원", "이 물품의 조건·효과에 아직 해석하지 못하는 자료가 있음. 효과가 없거나 사용할 수 없다는 뜻이 아님. 게임 판정이나 사용·학습은 실행하지 않음.", name + " · " + kind + " · 효과 해석 미지원", selected);
             }
         }
         private static InformationRow ReadKnown(object selected, string observedTitle, string id)
@@ -325,9 +327,14 @@ namespace DiceMaster.Information
                 if (effects.Count == 0) { status = "확인된 효과 없음"; detail.AppendLine("  등록된 사용 효과 없음"); }
                 else
                 {
-                    status = "확인 불가"; known = false;
+                    status = "사용 경로 미확인"; known = false;
                     detail.AppendLine("현재 실제 적용 변화는 확인 불가 · 제공된 게임 코드에서 이 효과 자료의 사용 실행 경로를 확인하지 못함. 자료상 수치를 실제 사용 결과로 단정하지 않음.");
                 }
+            }
+            else if (selected.GetType().FullName == "Mortal.Core.Misc" || selected.GetType().FullName == "Mortal.Core.SpecialItem")
+            {
+                ShopUseEffects.Result use = ShopUseEffects.Read(selected.GetType().FullName == "Mortal.Core.Misc" ? "misc" : "special", Identity(selected));
+                status = use.Status; known = use.Known; detail.AppendLine(use.Detail);
             }
             else if (selected.GetType().FullName == "Mortal.Core.Book")
             {
@@ -349,11 +356,11 @@ namespace DiceMaster.Information
                     foreach (object effect in effects) evaluation.AddModification(detail, effect, Number(selected, "_martialLevel"), true);
                     if (effects.Count == 0) detail.AppendLine("  확인된 효과 없음");
                     known = condition.HasValue && !evaluation.Unknown;
-                    status = !known ? "확인 불가" : condition.Value ? "학습 효과 확인" : "학습 조건 미충족";
+                    status = !condition.HasValue ? "학습 조건 일부 미지원" : evaluation.Unknown ? "학습 효과 일부 미지원" : condition.Value ? "학습 조건 충족" : "학습 조건 미충족";
                     detail.AppendLine("학습량·실제 레벨 도달·후속 이벤트는 예측하지 않음. 학습·소모·능력치 변경을 실행하지 않은 조회.");
                 }
             }
-            else { status = "확인 불가"; known = false; detail.AppendLine("미지원 물품 종류 · 장비 착용·강화·동적 효과는 조회 범위 밖"); }
+            else { status = "효과 조회 미지원"; known = false; detail.AppendLine("미지원 물품 종류 · 장비 착용·강화·동적 효과는 조회 범위 밖"); }
             name = Plain(DisplayNames.Text(name));
             return new InformationRow(id, name, kind, status, detail.ToString().TrimEnd(), name + " · " + kind + " · " + status, selected, known);
         }

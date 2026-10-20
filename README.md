@@ -17,6 +17,14 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 2026-10-21 사용자가 **“v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”**라고 확인했습니다. 이 포괄 확인을 PRD #6의 착수 근거로 기록하며 세부 장치·환경별 시험 결과를 추정하지 않습니다. 아래 기존 조작은 v1.0.6을 기준으로 유지하고, 새 정보 기능은 아래 별도 prerelease에서 제공합니다. [확인 범위](docs/ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)
 
+## v1.0.7-alpha.2 게시 준비 — 선택한 장소만 지도 안내
+
+지도 안내·1회성 지도 표시는 **현재 선택한 장소 하나만 조회해 좌측 상단 고정 패널 하나에 표시**하도록 수정했습니다. 선택 해제 시 숨기고, 선택을 바꾸면 이전 내용부터 숨깁니다. 화면 전체의 겹침 회피 탐색을 없애고 반복 그리기에 배치 캐시를 사용합니다.
+
+상점은 일반·특수 판매 물품의 사용 메뉴 효과를 로그 상세에 연결하고 학습 조건 충족·미충족, 미지원과 사용 경로 미연결을 구분합니다. 자동 표시는 이름·종류·상태, 실제 조건·효과는 로그에서 읽습니다. 새 키나 조작은 추가하지 않았습니다.
+
+전체 18개 자동 검사와 DLL/패키지 검증을 통과한 **미배포 로컬 수정 후보**입니다. 새 DLL의 실제 Windows 렉 개선·가독성·물품 효과는 확인 대기입니다. [후보 파일·검사·설치·Windows 확인](docs/ISSUE-6-SELECTED-MAP-SHOP.md)을 따르세요. 아래 공개 alpha.1 설명·해시는 게시 당시 기록이며 새 수정 파일과 구분합니다.
+
 ## PRD #6 시험판 — 지도·1회성·분기·상점 정보
 
 **[v1.0.7-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)**를 2026-10-21 00:46:36 KST에 게시했습니다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip)**은 검토 후보·고정 소스 재빌드와 익명 공개 다운로드의 바이트·해시가 일치합니다. 최신 정식은 v1.0.6으로 유지합니다. 새 후보의 자동 검사·패키지 식별값은 [후보 안내](docs/ISSUE-6-CANDIDATE.md)에, 실제 게임에서 확인할 항목은 [Windows 확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)에 구분합니다. **새 후보의 사용자 Windows·실제 장치 확인은 아직 남아 있습니다.**
@@ -134,7 +142,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | `EnableOptionInfo` | `true` | 선택지 효과·로그·예약·팝업과 후보의 네 정보 기능 상위 옵션. 시작 시 적용 |
 | `EnableEventSelectionPopup` | `true` | 지원하는 이벤트 판정의 선택 팝업 |
 | `EnableSwitchSelectionPopup` | `false` | 지원하는 대화 중 조건 분기의 선택 팝업 |
-| `EnableMapGuide` | `true` | 후보: 현재 지도 이야기·임무 안내 |
+| `EnableMapGuide` | `true` | 로컬 후속: 선택한 지도 장소 하나의 이야기·임무 안내 |
 | `EnableOneShotHints` | `true` | 후보: 지도·선택지·이벤트의 1회성 정보 |
 | `EnableBranchNotices` | `true` | 후보: 실제 분기 알림과 메모리 기록 |
 | `EnableShopEffectInfo` | `true` | 후보: 상점 사용·학습 정보 |

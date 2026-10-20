@@ -96,3 +96,53 @@ namespace Mortal.Core
     public sealed class MartialModifyStat { public MartialStatReference _stat; public int _value; public bool _center; public void Apply() { throw new Exception("Effect mutation"); } }
     public sealed class MartialLearnConsumable { public int _logicType; public List<MartialModifyStat> _consumable = new List<MartialModifyStat>(); public void Apply() { throw new Exception("Effect mutation"); } }
 }
+
+// These are parser/resource boundary fixtures; production ShopUseEffects and
+// provider code are linked unchanged. Actual parser IL is tested separately.
+namespace DiceMaster.LiveLog
+{
+    public enum ScriptReadState { Success, Missing, Waiting, Failed }
+    public class ScriptReadResult { public ScriptReadState State; public string Text; }
+    public enum PreviewAnalysisState { Supported, Partial, Unsupported, NoEffects, Waiting, ReadFailure }
+    public class PreviewEffect
+    {
+        public string Owner = "statmodifymanager", Name, ValidationError;
+        public bool Followup;
+        public List<object> Constants = new List<object>();
+    }
+    public class PreviewAnalysis
+    {
+        public List<PreviewEffect> Effects = new List<PreviewEffect>();
+        public PreviewAnalysisState State = PreviewAnalysisState.Supported;
+    }
+    public static class PreviewDisplay { public static void Validate(PreviewAnalysis value) { } }
+}
+namespace DiceMaster.LuaParse
+{
+    public class Action { public DiceMaster.LiveLog.PreviewAnalysis Analysis; public string Description = ""; }
+    public class LuaParser
+    {
+        public static int Parses;
+        public static Dictionary<string,List<Action>> Options = new Dictionary<string,List<Action>>();
+        public bool IncompleteOptionDiscovery;
+        public Dictionary<string,List<Action>> ExtractOptionActionsFromLua(string key, string source) { Parses++; return Options; }
+        public static void RefreshPreviewReads(List<Action> actions) { }
+        public static string Description(List<Action> actions)
+        { var lines = new List<string>(); foreach (var a in actions) lines.Add(a.Description); return string.Join("\n", lines); }
+    }
+}
+namespace DiceMaster
+{
+    public static class DataHelper
+    {
+        public static int Reads;
+        public static DiceMaster.LiveLog.ScriptReadState State = DiceMaster.LiveLog.ScriptReadState.Success;
+        public static DiceMaster.LiveLog.ScriptReadResult ReadPreviewScript(string key)
+        { Reads++; return new DiceMaster.LiveLog.ScriptReadResult { State = State, Text = "fixture food-use source" }; }
+    }
+    public static class PositionEventCache
+    {
+        private static readonly DiceMaster.LuaParse.LuaParser parser = new DiceMaster.LuaParse.LuaParser();
+        public static DiceMaster.LuaParse.LuaParser GetDefinitionParser() => parser;
+    }
+}

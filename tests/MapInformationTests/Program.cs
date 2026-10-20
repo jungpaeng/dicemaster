@@ -63,6 +63,8 @@ static class Program
         MapGuideSource.Clear(); MapGuideSource.Enabled = () => true; Time.unscaledTime = 0;
         Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0, "No hidden Unity search when no live place registered");
         var controller = new PositionController(); MapGuideSource.Register(controller);
+        Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0, "A live map without a selected place performs no reads");
+        MapGuideSource.Select(controller);
         var zero = Compare(Constant(0), Constant(1)); var met = Compare(Constant(1), Constant(1));
         var unknown = Compare(new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 7 } } }, Constant(1));
         var denied = Event("denied", zero); var allowed = Event("allowed", met); var maybe = Event("maybe", unknown);
@@ -124,30 +126,39 @@ static class Program
         reads = DataHelper.Reads; Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0 && DataHelper.Reads == reads, "OFF does not collect display data");
         MapGuideSource.ClearSnapshots(); MapGuideSource.Enabled = () => true;
         string emptyContext = MapGuideSource.ContextKey; MapGuideSource.ClearSnapshots(); Check(MapGuideSource.ContextKey == emptyContext, "Repeated OFF cleanup does not change map context");
-        Check(MapGuideSource.Visible && MapGuideSource.Discover(false, false).Count == 0, "Weak lifecycle handles allow ON without hidden object search");
+        Check(MapGuideSource.Visible && MapGuideSource.Discover(false, false).Count == 0, "Current game selection survives OFF cleanup without retaining snapshots");
+        var pending = MapGuideSource.Discover(true, true)[0];
+        int beforeSelection = DataHelper.Reads;
+        for (int index = 0; index < 500; index++) MapGuideSource.Register(new PositionController { _positionData = null });
         var brokenPlace = new PositionController { _positionData = null };
         MapGuideSource.Register(brokenPlace);
-        var independent = MapGuideSource.Discover(true, true);
-        Check(independent.Count == 2, "Null place data produces an independent waiting query rather than an empty map");
-        bool waiting = false;
-        try { independent[1].Read(); } catch (DataNotReadyException) { waiting = true; }
-        Check(waiting && independent[0].Read() is InformationRow, "Malformed place metadata cannot block another healthy place query");
-        string failedContext = MapGuideSource.ContextKey;
-        try { independent[1].Read(); } catch (DataNotReadyException) { }
-        Check(MapGuideSource.ContextKey == failedContext, "Repeated null metadata does not reset the failure retry context");
-        var engine = new RefreshEngine(); int healthyReads = 0, waitingReads = 0;
-        var scheduled = new List<DisplayQuery> {
-            new DisplayQuery("healthy", () => { healthyReads++; return independent[0].Read(); }),
-            new DisplayQuery("waiting", () => { waitingReads++; return independent[1].Read(); }) };
-        engine.Tick("map", true, true, 0, false, false, () => scheduled, values => { }, value => { });
-        engine.Tick("map", true, true, .25f, false, false, () => scheduled, values => { }, value => { });
-        Check(healthyReads == 2 && waitingReads == 1, "Metadata failures are read by the owning five-second row schedule, healthy rows remain at .25 seconds");
+        Check(MapGuideSource.Discover(true, true).Count == 1 && DataHelper.Reads == beforeSelection, "500 unrelated/broken places never become display queries");
+        MapGuideSource.Select(brokenPlace);
+        try { pending.Read(); Check(false, "Old selection query must be rejected"); } catch (DataNotReadyException) { assertions++; }
+        var engine = new RefreshEngine(); int waitingReads = 0;
+        Func<List<DisplayQuery>> discover = () => {
+            var only = MapGuideSource.Discover(true, true);
+            Check(only.Count == 1, "Only the selected place gets a refresh query");
+            return new List<DisplayQuery> { new DisplayQuery(only[0].Id, () => { waitingReads++; return only[0].Read(); }) };
+        };
+        engine.Tick("selected", true, true, 0, false, false, discover, values => { }, value => { });
+        engine.Tick("selected", true, true, .25f, false, false, discover, values => { }, value => { });
+        Check(waitingReads == 1, "Selected metadata failure waits five seconds");
         brokenPlace._positionData = new FreePositionData { name = "recovered", _defaultScript = "" };
-        engine.Tick("map", true, true, 5, false, false, () => scheduled, values => { }, value => { });
-        Check(waitingReads == 2 && ((InformationRow)independent[1].Read()).Title == "recovered", "Late map metadata recovers on its own retry and discards waiting subject identity");
+        engine.Tick("selected", true, true, 5, false, false, discover, values => { }, value => { });
+        Check(waitingReads == 2 && Row().Title == "recovered", "Selected metadata recovers at five seconds");
+        var oldSelected = MapGuideSource.Discover(true, true)[0];
+        var oldPublication = (InformationRow)oldSelected.Read();
+        MapGuideSource.Select(controller); MapGuideSource.Select(brokenPlace);
+        Check(!MapGuideSource.IsCurrent(oldPublication), "A to B to A immediately rejects old overlay publication before the next tick");
+        try { oldSelected.Read(); Check(false, "A to B to A must invalidate old requests"); } catch (DataNotReadyException) { assertions++; }
+        MapGuideSource.Deselect(controller);
+        Check(MapGuideSource.Visible, "Late deselect from another place does not clear selection");
+        MapGuideSource.Deselect(brokenPlace);
+        Check(!MapGuideSource.Visible && MapGuideSource.Discover(true, true).Count == 0, "Deselect hides panel and stops queries");
         MapGuideSource.Clear();
         var waitingPlace = new PositionController { _positionData = new FreePositionData { name = "empty", _defaultScript = "" }, _missionsManager = null };
-        MapGuideSource.Register(waitingPlace); var waitingRow = Row();
+        MapGuideSource.Select(waitingPlace); var waitingRow = Row();
         Check(waitingRow.Status.StartsWith("후보 0 · 진행 가능 0") && waitingRow.AutoText.Contains("게임 데이터 대기 중"), "Synthetic missing mission diagnostic is not a recognized candidate and stays visible automatically");
         waitingPlace._missionsManager = new MissionManagerData();
         waitingPlace._positionData = new FreePositionData { name = "unreadable", _defaultScript = "missing-map-source" };

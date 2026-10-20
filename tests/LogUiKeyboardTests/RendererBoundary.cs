@@ -65,8 +65,10 @@ namespace UnityEngine
             fixedWidth = source.fixedWidth; fixedHeight = source.fixedHeight;
             normal.textColor = source.normal.textColor;
         }
+        public static int Measurements;
         public float CalcHeight(GUIContent content, float width)
         {
+            Measurements++;
             float font = Math.Max(10, fontSize);
             float available = Math.Max(font, width - (padding?.horizontal ?? 0));
             int lines = 0;
@@ -101,6 +103,8 @@ namespace UnityEngine
     public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
     {
+        public static readonly List<(Rect Rect, string Text)> PassiveLabels = new List<(Rect, string)>();
+        public static void Label(Rect rect, GUIContent content, GUIStyle style) { PassiveLabels.Add((rect, content.text)); }
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
         private static string focusedControl;
         public sealed class FocusCall

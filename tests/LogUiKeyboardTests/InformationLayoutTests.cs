@@ -1,104 +1,110 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using DiceMaster.Information;
 using UnityEngine;
 
 internal static partial class Program
 {
-    private static bool InformationFinite(Rect value)
+    private sealed class CountedRects : IList<Rect>
     {
-        return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
-            !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
-            !float.IsNaN(value.width) && !float.IsInfinity(value.width) &&
-            !float.IsNaN(value.height) && !float.IsInfinity(value.height);
-    }
-    private static double InformationOverlap(Rect first, Rect second)
-    {
-        return Math.Max(0, Math.Min((double)first.x + first.width, (double)second.x + second.width) - Math.Max(first.x, second.x)) *
-            Math.Max(0, Math.Min((double)first.y + first.height, (double)second.y + second.height) - Math.Max(first.y, second.y));
-    }
-    private static double InformationTotalOverlap(Rect value, IList<Rect> occupied)
-    { double area = 0; foreach (Rect obstacle in occupied) area += InformationOverlap(value, obstacle); return area; }
-    private static void InformationInside(Rect value, Rect viewport, string message)
-    {
-        Check(InformationFinite(value) && value.width >= 0 && value.height >= 0, message + ": finite nonnegative geometry");
-        Check(value.x >= viewport.x && value.y >= viewport.y &&
-            (double)value.x + value.width <= (double)viewport.x + viewport.width &&
-            (double)value.y + value.height <= (double)viewport.y + viewport.height, message + ": inside viewport");
+        public int Reads; public int Count => 500; public bool IsReadOnly => true;
+        public Rect this[int i] { get { Reads++; return new Rect(0, 0, 200, 100); } set { throw new NotSupportedException(); } }
+        public IEnumerator<Rect> GetEnumerator() { throw new Exception("No obstacle grid enumeration"); }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public void Add(Rect x) => throw new NotSupportedException();
+        public void Clear() => throw new NotSupportedException();
+        public bool Contains(Rect x) => false; public void CopyTo(Rect[] x,int i) => throw new NotSupportedException();
+        public int IndexOf(Rect x) => -1; public void Insert(int i,Rect x) => throw new NotSupportedException();
+        public bool Remove(Rect x) => false; public void RemoveAt(int i) => throw new NotSupportedException();
     }
     private static void InformationLayoutGeometry()
     {
         var viewport = new Rect(0, 0, 200, 100);
-        var preferred = new Rect(25, 30, 70, 20);
-        Check(InformationLayout.Place(preferred, viewport, null) == preferred, "passive information retains its free preferred placement");
-        Rect clamped = InformationLayout.Place(new Rect(-900, 1000, 700, 2000), new Rect(10, 20, 90, 70), null);
-        Check(clamped == new Rect(10, 20, 90, 70), "long text width and height clamp to a nonzero-origin viewport");
-        var log = new List<Rect> { new Rect(100, 0, 100, 100) };
-        Rect moved = InformationLayout.Place(new Rect(150, 75, 50, 25), viewport, log);
-        InformationInside(moved, viewport, "leftward escape from full-height log");
-        Check(InformationTotalOverlap(moved, log) == 0 && moved.x <= 50, "label escapes sideways when downward clamping would remain over the log");
-        Check(log.Count == 1 && log[0] == new Rect(100, 0, 100, 100), "placement never edits occupied UI rectangles");
-        foreach (var obstacle in new[] { new Rect(0, 0, 100, 100), new Rect(0, 0, 200, 50), new Rect(0, 50, 200, 50) })
+        var preferred = new Rect(12, 12, 70, 20);
+        Check(InformationLayout.Place(preferred, viewport, null) == preferred, "selected-place panel has a stable fixed position");
+        Check(InformationLayout.Place(new Rect(-900, 1000, 700, 2000), new Rect(10, 20, 90, 70), null) == new Rect(10, 20, 90, 70), "large text stays inside the screen");
+        var log = new[] { new Rect(100, 0, 100, 100) };
+        Rect moved = InformationLayout.Place(new Rect(150, 0, 50, 25), viewport, log);
+        Check(moved == new Rect(0, 0, 50, 25), "branch notice can use a fixed opposite corner to avoid the log");
+        var obstacles = new CountedRects();
+        Rect first = InformationLayout.Place(preferred, viewport, obstacles);
+        Check(obstacles.Reads <= 5 * obstacles.Count, "five candidate placements at most, even on a fully blocked dense map");
+        Check(first == InformationLayout.Place(preferred, viewport, obstacles), "blocked-screen fallback never wanders");
+        foreach (float value in new[] { float.NaN, float.PositiveInfinity, float.NegativeInfinity, -500f, 0f, 12f, float.MaxValue })
         {
-            var occupied = new List<Rect> { obstacle };
-            moved = InformationLayout.Place(new Rect(45, 40, 60, 30), viewport, occupied);
-            InformationInside(moved, viewport, "right/above/below free-space placement");
-            Check(InformationTotalOverlap(moved, occupied) == 0, "right/above/below free-space candidate avoids existing UI");
+            Rect actual = InformationLayout.Place(new Rect(value, value, value, value), viewport, null);
+            Check(!float.IsNaN(actual.x) && !float.IsInfinity(actual.x) && actual.x >= 0 && actual.y >= 0 &&
+                actual.width >= 0 && actual.height >= 0 && (double)actual.x + actual.width <= 200 &&
+                (double)actual.y + actual.height <= 100, "invalid/extreme geometry is finite and clipped");
         }
-        // This lower-right cavity needs both axes to move. A one-pass push
-        // under the first collision would fall back into another rectangle.
-        var cavity = new List<Rect> { new Rect(0, 0, 200, 35), new Rect(0, 35, 110, 65), new Rect(160, 35, 40, 65) };
-        moved = InformationLayout.Place(new Rect(20, 5, 50, 45), viewport, cavity);
-        InformationInside(moved, viewport, "two-axis cavity search");
-        Check(InformationTotalOverlap(moved, cavity) == 0 && moved.x == 110 && moved.y >= 35, "all obstacle edge combinations find a fitting interior cavity");
-
-        var packed = new List<Rect>();
-        for (int index = 0; index < 16; index++)
+        InformationOverlayCaching();
+    }
+    private static void InformationOverlayCaching()
+    {
+        int width = Screen.width, height = Screen.height;
+        try
         {
-            Rect item = InformationLayout.Place(new Rect(15, 0, 5, 5), new Rect(0, 0, 20, 20), packed);
-            InformationInside(item, new Rect(0, 0, 20, 20), "multiple information labels " + index);
-            Check(InformationTotalOverlap(item, packed) == 0, "sixteen passive labels fit without overlap " + index);
-            packed.Add(item);
+            Screen.width = 1920; Screen.height = 1080;
+            InformationRuntime.TestFlags = new[] { true, true, false, true };
+            MapGuideSource.Selected = new object();
+            InformationRuntime.TestMap(new InformationRow("map/one", "선택 장소", "지도", "후보 1", "전체 상세", "후보 1 · 진행 가능 1", MapGuideSource.Selected, true));
+            int measures = GUIStyle.Measurements;
+            for (int i = 0; i < 1000; i++) { GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, i); }
+            Check(GUIStyle.Measurements == measures + 1, "1000 GUI calls measure the unchanged panel once");
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("선택 장소\n", StringComparison.Ordinal), "one named selected-place panel only");
+            Rect stable = GUI.PassiveLabels[0].Rect;
+            InformationRuntime.Draw(false, false, default, 1001);
+            Check(GUI.PassiveLabels[1].Rect == stable, "stable repaint retains exact placement");
+            MapGuideSource.Selected = new object(); GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(false, false, default, 1002);
+            Check(GUI.PassiveLabels.Count == 0, "selection change hides the previous publication before refresh");
+            MapGuideSource.Selected = null; InformationRuntime.Draw(false, false, default, 1003);
+            Check(GUI.PassiveLabels.Count == 0, "deselected place has no panel");
+            MapGuideSource.Selected = new object();
+            InformationRuntime.TestMap(new InformationRow("map/two", "새 장소", "지도", "", "조건과 효과", new string('가', 2000), MapGuideSource.Selected));
+            InformationRuntime.Draw(false, false, default, 1004);
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Length <= 180, "long automatic names are bounded; complete text stays in log");
+            measures = GUIStyle.Measurements; Screen.width = 800; Screen.height = 600;
+            GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1005);
+            Check(GUIStyle.Measurements == measures + 1 && GUI.PassiveLabels[0].Rect.width <= 800, "resize invalidates cached geometry once");
+            measures = GUIStyle.Measurements; GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(true, false, new Rect(20, 20, 700, 500), 1006);
+            InformationRuntime.Draw(false, true, default, 1007);
+            Check(GUI.PassiveLabels.Count == 0 && GUIStyle.Measurements == measures, "log and popup hide map without measuring");
+            InformationRuntime.TestFlags[0] = InformationRuntime.TestFlags[1] = false;
+            InformationRuntime.Draw(false, false, default, 1008);
+            Check(GUI.PassiveLabels.Count == 0, "both map features OFF stop drawing");
+            InformationRuntime.TestFlags[0] = true;
+            InformationRuntime.TestWaiting("waiting"); GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(false, false, default, 1009);
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("게임 데이터 대기 중", StringComparison.Ordinal), "first-read waiting is visible without inventing a zero-candidate success");
+            Check(InformationRuntime.TestErrors.Count == 0, "overlay boundaries complete without swallowed failures");
         }
-        moved = InformationLayout.Place(new Rect(15, 0, 5, 5), new Rect(0, 0, 20, 20), packed);
-        Check(InformationTotalOverlap(moved, packed) == 25, "full viewport falls back to the minimum unavoidable covered area");
-        Check(moved == InformationLayout.Place(new Rect(15, 0, 5, 5), new Rect(0, 0, 20, 20), packed), "impossible placement is deterministic");
-
-        var blocked = new List<Rect> { new Rect(10, 0, 80, 100) };
-        moved = InformationLayout.Place(new Rect(35, 35, 30, 30), new Rect(0, 0, 100, 100), blocked);
-        Check(InformationTotalOverlap(moved, blocked) == 600 && moved == new Rect(0, 35, 30, 30), "impossible screen minimizes overlap, then distance, then coordinates");
-        blocked.Reverse();
-        Check(moved == InformationLayout.Place(new Rect(35, 35, 30, 30), new Rect(0, 0, 100, 100), blocked), "fallback does not depend on obstacle enumeration order");
-
-        Rect one = InformationLayout.Place(new Rect(20, 30, 800, 1500), new Rect(0, 0, 1, 1), new[] { new Rect(0, 0, 1, 1) });
-        Check(one == new Rect(0, 0, 1, 1), "one-pixel screen has finite in-screen minimum-overlap placement");
-        Rect invalid = InformationLayout.Place(new Rect(float.NaN, float.PositiveInfinity, float.PositiveInfinity, float.NaN), viewport,
-            new[] { new Rect(float.NaN, 0, 20, 20), new Rect(0, 0, float.PositiveInfinity, 100), new Rect(0, 0, -20, 20) });
-        InformationInside(invalid, viewport, "nonfinite preferred and invalid occupied rectangles");
-        Check(invalid == new Rect(0, 0, 200, 0), "invalid origin and size normalization is explicit and deterministic");
-        invalid = InformationLayout.Place(new Rect(0, 0, 30, 40), new Rect(float.NaN, float.NegativeInfinity, float.PositiveInfinity, -30), null);
-        Check(invalid == new Rect(0, 0, 0, 0), "invalid viewport safely collapses instead of leaking NaN infinity or negative extent");
-        invalid = InformationLayout.Place(new Rect(float.MaxValue, float.MaxValue, float.MaxValue, float.MaxValue),
-            new Rect(float.MaxValue, float.MaxValue, float.MaxValue, float.MaxValue), null);
-        Check(InformationFinite(invalid) && invalid.width == 0 && invalid.height == 0, "extreme finite viewport cannot overflow a representable Rect");
-
-        // Exhaustive small integer positions independently verify global
-        // minimum overlap, including fragmented and fully blocked screens.
-        var random = new Random(601);
-        for (int sample = 0; sample < 120; sample++)
-        {
-            var obstacles = new List<Rect>();
-            for (int index = 0; index < 5; index++) obstacles.Add(new Rect(random.Next(10), random.Next(9), random.Next(1, 7), random.Next(1, 6)));
-            int width = random.Next(1, 7), height = random.Next(1, 6);
-            preferred = new Rect(random.Next(-5, 15), random.Next(-5, 14), width, height);
-            Rect actual = InformationLayout.Place(preferred, new Rect(0, 0, 10, 9), obstacles);
-            InformationInside(actual, new Rect(0, 0, 10, 9), "enumerated placement sample " + sample);
-            double minimum = double.MaxValue;
-            for (int y = 0; y <= 9 - height; y++) for (int x = 0; x <= 10 - width; x++)
-                minimum = Math.Min(minimum, InformationTotalOverlap(new Rect(x, y, width, height), obstacles));
-            Check(InformationTotalOverlap(actual, obstacles) == minimum, "all edge candidates achieve the exhaustive minimum " + sample);
-            obstacles.Reverse();
-            Check(actual == InformationLayout.Place(preferred, new Rect(0, 0, 10, 9), obstacles), "deterministic placement across obstacle order " + sample);
-        }
+        finally { Screen.width = width; Screen.height = height; InformationRuntime.TestMap(null); MapGuideSource.Selected = null; GUI.PassiveLabels.Clear(); }
+    }
+}
+namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
+namespace DiceMaster.Information
+{
+    public static class MapGuideSource
+    {
+        public static object Selected, CurrentAnchor;
+        public static string CurrentId;
+        public static bool IsCurrent(string id) => Selected != null && ReferenceEquals(Selected, CurrentAnchor) && id == CurrentId;
+        public static bool IsCurrent(InformationRow row) => Selected != null && ReferenceEquals(row.Anchor, Selected);
+    }
+    public static class BranchHistory { public static InformationRow Latest(float now) => null; }
+    public static partial class InformationRuntime
+    {
+        private sealed class Row { internal string Id; internal object Value; internal string Status = ""; }
+        private sealed class Page { internal bool Visible; internal List<Row> Rows = new List<Row>(); }
+        private static readonly Page map = new Page();
+        public static bool[] TestFlags = new[] { true, true, false, true };
+        public static readonly List<string> TestErrors = new List<string>();
+        public static bool Enabled(int index) => TestFlags[index];
+        private static void Failure(string source, Exception error) { TestErrors.Add(source + error); }
+        public static void TestMap(InformationRow row, string status = "") { map.Rows.Clear(); map.Visible = row != null; if (row != null) { MapGuideSource.CurrentAnchor = row.Anchor; MapGuideSource.CurrentId = row.Id; map.Rows.Add(new Row { Id = row.Id, Value = row, Status = status }); } }
+        public static void TestWaiting(string id) { MapGuideSource.CurrentAnchor = MapGuideSource.Selected; MapGuideSource.CurrentId = id; map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = id, Status = "게임 데이터 대기 중" }); }
     }
 }

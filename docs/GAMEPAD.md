@@ -2,6 +2,10 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
+## 로컬 후속 — 선택 장소 안내
+
+현재 선택한 장소만 고정 패널 하나로 표시·조회합니다. 기존 게임의 패드/키보드 선택과 포인터 진입을 관찰하며 새 입력은 추가하지 않습니다. 선택 해제·다른 장소 선택 뒤 오래된 내용은 숨기고 마우스 호버 없이 패드 선택으로 조회합니다. 상점 효과의 조건·수치는 기존 Y 도구 → 상점 효과 조회에서 읽습니다. [변경·후보·Windows 확인](ISSUE-6-SELECTED-MAP-SHOP.md). 아래 alpha.1은 공개 당시 기록입니다.
+
 ## v1.0.7-alpha.1 prerelease — 읽기 전용 정보 조회
 
 이 절은 [새 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)의 조작 안내다. [설치·공개 검증·파일 확인](ISSUE-6-CANDIDATE.md)을 따른다. 2026-10-21 사용자는 정식 v1.0.6의 Windows 확인 완료·잔여 문제 없음을 답했으며 [확인 근거](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)를 #6 착수에 사용한다. **새 v1.0.7-alpha.1의 실제 Windows Xbox/XInput·Unity·물리 장치 확인은 미실행**이다. 아래 과거 후보 기록의 미실행·수치·조작 변경은 당시 이력으로 보존한다.

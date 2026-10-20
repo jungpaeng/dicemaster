@@ -61,8 +61,8 @@ static class Program {
    }
   }
   var config=m.GetType("DiceMaster.Config.ConfigManager");foreach(string key in new[]{"EnableMapGuide","EnableOneShotHints","EnableBranchNotices","EnableShopEffectInfo"})Check(config.Fields.Any(f=>f.Name==key),"delivered persistent setting "+key);
-  var overlay = m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name=="DrawPassive");
-  Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Place"),"delivered passive overlays use tested collision layout");
+  var overlay = m.GetType("DiceMaster.Information.InformationRuntime").NestedTypes.Single(x=>x.Name=="PassiveLabel").Methods.Single(x=>x.Name=="Prepare");
+  Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Place"),"delivered passive panels use tested bounded fixed-corner layout");
   Check(m.GetType("DiceMaster.Information.ShopInformationPatches")!=null&&m.GetType("DiceMaster.Information.MapInformationPatches")!=null&&m.GetType("DiceMaster.Information.BranchObservationPatches")!=null,"delivered actual game observers included");
  }
 }
