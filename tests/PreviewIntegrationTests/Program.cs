@@ -18,7 +18,7 @@ static class Program
         using var source = AssemblyDefinition.ReadAssembly(args[0]);
         using var target = AssemblyDefinition.ReadAssembly(args[1]);
         var copier = new PayloadCopier(source.MainModule, target.MainModule,
-            type => type.Namespace == "DiceMaster.LuaParse" || !baseline && type.Namespace == "DiceMaster.Information" && (type.Name == "ShopUseEffects" || type.Name.StartsWith("MapRoute", StringComparison.Ordinal)) || (!baseline && (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "PopupConditionText", "SwitchEligibility", "EventResultPreview", "CheckpointReservation", "CheckpointReservationStore" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI")));
+            type => type.Namespace == "DiceMaster.LuaParse" || !baseline && type.Namespace == "DiceMaster.Information" && (type.Name == "ShopUseEffects" || type.Name == "MapChoiceStep" || type.Name == "MapStoryEntry" || type.Name.StartsWith("MapRoute", StringComparison.Ordinal)) || (!baseline && (type.Namespace == "DiceMaster.LiveLog" || type.Namespace == "DiceMaster.EventSelection" && new[] { "EventEligibility", "EventEligibilitySnapshot", "EventEligibilityState", "EventEligibilityReason", "PopupConditionText", "SwitchEligibility", "EventResultPreview", "CheckpointReservation", "CheckpointReservationStore" }.Contains(type.Name) || new[] { "LogReadState", "LogRefreshState", "LogConditionBranch", "LogConditionDetails", "LogItem", "LogSnapshot", "ReservationTicket", "LogTabState", "LogModel" }.Contains(type.Name) && type.Namespace == "DiceMaster.LogUI")));
         PreviewFixtureBoundary.Install(target.MainModule);
         if (!baseline)
         {
@@ -34,6 +34,10 @@ static class Program
         }
         foreach (string required in new[] { "DiceMaster.LuaParse.LuaParser", "DiceMaster.LuaParse.Action" })
             if (target.MainModule.GetType(required) == null) throw new InvalidDataException("Actual parser missing: " + required);
+        if (!baseline)
+            foreach (string required in new[] { "MapRouteDefinitions", "MapChoiceStep", "MapStoryEntry" })
+                if (target.MainModule.GetType("DiceMaster.Information." + required) == null)
+                    throw new InvalidDataException("Actual route dependency missing: " + required);
         target.Name.Name += baseline ? ".Baseline" : ".Candidate";
         string output = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1]))!, target.Name.Name + ".dll");
         target.Write(output);

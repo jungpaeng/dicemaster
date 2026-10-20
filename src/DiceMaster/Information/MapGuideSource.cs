@@ -41,7 +41,17 @@ namespace DiceMaster.Information
             internal bool Ready;
             internal readonly Dictionary<string, string> PoolDiagnostics = new Dictionary<string, string>(StringComparer.Ordinal);
             internal readonly Dictionary<MapRouteEntry, EventDefinition> RouteEvents = new Dictionary<MapRouteEntry, EventDefinition>();
+            internal readonly List<StoryGroup> Stories = new List<StoryGroup>();
+            internal int StoryWork = -1;
         }
+        private sealed class StoryGroup
+        {
+            internal string Id, RawLabel;
+            internal readonly List<StoryLink> Links = new List<StoryLink>();
+            internal bool Omitted;
+        }
+        private sealed class StoryLink
+        { internal MapStoryEntry Story; internal MapRoutePath Path; }
         private sealed class EventDefinition
         {
             internal PositionEventData Data;
@@ -60,7 +70,7 @@ namespace DiceMaster.Information
         {
             internal string Id, Name, Kind, Status, Detail;
             internal int Rank, Priority; // conditions/route met, denied, unknown
-            internal bool OneShot, StatusOnly, Waiting, Mission, Global, Other, Main;
+            internal bool OneShot, StatusOnly, Waiting, Mission, Global, Other, Main, ChoiceStory;
             internal object Stage;
         }
         private sealed class CandidateRead
@@ -267,14 +277,30 @@ namespace DiceMaster.Information
         private static IList<MapRouteEvent> ReadPool(Place place, string key)
         {
             if (place.PositionConfig == null) return null;
-            IList pools = List(place.PositionConfig, "_list");
+            return ReadPoolDefinition(place.PositionConfig, key, message => {
+                if (message == null) place.Definition.PoolDiagnostics.Remove(key);
+                else place.Definition.PoolDiagnostics[key] = message;
+            });
+        }
+        // The choice observer uses the same existing singleton/serialized pool
+        // boundary as the map. Never call Position/GetResult to fill a route.
+        public static IList<MapRouteEvent> ReadChoicePool(string key)
+        {
+            object manager = ExistingCheckpoints();
+            if (manager == null) throw new DataNotReadyException();
+            return ReadPoolDefinition(Read(manager, "_position"), key, null);
+        }
+        private static IList<MapRouteEvent> ReadPoolDefinition(object config, string key, Action<string> diagnostic)
+        {
+            if (config == null) throw new DataNotReadyException();
+            IList pools = List(config, "_list");
             // Native PositionResultConfig.GetResult uses the first exact name.
             // Locate that same pool without materializing unrelated definitions.
             for (int at = 0; at < pools.Count && at < 1024; at++)
             {
                 object pool = pools[at];
                 if (pool == null || Name(pool) != key) continue;
-                place.Definition.PoolDiagnostics.Remove(key);
+                diagnostic?.Invoke(null);
                 string prefix = (string)Read(pool, "_scriptPrefix");
                 IList entries = List(pool, "_list");
                 var result = new List<MapRouteEvent>();
@@ -292,7 +318,7 @@ namespace DiceMaster.Information
             }
             if (pools.Count > 1024)
             {
-                place.Definition.PoolDiagnostics[key] = "풀 검색 상한 · 1,024개 안에서 일치 항목을 찾지 못했습니다. 이후 자료는 확인하지 않았습니다.";
+                diagnostic?.Invoke("풀 검색 상한 · 1,024개 안에서 일치 항목을 찾지 못했습니다. 이후 자료는 확인하지 않았습니다.");
                 throw new InvalidOperationException("Map pool search limit reached.");
             }
             throw new DataNotReadyException();
@@ -418,7 +444,8 @@ namespace DiceMaster.Information
                 EventDefinition captured = entry;
                 candidates.Add(TryCandidate(place, "event/" + RuntimeHelpers.GetHashCode(entry.Data) + "/" + entry.Script, () => Event(controller, source, captured, guide, oneShot)));
             }
-            if (guide && source.Ready && source.Events.Count == 0 && !string.IsNullOrEmpty(source.Script))
+            if (guide && source.Routes != null) CollectStories(place, controller, source, candidates);
+            if (guide && source.Ready && source.Events.Count == 0 && source.Stories.Count == 0 && !string.IsNullOrEmpty(source.Script))
                 candidates.Add(TryCandidate(place, source, () => Story(controller, source.Script,
                     source.Failure != null || source.Routes != null && (source.Routes.IsPartial || source.Routes.HasReadFailure))));
             if (guide) CollectMissions(place, controller, candidates, false);
@@ -429,6 +456,64 @@ namespace DiceMaster.Information
             foreach (string diagnostic in source.PoolDiagnostics.Values)
                 candidates.Add(Diagnostic("풀 자료", "풀 검색 상한 · 일부 확인 불가", diagnostic));
             return Snapshot(place, controller, candidates, guide, oneShot);
+        }
+        private static void CollectStories(Place place, PositionController controller, Source source, List<Candidate> candidates)
+        {
+            // Rebuild this small definition index only when incremental parsing
+            // made progress. Warm .25 s reads only sample the cached first gates.
+            if (source.StoryWork != source.Routes.WorkCount)
+            {
+                source.StoryWork = source.Routes.WorkCount; source.Stories.Clear();
+                var groups = new Dictionary<string, StoryGroup>(StringComparer.Ordinal);
+                foreach (MapStoryEntry story in source.Routes.StoryEntries)
+                    foreach (MapRoutePath path in story.Paths)
+                    {
+                        if (path.Steps.Count == 0) continue;
+                        MapChoiceStep first = path.Steps[0];
+                        string id = first.Script + "/" + first.SourceOffset + "/" + first.Index + "/" + first.RawLabel;
+                        StoryGroup group;
+                        if (!groups.TryGetValue(id, out group))
+                        {
+                            if (groups.Count >= 256) break;
+                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel }); source.Stories.Add(group);
+                        }
+                        if (group.Links.Count < 32) group.Links.Add(new StoryLink { Story = story, Path = path });
+                        else group.Omitted = true;
+                    }
+            }
+            var read = new MapRouteRead(); int budget = 16, gates = 32;
+            foreach (StoryGroup group in source.Stories)
+            {
+                StoryGroup captured = group; bool sample = detailed || budget-- > 0;
+                candidates.Add(TryCandidate(place, "story/" + group.Id, () => {
+                    bool met = false, unknown = captured.Omitted || source.Routes.IsPreparing || source.Routes.IsPartial || source.Routes.HasReadFailure;
+                    if (sample) foreach (StoryLink link in captured.Links)
+                    {
+                        if (gates-- <= 0) { unknown = true; break; }
+                        MapRouteState state = link.Path.ReadEntryConditions(read);
+                        met |= state == MapRouteState.Met; unknown |= state == MapRouteState.Unknown;
+                        if (met) break;
+                    }
+                    int rank = !sample ? 2 : met ? 0 : unknown ? 2 : 1;
+                    var result = new Candidate { Id = "story/" + captured.Id, Name = ChoiceStoryLabels.Resolve(captured.RawLabel),
+                        Kind = "선택 연계 이야기", ChoiceStory = true, Rank = rank,
+                        Status = rank == 0 ? "진입 조건 충족 (현재)" : rank == 1 ? "진입 조건 미충족 (현재)" : "선택 화면에서 확인",
+                        Detail = "지도 시점의 첫 선택 조건입니다. 진입·대화 중 상태 변경과 이후 선택의 조건은 실제 선택 화면에서 다시 확인합니다. 이야기 발생이나 이후 선택 활성화를 보장하지 않습니다." };
+                    if (detailed)
+                    {
+                        var lines = new List<string>();
+                        foreach (StoryLink link in captured.Links)
+                        {
+                            string text = "선택 경로: " + ChoiceStoryLabels.Path(link.Path.Steps);
+                            if (!lines.Contains(text)) lines.Add(text);
+                        }
+                        result.Detail += "\n" + string.Join("\n", lines);
+                        if (captured.Omitted) result.Detail += "\n경로 상한으로 일부 연결은 생략했습니다.";
+                    }
+                    ApplyPlace(controller, result);
+                    return result;
+                }));
+            }
         }
         private static Candidate Diagnostic(string name, string status, string detail)
         { return new Candidate { Id = "diagnostic/" + name, Name = name, Kind = "상태", StatusOnly = true, Rank = 2, Status = status, Detail = detail }; }
@@ -456,12 +541,13 @@ namespace DiceMaster.Information
                     title, group + " · " + value.Kind, status, value.Detail ?? "", title + " · " + value.Kind + " · " + status, controller, value.Rank == 0));
                 if (value.StatusOnly) { if (!diagnostics.Contains(value.Status)) diagnostics.Add(value.Status); continue; }
                 if (value.Global || value.Other) continue;
-                if (value.Rank == 0 && (value.Waiting || value.Mission || value.OneShot)) available = true;
+                if (value.Rank == 0 && (value.Waiting || value.Mission || value.OneShot || value.ChoiceStory)) available = true;
                 if (value.Waiting) waiting++;
                 else if (value.Mission && value.Rank == 0) stages++;
                 else if (value.OneShot && value.Rank == 0) oneShots++;
-                if (guide && (value.Waiting || value.Mission) || value.OneShot)
-                    automatic.Add(MapGuidePresentation.Notice(title, value.Mission ? (value.Main ? "주 임무" : "보조 임무") : "1회성 이야기", value.Rank, value.Waiting, value.Mission, value.Status));
+                if (guide && (value.Waiting || value.Mission || value.ChoiceStory) || value.OneShot)
+                    automatic.Add(value.ChoiceStory ? MapGuidePresentation.StoryNotice(title, value.Status) :
+                        MapGuidePresentation.Notice(title, value.Mission ? (value.Main ? "주 임무" : "보조 임무") : "1회성 이야기", value.Rank, value.Waiting, value.Mission, value.Status));
             }
             if (snapshot.Entries.Count == 0)
                 snapshot.Entries.Add(new InformationRow("map/empty/" + ContextKey, place == null ? "장소 무관 임무 없음" : "현재 연결 항목 없음", "지도", "현재 확인된 항목 없음",

@@ -199,6 +199,9 @@ namespace DiceMaster.Information
     // its bounded preparation are covered by MapRouteTests and DLL linkage.
     public enum MapRouteState { Met, NotMet, Unknown }
     public class MapRouteRead { }
+    public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; }
+    public class MapRoutePath { public List<MapChoiceStep> Steps = new List<MapChoiceStep>(); public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Unknown; }
+    public class MapStoryEntry { public List<MapRoutePath> Paths = new List<MapRoutePath>(); }
     public class MapRouteEvent
     {
         public object Event; public string ResultScript, Id;
@@ -216,6 +219,8 @@ namespace DiceMaster.Information
         public static MapRouteState State = MapRouteState.Met;
         public static bool Choice;
         public readonly List<MapRouteEntry> Entries = new List<MapRouteEntry>();
+        public readonly List<MapStoryEntry> StoryEntries = new List<MapStoryEntry>();
+        public int WorkCount => Advances;
         private string root; private Func<string,ScriptReadResult> reader; private Func<string,IList<MapRouteEvent>> pools;
         private bool done;
         public bool IsPreparing { get; private set; } = true;
@@ -241,3 +246,15 @@ namespace DiceMaster.Information
 }
 
 #endif
+
+namespace DiceMaster.Information
+{
+    // Production localization is exercised by ChoiceStoryTests. These provider
+    // tests keep game locale/UI objects at an explicit identity boundary.
+    public static class ChoiceStoryLabels
+    {
+        public static string Resolve(string raw) => raw;
+        public static string Path(System.Collections.Generic.IList<MapChoiceStep> steps)
+        { var labels = new System.Collections.Generic.List<string>(); foreach (var step in steps) labels.Add(step.RawLabel); return string.Join(" → ", labels); }
+    }
+}

@@ -42,11 +42,14 @@ namespace DiceMaster.Information
         }
         private static GUIStyle informationStyle;
         private static int informationFont;
-        private static readonly PassiveLabel mapLabel = new PassiveLabel(), branchLabel = new PassiveLabel();
+        private static readonly PassiveLabel mapLabel = new PassiveLabel(), branchLabel = new PassiveLabel(), choiceLabel = new PassiveLabel();
         private static InformationRow lastMapRow;
         private static string lastMapStatus, mapText;
         private static object lastWaitingSource;
         private static InformationRow waitingRow;
+        private static ChoiceStorySnapshot lastChoice;
+        private static InformationRow lastChoiceRow;
+        private static string choiceText, lastChoiceStatus;
 
         public static void Draw(bool logOpen, bool popupOpen, Rect logRect, float now)
         {
@@ -57,7 +60,14 @@ namespace DiceMaster.Information
         {
             if (!Application.isFocused || Screen.width <= 0 || Screen.height <= 0) return;
             InformationRow selected = null; string status = "";
-            if (!logOpen && !popupOpen && map.Visible && (Enabled(0) || Enabled(1)) && map.Rows.Count == 1)
+            ChoiceStorySnapshot choice = null; string choiceStatus = "";
+            if (!logOpen && !popupOpen && choices.Visible && Enabled(0) && choices.Rows.Count == 1)
+            {
+                var source = choices.Rows[0];
+                var snapshot = source.Value as ChoiceStorySnapshot;
+                if (snapshot != null && ChoiceStorySource.IsCurrent(snapshot)) { choice = snapshot; choiceStatus = source.Status ?? ""; }
+            }
+            if (choice == null && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && map.Visible && (Enabled(0) || Enabled(1)) && map.Rows.Count == 1)
             {
                 var source = map.Rows[0];
                 status = source.Status ?? "";
@@ -78,7 +88,7 @@ namespace DiceMaster.Information
                 }
             }
             var latest = Enabled(2) ? BranchHistory.Latest(now) : null;
-            if (selected == null && latest == null) { lastMapRow = null; mapText = null; return; }
+            if (selected == null && latest == null && choice == null) { lastMapRow = null; mapText = null; lastChoice = null; choiceText = null; return; }
             int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 24);
             if (informationStyle == null || informationFont != font)
             { informationFont = font; informationStyle = new GUIStyle(GUI.skin.box) { fontSize = font, wordWrap = true, richText = false, alignment = TextAnchor.UpperLeft }; }
@@ -92,15 +102,32 @@ namespace DiceMaster.Information
                     // cut through a status or through the detail navigation hint.
                     mapText = "선택 장소: " + heading + (status.Length == 0 ? "" : " · " + status) + "\n" + selected.AutoText;
                 }
-                DrawPassive(mapLabel, mapText, false, default(Rect), selected.Available && status.Length == 0);
+                // Aggregate green used to imply that every listed story was
+                // ready. These panels now use neutral text and explicit states.
+                DrawPassive(mapLabel, mapText, false, default(Rect), false, true);
+            }
+            if (choice != null)
+            {
+                InformationRow current = ChoiceStorySource.CurrentRow(choice);
+                if (!ReferenceEquals(lastChoice, choice) || !ReferenceEquals(lastChoiceRow, current) || lastChoiceStatus != choiceStatus)
+                {
+                    lastChoice = choice; lastChoiceRow = current; lastChoiceStatus = choiceStatus;
+                    var lines = new List<string>();
+                    lines.Add((current == null ? "선택지의 연결 이야기" : "현재 선택의 연결 이야기") + (choiceStatus.Length == 0 ? "" : " · " + choiceStatus));
+                    if (current != null) lines.Add("• " + current.AutoText);
+                    else for (int at = 0; at < Math.Min(3, choice.Entries.Count); at++) lines.Add("• " + choice.Entries[at].AutoText);
+                    lines.Add("자세히: 로그 → 도구 → 지도 안내");
+                    choiceText = string.Join("\n", lines);
+                }
+                DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true);
             }
             if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available);
         }
-        private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available)
+        private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available, bool neutral = false)
         {
             label.Prepare(text, informationStyle, right, occlusion);
             if (string.IsNullOrEmpty(label.Content.text)) return;
-            informationStyle.normal.textColor = available ? new Color(.75f, 1f, .8f) : new Color(1f, .88f, .55f);
+            informationStyle.normal.textColor = neutral ? new Color(.95f, .95f, .95f) : available ? new Color(.75f, 1f, .8f) : new Color(1f, .88f, .55f);
             GUI.Label(label.Rect, label.Content, informationStyle);
         }
     }

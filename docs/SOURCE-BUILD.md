@@ -6,11 +6,28 @@
 
 2026-10-19 사용자가 공개 [v1.0.3-alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상은 아래 alpha.4 해시이며 현재 주석 정리 DLL을 새로 실행한 결과로 간주하지 않습니다. [사용자 확인과 기본 전환](#사용자-windows-확인과-기본-전환)에 근거 범위를 구분하고 [배포 기록](ISSUE-3-RELEASE.md)에 정식 게시·공개 다운로드·이슈 완료 결과를 기록했습니다. 이슈 #1·#2의 기능이나 상태는 추가 변경하지 않습니다.
 
-## 현재 지도 후속 후보 빌드
+## 이야기·선택 경로 후속 후보 준비
 
-현재 상점 요약·지도 비용·1회성 자동 문구 수정 후보는 같은 20개 프로그램과 고정 커밋 재빌드·실제 DLL 연결·ZIP 검증을 사용한다. `--output-dir artifacts/issue-6/compact-information-candidate/full-final`로 이전 후보 산출물과 분리한다. [현재 구현·검사·식별값](ISSUE-6-ALPHA4-RELEASE.md)을 따른다. 아래 지도 개선 경로·수치는 alpha.3 당시 기록이다.
+alpha.5 후속은 `ChoiceStoryTests`를 추가한 21개 검사 프로그램에 실제 경로/이야기/선택 표시와 입력 연결 회귀를 포함한다. 이는 등록 수이며 최종 통과 결과는 아직 대기다. 수치·해시·통과 여부는 실행 결과로 확정하며 alpha.4의 20개 프로그램 결과를 새 후보에 승계하지 않는다. [후보 초안](ISSUE-6-ALPHA5-RELEASE.md)에 새 영수증을 기록한다.
 
-main의 지도 후속은 기존 전체 소스 빌드에 MapRouteTests와 MapGuideRouteIntegrationTests를 포함한 20개 검사 프로그램을 등록한다. `build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/map-guidance-candidate/full-final`로 후보를 만들고, 커밋 확정 뒤 `verify-preview-release.py --scope prd6`로 해당 소스만 추출해 다시 검증한다. 선택적 `DICEMASTER_CORPUS_INDEX`는 개발자가 보유한 검증된 번체 자료 색인을 지정하며 게임 자료를 저장소·설치 ZIP에 포함하지 않는다. [현재 구현·최종 검사·파일·Windows 확인](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 실제 결과를 기록하며 아래 PRD #4 이전 후보의 수치·확인은 당시 이력이다.
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/choice-story-candidate/full-final
+python3 build/test-verify-preview-release.py
+```
+
+생산·검사·빌드·설정 입력이 동결된 상태에서 실행한다. 기존 .NET SDK·NuGet 캐시와 읽기 전용 게임 참조를 사용하고, 선택적 `DICEMASTER_CORPUS_INDEX`를 쓴다면 고정 커밋 재빌드에서도 같은 SHA 검증 자료를 유지한다. 소스 커밋 확정 뒤 아래 명령의 값을 새 manifest에서 채운다. 출력은 없거나 빈 폴더여야 하며 다른 버전 산출물·게시 원문을 지우지 않는다.
+
+```sh
+python3 build/verify-preview-release.py --scope prd6 --references '<읽기 전용 참조 루트>' --source-commit '<고정 소스 전체 커밋>' --version v1.0.7-alpha.5 --expected-dll-sha256 '<새 DLL SHA-256>' --expected-config-sha256 '<새 cfg SHA-256>' --output-dir artifacts/releases/v1.0.7-alpha.5
+```
+
+이 검증은 고정 커밋의 허용 소스만 추출해 관리 모드 DLL 0개에서 빌드·검사를 다시 실행한다. 원래 검토 후보와 SDK·전체 입력/참조·검사 결과·DLL/cfg/ZIP을 비교하고 ZIP의 정확히 두 경로·CRC·내부 바이트를 확인한다. 실제 Windows 실행·물리 입력·프레임 비용은 이 명령의 결과에 포함하지 않는다. 커밋·태그·게시와 익명 다운로드 확인은 [Release 절차](RELEASING.md)에 별도로 남긴다.
+
+## 이전 지도 후속 후보 빌드 — alpha.4·alpha.3
+
+alpha.4의 상점 요약·지도 비용·1회성 자동 문구 수정 후보는 당시 20개 프로그램과 고정 커밋 재빌드·실제 DLL 연결·ZIP 검증을 사용했다. `--output-dir artifacts/issue-6/compact-information-candidate/full-final`의 산출물과 [당시 구현·검사·식별값](ISSUE-6-ALPHA4-RELEASE.md)을 보존한다. 다음 지도 개선 경로·수치는 alpha.3 당시 기록이다.
+
+alpha.3 지도 후속은 기존 전체 소스 빌드에 MapRouteTests와 MapGuideRouteIntegrationTests를 포함한 당시 20개 검사 프로그램을 등록했다. `build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/map-guidance-candidate/full-final`로 후보를 만들고, 커밋 확정 뒤 `verify-preview-release.py --scope prd6`로 해당 소스만 추출해 다시 검증한다. 선택적 `DICEMASTER_CORPUS_INDEX`는 개발자가 보유한 검증된 번체 자료 색인을 지정하며 게임 자료를 저장소·설치 ZIP에 포함하지 않는다. [당시 구현·검사·파일·Windows 확인](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 그 결과를 기록했으며 아래 PRD #4 이전 후보의 수치·확인도 당시 이력이다.
 
 ## PRD #4 후보와 prerelease
 

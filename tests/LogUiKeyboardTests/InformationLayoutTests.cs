@@ -92,14 +92,46 @@ internal static partial class Program
             InformationRuntime.TestGlobal(); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1010);
             Check(GUI.PassiveLabels.Count == 0, "no-selection snapshot with global rows never creates a selected-place panel");
+            Screen.width = 1920; Screen.height = 1080;
+            var choice = new ChoiceStorySnapshot();
+            var firstChoice = new InformationRow("one", "사사형", "연결 이야기", "조건 충족", "전체 경로", "사사형 → 대화 항목 · 현재 이야기 진입 조건 충족");
+            var nextChoice = new InformationRow("two", "다른 항목", "연결 이야기", "후보", "전체 경로", "경로 후보: 다른 항목 → 이야기 · 이후 진행 확인");
+            choice.Entries.Add(firstChoice); choice.Entries.Add(nextChoice);
+            ChoiceStorySource.MenuVisible = true; ChoiceStorySource.Current = choice; ChoiceStorySource.Selected = firstChoice;
+            InformationRuntime.TestChoices(choice); GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(false, false, default, 1011);
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 연결 이야기") && GUI.PassiveLabels[0].Text.Contains("사사형 → 대화 항목") && !GUI.PassiveLabels[0].Text.Contains("다른 항목"), "choice overlay follows only the published current pad selection");
+            measures = GUIStyle.Measurements;
+            for (int at = 0; at < 1000; at++) { GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1012); }
+            Check(GUIStyle.Measurements == measures, "one thousand unchanged choice draws reuse measured cached text");
+            ChoiceStorySource.Selected = nextChoice; GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1013);
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("다른 항목") && !GUI.PassiveLabels[0].Text.Contains("사사형"), "changing native selection switches cached path without a provider query");
+            ChoiceStorySource.Current = null; GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1014);
+            Check(GUI.PassiveLabels.Count == 0, "old menu publication is hidden immediately and cannot reveal an underlying map");
+            InformationRuntime.TestFlags[0] = false; InformationRuntime.TestFlags[1] = true;
+            MapGuideSource.Selected = new object(); InformationRuntime.TestMap(new InformationRow("back", "뒤 지도", "지도", "가능", "상세", "지도 후보", MapGuideSource.Selected));
+            InformationRuntime.Draw(false, false, default, 1015);
+            Check(GUI.PassiveLabels.Count == 0, "physical menu occludes the one-shot map panel even while map guide is OFF");
+            ChoiceStorySource.MenuVisible = false; InformationRuntime.TestChoices(null); GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(false, false, default, 1016);
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("선택 장소: 뒤 지도"), "closing the physical menu restores current map information");
             Check(InformationRuntime.TestErrors.Count == 0, "overlay boundaries complete without swallowed failures");
         }
-        finally { Screen.width = width; Screen.height = height; InformationRuntime.TestMap(null); MapGuideSource.Selected = null; GUI.PassiveLabels.Clear(); }
+        finally { Screen.width = width; Screen.height = height; InformationRuntime.TestMap(null); InformationRuntime.TestChoices(null); ChoiceStorySource.MenuVisible = false; MapGuideSource.Selected = null; GUI.PassiveLabels.Clear(); }
     }
 }
 namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
 namespace DiceMaster.Information
 {
+    public class ChoiceStorySnapshot { public readonly List<InformationRow> Entries = new List<InformationRow>(); }
+    public static class ChoiceStorySource
+    {
+        public static bool MenuVisible;
+        public static ChoiceStorySnapshot Current;
+        public static InformationRow Selected;
+        public static bool IsCurrent(ChoiceStorySnapshot value) => MenuVisible && ReferenceEquals(Current, value);
+        public static InformationRow CurrentRow(ChoiceStorySnapshot value) => IsCurrent(value) ? Selected : null;
+    }
     public static class MapGuideSource
     {
         public static object Selected, CurrentAnchor;
@@ -112,7 +144,7 @@ namespace DiceMaster.Information
     {
         private sealed class Row { internal string Id; internal object Value; internal string Status = ""; }
         private sealed class Page { internal bool Visible; internal List<Row> Rows = new List<Row>(); }
-        private static readonly Page map = new Page();
+        private static readonly Page map = new Page(), choices = new Page();
         public static bool[] TestFlags = new[] { true, true, false, true };
         public static readonly List<string> TestErrors = new List<string>();
         public static bool Enabled(int index) => TestFlags[index];
@@ -120,5 +152,6 @@ namespace DiceMaster.Information
         public static void TestMap(InformationRow row, string status = "") { map.Rows.Clear(); map.Visible = row != null; if (row != null) { MapGuideSource.CurrentAnchor = row.Anchor; MapGuideSource.CurrentId = row.Id; var snapshot = new MapGuideSnapshot { Summary = row, HasSelection = true }; snapshot.Entries.Add(row); snapshot.Entries.Add(new InformationRow("other", "장소 무관", "임무", "대기", "상세")); map.Rows.Add(new Row { Id = row.Id, Value = snapshot, Status = status }); } }
         public static void TestWaiting(string id) { MapGuideSource.CurrentAnchor = MapGuideSource.Selected; MapGuideSource.CurrentId = id; map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = id, Status = "게임 데이터 대기 중" }); }
         public static void TestGlobal() { var snapshot = new MapGuideSnapshot { HasSelection = false }; snapshot.Entries.Add(new InformationRow("global", "장소 무관", "임무", "대기", "상세")); map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = MapGuideSource.CurrentId, Value = snapshot }); }
+        public static void TestChoices(ChoiceStorySnapshot value) { choices.Rows.Clear(); choices.Visible = value != null; if (value != null) choices.Rows.Add(new Row { Value = value }); }
     }
 }

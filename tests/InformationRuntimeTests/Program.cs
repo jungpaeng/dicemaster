@@ -65,8 +65,36 @@ static class Program {
   InformationRuntime.Tick(null,true,30.03f);
   Check(MapGuideSource.Reads==modeReads+3&&MapGuideSource.DetailReads==detailReads+1,"closing detail returns to lightweight mode and stops detailed work");
   Check(InformationRuntime.OptionTag("O_unknown")==""&&InformationRuntime.EventTag(new object())==""&&InformationRuntime.OptionDetail("O_unknown").Contains("확인 불가"),"automatic badges and cached detail diagnostics use separate APIs");
+  ChoiceCadence();
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
+ }
+ static void ChoiceCadence(){
+  ChoiceStorySource.Visible=true;ChoiceStorySource.ContextKey="male-room";
+  int map=MapGuideSource.Reads;
+  InformationRuntime.Tick(null,true,40);
+  Check(ChoiceStorySource.Reads==1&&MapGuideSource.Reads==map,"visible native choice owns information reads while underlying map remains silent");
+  var menu=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
+  Check(menu.Count==1&&menu[0].Title=="사사형"&&!menu[0].CanReserve&&menu[0].Target==null,"current choice publishes read-only stories in existing map log tool");
+  InformationRuntime.Tick(null,true,40.1f);Check(ChoiceStorySource.Reads==1,"choice uses healthy quarter-second budget");
+  InformationRuntime.Tick("지도 안내",true,40.11f);Check(ChoiceStorySource.Reads==2&&ChoiceStorySource.DetailReads==1,"explicit detail upgrades choice paths immediately");
+  Check(LogBridge.Model.Tab("지도 안내").Snapshot.Rows[0].Description=="사사형 → 대화 항목","choice detail retains complete selection path");
+  InformationRuntime.Tick("지도 안내",true,40.2f);Check(ChoiceStorySource.Reads==2,"choice detail and passive share scheduling owner");
+  ChoiceStorySource.Fail=true;InformationRuntime.Tick("지도 안내",true,40.37f);
+  Check(ChoiceStorySource.Reads==3&&LogBridge.Model.Tab("지도 안내").Snapshot.Rows[0].RefreshState==DiceMaster.LogUI.LogRefreshState.RetainedFailure,"choice failure retains only current context with stale marker");
+  InformationRuntime.Tick("지도 안내",true,41);Check(ChoiceStorySource.Reads==3,"choice failure backoff is five seconds");
+  InformationRuntime.Tick("다른 도구",true,46,false,false);Check(ChoiceStorySource.Reads==3,"hidden choice failure cannot retry");
+  InformationRuntime.Tick("지도 안내",false,46);Check(ChoiceStorySource.Reads==3,"unfocused choice detail cannot query");
+  ChoiceStorySource.ContextKey="next-menu";ChoiceStorySource.Fail=false;
+  InformationRuntime.Tick("지도 안내",true,46.01f);Check(ChoiceStorySource.Reads==4,"new menu clears previous failure backoff and old snapshot");
+  InformationRuntime.Toggle(0);int before=ChoiceStorySource.Reads;
+  InformationRuntime.Tick("지도 안내",true,47);Check(ChoiceStorySource.Reads==before,"map-guide OFF stops choice collection independently of one-shot setting");
+  int occludedMap=MapGuideSource.Reads; InformationRuntime.Tick(null,true,47.25f);
+  Check(MapGuideSource.Reads==occludedMap,"physical menu occludes map one-shot reads while guide OFF and one-shot ON");
+  Check(InformationRuntime.Enabled(1),"choice guide OFF preserves one-shot setting");
+  ChoiceStorySource.Visible=false;InformationRuntime.Toggle(0);
+  InformationRuntime.Tick(null,true,48);
+  Check(MapGuideSource.Reads>map&&LogBridge.Model.Tab("지도 안내").Snapshot.Rows[0].Id=="mission/first","leaving choice restores current map context without old menu rows");
  }
  static void Metadata(string path, string references){
   using var a=AssemblyDefinition.ReadAssembly(path);var m=a.MainModule;
@@ -80,7 +108,7 @@ static class Program {
     Check(free.MainModule.GetType("Mortal.Free.FreePositionData").Fields.Single(x=>x.Name=="_conditionFlags").FieldType.FullName=="Mortal.Free.PositionConditionFlagItem[]","supplied actual activity entry flag array metadata is pinned");
     Check(free.MainModule.GetType("Mortal.Free.PositionFlagItem").Methods.Single(x=>x.Name=="Setup").Body.Instructions.Count(x=>x.OpCode.Code==Mono.Cecil.Cil.Code.Stfld&&x.Operand is FieldReference f&&f.DeclaringType.FullName=="Mortal.Core.FlagData"&&f.Name=="State")==2,"supplied actual entry flag setup mutates both true and false outcomes");
    }
-   foreach(string typeName in new[]{"DiceMaster.Information.MapInformationPatches","DiceMaster.Information.OptionInformationPatches"}) {
+   foreach(string typeName in new[]{"DiceMaster.Information.MapInformationPatches","DiceMaster.Information.OptionInformationPatches","DiceMaster.Information.ChoiceStoryPatches"}) {
     var root=m.GetType(typeName);var install=root.Methods.Single(x=>x.Name=="Install");
     foreach(var target in root.NestedTypes) {
      var patch=target.CustomAttributes.SingleOrDefault(x=>x.AttributeType.FullName=="HarmonyLib.HarmonyPatch");
@@ -104,11 +132,15 @@ static class Program {
   Check(publish.Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.MapGuideSnapshot"&&f.Name=="Entries"),"delivered runtime publishes typed map snapshot entries");
   Check(runtime.Methods.Single(x=>x.Name=="DrawCore").Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.MapGuideSnapshot"&&f.Name=="Summary"),"delivered overlay reads the same snapshot summary");
   Check(m.GetType("DiceMaster.Information.MapGuideSource").Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference call&&call.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&call.Name=="Advance")),"delivered map provider prepares actual bounded route engine");
-  var forbidden=new[]{"Check","Execute","GetResult","GetRate","Position","Switch","Condition","SetStoryScript","SetCurrentKey","SetConditionFlag","GetRandomResult","UpdateCheckMissions","GetActiveMissions"};
-  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"))) {
+  Check(publish.Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.ChoiceStorySnapshot"&&f.Name=="Entries"),"delivered choice snapshot uses the existing read-only map log publication");
+  var choice=m.GetType("DiceMaster.Information.ChoiceStorySource");
+  Check(choice.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&c.Name=="Advance")),"delivered current-menu source uses the bounded route analyzer");
+  Check(choice.Methods.Single(x=>x.Name=="CurrentRow").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.EventSystems.EventSystem"&&c.Name=="get_currentSelectedGameObject"),"delivered pad focus reads the existing native selected object");
+  var forbidden=new[]{"Check","Execute","GetResult","GetRate","Position","Switch","Condition","SetStoryScript","SetNextScript","SetCurrentStoryScript","SetCurrentKey","SetConditionFlag","GetRandomResult","UpdateCheckMissions","GetActiveMissions","GetStoryText","UpdateContent","LoadLuaFunction","SetSelectedGameObject","OnSelect","Select","AddOption","Use","Learn","Apply","Buy"};
+  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name.StartsWith("ChoiceStory")))) {
    foreach(var method in DeepTypes(type).SelectMany(x=>x.Methods).Where(x=>x.HasBody))
     foreach(var call in method.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>())
-     Check(!(call.DeclaringType.Namespace.StartsWith("Mortal.")&&forbidden.Contains(call.Name)),"delivered map IL does not call gameplay chain "+call.FullName);
+     Check(!((call.DeclaringType.Namespace.StartsWith("Mortal.")||call.DeclaringType.Namespace.StartsWith("Fungus")||call.DeclaringType.Namespace.StartsWith("UnityEngine"))&&forbidden.Contains(call.Name)),"delivered map/choice IL does not invoke game or input mutation "+call.FullName);
   }
  }
  static System.Collections.Generic.IEnumerable<TypeDefinition> DeepTypes(TypeDefinition type) {

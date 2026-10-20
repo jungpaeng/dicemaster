@@ -4,6 +4,12 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 다음 prerelease 준비 — v1.0.7-alpha.5 이야기·선택 경로
+
+사용자가 승인한 지도 이야기·선택 경로 후속은 원래 `main`에서 구현·검증한다. [후보 초안](ISSUE-6-ALPHA5-RELEASE.md)의 자동 검사·고정 소스/파일 식별·게시·Windows 항목은 각각 미확정이며, 현재 공개 시험판은 아래 alpha.4다. 생산·검사·빌드·설정 입력을 동결한 뒤 전체 소스 후보와 `verify-preview-release.py --scope prd6`의 고정 커밋 재빌드를 대조한다. 기존 관리 모드 DLL 없이 빌드하고 검사/입력/참조/DLL·cfg·ZIP 일치를 확인한 파일만 게시 대상으로 삼는다.
+
+Release 제목·본문은 사용자가 보게 되는 이야기·선택 안내와 지원 한계를 먼저 설명한다. 새 버전의 주석 태그·원격 main·기존 Release/자산/Latest·이슈 상태를 확인하고, 실제 게시 후 익명 다운로드를 검증한 결과는 별도 보충한다. 이전 배포 파일과 과거 영수증을 교체하지 않으며 자동 검사를 새 Windows 확인이나 #6 완료로 쓰지 않는다.
+
 ## 짧은 상점 효과·가벼운 지도 안내 — v1.0.7-alpha.4 prerelease
 
 2026-10-21 03:53:15 KST에 소스·주석 태그 `8e052e1001bcfa3187fd05880c76197b0ebef8c4`로 [v1.0.7-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.4)를 게시했다. Release 418751083·asset 660185761, draft=false·prerelease=true·make_latest=false다. 전체·고정 재빌드 20개 프로그램·241개 입력·DLL/cfg/ZIP 동일성과 익명 공개 설치 ZIP 대조를 확인했다. 기존 45개 Release·46개 태그·자산, Latest v1.0.6·이슈 #6 open을 보존했다. [원인·지원 경계·자동 검사·새 Windows 확인표](ISSUE-6-ALPHA4-RELEASE.md)에 새 파일의 결과를 기록한다. 아래 alpha.3은 이전 공개 버전의 기록이다.

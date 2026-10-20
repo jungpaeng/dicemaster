@@ -123,7 +123,7 @@ public static class ConfigManager
 		EnableOptionInfo = new ConfigElement<bool>("EnableOptionInfo", "Enable option info", defaultValue: true);
 		EnableEventSelectionPopup = new ConfigElement<bool>("EnableEventSelectionPopup", "실제 이벤트 판정 직전에 이벤트 선택 팝업을 표시합니다. 끄면 대기를 취소하고 원래 무작위 판정으로 진행합니다. EnableOptionInfo가 유효하게 켜져 있을 때만 작동하며, 이 상위 설정의 재시작 규칙은 유지합니다.", defaultValue: true);
 		EnableSwitchSelectionPopup = new ConfigElement<bool>("EnableSwitchSelectionPopup", "실제 Switch 조건 분기 직전에 분기 선택 팝업을 표시합니다. 끄면 조건 분기 대기만 해제하고 원래 조건 판정으로 진행합니다. EnableOptionInfo가 유효하게 켜져 있을 때만 작동합니다.", defaultValue: false);
-		EnableMapGuide = InformationSetting("EnableMapGuide", "선택한 지도 장소와 임무 이름·진행 상태를 최대 세 항목으로 표시합니다. 전체 목록·장소 무관 임무·조건·효과는 로그 도구의 지도 안내에서 읽습니다. 자동 안내에서는 긴 결과 분석을 실행하지 않습니다.");
+		EnableMapGuide = InformationSetting("EnableMapGuide", "선택한 지도 장소의 이야기 진입 조건·임무 상태와 현재 선택지의 연결 이야기·선택 경로를 짧게 표시합니다. 조건 충족은 현재 시점이며 이후 발생을 보장하지 않습니다. 전체 경로·조건·효과는 로그 도구의 지도 안내에서 읽습니다. 자동 안내에서는 긴 결과 분석을 실행하지 않습니다.");
 		EnableOneShotHints = InformationSetting("EnableOneShotHints", "실행 후 현재 활성 조건이 성립하지 않음을 안전하게 판별한 항목에만 1회성을 표시합니다. 미확인·실패 사유는 상세에서 읽으며 미독·영구 유일 기회를 뜻하지 않습니다.");
 		EnableBranchNotices = InformationSetting("EnableBranchNotices", "실제 선택된 분기를 5초 알리고 최근 20건을 메모리에 보관합니다. 저장·로드·장면 전환·OFF에서 초기화합니다.");
 		EnableShopEffectInfo = InformationSetting("EnableShopEffectInfo", "상점 설명 아래에 사용 효과 또는 책·비급의 현재/만렙 수치·성장 방향을 짧게 표시합니다. 학습 조건·소모·필요 학습점과 전체 효과는 로그 도구에서 읽으며 구매·사용·학습을 실행하지 않습니다.");

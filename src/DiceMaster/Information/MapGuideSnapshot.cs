@@ -17,6 +17,12 @@ namespace DiceMaster.Information
     // analysis diagnostics belong to the existing scrollable detail page.
     public static class MapGuidePresentation
     {
+        public static string StoryNotice(string name, string status)
+        {
+            string title = name ?? "";
+            if (title.Length > 28) title = title.Substring(0, 27) + "…";
+            return title + " · 연결 이야기 · " + status;
+        }
         public static string Notice(string name, string kind, int rank, bool waiting, bool mission, string sourceStatus)
         {
             string status = rank == 1 ? "지금 진행 불가" : rank == 2 ? "진행 여부 확인 필요" :
@@ -31,7 +37,7 @@ namespace DiceMaster.Information
             int count = notices == null ? 0 : notices.Count;
             if (!guide && count == 0) return "";
             var text = new StringBuilder();
-            if (count == 0) text.Append(preparing ? "이 장소의 안내를 확인하는 중" : "확인된 임무·1회성 이야기 없음");
+            if (count == 0) text.Append(preparing ? "이 장소의 안내를 확인하는 중" : "확인된 연결 이야기·임무·1회성 없음");
             for (int index = 0; index < Math.Min(3, count); index++)
             {
                 if (text.Length != 0) text.Append('\n');

@@ -168,6 +168,7 @@ internal static class Program
         Check(d.Entries.First(x => x.Pool == "second").Current == MapRouteState.Unknown, "post-event descendants never inherit current state certainty");
         d = Build(Use("clear")); d.Clear(); d.Advance(100); Check(d.Entries.Count == 0 && !d.IsPreparing, "lifecycle clear releases all route state");
         SharedGateAndProofBudget();
+        MapStoryCases.Run(Check);
         Corpus();
         Check(manager.GameplayCalls == 0 && manager.RngCalls == 0 && manager.Counter == 0, "no gameplay condition/Position/RNG/counter changes");
         Console.WriteLine("PASS: MapRouteTests " + checks + " actual-route/syntax/current-reader assertions; resource/stat/game boundaries are explicit fixtures; Lua/Windows/native not executed.");
@@ -229,6 +230,15 @@ internal static class Program
             Check(d.Entries.All(x => x.Current == MapRouteState.Unknown), "real UI/prelude barriers remain unknown " + root);
             Check(d.Entries.Select(x => x.Id).Distinct().Count() == d.Entries.Count, "real marker/choose aliases not duplicated " + root);
             Console.WriteLine("Real mapped Lua route sample " + root + ": " + d.Entries.Count + " distinct fixture terminals [" + string.Join(", ", d.Entries.Select(x => x.Pool)) + "], " + d.Diagnostic + "; eligibility/one-shot not asserted.");
+            if (root == "room_001")
+            {
+                Check(d.StoryEntries.Any(x => x.Script == "room_001" && x.Paths.Any(p => p.Steps.Count == 1 && p.Steps[0].Index == 2 && p.Steps[0].RawLabel == "talk+talk+brother4")), "real male disciples room second selection exposes its inline brother dialogue");
+                Check(d.StoryEntries.Any(x => x.Script.StartsWith("talk_brother4_option_", StringComparison.Ordinal) && x.Paths.Any(p => p.Steps.Count >= 2 && p.Steps[0].Script == "room_001" && p.Steps[0].Index == 2 && p.Steps[1].Script == "talk_brother4")), "real brother menu literal followup retains both required selections");
+                Check(d.StoryEntries.All(x => x.Script != "talk_brother4"), "real brother menu itself is not mislabeled as dialogue");
+                Check(d.StoryEntries.All(x => x.Current == MapRouteState.Unknown), "real visual/state-write barriers never become guaranteed current stories");
+                Check(d.StoryEntries.Select(x => x.Identity).Distinct().Count() == d.StoryEntries.Count, "real selected story alternatives have unique canonical identities");
+                Console.WriteLine("Real mapped selected stories " + root + ": " + d.StoryEntries.Count + " groups in [" + string.Join(", ", d.StoryEntries.Select(x => x.Script).Distinct()) + "]; only static text references and selection metadata inspected.");
+            }
             if (root == "door_001_01")
             {
                 Check(d.Entries.Select(x => x.Pool).Distinct().Count() >= 7, "real consumed nested destination pools found");

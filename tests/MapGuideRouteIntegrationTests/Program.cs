@@ -99,7 +99,48 @@ internal static class Program
         Check(Counters.GameCalls == 0 && onceFlag.State == 0 && controller._gameStatManager._stats._list[0]._value == 3 && controller._scriptName == "old-click-cache", "Integration never calls game Position/Condition/Check, applies effects, consumes action points or initializes the click cache");
         Limits();
         PassiveCosts();
+        ChoiceStoryMap();
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
+    }
+    private static void ChoiceStoryMap()
+    {
+        MapGuideSource.Clear(); MapGuideSource.Enabled = () => true;
+        var firstFlag = new FlagData { name = "talk-entry", State = 0 };
+        var laterFlag = new FlagData { name = "talk-later", State = 1 };
+        var manager = CheckPointManager.Instance = new CheckPointManager();
+        manager._condition._list.Add(new ConditionResultData { name = "talk_entry", _items = new List<ConditionResultItem> { IsZero(firstFlag) } });
+        manager._condition._list.Add(new ConditionResultData { name = "talk_later", _items = new List<ConditionResultItem> { IsZero(laterFlag) } });
+        DataHelper.Scripts["choice_map_root"] = "runwait(function() end); local gate=checkpointmanager.Condition('talk_entry'); local room={}; room[1]='휴식'; room[2]=gate and '사사형' or '~x'; local r=choose(room); if r==2 then say(luamanager.GetStoryText('talk_hello')); statmodifymanager.SetFlag('talk-later',0); luamanager.SetNextScript('choice_map_talk') end";
+        DataHelper.Scripts["choice_map_talk"] = "local gate=checkpointmanager.Condition('talk_later'); local opts={}; opts[1]=gate and '대화 항목' or '~x'; local r=choose(opts); if r==1 then luamanager.SetNextScript('choice_map_story') end";
+        DataHelper.Scripts["choice_map_story"] = "say(luamanager.GetStoryText('story_line'))";
+        var controller = new PositionController { _positionData = new FreePositionData { name = "Room", _defaultScript = "choice_map_root" } };
+        MapGuideSource.Select(controller); MapGuideSnapshot snapshot = null;
+        int formatter = LuaParser.Descriptions, parses = LuaParser.Parses;
+        for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
+        var story = Find(snapshot, "사사형");
+        Check(story != null && story.Kind.Contains("선택 연계 이야기"), "Literal and inline selected dialogue becomes a map story without fabricating an event pool");
+        Check(story.Status.StartsWith("진입 조건 충족 (현재)") && story.Available, "Map shows the first option's current condition separately from post-entry mutation and false future guards");
+        Check(snapshot.Summary.AutoText.Contains("사사형") && snapshot.Summary.AutoText.Contains("진입 조건 충족 (현재)"), "Compact map tells the user which conversation can currently be entered");
+        Check(!snapshot.Summary.AutoText.Contains("story_line") && !snapshot.Summary.AutoText.Contains("talk-later"), "Automatic story information excludes dialogue text and condition internals");
+        Check(!story.Status.Contains("1회성"), "Choice route discovery never grants a one-shot property");
+        Check(LuaParser.Descriptions == formatter && LuaParser.Parses == parses, "Passive choice story map performs zero full effect descriptions or analyzers");
+        snapshot = Read(true); story = Find(snapshot, "사사형");
+        Check(story.Detail.Contains("사사형 → 대화 항목") && story.Detail.Contains("다시 확인"), "Map detail provides required choice route and explicitly preserves later-state uncertainty");
+        int resourceReads = DataHelper.Reads;
+        for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
+        Check(DataHelper.Reads == resourceReads && LuaParser.Parses == parses, "Warm story refresh reuses route definitions without resource reads or full Lua analysis");
+        firstFlag.State = 1; snapshot = Read(false); story = Find(snapshot, "사사형");
+        Check(story.Status == "선택 화면에서 확인" && !story.Available, "A false observed entry condition on an incomplete route does not deny potentially omitted alternative paths");
+        Check(laterFlag.State == 1 && firstFlag.State == 1 && Counters.GameCalls == 0, "Neither discovery nor path preview applies the intervening flag write or calls game judgments");
+        firstFlag.State = 0; controller._gameStatManager._stats._list[0]._value = 0; snapshot = Read(false);
+        Check(!Find(snapshot, "사사형").Available && Find(snapshot, "사사형").Status.Contains("행동 부족"), "Current first guard does not override native map action availability");
+        controller._gameStatManager._stats._list[0]._value = 3;
+        controller._positionData._defaultScript = "choice_labels";
+        DataHelper.Scripts["choice_labels"] = "local opts={}; if checkpointmanager.Condition('talk_entry') then opts[1]='선택 A' else opts[1]='선택 B' end; local r=choose(opts); say(luamanager.GetStoryText('line'))";
+        firstFlag.State = 1;
+        for (int at = 0; at < 8; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
+        Check(Find(snapshot, "선택 A") != null && !Find(snapshot, "선택 A").Available && Find(snapshot, "선택 B").Available, "Same original choose index with alternative raw labels stays in separate groups and cannot mark the wrong title ready");
+        Check(Find(snapshot, "선택 A").Status == "진입 조건 미충족 (현재)", "A complete supported route can report a proven current negative without conflating it with missing paths");
     }
     private static void Limits()
     {
@@ -118,6 +159,9 @@ internal static class Program
         Check(HasStatus(value, "경로 일부 확인 불가") || HasStatus(value, "경로 읽기 실패") || HasStatus(value, "경로 준비 중"), "Oversized native pool retains explicit incomplete/preparing status instead of reporting a complete zero");
         bool limitDetail = false; foreach (var row in value.Entries) if (row.Detail.Contains("풀 항목 상한", StringComparison.Ordinal)) limitDetail = true;
         Check(limitDetail, "The 257th sentinel activates the production route item-limit diagnostic");
+        manager._position._list.Add(new PositionResultData { name = "large_pool", _scriptPrefix = "wrong_second_match" });
+        var choicePool = MapGuideSource.ReadChoicePool("large_pool");
+        Check(choicePool.Count == 257 && choicePool[256] == null && ReferenceEquals(choicePool[0].Target, pool._list[0]) && choicePool[0].ResultScript == "large_result_entry0", "Choice pool shares native first-exact matching and 256-entry plus overflow-sentinel bound");
         manager._position._list.Clear();
         for (int i = 0; i < 1024; i++) manager._position._list.Add(new PositionResultData { name = "unrelated-" + i });
         var beyond = new PositionEventData { name = "beyond-limit", ResultType = "beyond", _toggleCondition = false };
@@ -129,6 +173,8 @@ internal static class Program
         Check(diagnostic != null && diagnostic.Detail.Contains("1,024", StringComparison.Ordinal), "Pool search budget is distinct from missing data and successful emptiness");
         var activity = Find(value, "beyond_root");
         Check(activity != null && !activity.Available && activity.Status.Contains("내부 경로 확인 필요", StringComparison.Ordinal), "Incomplete or failed route discovery preserves the default activity as unknown rather than a healthy possible fixed story");
+        bool rejected = false; try { MapGuideSource.ReadChoicePool("beyond_pool"); } catch (InvalidOperationException) { rejected = true; }
+        Check(rejected && beyond.ResultReads == 0, "Choice pool adapter also rejects lookup beyond 1024 definitions without reading the hidden entry");
         Check(Counters.GameCalls == 0, "Bounded pool materialization never evaluates game entry or event methods");
     }
     private static void PassiveCosts()
