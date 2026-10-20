@@ -233,6 +233,8 @@ internal static class Program
             if (root == "room_001")
             {
                 Check(d.StoryEntries.Any(x => x.Script == "room_001" && x.Paths.Any(p => p.Steps.Count == 1 && p.Steps[0].Index == 2 && p.Steps[0].RawLabel == "talk+talk+brother4")), "real male disciples room second selection exposes its inline brother dialogue");
+                Check(d.StoryEntries.All(x => x.Paths.All(p => p.Steps.Count == 0 || p.Steps[0].Script != "room_001" || p.Steps[0].Index != 1)), "real male room sleep branch has zero meaningful NPC story paths");
+                Check(d.StoryEntries.Any(x => x.Script == "room_001" && x.Paths.Any(p => p.DialogueCharacter == "brother4" && p.Steps[0].Index == 2)), "real male room brother route keeps explicit NPC source metadata");
                 Check(d.StoryEntries.Any(x => x.Script.StartsWith("talk_brother4_option_", StringComparison.Ordinal) && x.Paths.Any(p => p.Steps.Count >= 2 && p.Steps[0].Script == "room_001" && p.Steps[0].Index == 2 && p.Steps[1].Script == "talk_brother4")), "real brother menu literal followup retains both required selections");
                 Check(d.StoryEntries.All(x => x.Script != "talk_brother4"), "real brother menu itself is not mislabeled as dialogue");
                 Check(d.StoryEntries.All(x => x.Current == MapRouteState.Unknown), "real visual/state-write barriers never become guaranteed current stories");
@@ -244,6 +246,13 @@ internal static class Program
                 Check(d.Entries.Select(x => x.Pool).Distinct().Count() >= 7, "real consumed nested destination pools found");
                 Check(d.Entries.All(x => x.Pool != "Fortress_Work_001"), "real discarded fortress Position result excluded");
             }
+        }
+        foreach (string monologue in new[] { "ch1_1_break_option", "ch2_2_3_4_3_break_01" })
+        {
+            Check(scripts[monologue].Contains("GetStoryText(\"D_", StringComparison.Ordinal) && scripts[monologue].Contains("choose(", StringComparison.Ordinal), "real player monologue counterexample has selected D_ speech " + monologue);
+            var d = new MapRouteDefinitions(monologue, key => scripts.ContainsKey(key) ? ScriptReadResult.Success(scripts[key]) : ScriptReadResult.Missing(), Pool);
+            for (int i = 0; i < 10000 && d.IsPreparing; i++) d.Advance(0, 4096);
+            Check(d.StoryEntries.All(x => x.Script != monologue), "real selected player-only D_ monologue is not an NPC conversation " + monologue);
         }
     }
 }

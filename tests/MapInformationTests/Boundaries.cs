@@ -200,7 +200,7 @@ namespace DiceMaster.Information
     public enum MapRouteState { Met, NotMet, Unknown }
     public class MapRouteRead { }
     public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; }
-    public class MapRoutePath { public List<MapChoiceStep> Steps = new List<MapChoiceStep>(); public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Unknown; }
+    public class MapRoutePath { public string DialogueCharacter = ""; public List<MapChoiceStep> Steps = new List<MapChoiceStep>(); public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Unknown; }
     public class MapStoryEntry { public List<MapRoutePath> Paths = new List<MapRoutePath>(); }
     public class MapRouteEvent
     {
@@ -254,6 +254,7 @@ namespace DiceMaster.Information
     public static class ChoiceStoryLabels
     {
         public static string Resolve(string raw) => raw;
+        public static string DialogueName(string raw, string character) => raw;
         public static string Path(System.Collections.Generic.IList<MapChoiceStep> steps)
         { var labels = new System.Collections.Generic.List<string>(); foreach (var step in steps) labels.Add(step.RawLabel); return string.Join(" → ", labels); }
     }

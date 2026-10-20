@@ -251,7 +251,7 @@ namespace DiceMaster.Information
                 var anchor = option.Control.Target as UnityEngine.Object;
                 string preview = ambiguous ? ChoiceStoryLabels.ShortName(option.Title) + " · 이야기 연결 확인 필요" : (incomplete ? "경로 후보: " : "") + PreviewPath(option, binding);
                 var row = new InformationRow("choice/" + key + "/" + (anchor == null ? "" : anchor.GetInstanceID().ToString(CultureInfo.InvariantCulture)),
-                    option.Title, "관련 이야기", status, detail,
+                    option.Title, "인물 대화", status, detail,
                     preview + (!ambiguous && !incomplete && binding.Stories.Count > 1 ? " · 외 " + (binding.Stories.Count - 1) + "개" : "") + " · " + status, anchor, !ambiguous && !incomplete && state == MapRouteState.Met);
                 snapshot.Entries.Add(row);
                 if (snapshot.Hints.Count < 3) snapshot.Hints.Add(row);
@@ -278,6 +278,7 @@ namespace DiceMaster.Information
                 {
                     if (budget-- <= 0) { pending = true; break; }
                     MapRoutePath path = story.Paths[at++];
+                    if (string.IsNullOrEmpty(path.DialogueCharacter)) continue;
                     foreach (MapChoiceStep step in path.Steps)
                     {
                         if (!string.Equals(step.Script, script, StringComparison.OrdinalIgnoreCase)) continue;
@@ -319,7 +320,8 @@ namespace DiceMaster.Information
         {
             // Use one supported future path and complete labels. Dialogue
             // sentences are never invented as story titles.
-            string fallback = ChoiceStoryLabels.ShortName(option.Title) + " · 관련 이야기";
+            string fallback = ChoiceStoryLabels.ShortName(option.Title) + " · 인물 대화";
+            string direct = null;
             foreach (MapRoutePath path in binding.Paths)
             {
                 var labels = new List<string>(); bool started = false;
@@ -333,9 +335,14 @@ namespace DiceMaster.Information
                     if (labels.Count == 3) { labels.Add("이후 선택은 상세 확인"); break; }
                     labels.Add(ChoiceStoryLabels.ShortName(ChoiceStoryLabels.Resolve(step.RawLabel)));
                 }
-                if (labels.Count > 1) return string.Join(" → ", labels) + " · 관련 이야기";
+                if (started)
+                {
+                    string preview = string.Join(" → ", labels) + " · " + ChoiceStoryLabels.DialogueTarget(path.DialogueCharacter);
+                    if (labels.Count > 1) return preview;
+                    if (direct == null) direct = preview;
+                }
             }
-            return fallback;
+            return direct ?? fallback;
         }
         public static bool IsCurrent(ChoiceStorySnapshot snapshot)
         { return snapshot != null && Visible && ReferenceEquals(snapshot.Menu, Active) && snapshot.ContextKey == ContextKey; }

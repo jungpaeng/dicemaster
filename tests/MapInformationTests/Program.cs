@@ -85,7 +85,7 @@ static class Program
         Check(text.Contains("문파 방문 · 1회성 이야기 · 지금 진행 불가") && !text.Contains("나머지 이야기") && text.Contains("외 1개"), "Automatic notice bounds complete entries rather than cutting statuses midway");
         Check(text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && !text.Contains("단계 후보") && !text.Contains("확인 불가"), "Compact notice keeps the detail path and omits analysis jargon");
         Check(MapGuidePresentation.Summary(new List<string>(), true, true).StartsWith("이 장소의 안내를 확인하는 중"), "Preparing is distinct from confirmed empty");
-        Check(MapGuidePresentation.Summary(new List<string>(), true, false).StartsWith("확인된 연결 이야기·임무·1회성 없음"), "Empty notice describes only recognized supported items");
+        Check(MapGuidePresentation.Summary(new List<string>(), true, false).StartsWith("현재 확인된 인물 대화·임무·1회성 없음"), "Empty notice describes only recognized supported items");
         Check(MapGuidePresentation.Summary(new List<string>(), false, true) == "", "One-shot-only mode does not create an empty or unknown noise panel");
     }
     private static MapGuideSnapshot Snapshot(bool guide = true, bool once = true)

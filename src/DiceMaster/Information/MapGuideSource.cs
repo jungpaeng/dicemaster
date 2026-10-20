@@ -46,7 +46,7 @@ namespace DiceMaster.Information
         }
         private sealed class StoryGroup
         {
-            internal string Id, RawLabel;
+            internal string Id, RawLabel, DialogueCharacter;
             internal readonly List<StoryLink> Links = new List<StoryLink>();
             internal bool Omitted;
         }
@@ -468,14 +468,14 @@ namespace DiceMaster.Information
                 foreach (MapStoryEntry story in source.Routes.StoryEntries)
                     foreach (MapRoutePath path in story.Paths)
                     {
-                        if (path.Steps.Count == 0) continue;
+                        if (path.Steps.Count == 0 || string.IsNullOrEmpty(path.DialogueCharacter)) continue;
                         MapChoiceStep first = path.Steps[0];
-                        string id = first.Script + "/" + first.SourceOffset + "/" + first.Index + "/" + first.RawLabel;
+                        string id = first.Script + "/" + first.SourceOffset + "/" + first.Index + "/" + first.RawLabel + "/npc/" + path.DialogueCharacter;
                         StoryGroup group;
                         if (!groups.TryGetValue(id, out group))
                         {
                             if (groups.Count >= 256) break;
-                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel }); source.Stories.Add(group);
+                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel, DialogueCharacter = path.DialogueCharacter }); source.Stories.Add(group);
                         }
                         if (group.Links.Count < 32) group.Links.Add(new StoryLink { Story = story, Path = path });
                         else group.Omitted = true;
@@ -495,10 +495,10 @@ namespace DiceMaster.Information
                         if (met) break;
                     }
                     int rank = !sample ? 2 : met ? 0 : unknown ? 2 : 1;
-                    var result = new Candidate { Id = "story/" + captured.Id, Name = ChoiceStoryLabels.Resolve(captured.RawLabel),
-                        Kind = "선택 연계 이야기", ChoiceStory = true, Rank = rank,
+                    var result = new Candidate { Id = "story/" + captured.Id, Name = ChoiceStoryLabels.DialogueName(captured.RawLabel, captured.DialogueCharacter),
+                        Kind = "인물 대화", ChoiceStory = true, Rank = rank,
                         Status = rank == 0 ? "진입 조건 충족 (현재)" : rank == 1 ? "진입 조건 미충족 (현재)" : "선택 화면에서 확인",
-                        Detail = "지도 시점의 첫 선택 조건입니다. 진입·대화 중 상태 변경과 이후 선택의 조건은 실제 선택 화면에서 다시 확인합니다. 이야기 발생이나 이후 선택 활성화를 보장하지 않습니다." };
+                        Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백만 있는 경로는 안내 대상에서 제외합니다. 1회성을 뜻하지 않습니다.\n지도 시점의 첫 선택 조건입니다. 진입·대화 중 상태 변경과 이후 선택의 조건은 실제 선택 화면에서 다시 확인합니다. 이야기 발생이나 이후 선택 활성화를 보장하지 않습니다." };
                     if (detailed)
                     {
                         var lines = new List<string>();

@@ -29,7 +29,7 @@ namespace DiceMaster.Information
         }
         private sealed class Job
         {
-            internal string Script, Pool, Identity = "", Path = "";
+            internal string Script, Pool, Identity = "", Path = "", DialogueCharacter;
             internal int Depth, At, End, PoolCursor;
             internal bool Started, Uncertain, HasChoice, StoryChoice, EntryUncertain;
             internal PreviewCondition Gate = PreviewConditions.Constant(true);
@@ -44,7 +44,7 @@ namespace DiceMaster.Information
             internal Job Copy()
             {
                 var n = new Job { Script = Script, Pool = Pool, Identity = Identity, Path = Path, Depth = Depth, At = At, End = End,
-                    Started = Started, Uncertain = Uncertain, HasChoice = HasChoice, StoryChoice = StoryChoice, Gate = Gate, Pending = Pending,
+                    Started = Started, Uncertain = Uncertain, HasChoice = HasChoice, StoryChoice = StoryChoice, Gate = Gate, Pending = Pending, DialogueCharacter = DialogueCharacter,
                     EntryGate = EntryGate, EntryUncertain = EntryUncertain, Steps = new List<MapChoiceStep>(Steps),
                     InvalidManagers = new HashSet<string>(InvalidManagers, StringComparer.Ordinal),
                     Ancestors = new HashSet<string>(Ancestors, StringComparer.OrdinalIgnoreCase) };
@@ -229,11 +229,12 @@ namespace DiceMaster.Information
                 if (control.Kind == "if") { Fork(job, syntax, control); return true; }
                 if (control.Kind == "do")
                 { job.Frames.Add(new Frame { At = control.End + 1, End = job.End }); job.At++; job.End = control.End; return false; }
-                if (control.Kind != "function") { job.Uncertain = true; Reason("반복/미지원 제어 흐름 · 경로 확인 필요"); }
+                if (control.Kind != "function") { job.DialogueCharacter = null; job.Uncertain = true; Reason("반복/미지원 제어 흐름 · 경로 확인 필요"); }
                 else if (at + 1 < t.Count)
                 {
-                    if (Manager(t[at + 1].Text)) { job.InvalidManagers.Add(t[at + 1].Text); job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); }
-                    if (t[at + 1].Text == "choose" || t[at + 1].Text == "say") job.Bindings[t[at + 1].Text] = new Value();
+                    if (Manager(t[at + 1].Text)) { job.InvalidManagers.Add(t[at + 1].Text); job.DialogueCharacter = null; job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); }
+                    if (t[at + 1].Text == "choose" || t[at + 1].Text == "say" || t[at + 1].Text == "setcharacter")
+                    { job.Bindings[t[at + 1].Text] = new Value(); if (t[at + 1].Text == "setcharacter") job.DialogueCharacter = null; }
                 }
                 job.At = Math.Min(control.End + 1, job.End); return false;
             }
@@ -257,6 +258,7 @@ namespace DiceMaster.Information
                 if (local && variable + 1 < job.End && t[variable + 1].Text == "function") { job.At++; return false; }
                 if (variable + 1 < job.End && t[variable + 1].Text == "=")
                 {
+                    if (name == "setcharacter" || name == "characters") job.DialogueCharacter = null;
                     if (Manager(name)) { job.InvalidManagers.Add(name); job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); }
                     if (local) Declare(job, name);
                     int rhs = variable + 2;
@@ -304,23 +306,43 @@ namespace DiceMaster.Information
                                 table.TableGates[key] = PreviewConditions.ParseTokens(t, first, and, bindings);
                                 end = and + 4;
                             }
-                            else { table.Table.Remove(key); job.Uncertain = true; Reason("선택지 활성식 확인 불가"); }
+                            // Opaque indexed values may expose the manager
+                            // through an alias; its object provenance is not
+                            // modeled, so later setters cannot prove speech.
+                            else { table.Table.Remove(key); job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; job.Uncertain = true; Reason("선택지 활성식 확인 불가"); }
                         }
                     }
-                    else { if (Manager(name)) job.InvalidManagers.Add(name); job.Uncertain = true; Reason("미지원 인덱스 쓰기 · 현재 경로 확인 필요"); }
+                    else { if (Manager(name)) job.InvalidManagers.Add(name); job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; job.Uncertain = true; Reason("미지원 인덱스 쓰기 · 현재 경로 확인 필요"); }
                     job.At = end; return false;
                 }
                 if (local)
-                { Declare(job, name); job.Bindings[name] = new Value(); if (Manager(name)) { job.InvalidManagers.Add(name); job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); } job.At = variable + 1; return false; }
+                { Declare(job, name); job.Bindings[name] = new Value(); if (name == "setcharacter" || name == "characters") job.DialogueCharacter = null; if (Manager(name)) { job.InvalidManagers.Add(name); job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); } job.At = variable + 1; return false; }
                 if (Manager(name) && variable + 3 < job.End && (t[variable + 1].Text == "." || t[variable + 1].Text == ":") && t[variable + 3].Text == "=")
-                { job.InvalidManagers.Add(name); job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); }
+                { job.InvalidManagers.Add(name); job.DialogueCharacter = null; job.Uncertain = true; Reason("manager 바인딩 변경 · 호출 확인 불가"); }
             }
             if (TryCall(syntax, at, out string owner, out string method, out int open, out int closing))
             {
                 if (UsesColon(syntax, at, open))
                 {
+                    job.DialogueCharacter = null;
                     job.Uncertain = true; Reason("colon 호출 인수 계약 미확인 · 현재 경로 확인 필요");
                     if (owner == "luamanager" && (method == "SetNextScript" || method == "SetCurrentStoryScript")) job.Pending = new Value();
+                    job.At = closing + 1; return false;
+                }
+                if (owner.Length == 0 && method == "setcharacter")
+                {
+                    job.DialogueCharacter = DialogueCharacter(job, syntax, open, closing);
+                    // Speaker evidence is definition metadata, not permission
+                    // to execute this UI call or strengthen a route verdict.
+                    job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요");
+                    job.At = closing + 1; return false;
+                }
+                if (owner == "characters" && method == "Focus" && !job.InvalidManagers.Contains(owner) &&
+                    !job.Bindings.ContainsKey(owner) && closing == open + 2 && t[open + 1].IsString)
+                {
+                    // Focus moves a portrait, not the dialogue speaker. It
+                    // preserves an existing witness but cannot create one.
+                    job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요");
                     job.At = closing + 1; return false;
                 }
                 // Recognize only the game's literal localized dialogue form.
@@ -343,19 +365,21 @@ namespace DiceMaster.Information
                 }
                 else if (owner == "checkpointmanager" && method == "Position" && !job.InvalidManagers.Contains(owner))
                 { job.Uncertain = true; Reason("등록에 사용되지 않은 Position 반환값"); }
-                else { job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요"); }
+                else { job.DialogueCharacter = null; job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요"); }
                 job.At = closing + 1; return false;
             }
             if (TrySugar(syntax, at, out owner, out method, out closing))
             {
+                job.DialogueCharacter = null;
                 job.Uncertain = true; Reason("미지원 축약 호출 · 현재 경로 확인 필요");
                 if (owner == "luamanager" && (method == "SetNextScript" || method == "SetCurrentStoryScript")) job.Pending = new Value();
                 job.At = closing + 1; return false;
             }
+            if (text == "characters") { job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; }
             if (text != ";") { job.Uncertain = true; Reason("미지원 명령/값 · 현재 경로 확인 필요"); }
             job.At++; return false;
         }
-        private static bool Manager(string name) { return name == "checkpointmanager" || name == "luamanager" || name == "statmodifymanager"; }
+        private static bool Manager(string name) { return name == "checkpointmanager" || name == "luamanager" || name == "statmodifymanager" || name == "characters"; }
         private static void Declare(Job job, string name)
         {
             if (job.Frames.Count == 0) return;
@@ -370,13 +394,19 @@ namespace DiceMaster.Information
                 return new Value { Script = literal.Length == 0 || ValidScript(literal) ? literal : null, Literal = t[at].Text };
             if (t[at].Text == "{" && syntax.Closes.TryGetValue(at, out int tableEnd))
             {
+                // Tables may hide a character-manager alias in any cell.
+                // Inspect only a fixed token window; larger opaque tables
+                // conservatively invalidate that manager instead of scanning.
+                bool escaped = tableEnd - at > MapRouteLimits.MaxHeaderTokens;
+                for (int i = at + 1; !escaped && i < tableEnd; i++) escaped = t[i].IsIdentifier && t[i].Text == "characters";
+                if (escaped) { job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; }
                 end = tableEnd + 1; var table = new Dictionary<string, string>(StringComparer.Ordinal); int n = 1;
                 for (int i = at + 1; i < tableEnd; i++)
                 {
                     if (t[i].Text == "," || t[i].Text == ";") continue;
-                    if (n > MapRouteLimits.MaxTableCells) { job.Uncertain = true; Reason("선택 테이블 크기 상한"); return new Value(); }
+                    if (n > MapRouteLimits.MaxTableCells) { job.DialogueCharacter = null; job.Uncertain = true; Reason("선택 테이블 크기 상한"); return new Value(); }
                     if (!t[i].IsString || !PreviewSyntax.TryString(t[i].Text, out string value))
-                    { job.Uncertain = true; Reason("테이블 값/내부 호출 확인 불가"); return new Value(); }
+                    { job.DialogueCharacter = null; job.Uncertain = true; Reason("테이블 값/내부 호출 확인 불가"); return new Value(); }
                     table[(n++).ToString(CultureInfo.InvariantCulture)] = value;
                 }
                 return new Value { Table = table };
@@ -385,16 +415,21 @@ namespace DiceMaster.Information
             {
                 end = close + 1;
                 if (UsesColon(syntax, at, open))
-                { job.Uncertain = true; Reason("colon 호출 인수 계약 미확인 · 현재 경로 확인 필요"); return new Value(); }
+                { job.DialogueCharacter = null; job.Uncertain = true; Reason("colon 호출 인수 계약 미확인 · 현재 경로 확인 필요"); return new Value(); }
                 if (owner == "checkpointmanager" && !job.InvalidManagers.Contains(owner) && close == open + 2 && t[open + 1].IsString && PreviewSyntax.TryString(t[open + 1].Text, out string key))
                 {
                     if (name == "Position") return new Value { Pool = key };
                     if (name == "Switch" || name == "Condition") return new Value { Condition = PreviewConditions.ParseTokens(t, at, close + 1) };
                 }
-                job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요"); return new Value();
+                job.DialogueCharacter = null; job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요"); return new Value();
             }
             if (TrySugar(syntax, at, out owner, out name, out int sugarClose))
-            { end = sugarClose + 1; job.Uncertain = true; Reason("미지원 축약 호출 · 현재 경로 확인 필요"); return new Value(); }
+            { end = sugarClose + 1; job.DialogueCharacter = null; job.Uncertain = true; Reason("미지원 축약 호출 · 현재 경로 확인 필요"); return new Value(); }
+            // No object/alias analysis is performed. Once the character
+            // manager escapes as a value, a later method write through that
+            // alias cannot be ruled out; do not accept new speaker witnesses.
+            if (t[at].Text == "characters")
+            { job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; }
             Value found;
             if (job.Bindings.TryGetValue(t[at].Text, out found)) return found;
             if (t[at].Text == "true" || t[at].Text == "false" || int.TryParse(t[at].Text, out int number))
@@ -434,11 +469,23 @@ namespace DiceMaster.Information
                 end == close - 1 && end == inner + 2 && t[inner + 1].IsString &&
                 PreviewSyntax.TryString(t[inner + 1].Text, out key) && !string.IsNullOrEmpty(key);
         }
-        private MapRoutePath Path(Job job)
-        { return new MapRoutePath(job.Identity, job.Path, job.HasChoice, job.Uncertain, job.Gate, job.Steps, job.EntryGate, job.EntryUncertain); }
+        private static string DialogueCharacter(Job job, MapRouteSyntax syntax, int open, int close)
+        {
+            if (job.Bindings.ContainsKey("setcharacter") || job.Bindings.ContainsKey("characters") || job.InvalidManagers.Contains("characters")) return null;
+            var t = syntax.Tokens;
+            if (!TryCall(syntax, open + 1, out string owner, out string method, out int inner, out int end) ||
+                owner != "characters" || method != "Get" || UsesColon(syntax, open + 1, inner) || end != inner + 2 ||
+                !t[inner + 1].IsString || !PreviewSyntax.TryString(t[inner + 1].Text, out string character) ||
+                end >= close || end != close - 1 && t[end + 1].Text != "," || !ValidScript(character)) return null;
+            if (character.IndexOf("player", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                character.Equals("narrative", StringComparison.OrdinalIgnoreCase) || character.Equals("narrator", StringComparison.OrdinalIgnoreCase)) return null;
+            return character;
+        }
+        private MapRoutePath Path(Job job, string dialogueCharacter = null)
+        { return new MapRoutePath(job.Identity, job.Path, job.HasChoice, job.Uncertain, job.Gate, job.Steps, job.EntryGate, job.EntryUncertain, dialogueCharacter); }
         private void AddStory(Job job, int offset, string key)
         {
-            if (!job.StoryChoice || job.Steps.Count == 0) return;
+            if (!job.StoryChoice || job.Steps.Count == 0 || string.IsNullOrEmpty(job.DialogueCharacter)) return;
             var last = job.Steps[job.Steps.Count - 1];
             string identity = job.Script + "/selected:" + last.Script + ":" + last.SourceOffset + ":" + last.Index;
             MapStoryEntry entry;
@@ -448,9 +495,10 @@ namespace DiceMaster.Information
                 storyEntries.Add(entry = new MapStoryEntry(identity, job.Script, offset, key, last.RawLabel, () => IsPreparing || IsPartial));
                 storyIndex.Add(identity, entry);
             }
-            // All lines in the same selected dialogue segment share a path;
-            // do not allocate another step array for every paragraph.
-            if (!entry.HasPath(job.Identity) && !entry.Add(Path(job))) { limited = true; Reason("이야기 경로 수 상한 · 생략된 경로 확인 불가"); }
+            // All lines in the same selected dialogue segment share a path.
+            // Keep its first qualifying NPC witness, not a complete list of
+            // conversation participants or another array for every paragraph.
+            if (!entry.HasPath(job.Identity) && !entry.Add(Path(job, job.DialogueCharacter))) { limited = true; Reason("이야기 경로 수 상한 · 생략된 경로 확인 불가"); }
         }
         private void Choose(Job job, MapRouteSyntax syntax, string variable, int open, int close)
         {
@@ -545,7 +593,7 @@ namespace DiceMaster.Information
             }
             if (control.Branches.Count > MapRouteLimits.MaxBranchArms || cells < 0 || (long)cells * control.Branches.Count + headers > MapRouteLimits.MaxForkCells)
             { Reason("분기/복사 상한 · 해당 경로 확인 불가"); return; }
-            PreviewCondition remaining = PreviewConditions.Constant(true); bool hasElse = false, provenTaken = false;
+            PreviewCondition remaining = PreviewConditions.Constant(true); bool hasElse = false, provenTaken = false, speakerUnknown = false;
             foreach (var branch in control.Branches)
             {
                 if (admitted >= limits.MaxContexts) { limited = true; Reason("경로 대기열 상한"); return; }
@@ -553,13 +601,14 @@ namespace DiceMaster.Information
                 bool? known = branch.Else ? (bool?)true : LiteralBranch(job, syntax.Tokens, branch.Header, branch.HeaderEnd);
                 if (known == false) continue;
                 Job arm = job.Copy(); arm.At = branch.Start; arm.End = branch.End;
+                if (speakerUnknown) arm.DialogueCharacter = null;
                 arm.Frames.Add(new Frame { At = control.End + 1, End = job.End });
                 arm.Identity += "/" + job.Script + ":branch:" + syntax.Tokens[branch.Start < syntax.Tokens.Count ? branch.Start : control.Start].Start;
                 if (!known.HasValue)
                 {
                     var bindings = Conditions(job);
                     var predicate = PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, bindings);
-                    if (!predicate.IsKnownSyntax) arm.Uncertain = true;
+                    if (!predicate.IsKnownSyntax) { arm.Uncertain = true; arm.DialogueCharacter = null; speakerUnknown = true; }
                     arm.Gate = PreviewConditions.All(job.Gate, PreviewConditions.All(remaining, predicate));
                     remaining = PreviewConditions.All(remaining, PreviewConditions.Not(predicate));
                 }
@@ -568,7 +617,7 @@ namespace DiceMaster.Information
                 if (known == true) { provenTaken = true; break; }
             }
             if (!hasElse && !provenTaken)
-            { var tail = job.Copy(); tail.At = control.End + 1; tail.Gate = PreviewConditions.All(job.Gate, remaining); Admit(tail); }
+            { var tail = job.Copy(); if (speakerUnknown) tail.DialogueCharacter = null; tail.At = control.End + 1; tail.Gate = PreviewConditions.All(job.Gate, remaining); Admit(tail); }
         }
         private static int EnvironmentCells(Job job)
         {
@@ -607,6 +656,7 @@ namespace DiceMaster.Information
             if (job.Pending.Pool != null)
             {
                 var next = job.Copy(); next.Pool = job.Pending.Pool; next.PoolCursor = 0; next.PoolItems = null;
+                next.DialogueCharacter = null;
                 next.Identity += "/pool:" + next.Pool; next.Path += " → " + next.Pool; Admit(next);
             }
             else if (!string.IsNullOrEmpty(job.Pending.Script))

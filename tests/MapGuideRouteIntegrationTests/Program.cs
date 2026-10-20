@@ -100,6 +100,7 @@ internal static class Program
         Limits();
         PassiveCosts();
         ChoiceStoryMap();
+        MeaningfulDialogueMap();
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
     }
     private static void ChoiceStoryMap()
@@ -110,15 +111,15 @@ internal static class Program
         var manager = CheckPointManager.Instance = new CheckPointManager();
         manager._condition._list.Add(new ConditionResultData { name = "talk_entry", _items = new List<ConditionResultItem> { IsZero(firstFlag) } });
         manager._condition._list.Add(new ConditionResultData { name = "talk_later", _items = new List<ConditionResultItem> { IsZero(laterFlag) } });
-        DataHelper.Scripts["choice_map_root"] = "runwait(function() end); local gate=checkpointmanager.Condition('talk_entry'); local room={}; room[1]='휴식'; room[2]=gate and '사사형' or '~x'; local r=choose(room); if r==2 then say(luamanager.GetStoryText('talk_hello')); statmodifymanager.SetFlag('talk-later',0); luamanager.SetNextScript('choice_map_talk') end";
+        DataHelper.Scripts["choice_map_root"] = "runwait(function() end); local gate=checkpointmanager.Condition('talk_entry'); local room={}; room[1]='휴식'; room[2]=gate and '사사형' or '~x'; local r=choose(room); if r==2 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('talk_hello')); statmodifymanager.SetFlag('talk-later',0); luamanager.SetNextScript('choice_map_talk') end";
         DataHelper.Scripts["choice_map_talk"] = "local gate=checkpointmanager.Condition('talk_later'); local opts={}; opts[1]=gate and '대화 항목' or '~x'; local r=choose(opts); if r==1 then luamanager.SetNextScript('choice_map_story') end";
-        DataHelper.Scripts["choice_map_story"] = "say(luamanager.GetStoryText('story_line'))";
+        DataHelper.Scripts["choice_map_story"] = "setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('story_line'))";
         var controller = new PositionController { _positionData = new FreePositionData { name = "Room", _defaultScript = "choice_map_root" } };
         MapGuideSource.Select(controller); MapGuideSnapshot snapshot = null;
         int formatter = LuaParser.Descriptions, parses = LuaParser.Parses;
         for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
         var story = Find(snapshot, "사사형");
-        Check(story != null && story.Kind.Contains("선택 연계 이야기"), "Literal and inline selected dialogue becomes a map story without fabricating an event pool");
+        Check(story != null && story.Kind.Contains("인물 대화"), "Literal and inline selected dialogue becomes a map story without fabricating an event pool");
         Check(story.Status.StartsWith("진입 조건 충족 (현재)") && story.Available, "Map shows the first option's current condition separately from post-entry mutation and false future guards");
         Check(snapshot.Summary.AutoText.Contains("사사형") && snapshot.Summary.AutoText.Contains("진입 조건 충족 (현재)"), "Compact map tells the user which conversation can currently be entered");
         Check(!snapshot.Summary.AutoText.Contains("story_line") && !snapshot.Summary.AutoText.Contains("talk-later"), "Automatic story information excludes dialogue text and condition internals");
@@ -136,11 +137,40 @@ internal static class Program
         Check(!Find(snapshot, "사사형").Available && Find(snapshot, "사사형").Status.Contains("행동 부족"), "Current first guard does not override native map action availability");
         controller._gameStatManager._stats._list[0]._value = 3;
         controller._positionData._defaultScript = "choice_labels";
-        DataHelper.Scripts["choice_labels"] = "local opts={}; if checkpointmanager.Condition('talk_entry') then opts[1]='선택 A' else opts[1]='선택 B' end; local r=choose(opts); say(luamanager.GetStoryText('line'))";
+        DataHelper.Scripts["choice_labels"] = "local opts={}; if checkpointmanager.Condition('talk_entry') then opts[1]='선택 A' else opts[1]='선택 B' end; local r=choose(opts); setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('line'))";
         firstFlag.State = 1;
         for (int at = 0; at < 8; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
         Check(Find(snapshot, "선택 A") != null && !Find(snapshot, "선택 A").Available && Find(snapshot, "선택 B").Available, "Same original choose index with alternative raw labels stays in separate groups and cannot mark the wrong title ready");
-        Check(Find(snapshot, "선택 A").Status == "진입 조건 미충족 (현재)", "A complete supported route can report a proven current negative without conflating it with missing paths");
+        Check(Find(snapshot, "선택 A").Status == "선택 화면에서 확인", "Speaker-call uncertainty preserves a false current first-guard snapshot without rejecting omitted paths");
+    }
+    private static void MeaningfulDialogueMap()
+    {
+        MapGuideSource.Clear(); MapGuideSource.Enabled = () => true;
+        CheckPointManager.Instance = new CheckPointManager();
+        DataHelper.Scripts["activity_filter"] = "local a={'휴식','훈련','사사형'};local r=choose(a);if r==1 then setcharacter(narrative);say(luamanager.GetStoryText('N_rest'));setcharacter(characters.Get('player'));say(luamanager.GetStoryText('D_rest')) elseif r==2 then say(luamanager.GetStoryText('N_train')) elseif r==3 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_brother')) end";
+        var controller = new PositionController { _positionData = new FreePositionData { name = "Room", _defaultScript = "activity_filter" } };
+        MapGuideSource.Select(controller); MapGuideSnapshot value = null;
+        for (int at = 0; at < 15; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        Check(Find(value, "사사형")?.Kind.Contains("인물 대화", StringComparison.Ordinal) == true, "Map keeps a selected literal NPC-speaker conversation alongside repeated utility choices");
+        Check(Find(value, "휴식") == null && Find(value, "훈련") == null && !value.Summary.AutoText.Contains("휴식", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("훈련", StringComparison.Ordinal), "Basic rest/player D-lines and training narration do not become automatic map story names");
+
+        DataHelper.Scripts["rest_followup"] = "local a={'휴식'};local r=choose(a);if r==1 then setcharacter(narrative);say(luamanager.GetStoryText('N_intro'));luamanager.SetNextScript('late_conversation') end";
+        DataHelper.Scripts["late_conversation"] = "setcharacter(characters.Get('player'));say(luamanager.GetStoryText('D_thought'));setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_npc'))";
+        controller._positionData._defaultScript = "rest_followup";
+        for (int at = 0; at < 15; at++) { Time.unscaledTime += .25f; value = Read(true); }
+        var rest = Find(value, "휴식");
+        Check(rest?.Kind.Contains("인물 대화", StringComparison.Ordinal) == true && rest.Detail.Contains("선택 경로: 휴식", StringComparison.Ordinal), "Rest that reaches a real NPC line remains a conditional conversation path rather than being pruned with repeated rest");
+        Check(rest.Status.Contains("진입 조건 충족", StringComparison.Ordinal) && !rest.Status.Contains("1회성", StringComparison.Ordinal), "Static NPC evidence preserves current first-guard semantics and grants no one-shot property");
+        int reads = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
+        for (int at = 0; at < 20; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        Check(DataHelper.Reads == reads && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && Counters.GameCalls == 0,
+            "Classification reuses static route definitions without warm Lua reload, full effects or game judgment calls");
+
+        DataHelper.Scripts["player_talk_only"] = "local a={'talk+O_thought+0+0'};local r=choose(a);if r==1 then setcharacter(characters.Get('player'));say(luamanager.GetStoryText('D_player_talk')) end";
+        controller._positionData._defaultScript = "player_talk_only";
+        for (int at = 0; at < 12; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        bool npcRow = false; foreach (var row in value.Entries) npcRow |= row.Kind.Contains("인물 대화", StringComparison.Ordinal);
+        Check(!npcRow && !value.Summary.AutoText.Contains("O_thought", StringComparison.Ordinal), "A talk-tagged player-only menu cannot reenter the map's automatic conversation summary");
     }
     private static void Limits()
     {

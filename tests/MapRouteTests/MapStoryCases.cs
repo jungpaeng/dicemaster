@@ -6,7 +6,7 @@ using DiceMaster.LiveLog;
 
 internal static class MapStoryCases
 {
-    private const string Say = "say(luamanager.GetStoryText('dialogue-key'))";
+    private const string Say = "setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('dialogue-key'))";
     private static MapRouteDefinitions Build(string root, Dictionary<string, string> scripts = null, MapRouteLimits limits = null)
     {
         scripts = scripts ?? new Dictionary<string, string>(); scripts["root"] = root;
@@ -31,6 +31,7 @@ internal static class MapStoryCases
         var leaf = d.StoryEntries.Single(x => x.Script == "leaf");
         check(inline.Paths.Count == 1 && inline.Paths[0].Steps.Count == 1, "inline dialogue retains one canonical selected path");
         check(inline.TitleRawLabel == "brother" && inline.StoryKey == "dialogue-key", "story identity uses selected label and literal text key without reading dialogue");
+        check(inline.DialogueCharacter == "brother4" && inline.Paths[0].DialogueCharacter == "brother4", "selected path records its explicit NPC literal");
         check(leaf.Paths.Count == 1 && leaf.Paths[0].Steps.Count == 2, "literal followup retains each structured selection step");
         var step = leaf.Paths[0].Steps[1];
         check(step.Script == "menu" && step.Index == 2 && step.RawLabel == "talk+topic+0+0" && step.SourceOffset > 0, "step retains script, choose offset, original Lua index and untouched source label");
@@ -50,11 +51,12 @@ internal static class MapStoryCases
 
         d = Build("local opts={};opts[1]=checkpointmanager.Condition('gate') and 'brother' or '~x';local r=choose(opts);" + Say);
         inline = d.StoryEntries.Single();
-        check(!d.IsPartial && inline.Current == MapRouteState.Met, "supported closed dialogue is structurally complete while the dialogue start remains eligible");
+        check(d.IsPartial && inline.Current == MapRouteState.Unknown && inline.ReadEntryConditions(new MapRouteRead()) == MapRouteState.Met,
+            "NPC definition evidence retains the existing UI-call uncertainty and separate known entry guard");
         var condition = Mortal.Story.CheckPointManager.Instance._condition._list.Single(x => x.name == "gate");
         condition.Current = false;
-        check(inline.ReadEntry(new MapRouteRead()) == MapRouteState.NotMet && inline.ReadEntryConditions(new MapRouteRead()) == MapRouteState.NotMet && inline.Current == MapRouteState.NotMet,
-            "supported closed dialogue with a false first guard is unavailable, not unsupported merely because it displays text");
+        check(inline.Paths[0].ReadEntry(new MapRouteRead()) == MapRouteState.NotMet && inline.Paths[0].ReadEntryConditions(new MapRouteRead()) == MapRouteState.NotMet && inline.Current == MapRouteState.Unknown,
+            "false first guard remains observable without strengthening partial NPC execution certainty");
         condition.Current = true;
 
         d = Build("local opts={'same'};local r=choose(opts);" + Say + ";local later={'same'};local n=choose(later);local utility=1");
@@ -93,7 +95,7 @@ internal static class MapStoryCases
         check(d.StoryEntries.Count == 0, "overwritten literal story registration is never followed");
         d = Build(choice + "if checkpointmanager.Condition('gate') then " + Say + " else " + Say + " end");
         check(d.StoryEntries.Count == 2 && d.StoryEntries.All(x => x.Paths.Count == 2), "dialogue lines and conditional alternatives merge by script and selected option");
-        check(d.StoryEntries.All(x => x.Current == MapRouteState.Met), "supported current branch union retains its known eligible path");
+        check(d.StoryEntries.All(x => x.Current == MapRouteState.Unknown), "NPC witnesses do not strengthen current branch execution certainty");
         var pooled = new MapRouteDefinitions("root", key => ScriptReadResult.Success(key == "root" ? choice + "local result=checkpointmanager.Position('p');luamanager.SetNextScript(result)" : Say),
             key => new[] { new MapRouteEvent(new object(), "pooled_result") });
         for (int i = 0; i < 10000 && pooled.IsPreparing; i++) pooled.Advance(0, 128);
@@ -107,5 +109,6 @@ internal static class MapStoryCases
         check(d.IsPartial && d.StoryEntries.All(x => x.Current == MapRouteState.Unknown), "malformed script never proves a prefix dialogue route");
         d.Clear();
         check(d.StoryEntries.Count == 0 && d.ChoiceSteps.Count == 0 && !d.IsPreparing, "lifecycle clear drops selected stories and all choice steps");
+        MeaningfulStoryCases.Run(check);
     }
 }

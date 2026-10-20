@@ -60,18 +60,19 @@ namespace DiceMaster.Information
     }
     public sealed class MapRoutePath
     {
-        public readonly string Identity, Description;
+        public readonly string Identity, Description, DialogueCharacter;
         public readonly bool HasChoice, Uncertain;
         internal readonly PreviewCondition Gate;
         public readonly PreviewCondition EntryGate;
         public readonly bool EntryUncertain;
         public readonly IList<MapChoiceStep> Steps;
         internal MapRoutePath(string identity, string description, bool choice, bool uncertain, PreviewCondition gate,
-            IList<MapChoiceStep> steps = null, PreviewCondition entryGate = null, bool entryUncertain = false)
+            IList<MapChoiceStep> steps = null, PreviewCondition entryGate = null, bool entryUncertain = false, string dialogueCharacter = null)
         {
             Identity = identity; Description = description; HasChoice = choice; Uncertain = uncertain; Gate = gate;
             Steps = new List<MapChoiceStep>(steps ?? new MapChoiceStep[0]).AsReadOnly();
             EntryGate = entryGate ?? gate; EntryUncertain = entryUncertain;
+            DialogueCharacter = dialogueCharacter ?? "";
         }
         internal static MapRouteState State(PreviewConditionState value)
         { return value == PreviewConditionState.Met ? MapRouteState.Met : value == PreviewConditionState.NotMet ? MapRouteState.NotMet : MapRouteState.Unknown; }
@@ -92,6 +93,19 @@ namespace DiceMaster.Information
         private bool omittedPaths;
         private string pathText;
         public IList<MapRoutePath> Paths { get { return paths.AsReadOnly(); } }
+        // Each path stores its first qualifying NPC witness, not all dialogue
+        // participants. A representative is valid only when retained paths
+        // agree; consumers that group alternatives must use path metadata.
+        public string DialogueCharacter
+        {
+            get
+            {
+                string value = null;
+                foreach (var path in paths)
+                { if (value == null) value = path.DialogueCharacter; else if (value != path.DialogueCharacter) return ""; }
+                return value ?? "";
+            }
+        }
         public string Path
         { get { if (pathText == null) { var text = new List<string>(); foreach (var p in paths) if (!text.Contains(p.Description)) text.Add(p.Description); pathText = string.Join("\n", text); } return pathText; } }
         public MapRouteState Current { get { return ReadCurrent(new MapRouteRead()); } }

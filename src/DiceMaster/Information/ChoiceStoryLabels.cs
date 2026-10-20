@@ -57,6 +57,23 @@ namespace DiceMaster.Information
             string label;
             return (TryResolve(raw, out label) ? label : "이름 미확인 선택지") + " 관련 이야기";
         }
+        public static string DialogueTarget(string character)
+        {
+            if (string.IsNullOrEmpty(character)) return "인물 대화";
+            string key = "Position/title/" + character;
+            string value = DisplayNames.Locale(key, "");
+            if (string.IsNullOrWhiteSpace(value) || value == key) return "인물 대화";
+            string name = Plain(DisplayNames.Text(value));
+            return name.Length == 0 ? "인물 대화" : ShortName(name) + " 대화";
+        }
+        public static string DialogueName(string raw, string character)
+        {
+            string name = Resolve(raw);
+            string[] parts = Raw(raw).Split('+');
+            // The native position label already names this exact person.
+            if (parts.Length == 3 && parts[0] == "talk" && parts[1] == "talk" && parts[2] == character) return name;
+            return ShortName(name) + " → " + DialogueTarget(character);
+        }
         public static string ShortName(string label)
         { label = Plain(label); return label.Length <= 28 ? label : label.Substring(0, 27) + "…"; }
         public static string Path(IList<MapChoiceStep> steps)
