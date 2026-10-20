@@ -15,11 +15,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | 배포 | 내용 | 검증 상태 |
 | --- | --- | --- |
 | [정식 v1.0.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.5) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.5/DiceMaster-v1.0.5.zip) | 로그 UI·패드 탐색·한국어 표시·예약 표시와 해제 | 2026-10-20 사용자 Windows 확인 완료. [확인 범위](docs/ISSUE-4-STABLE-RELEASE.md#2026-10-20-사용자-후속-확인) |
-| [시험판 v1.0.6-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.15) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.15/DiceMaster-v1.0.6-alpha.15.zip) | 조건·이벤트 팝업의 조건 요약·전체 상세·회색/미확정 구분 통일 | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA15-RELEASE.md) |
+| [시험판 v1.0.6-alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16) · [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.16/DiceMaster-v1.0.6-alpha.16.zip) | 로그 이벤트 목록·조건 상세의 확정 미충족 회색 표시와 공통 판정 | 후보·고정 소스의 14개 자동 검사와 공개 파일 대조 완료, 실제 Windows·장치 확인 대기. [변경·검증·한계](docs/ISSUE-5-ALPHA16-RELEASE.md) |
 
-다음 시험판 **v1.0.6-alpha.16은 배포 준비 중**입니다. 로그 이벤트 목록과 조건 상세의 분기에도 팝업과 같은 확정 미충족 회색 표시를 적용합니다. 전체 후보 14개 검사는 통과했고 고정 소스 재빌드와 공개 파일 대조는 대기이며, 현재 설치 가능한 공개 시험판은 위 alpha.15입니다. [예정 변경·검증 상태](docs/ISSUE-5-ALPHA16-RELEASE.md)
-
-alpha.15는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
+alpha.16은 alpha.15의 팝업 조건·판정 표시, alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원복을 유지합니다. 회상·조건 설명에 내부 ID가 남는 문제를 해결한 것으로 안내하지 않습니다. 기존 alpha.10 공개 파일은 당시 이력으로 보존합니다. [후속 보고·원복 범위](docs/ISSUE-5-ALPHA10-RELEASE.md#2026-10-20-사용자-후속-보고와-원복)
 
 **시험판의 조건 팝업 기본값은 OFF입니다.** 기존 cfg에 저장된 ON은 유지하므로 끄려면 조건 탭 상단 설정을 OFF로 바꾸세요. 새 cfg 또는 해당 키가 없는 cfg에만 OFF를 적용합니다.
 
@@ -120,11 +118,11 @@ alpha.15는 alpha.13의 조건 상세 분기 예약과 alpha.11의 조건명 원
 
 ## 시험판의 조건·이벤트 선택
 
-공개 시험판은 **[v1.0.6-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.15)**입니다. 조건·이벤트 모두 같은 수준의 요약·전체 조건을 보여주며, 기존 로그 열기와 체크포인트당 한 행·상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha15-팝업-조건요약판정-통일-확인표)에서 대기합니다.
+공개 시험판은 **[v1.0.6-alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16)**입니다. 로그 이벤트 목록과 조건 상세의 분기에도 팝업과 같은 확정 미충족 회색 표시를 적용합니다. 기존 세 줄 팝업·전체 조건, 로그 열기와 체크포인트당 한 행·상세 분기 예약을 유지합니다. 이 DLL의 실제 Windows·장치 확인은 [검증표](docs/ISSUE-5-WINDOWS-VALIDATION.md#alpha16-로그-판정회색-표시-확인표)에서 대기합니다.
 
-### 다음 시험판의 로그 판정 표시
+### 로그 판정 표시
 
-alpha.16 준비 코드에서는 **이벤트 목록의 제목·상세 조건, 조건 상세의 개별 분기 제목·조건**을 팝업과 같은 판정으로 구분합니다. 확정된 조건 미충족·최종 가중치 0·앞 분기 우선만 회색이고, 난수·미지원·앞 분기 미확정은 기본색과 `?`·사유로 남깁니다. 조건 목록의 체크포인트 자체와 결과 효과색·예약 조작은 유지합니다. 회색이어도 읽기 가능한 결과는 기존 방식으로 예약할 수 있습니다.
+**이벤트 목록의 제목·상세 조건, 조건 상세의 개별 분기 제목·조건**을 팝업과 같은 판정으로 구분합니다. 확정된 조건 미충족·최종 가중치 0·앞 분기 우선만 회색이고, 난수·미지원·앞 분기 미확정은 기본색과 `?`·사유로 남깁니다. 조건 목록의 체크포인트 자체와 결과 효과색·예약 조작은 유지합니다. 회색이어도 읽기 가능한 결과는 기존 방식으로 예약할 수 있습니다.
 
 기준은 과거 실행 당시가 아닌 **마지막 정상 조회 시점의 현재 상태**입니다. 로그가 열린 현재 탭을 약 0.25초마다 갱신하고 조건 횟수 분기는 다음 실행 횟수로 판단합니다. 조회 실패·이전 값·게시 실패에서는 이전 회색을 현재 미충족처럼 유지하지 않고 판정 미확인으로 표시합니다. 이벤트 상세는 전체 조건과 예상 결과를 분리하고 조건 난수는 표시용 예시값 없이 범위·식·미확정으로 설명합니다. [표시 기준과 변경 범위](docs/ISSUE-5-LOG-JUDGMENT-DISPLAY.md)
 

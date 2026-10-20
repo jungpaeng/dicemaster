@@ -1,8 +1,8 @@
 # PRD #5 — 실제 Windows 확인표
 
-**v1.0.6-alpha.16은 배포 준비 중이며 새 DLL의 실제 Windows·장치 확인은 대기**다. 로그 이벤트 목록과 조건 상세의 개별 분기에 팝업과 같은 확정 미충족 회색 표시를 적용한다. 전체 후보·고정 소스·공개 파일 검증은 아직 대기이며 현재 공개 시험판은 alpha.15다. [alpha.16 준비·검증 상태](ISSUE-5-ALPHA16-RELEASE.md) · [표시 기준과 구현 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md).
+**v1.0.6-alpha.16을 2026-10-20 22:00:13 KST에 게시했으며 새 DLL의 실제 Windows·장치 확인은 대기**다. 로그 이벤트 목록과 조건 상세의 개별 분기에 팝업과 같은 확정 미충족 회색 표시를 적용한다. 후보·고정 소스에서 각각 14개 검사와 197개 입력·80개 소스/리소스·전체 검사 결과·동일 DLL/cfg/ZIP 바이트를 확인하고 익명 공개 ZIP의 CRC·두 파일·내부 바이트·해시를 대조했다. [alpha.16 배포 기록](ISSUE-5-ALPHA16-RELEASE.md) · [표시 기준과 구현 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md).
 
-alpha.16 시험 파일·소스·태그·해시는 게시 검증 뒤 기록한다. Windows 개발 환경에 설치하거나 실행하지 않았고 이전 버전의 사용자 확인을 새 DLL에 승계하지 않는다. 시험 전에 실제 설치 DLL의 SHA-256과 게임·BepInEx·Windows 버전, 장치·Steam Input, 해상도·UI 배율을 남긴다.
+시험 대상은 [DiceMaster-v1.0.6-alpha.16.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.16/DiceMaster-v1.0.6-alpha.16.zip)이며 소스·주석 태그는 `e2fa8163a5565a571eca2d7d5c51d8d05b75bae1`다. 공개 DLL은 650,752바이트·SHA-256 `f36e61907b0913ac9a9ee13ccdda75e9758fd8498d0b76d22621b9c04ac74da6`다. Windows 개발 환경에 설치하거나 실행하지 않았고 이전 버전의 사용자 확인을 새 DLL에 승계하지 않는다. 시험 전에 실제 설치 DLL의 SHA-256과 게임·BepInEx·Windows 버전, 장치·Steam Input, 해상도·UI 배율을 남긴다. alpha.15의 게시 파일·확인표는 아래 당시 기록으로 보존한다.
 
 ## alpha.16 로그 판정·회색 표시 확인표
 

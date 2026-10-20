@@ -1,8 +1,8 @@
 # v1.0.6-alpha.16 — 로그에서도 조건·이벤트 판정과 미충족 표시
 
-상태: **배포 준비 중 · 전체 후보 검사 통과 · 고정 소스 재빌드·게시·공개 파일 검증 대기 · 새 DLL의 실제 Windows·장치 확인 대기**. alpha.15 이후 로그의 이벤트 목록과 조건 상세에서도 팝업과 같은 확정 미충족 회색 표시를 읽도록 정리한다. 현재 공개 시험판은 [v1.0.6-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.15)이며 이 문서는 아직 새 버전 게시 완료 기록이 아니다.
+상태: **2026-10-20 22:00:13 KST prerelease 게시 완료 · 새 DLL의 실제 Windows·장치 확인 대기**. alpha.15 이후 로그의 이벤트 목록과 조건 상세에서도 팝업과 같은 확정 미충족 회색 표시를 읽도록 정리한다. 소스·주석 태그는 `e2fa8163a5565a571eca2d7d5c51d8d05b75bae1`이며 후보·고정 재빌드·익명 공개 파일의 바이트·해시를 대조했다.
 
-[현재 공개 시험판 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.15/DiceMaster-v1.0.6-alpha.15.zip) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha16-로그-판정회색-표시-확인표) · [표시 기준과 구현 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md).
+**[이 버전 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.16/DiceMaster-v1.0.6-alpha.16.zip)** · [Release](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16) · [최신 정식 버전](https://github.com/jungpaeng/dicemaster/releases/latest) · [Windows 확인표](ISSUE-5-WINDOWS-VALIDATION.md#alpha16-로그-판정회색-표시-확인표) · [표시 기준과 구현 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md).
 
 ## 사용자에게 달라진 점
 
@@ -31,14 +31,14 @@
 
 ## 설치·업데이트와 복구
 
-Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**가 필요하다. alpha.16의 설치 ZIP은 게시 후 이 문서에 연결한다. 현재 alpha.15 설치 링크를 alpha.16 파일로 오인하지 않는다.
+Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**가 필요하다.
 
 1. 게임을 종료하고 현재 `BepInEx/plugins/DiceMaster/DiceMaster.dll`과 `BepInEx/config/DiceMaster.cfg`를 백업한다.
 2. 게시된 대상 버전의 `DiceMaster-v1.0.6-alpha.16.zip`을 받는다. GitHub 자동 `Source code` 압축 파일은 설치용이 아니다.
 3. 업데이트는 **`plugins/DiceMaster/DiceMaster.dll`만 교체**해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다.
 4. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
-alpha.15로 복구하면 로그의 새 회색 표시·공통 Switch 판정·조건/결과 분리는 사라지고 이전 로그 표시로 돌아간다. alpha.15의 세 줄 팝업·전체 조건·판정 구분과 로그 열기·상세 분기 예약은 유지된다. 기존 Release·태그·자산과 Latest 정식 v1.0.5를 보존할 예정이며 설치 ZIP은 cfg와 DLL 두 파일만 포함하도록 검증한다.
+alpha.15로 복구하면 로그의 새 회색 표시·공통 Switch 판정·조건/결과 분리는 사라지고 이전 로그 표시로 돌아간다. alpha.15의 세 줄 팝업·전체 조건·판정 구분과 로그 열기·상세 분기 예약은 유지된다. 기존 Release·태그·자산과 Latest 정식 v1.0.5를 보존했으며 설치 ZIP은 cfg와 DLL 두 파일만 포함한다.
 
 ## 검증과 알려진 제한
 
@@ -71,9 +71,11 @@ Windows 개발 환경에 설치·실행하지 않았다. 관리 코드·제공�
 
 새 회귀는 공통 Switch 우선순위·기본/빈 분기·미확정/조회 실패·6개 횟수 비교·오버플로와 RNG/중첩 카운터 비변경, 로그 분기 스냅샷 전달·갱신 실패/회복·이전 게시 불변성, 최신 판정 회색/미확정/실패 구분·효과색·회색 행 예약, 분기 상태 줄의 높이와 다음 같은 위치 터치 유지, 실제 DLL 결과 전용 캐시의 null·정적 결과 생성/재사용·동적 조건 실패와 분리·기존 설명 경로 유지를 포함한다.
 
-고정 소스의 별도 재빌드·동일 입력/전체 검사 결과/DLL·cfg·ZIP 바이트와 게시 후 익명 공개 파일 대조는 다음 단계에서 기록한다.
+고정 소스 `e2fa8163a5565a571eca2d7d5c51d8d05b75bae1`를 기존 모드 DLL 0개인 별도 스냅샷에서 재빌드해 2026-10-20 21:42:33 KST 같은 14개 검사를 통과했다. 2026-10-20 21:43:12 KST 검토 후보와 197개 입력·80개 소스/리소스·전체 검사 결과·DLL/cfg/ZIP 바이트 일치를 확인했다. 구현·README를 `origin/main`에 반영하고 같은 커밋의 주석 태그로 2026-10-20 22:00:13 KST prerelease를 게시했다. 이후 익명 공개 페이지·ZIP 다운로드·CRC·두 파일·내부 바이트·해시 대조를 통과했다.
 
 ## 파일 확인과 게시 기록
+
+아래 파일은 검토 후보·고정 소스 재빌드·익명 공개 다운로드의 바이트·해시가 일치한다. 소스 커밋은 [e2fa8163a5565a571eca2d7d5c51d8d05b75bae1](https://github.com/jungpaeng/dicemaster/commit/e2fa8163a5565a571eca2d7d5c51d8d05b75bae1)다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -85,14 +87,14 @@ Windows 개발 환경에 설치·실행하지 않았다. 관리 코드·제공�
 | --- | --- |
 | 구현 시작 기준 main | `887741887c456df735966403e9348e6205497c42` |
 | 사전 원격 main | `887741887c456df735966403e9348e6205497c42` |
-| 고정 소스·주석 태그 커밋 | 대기 |
+| 고정 소스·주석 태그 커밋 | `e2fa8163a5565a571eca2d7d5c51d8d05b75bae1` |
 | 후보 빌드·입력·패키지 대조 | 2026-10-20 21:39:56 KST 완료. 197개 입력·80개 소스/리소스·전체 14개 검사·ZIP CRC/두 파일/바이트 확인 |
-| 고정 소스 재빌드·전체 검사·후보 대조 | 대기 |
-| 게시 시각 | 미게시 |
-| Release / asset ID | 대기 |
-| 공개 상태 | 미게시. `draft=false`·`prerelease=true`·`make_latest=false`로 게시 예정 |
-| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 대기 |
-| 기존 Release·태그·자산 | 사전 보관·게시 후 보존 대조 대기 |
-| Latest 정식·게시 전후 이슈 상태 | 대조 대기. Latest 정식 v1.0.5·#2 closed·#4 closed·#5 open 보존 예정 |
+| 고정 소스 재빌드·전체 검사·후보 대조 | 2026-10-20 21:42:33 KST 완료. 2026-10-20 21:43:12 KST 전체 입력·검사·파일 바이트 일치 확인 |
+| 게시 시각 | 2026-10-20 22:00:13 KST |
+| Release / asset ID | `418404083` / `659346092` |
+| 공개 상태 | `draft=false`·`prerelease=true`·`make_latest=false` |
+| 공개 페이지·ZIP CRC·두 파일·내부 바이트·SHA-256 | 익명 공개 페이지·다운로드 대조 통과 |
+| 기존 Release·태그·자산 | 사전 기존 39개 Release·39개 태그·자산 보관, 게시 후 보존 확인 |
+| Latest 정식·게시 전후 이슈 상태 | v1.0.5 · #2 closed·#4 closed·#5 open 유지. 이 작업은 이슈를 변경하지 않음 |
 
-최종 후보 영수증은 로컬 `artifacts/log-judgment/full/final-candidate/build-manifest.json`, 로그는 `artifacts/log-judgment/full-final-build-run.log`다. 고정 소스·게시·익명 대조 영수증은 `artifacts/releases/v1.0.6-alpha.16/`에 수행 후 보존한다. 위 파일 크기·해시는 같은 최종 검토 후보의 값이며 고정 소스·공개 다운로드와의 대조는 완료 후 기록한다. 공개 근거는 이 배포 문서와 [설계·검증 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md)에 기록하고 로컬 `artifacts/`를 공개 링크로 사용하지 않는다.
+최종 후보 영수증은 로컬 `artifacts/log-judgment/full/final-candidate/build-manifest.json`, 로그는 `artifacts/log-judgment/full-final-build-run.log`다. 고정 소스·게시·익명 대조 영수증은 `artifacts/releases/v1.0.6-alpha.16/`의 `release-verification.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`에 보존한다. 고정 검사 영수증의 `published=false`와 고정 소스 문서의 준비 문구는 게시 전 검사 시점이다. 이 게시 결과 보충은 별도 main 문서 커밋으로 반영하며 빌드 소스·태그·공개 자산은 변경하지 않는다. 공개 근거는 이 배포 문서와 [설계·검증 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md)에 기록하고 로컬 `artifacts/`를 공개 링크로 사용하지 않는다.

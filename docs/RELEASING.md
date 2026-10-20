@@ -4,11 +4,17 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## 로그창의 이벤트·분기 판정 색상 — v1.0.6-alpha.16 prerelease 준비
+## 로그창의 이벤트·분기 판정 색상 — v1.0.6-alpha.16 prerelease
 
 현재 팝업과 같은 구조화된 판정을 로그의 이벤트 목록과 조건 상세 개별 분기에 연결한다. 최신 정상 조회에서 확정 미충족·가중치 0·앞 분기 우선만 제목·조건을 회색으로 표시하고, 미확정 `?`·자료 확인 실패 `!`·갱신 실패와 이전 값을 구분한다. 조건 체크포인트 부모 행과 결과 효과색, 선택·예약·터치 동작은 유지한다. 공통 Switch 읽기 helper는 기존 분기 순서·기본 분기·다음 실행 횟수 계산을 보존하며, 이벤트 로그는 조건과 정적 결과 설명을 분리한다. [변경·설치·검증](ISSUE-5-ALPHA16-RELEASE.md) · [표시·갱신 경계](ISSUE-5-LOG-JUDGMENT-DISPLAY.md).
 
-기준 main은 `887741887c456df735966403e9348e6205497c42`다. 최종 전체 후보는 2026-10-20 21:39:56 KST에 14개 검사·197개 입력·80개 소스/리소스·패키지 대조를 통과했다. 고정 커밋 재빌드·14개 검사·동일 입력과 DLL/cfg/ZIP 대조 후 main과 새 태그를 atomic push하고 새 prerelease를 준비한다. 사전 기존 39개 Release·태그·자산과 Latest 정식 v1.0.5·이슈 #2 closed·#4 closed·#5 open을 보관했으며 게시 후 대조한다. 실제 게시 결과는 별도 문서 커밋으로 보충한다. Windows 개발 환경 설치·실행 검사는 하지 않으며 실제 Windows·터치 확인은 대기다.
+사용자의 직접 승인 후 **2026-10-20 22:00:13 KST에 [alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6-alpha.16)을 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6-alpha.16/DiceMaster-v1.0.6-alpha.16.zip). 고정 소스·주석 태그는 `e2fa8163a5565a571eca2d7d5c51d8d05b75bae1`이며 main과 태그를 함께 atomic push했다. 사전 원격 main은 `887741887c456df735966403e9348e6205497c42`다.
+
+최종 전체 후보는 2026-10-20 21:39:56 KST에 14개 검사·197개 입력·80개 소스/리소스·패키지 대조를 통과했다. 고정 소스를 기존 모드 DLL 0개인 별도 스냅샷에서 재빌드해 21:42:33 KST 같은 14개 검사를 통과했고 21:43:12 KST 전체 입력·검사 결과·DLL/cfg/ZIP 바이트 일치를 확인했다. 독립 감사도 최종 후보의 입력·참조·검사 로그·정확히 두 파일·내부 바이트와 게임 DLL 미포함을 확인했다. Release `418404083`·asset `659346092`, `draft=false`·`prerelease=true`·`make_latest=false`다. 게시 후 익명 공개 페이지·다운로드에서 ZIP CRC·두 파일·내부 바이트·SHA-256과 고정 태그를 확인했다.
+
+사전 기존 39개 Release·태그·자산을 보관하고 게시 후 보존을 확인했다. Latest 정식 v1.0.5와 이슈 #2 closed·#4 closed·#5 open도 유지했다. Windows 개발 환경 설치·실행 검사는 하지 않았으며 실제 Windows·Unity 화면·물리 패드·터치 확인과 이슈 #5 완료는 대기다.
+
+영수증은 로컬 `artifacts/releases/v1.0.6-alpha.16/`의 `release-verification.json`·`build-manifest.json`·`reviewed-candidate-comparison.json`·`github-publication.json`·`anonymous-verification.json`·`public-release.json`·`tag-verification.json`·`release-body.md` 등에 보존한다. 후보 독립 감사는 `artifacts/log-judgment/full/independent-audit.json`이다. 앞선 자동 승인 거부 영수증은 보존하고 직접 승인 후 정상 push·게시 결과를 `publication-resumed.json`에 기록한다. 고정 검사 영수증의 `published=false`와 소스 태그의 준비 문구는 게시 전 검사 시점이다. 이 결과 보충은 별도 main 문서 커밋이며 빌드 소스·태그·공개 자산을 변경하지 않는다.
 
 ## 선택 팝업의 조건·판정 표시 통일 — v1.0.6-alpha.15 prerelease
 
