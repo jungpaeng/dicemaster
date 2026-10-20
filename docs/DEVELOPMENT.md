@@ -2,13 +2,15 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #6 로컬 후속 — 선택 대상과 그리기 비용
+## v1.0.7-alpha.2 — 선택 대상과 그리기 비용
+
+[2026-10-21 01:35:02 KST 공개 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2). 소스 `4bbdffb`의 고정 재빌드·18개 검사와 검토 후보의 입력/검사/패키지 일치·익명 다운로드 검증을 완료했습니다. 새 Windows·성능 확인과 #6 완료는 대기이며 main·기존 Release/Latest를 보존했습니다. [게시·검증 근거](ISSUE-6-SELECTED-MAP-SHOP.md#공개-prerelease-게시와-검증).
 
 선택 장소 하나만 DisplayQuery로 만들고 선택 세대를 키에 포함합니다. 약한 참조의 실제 게임 선택은 OFF 동안 유지하되 자료는 비웁니다. 선택 변경/해제는 전 주기 게시와 오래된 콜백을 즉시 무효화합니다. 화면은 선택 장소 이름의 좌측 상단 패널 하나를 사용하고 높이·사각형·GUIContent를 캐시합니다. 다른 장소 UI의 카메라 투영/장애물 수집과 전역 겹침 최소화 탐색은 제거했습니다.
 
 ShopUseEffects는 실제 재고 Misc/SpecialItem을 food_menu_001의 명시 제거 호출과 연결합니다. 기존 정의 파서·설명기와 문맥당 연결 색인을 사용하며 게임 사용/학습·조건 실행을 호출하지 않습니다. 자동 상태와 상세 효과를 분리하고 읽기 실패는 기존 5초 재시도를 따릅니다. [결정·지원 경계·전체 자동 결과·Windows 확인](ISSUE-6-SELECTED-MAP-SHOP.md). 아래 alpha.1은 해당 공개 버전의 기록입니다.
 
-## PRD #6 — 네 정보 기능의 prerelease
+## PRD #6 — alpha.1의 구현·게시 기록
 
 [v1.0.7-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)는 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6)의 구현·자동 검사·고정 소스 재빌드 검증 후보다. 사용자가 2026-10-21 같은 채팅에서 “v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”라고 답해 #5 착수 조건을 충족했다. 확인 버전·파일·기준 커밋과 미제공 환경은 [#5 후속 기록](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)에, 새 구현·검사·한계는 [#6 구현 기록](ISSUE-6-IMPLEMENTATION.md)에 구분한다. 새 후보는 2026-10-21 00:46:36 KST에 공개했고 익명 ZIP·기존 Release/태그/Latest 보존을 검증했다. 검증 소스 태그 `949ebcc`와 `codex/prd6-information` 브랜치를 원격에 반영했으며 main은 변경하지 않았다. [게시 기록](ISSUE-6-CANDIDATE.md#공개-prerelease-게시와-검증)을 따른다. 새 Windows 확인은 미실행이고 #6은 open이다.
 

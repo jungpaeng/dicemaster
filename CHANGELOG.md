@@ -1,11 +1,11 @@
 # 변경 이력
 
-## 미배포 로컬 후속 — 선택 장소 지도·상점 효과 (2026-10-21)
+## [v1.0.7-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2) — 2026-10-21 (prerelease)
 
 - 지도 안내와 1회성 지도 표식을 현재 선택한 장소 하나로 제한합니다. 선택하지 않은 장소는 표시 주기에 순회·조회하지 않고, 선택 변경·해제 직후 이전 오버레이를 숨깁니다.
 - 좌측 상단 고정 패널·긴 자동 텍스트 제한·배치/높이 캐시를 적용하고 매 GUI 호출의 전체 화면 장애물 조합 탐색을 제거합니다. 실제 Windows 렉 개선은 확인 대기입니다.
 - 상점의 Misc/SpecialItem을 음식 사용 메뉴의 종류·ID와 연결해 효과를 기존 로그에서 조회합니다. 책의 ‘학습 효과 확인’을 ‘학습 조건 충족’으로 바꾸고 미충족·부분 미지원·사용 경로 미연결을 구분합니다.
-- 전체 18개 검사와 실제 후보 DLL 파서·API 메타데이터·패키지 검증을 통과했습니다. 공개 alpha.1 파일을 교체하지 않았으며 새 후보의 Windows 확인은 대기입니다. [파일·구현·검사·설치와 확인표](docs/ISSUE-6-SELECTED-MAP-SHOP.md).
+- 소스 `4bbdffb`의 검토 후보·고정 소스 재빌드에서 각각 18개 검사를 통과하고 229개 입력·전체 검사 결과·DLL/cfg/ZIP 바이트 일치를 확인했습니다. 2026-10-21 01:35:02 KST에 새 prerelease로 게시하고 익명 공개 ZIP 검증을 통과했습니다. 기존 alpha.1과 Latest 정식 v1.0.6을 보존했습니다. **새 DLL의 Windows 확인은 대기이며 #6은 open입니다.** [파일·지원 범위·검사·설치와 확인표](docs/ISSUE-6-SELECTED-MAP-SHOP.md).
 
 ## [v1.0.7-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1) — 2026-10-21 (prerelease)
 

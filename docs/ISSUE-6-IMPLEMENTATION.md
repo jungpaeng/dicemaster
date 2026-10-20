@@ -1,6 +1,6 @@
 # PRD #6 — 지도·1회성·실제 분기·상점 정보 구현 기록
 
-**현재 로컬 후속:** [선택 장소 지도 안내·상점 사용 효과 수정과 새 Windows 확인표](ISSUE-6-SELECTED-MAP-SHOP.md). 아래는 공개 v1.0.7-alpha.1의 구현·파일·미실행 확인 기록으로 보존하며 새 수정 후보와 구분한다.
+**현재 공개 후보 v1.0.7-alpha.2:** [선택 장소 지도 안내·상점 사용 효과·공개 파일 검증·새 Windows 확인표](ISSUE-6-SELECTED-MAP-SHOP.md). 아래는 공개 alpha.1의 구현·파일·게시 당시 미실행 확인 기록으로 보존하며 새 수정 파일과 구분한다.
 
 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6) · [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [후보·설치·자동 검사](ISSUE-6-CANDIDATE.md) · [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)
 

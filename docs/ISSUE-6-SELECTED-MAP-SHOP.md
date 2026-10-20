@@ -2,7 +2,7 @@
 
 [사용자 안내](../README.md) · [공개 alpha.1 기록](ISSUE-6-CANDIDATE.md) · [구현 기록](ISSUE-6-IMPLEMENTATION.md) · [패드](GAMEPAD.md)
 
-상태: **로컬 수정 후보·전체 자동 검사·DLL/패키지 검증 완료 / 새 Windows 확인 대기**. 공개 v1.0.7-alpha.1의 파일·태그·게시 기록과 구분한다. 아래 파일은 alpha.1 이후 작업 트리에서 빌드한 새 후보이며 공개 Release 자산이 아니다.
+상태: **[v1.0.7-alpha.2 prerelease 공개](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2)·고정 소스 재빌드·전체 자동 검사·익명 공개 ZIP 검증 완료 / 새 Windows 확인 대기**. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.2/DiceMaster-v1.0.7-alpha.2.zip) · 빌드 소스/태그 `4bbdffb15c8fd134ea06749e79cd5d75c929fb53`. 공개 alpha.1의 파일·태그·게시 기록을 보존하며 이번 새 파일과 구분한다.
 
 ## 사용자 관찰과 반영한 결정
 
@@ -70,6 +70,18 @@
 로컬 영수증은 `artifacts/issue-6/selected-map-shop-candidate/build-manifest.json`·`build.log`·`followup-verification.json`이다. 위 검토 후보 생성 당시 기반 HEAD는 `dfa66245eace50cc25a73015b490832d5ce512c6`이며 이후 작업 트리 입력으로 빌드했다. 당시 영수증은 고정 커밋 재빌드·공개 배포 검증 이전의 기록으로 보존한다. v1.0.7-alpha.2의 고정 소스 재빌드와 게시 결과는 후속 영수증으로 구분한다.
 
 자동 검사의 대역·실제 제공 API 메타데이터·실제 후보 DLL 파서 IL 실행과 Windows 게임·Unity UI·물리 장치·프레임 성능은 다른 근거다. 겹침 면적의 전역 최소를 찾는 과거 검사 대신 고정 위치·최대 다섯 후보의 비용 상한·선택 변경·실제 반복 그리기 캐시를 검사한다. 검사 개수 감소를 기능 누락이나 성능 수치로 해석하지 않는다.
+
+## 공개 prerelease 게시와 검증
+
+사용자의 커밋·prerelease 지시에 따라 **2026-10-21 01:35:02 KST에 [v1.0.7-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.2/DiceMaster-v1.0.7-alpha.2.zip)은 위 검토 후보와 같은 바이트이며 파일명만 DiceMaster-v1.0.7-alpha.2.zip으로 지정했다.
+
+고정 소스·주석 태그 `4bbdffb15c8fd134ea06749e79cd5d75c929fb53`를 기존 `codex/prd6-information` 브랜치와 atomic push했다. 기존 관리 모드 DLL 0개인 별도 소스 스냅샷을 `verify-preview-release.py --scope prd6`로 재빌드해 2026-10-21 01:33:46 KST에 18개 검사 프로그램을 통과했다. 검토 후보와 SDK·229개 입력·96개 소스/리소스·15개 읽기 전용 참조·전체 검사 결과·DLL/cfg/ZIP 바이트가 일치한다. Python 검증기 회귀 20개도 다시 통과했다.
+
+Release `418628151`·asset `659869905`, `draft=false`·`prerelease=true`·`make_latest=false`다. 익명 공개 API·페이지·설치 ZIP 다운로드, ZIP CRC·정확히 두 파일·내부 바이트·SHA-256과 주석 태그의 소스 커밋을 확인했다. 게시 전 기존 43개 Release·44개 태그·자산과 Latest 정식 v1.0.6을 보존했다. main `375c39715c91d9a2bcdc629dbfe8a88ac0ff127a`과 다른 세션의 변경을 보존하고 이슈 #2 closed·#4 closed·#5 open·#6 open을 유지했다.
+
+영수증은 로컬 `artifacts/releases/v1.0.7-alpha.2/`의 `release-verification.json`·`build-manifest.json`·`build.log`·`publication-preflight-summary.json`·`github-publication.json`·`anonymous-verification.json`·`tag-verification.json`·`release-body.md` 등에 보관한다. 고정 재빌드 영수증의 `published=false`와 소스 문서의 미게시 문구는 게시 전 시점이다. 이 게시 결과 보충은 별도 문서 커밋이며 생산/검사/빌드 입력·소스 태그·설치 파일은 바꾸지 않는다.
+
+새 DLL의 실제 Windows·Unity·물리 입력·프레임 성능은 아래 확인표에서 대기한다. 이전 DLL의 사용자 관찰과 v1.0.6 선행 확인은 이 파일의 Windows 통과 근거가 아니다. #6 전체 완료·이슈 종료로 처리하지 않는다.
 
 ## 설치와 실제 Windows 확인
 

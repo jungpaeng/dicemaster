@@ -4,6 +4,18 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 선택 장소 지도·상점 사용 효과 — v1.0.7-alpha.2 prerelease
+
+사용자의 커밋·prerelease 지시에 따라 **2026-10-21 01:35:02 KST에 [v1.0.7-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.2/DiceMaster-v1.0.7-alpha.2.zip)은 [검토 후보](ISSUE-6-SELECTED-MAP-SHOP.md)와 같은 바이트이며 파일명만 DiceMaster-v1.0.7-alpha.2.zip으로 지정했다.
+
+고정 소스·주석 태그 `4bbdffb15c8fd134ea06749e79cd5d75c929fb53`를 기존 `codex/prd6-information` 브랜치와 atomic push했다. 기존 관리 모드 DLL 0개인 별도 소스 스냅샷을 `verify-preview-release.py --scope prd6`로 재빌드해 2026-10-21 01:33:46 KST에 18개 검사 프로그램을 통과했다. 검토 후보와 SDK·229개 입력·96개 소스/리소스·15개 읽기 전용 참조·전체 검사 결과·DLL/cfg/ZIP 바이트가 일치한다. Python 검증기 회귀 20개도 다시 통과했다.
+
+Release `418628151`·asset `659869905`, `draft=false`·`prerelease=true`·`make_latest=false`다. 익명 공개 API·페이지·설치 ZIP 다운로드, ZIP CRC·정확히 두 파일·내부 바이트·SHA-256과 주석 태그의 소스 커밋을 확인했다. 게시 전 기존 43개 Release·44개 태그·자산과 Latest 정식 v1.0.6을 보존했다. main `375c39715c91d9a2bcdc629dbfe8a88ac0ff127a`과 다른 세션의 변경을 보존하고 이슈 #2 closed·#4 closed·#5 open·#6 open을 유지했다.
+
+영수증은 로컬 `artifacts/releases/v1.0.7-alpha.2/`의 `release-verification.json`·`build-manifest.json`·`build.log`·`publication-preflight-summary.json`·`github-publication.json`·`anonymous-verification.json`·`tag-verification.json`·`release-body.md` 등에 보관한다. 고정 재빌드 영수증의 `published=false`와 소스 문서의 미게시 문구는 게시 전 시점이다. 이 게시 결과 보충은 별도 문서 커밋이며 생산/검사/빌드 입력·소스 태그·설치 파일은 바꾸지 않는다.
+
+새 DLL의 실제 Windows·Unity·물리 입력·프레임 성능은 [새 확인표](ISSUE-6-SELECTED-MAP-SHOP.md#설치와-실제-windows-확인)에서 대기한다. 이전 DLL의 사용자 관찰과 v1.0.6 선행 확인은 이 파일의 Windows 통과 근거가 아니다. #6 전체 완료·이슈 종료로 처리하지 않는다.
+
 ## 지도·1회성·실제 분기·상점 정보 — v1.0.7-alpha.1 prerelease
 
 사용자의 커밋·prerelease 지시 후 **2026-10-21 00:46:36 KST에 [v1.0.7-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)을 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip) · [변경·설치·고정 소스·공개 검증](ISSUE-6-CANDIDATE.md) · [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md).
