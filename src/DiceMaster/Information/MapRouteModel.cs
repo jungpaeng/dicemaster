@@ -62,17 +62,27 @@ namespace DiceMaster.Information
     {
         public readonly string Identity, Description, DialogueCharacter;
         public readonly bool HasChoice, Uncertain;
+        public readonly bool StoryConditionsMayHaveChanged;
         internal readonly PreviewCondition Gate;
         public readonly PreviewCondition EntryGate;
         public readonly bool EntryUncertain;
         public readonly IList<MapChoiceStep> Steps;
+        private readonly Func<bool> storyIncomplete;
+        private readonly PreviewCondition storyGate;
+        private readonly bool opaqueStoryEffects;
         internal MapRoutePath(string identity, string description, bool choice, bool uncertain, PreviewCondition gate,
-            IList<MapChoiceStep> steps = null, PreviewCondition entryGate = null, bool entryUncertain = false, string dialogueCharacter = null)
+            IList<MapChoiceStep> steps = null, PreviewCondition entryGate = null, bool entryUncertain = false, string dialogueCharacter = null,
+            Func<bool> incompleteStoryPaths = null, PreviewCondition fullStoryGate = null, bool storyConditionsMayHaveChanged = false,
+            bool hasOpaqueStoryEffects = false)
         {
             Identity = identity; Description = description; HasChoice = choice; Uncertain = uncertain; Gate = gate;
             Steps = new List<MapChoiceStep>(steps ?? new MapChoiceStep[0]).AsReadOnly();
             EntryGate = entryGate ?? gate; EntryUncertain = entryUncertain;
             DialogueCharacter = dialogueCharacter ?? "";
+            storyIncomplete = incompleteStoryPaths;
+            storyGate = fullStoryGate ?? gate;
+            StoryConditionsMayHaveChanged = storyConditionsMayHaveChanged;
+            opaqueStoryEffects = hasOpaqueStoryEffects;
         }
         internal static MapRouteState State(PreviewConditionState value)
         { return value == PreviewConditionState.Met ? MapRouteState.Met : value == PreviewConditionState.NotMet ? MapRouteState.NotMet : MapRouteState.Unknown; }
@@ -81,6 +91,14 @@ namespace DiceMaster.Information
         // Deliberately separate current guard values from route certainty.
         public MapRouteState ReadEntryConditions(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return State(read.Current(EntryGate)); }
+        // The whole observed story path, with checkpoint inputs affected by
+        // preceding writes/callbacks masked. This is a current-condition
+        // snapshot, never an execution or future-story guarantee.
+        public MapRouteState ReadStoryConditions(MapRouteRead read)
+        {
+            if (read == null) throw new ArgumentNullException("read");
+            return opaqueStoryEffects || read.Incomplete(storyIncomplete) ? MapRouteState.Unknown : State(read.Current(storyGate));
+        }
     }
     // A selected, statically observed dialogue segment. It has no fabricated
     // PositionEventData, activation condition, event weight or one-shot proof.
@@ -121,6 +139,18 @@ namespace DiceMaster.Information
         public MapRouteState ReadCurrent(MapRouteRead read) { return Read(read, 0); }
         public MapRouteState ReadEntry(MapRouteRead read) { return Read(read, 1); }
         public MapRouteState ReadEntryConditions(MapRouteRead read) { return Read(read, 2); }
+        public MapRouteState ReadStoryConditions(MapRouteRead read)
+        {
+            if (read == null) throw new ArgumentNullException("read");
+            bool unknown = omittedPaths;
+            foreach (var path in paths)
+            {
+                MapRouteState state = path.ReadStoryConditions(read);
+                if (state == MapRouteState.Met) return state;
+                unknown |= state == MapRouteState.Unknown;
+            }
+            return unknown || paths.Count == 0 ? MapRouteState.Unknown : MapRouteState.NotMet;
+        }
         private MapRouteState Read(MapRouteRead read, int mode)
         {
             if (read == null) throw new ArgumentNullException("read");

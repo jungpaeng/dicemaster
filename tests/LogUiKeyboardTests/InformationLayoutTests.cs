@@ -64,6 +64,14 @@ internal static partial class Program
             InformationRuntime.TestMap(initial, "갱신 실패 · 이전 값"); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1001.5f);
             Check(!GUI.PassiveLabels[0].Text.Contains("<color="), "a failed refresh never colors an old positive entry as current");
+            InformationRuntime.TestMap(new InformationRow("map/conditions", "상태 구분", "지도", "", "상세",
+                "• 대화 · 인물 대화 · 진행 가능\n• 임무 · 주 임무 · 발생 조건 충족\n• 미확정 · 인물 대화 · 진행 가능성 있음\n• 차단 · 인물 대화 · 지금 진행 불가", MapGuideSource.Selected));
+            GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1001.6f);
+            Check(GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능</color>") &&
+                GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>발생 조건 충족</color>") &&
+                !GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능성 있음") &&
+                !GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>지금 진행 불가"),
+                "confirmed availability and met mission conditions are green while possibility and blocked statuses remain neutral");
             MapGuideSource.Selected = new object(); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1002);
             Check(GUI.PassiveLabels.Count == 0, "selection change hides the previous publication before refresh");
@@ -78,7 +86,7 @@ internal static partial class Program
             measures = GUIStyle.Measurements; Screen.width = 800; Screen.height = 600;
             GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1005);
             Check(GUIStyle.Measurements > measures && GUI.PassiveLabels[0].Rect.width <= 800, "resize recomputes bounded whole-row geometry");
-            var passiveStyle = new GUIStyle(GUI.skin.box) { fontSize = Math.Min(24, Math.Max(12, DiceMaster.Config.ConfigManager.LogFontSize.Value)), wordWrap = true, richText = false };
+            var passiveStyle = new GUIStyle(GUI.skin.box) { fontSize = Math.Min(24, Math.Max(12, DiceMaster.Config.ConfigManager.LogFontSize.Value)), wordWrap = true, richText = GUI.PassiveLabels[0].RichText };
             Check(passiveStyle.CalcHeight(new GUIContent(GUI.PassiveLabels[0].Text), GUI.PassiveLabels[0].Rect.width) <= GUI.PassiveLabels[0].Rect.height + .01f,
                 "small-screen map notice fits its actual box height instead of clipping the final rows");
             Check(GUI.PassiveLabels[0].Text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && GUI.PassiveLabels[0].Text.Contains("상세에서 확인"),
@@ -102,14 +110,14 @@ internal static partial class Program
             Check(GUI.PassiveLabels.Count == 0, "no-selection snapshot with global rows never creates a selected-place panel");
             Screen.width = 1920; Screen.height = 1080;
             var choice = new ChoiceStorySnapshot();
-            var firstChoice = new InformationRow("one", "사사형", "연결 이야기", "조건 충족", "전체 경로", "사사형 → 대화 항목 · 현재 이야기 진입 조건 충족");
-            var nextChoice = new InformationRow("two", "다른 항목", "연결 이야기", "후보", "전체 경로", "경로 후보: 다른 항목 → 이야기 · 이후 진행 확인");
+            var firstChoice = new InformationRow("one", "사사형", "연결 이야기", "조건 충족", "전체 경로", "사사형 → 대화 항목 · 진행 가능");
+            var nextChoice = new InformationRow("two", "다른 항목", "연결 이야기", "후보", "전체 경로", "경로 후보: 다른 항목 → 이야기 · 진행 가능성 있음");
             choice.Entries.Add(firstChoice); choice.Entries.Add(nextChoice);
             ChoiceStorySource.MenuVisible = true; ChoiceStorySource.Current = choice; ChoiceStorySource.Selected = firstChoice;
             InformationRuntime.TestChoices(choice); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1011);
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 연결 이야기") && GUI.PassiveLabels[0].Text.Contains("사사형 → 대화 항목") && !GUI.PassiveLabels[0].Text.Contains("다른 항목"), "choice overlay follows only the published current pad selection");
-            Check(GUI.PassiveLabels[0].RichText && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>현재 이야기 진입 조건 충족</color>"),
+            Check(GUI.PassiveLabels[0].RichText && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능</color>"),
                 "the current choice's positive entry status uses the same green text");
             measures = GUIStyle.Measurements;
             for (int at = 0; at < 1000; at++) { GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1012); }

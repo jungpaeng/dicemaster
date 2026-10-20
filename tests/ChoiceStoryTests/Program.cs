@@ -11,6 +11,7 @@ using DiceMaster;
 using DiceMaster.Information;
 using DiceMaster.LiveLog;
 using Mortal.Core;
+using Mortal.Story;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Fungus;
@@ -32,6 +33,7 @@ internal static class Program
         DataHelper.Scripts.Clear(); DataHelper.ExternalReader = null; DataHelper.Reads = 0; Time.unscaledTime = 0;
         MenuDialog.ActiveMenuDialog = new MenuDialog(); EventSystem.current = new EventSystem();
         DicePlugin.Logs.Clear(); DisplayNames.Labels.Clear(); DisplayNames.LabelReads.Clear();
+        CheckPointManager.Instance = new CheckPointManager();
         DisplayNames.Labels["Position/title/brother4"] = "사사형";
         DisplayNames.Labels["Story/O_topic"] = "어린 시절 이야기";
         DisplayNames.Labels["Story/O_other"] = "다른 이야기";
@@ -68,6 +70,19 @@ internal static class Program
     }
     private static InformationRow Linked(ChoiceStorySnapshot value, string title)
     { return value.Entries.First(row => row.Title == title); }
+    private static ConditionResultItem IsZero(FlagData flag)
+    {
+        return new ConditionResultItem { _items = new List<StatCompareItem> { new StatCompareItem {
+            _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 3, _flag = flag } } },
+            _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 0 } } }
+        } } };
+    }
+    private static FlagData Condition(string key, int value)
+    {
+        var flag = new FlagData { name = key, State = value };
+        CheckPointManager.Instance._condition._list.Add(new ConditionResultData { name = key, _items = new List<ConditionResultItem> { IsZero(flag) } });
+        return flag;
+    }
     private static void Labels()
     {
         Reset();
@@ -95,9 +110,9 @@ internal static class Program
         ChoiceStorySource.ContextChanged();
         Check(ChoiceStorySource.Visible && ChoiceStorySource.MenuVisible, "The first Tick preserves a just-observed same-context menu");
         var value = Ready(true); var row = Linked(value, "사사형");
-        Check(!row.Available && row.Detail.Contains("현재 선택 조건값: 충족", StringComparison.Ordinal), "The actual Position button retains its current option guard without promising execution across a speaker-call barrier");
+        Check(row.Available && row.Status == "진행 가능", "The complete supported NPC-story path is positive without invoking a native menu or judgment");
         Check(row.AutoText.Contains("사사형 → 어린 시절 이야기", StringComparison.Ordinal) && row.AutoText.Contains("사사형 대화", StringComparison.Ordinal), "Compact automatic row contains a supported future choice path and the explicitly observed NPC");
-        Check(!row.AutoText.Contains("외 ", StringComparison.Ordinal), "Incomplete speaker-call paths do not advertise an exact total story count");
+        Check(row.AutoText.Contains("외 1개", StringComparison.Ordinal), "Fully observed safe alternatives retain their known compact remaining-story count");
         Check(!row.AutoText.Contains("긴", StringComparison.Ordinal) && !row.AutoText.Contains("D_topic", StringComparison.Ordinal), "Native title is clean and dialogue content is not invented as a title");
         Check(row.Detail.Contains("talk+talk+brother4", StringComparison.Ordinal) && row.Detail.Contains("연결 경로", StringComparison.Ordinal), "Explicit detail retains exact source identity and full supported paths");
         Check(!value.Entries.Any(item => item.Title == "휴식"), "A menu-only utility is not presented as a discovered story");
@@ -139,7 +154,7 @@ internal static class Program
         Check(!ChoiceStorySource.IsCurrent(previous), "An observer read failure invalidates the old publication before attempting a replacement capture");
         normal._text = new[] { new UnityEngine.UI.Text { text = new string('가', 1000) } }; ChoiceStorySource.Observe(normal);
         row = Linked(Ready(), new string('가', 1000));
-        Check(row.AutoText.Length <= 220 && row.AutoText.EndsWith("연결 후보 · 이후 진행 확인", StringComparison.Ordinal) && row.AutoText.Contains("…", StringComparison.Ordinal), "Automatic names are bounded without cutting the complete status; full native title stays in the log");
+        Check(row.AutoText.Length <= 220 && row.AutoText.EndsWith("진행 가능", StringComparison.Ordinal) && row.AutoText.Contains("…", StringComparison.Ordinal), "Automatic names are bounded without cutting the complete status; full native title stays in the log");
         Check(ChoiceStoryLabels.ShortName(ChoiceStoryLabels.Resolve("O_" + new string('x', 2000))).Length <= 28, "An unresolved long raw key cannot expand the automatic path without a bound");
     }
     private static void StateAndLifetimes()
@@ -148,20 +163,20 @@ internal static class Program
         ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_one')) end;local b={'O_topic'};local s=choose(b);if s==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_two')) end", "duplicates.LuaScript");
         Normal("O_topic", "중복 항목");
         var value = Ready(true); var row = Linked(value, "중복 항목");
-        Check(!row.Available && row.Status.Contains("연결 선택지 확인 필요", StringComparison.Ordinal), "Duplicate raw label at two choose offsets is explicitly ambiguous");
+        Check(!row.Available && row.Status == "진행 가능성 있음", "Duplicate raw label at two choose offsets keeps the current story condition explicitly uncertain");
         Check(row.Detail.Contains("여러 번", StringComparison.Ordinal), "Detail explains why the menu offset cannot be guessed");
         Check(!row.AutoText.Contains("→", StringComparison.Ordinal) && !row.AutoText.Contains("외 ", StringComparison.Ordinal), "An ambiguous actual menu receives no invented story path or count");
         ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_one')) end;local b={'O_topic'};local s=choose(b);if s==1 then local unused=1 end", "utility_duplicate.LuaScript");
         Normal("O_topic", "이야기 없는 두 번째 메뉴");
         value = Ready(true); row = Linked(value, "이야기 없는 두 번째 메뉴");
-        Check(!row.Available && row.Status.Contains("연결 선택지 확인 필요", StringComparison.Ordinal) && !row.AutoText.Contains("→", StringComparison.Ordinal), "The all-choice registry detects the duplicate utility-only node even though it has no story entry");
+        Check(!row.Available && row.Status == "진행 가능성 있음" && row.Detail.Contains("여러 번", StringComparison.Ordinal) && !row.AutoText.Contains("→", StringComparison.Ordinal), "The all-choice registry detects the duplicate utility-only node even though it has no story entry");
         ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_one')) end;" + new string(';', 20000) + "local b={'O_topic'};local s=choose(b);if s==1 then local unused=1 end", "late_duplicate.LuaScript");
         Normal("O_topic", "준비 중 원문 후보"); bool sawCandidate = false;
         for (int at = 0; at < 80; at++)
         {
             value = Read(); row = value.Entries.FirstOrDefault(item => item.Title == "준비 중 원문 후보");
-            if (row != null && row.AutoText.StartsWith("경로 후보:", StringComparison.Ordinal)) { sawCandidate = true; Check(!row.Available && row.Status.Contains("이후 진행 확인", StringComparison.Ordinal), "An incomplete unique prefix is a qualified future candidate, never a confirmed currently executable connection"); }
-            if (row != null && row.Status.Contains("연결 선택지 확인 필요", StringComparison.Ordinal)) break;
+            if (row != null && row.AutoText.StartsWith("경로 후보:", StringComparison.Ordinal)) { sawCandidate = true; Check(!row.Available && row.Status.Contains("진행 가능성 있음", StringComparison.Ordinal), "An incomplete unique prefix is a qualified future candidate, never a confirmed currently executable connection"); }
+            if (row != null && row.Detail.Contains("여러 번", StringComparison.Ordinal)) break;
         }
         Check(sawCandidate, "Cold preparation exposes a qualified candidate before the later duplicate is discovered");
         Check(row != null && !row.Available && !row.AutoText.Contains("→", StringComparison.Ordinal), "A duplicate discovered after cold preparation replaces provisional connection text with an ambiguity state");
@@ -232,7 +247,7 @@ internal static class Program
         var rest = Position("sleep+free+sleep", "휴식"); value = Ready(true);
         var linked = Linked(value, "휴식");
         Check(linked.Kind == "인물 대화" && linked.AutoText.Contains("휴식", StringComparison.Ordinal) && linked.AutoText.Contains("사사형 대화", StringComparison.Ordinal), "Rest followed by a literal NPC-speaker followup remains a qualified path to that NPC");
-        Check(!linked.Available && linked.Status.Contains("후보", StringComparison.Ordinal) && !linked.Status.Contains("1회성", StringComparison.Ordinal), "A future NPC observation grants neither immediate execution nor a one-shot property");
+        Check(linked.Available && linked.Status == "진행 가능" && !linked.Status.Contains("1회성", StringComparison.Ordinal), "A fully supported NPC path has current full-condition evidence without granting a one-shot property");
         EventSystem.current.currentSelectedGameObject = rest.gameObject;
         Check(ReferenceEquals(linked, ChoiceStorySource.CurrentRow(value)), "The retained conditional rest-to-NPC path is available through passive pad focus");
         int reads = DataHelper.Reads;
@@ -243,6 +258,70 @@ internal static class Program
         ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then setcharacter(narrative);say(luamanager.GetStoryText('N_intro'));setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_real_npc'));setcharacter(characters.Get('player'));say(luamanager.GetStoryText('D_player_reply')) end", "late_inline_npc.LuaScript");
         Normal("O_topic", "동일 선택의 대화"); value = Ready(true);
         Check(Linked(value, "동일 선택의 대화").AutoText.Contains("사사형 대화", StringComparison.Ordinal), "An earlier narrative segment does not consume the selected path before its later explicit NPC line");
+    }
+    private static void FullStoryConditions()
+    {
+        const string npc = "setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_training_npc'))";
+        const string start = "local a={'practice+free+practice'};local r=choose(a);if r==1 then ";
+        Reset(); var gate = Condition("training_npc", 1);
+        ChoiceStorySource.ObserveScript(start + "if checkpointmanager.Condition('training_npc') then " + npc + " end end", "training_condition.LuaScript");
+        var training = Position("practice+free+practice", "수련");
+        var value = Ready(true); var row = Linked(value, "수련");
+        Check(row.Status == "지금 진행 불가" && !row.Available, "An unguarded training option cannot turn its false internal NPC condition into a positive story condition");
+        Check(!row.AutoText.Contains("조건 충족", StringComparison.Ordinal), "The automatic row does not advertise the utility option's true first guard as story readiness");
+        int reads = DataHelper.Reads;
+        gate.State = 0; value = Read(true); row = Linked(value, "수련");
+        Check(row.Status == "진행 가능" && row.Available, "A safely observed full NPC-story gate can become positive on a fresh current snapshot");
+        EventSystem.current.currentSelectedGameObject = training.gameObject;
+        Check(ReferenceEquals(row, ChoiceStorySource.CurrentRow(value)), "Full-story condition publications retain passive pad selection");
+        for (int at = 0; at < 30; at++) Read();
+        Check(DataHelper.Reads == reads && gate.State == 0 && Counters.GameCalls == 0, "Current full-story conditions update without Lua reload, game judgment, RNG or applying a result");
+
+        Reset(); gate = Condition("training_npc", 1);
+        ChoiceStorySource.ObserveScript(start + "statmodifymanager.SetFlag('training_npc',0);if checkpointmanager.Condition('training_npc') then " + npc + " end end", "training_write_before_condition.LuaScript");
+        Position("practice+free+practice", "수련"); row = Linked(Ready(true), "수련");
+        Check(row.Status == "진행 가능성 있음" && !row.Available && gate.State == 1, "A preceding write to the condition dependency keeps a currently false NPC gate possible and never executes that write");
+
+        Reset(); gate = Condition("training_npc", 1);
+        ChoiceStorySource.ObserveScript(start + "unknown_callback();if checkpointmanager.Condition('training_npc') then " + npc + " end end", "training_opaque_before_condition.LuaScript");
+        Position("practice+free+practice", "수련"); row = Linked(Ready(true), "수련");
+        Check(row.Status == "진행 가능성 있음" && !row.Available, "An opaque predecessor cannot certify either a current positive or a definitive false future NPC gate");
+
+        Reset(); var first = Condition("first_npc", 1); var second = Condition("second_npc", 0);
+        DataHelper.Scripts["training_npc_a"] = npc; DataHelper.Scripts["training_npc_b"] = npc;
+        ChoiceStorySource.ObserveScript(start + "if checkpointmanager.Condition('first_npc') then luamanager.SetNextScript('training_npc_a') elseif checkpointmanager.Condition('second_npc') then luamanager.SetNextScript('training_npc_b') end end", "training_alternatives.LuaScript");
+        Position("practice+free+practice", "수련"); row = Linked(Ready(true), "수련");
+        Check(row.Status == "진행 가능" && row.Available, "One safely positive full conversation path is sufficient among same-option alternatives");
+        second.State = 1; row = Linked(Read(true), "수련");
+        Check(row.Status == "지금 진행 불가" && !row.Available, "All completely observed conversation paths must be false before denying the current opportunity");
+        CheckPointManager.Instance._condition._list.RemoveAt(1); row = Linked(Read(true), "수련");
+        Check(row.Status == "진행 가능성 있음" && !row.Available, "A missing alternative checkpoint keeps the aggregate possible instead of borrowing a true utility guard");
+        Check(first.State == 1 && second.State == 1 && Counters.GameCalls == 0, "Alternative aggregation neither modifies flags nor invokes the native condition chain");
+
+        Reset(); gate = Condition("training_npc", 1);
+        DataHelper.Scripts["bounded_npc"] = npc + ";luamanager.SetNextScript('bounded_tail_0')";
+        for (int at = 0; at < 40; at++) DataHelper.Scripts["bounded_tail_" + at] = "luamanager.SetNextScript('bounded_tail_" + (at + 1) + "')";
+        ChoiceStorySource.ObserveScript(start + "if checkpointmanager.Condition('training_npc') then luamanager.SetNextScript('bounded_npc') end end", "training_late_cap.LuaScript");
+        Position("practice+free+practice", "수련");
+        bool found = false;
+        for (int at = 0; at < 100; at++)
+        {
+            value = Read(true); row = value.Entries.FirstOrDefault(item => item.Title == "수련");
+            if (row != null)
+            {
+                found = true;
+                Check(!row.Available && row.Status != "진행 가능", "A false full-story prefix never becomes green while later literal descendants reach the source-script limit");
+            }
+        }
+        Check(found && gate.State == 1 && value.Entries.Any(item => item.Status.Contains("확인", StringComparison.Ordinal) || item.Status == "진행 가능성 있음"),
+            "A later source limit keeps recognized conversation evidence explicitly incomplete without changing its predicate");
+
+        var negative = new MapRoutePath("negative", "negative", true, false, PreviewConditions.Constant(false));
+        var positive = new MapRoutePath("positive", "positive", true, false, PreviewConditions.Constant(true));
+        var paths = new List<MapRoutePath>(); for (int at = 0; at < 32; at++) paths.Add(negative); paths.Add(positive);
+        Check(ChoiceStorySource.CurrentStoryConditions(paths, new MapRouteRead()) == MapRouteState.Unknown, "A thirty-third unread conversation alternative cannot be used to deny or certify the current option");
+        paths[0] = positive;
+        Check(ChoiceStorySource.CurrentStoryConditions(paths, new MapRouteRead()) == MapRouteState.Met, "A safely proven retained full path is sufficient even when later alternatives exceed the per-query gate budget");
     }
     private static void Metadata(string root)
     {
@@ -288,6 +367,7 @@ internal static class Program
         var cases = new[] {
             (Name: "room_001", Raw: "talk+talk+brother4", Title: "사사형", Position: true, Expected: true),
             (Name: "talk_brother4", Raw: "talk+O_Talk_Brother4_003+0+0", Title: "사사형 대화 항목", Position: false, Expected: true),
+            (Name: "center_001", Raw: "practice+free+practice", Title: "연무장 수련", Position: true, Expected: true),
             (Name: "room_001", Raw: "sleep+free+sleep", Title: "휴식", Position: true, Expected: false),
             (Name: "ch1_1_break_option", Raw: "talk+O_1_1_Break_002+0+0", Title: "실제 player-only talk 항목", Position: false, Expected: false),
             (Name: "ch2_4_6_2_break_start_01", Raw: "talk+O_2_4_6_2_Break_01_001+0+0", Title: "실제 D_ 독백 후속 항목", Position: false, Expected: false)
@@ -296,6 +376,19 @@ internal static class Program
         {
             string name = sample.Name, title = sample.Title;
             Reset();
+            if (name == "center_001")
+            {
+                // Synthetic runtime data only: the actual game's checkpoint
+                // configuration and the user's current save are not supplied.
+                CheckPointManager.Instance._switchList = new object[] { new SwitchResultConfig { _list = new List<SwitchResultData> {
+                    new SwitchResultData { name = "Center_001_001", _items = new List<ConditionResultItem> {
+                        new ConditionResultItem { _items = new List<StatCompareItem> { new StatCompareItem {
+                            _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 0 } } },
+                            _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 1 } } }
+                        } } }
+                    } }
+                } } };
+            }
             var cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             ScriptReadResult Exact(string key)
             {
@@ -318,7 +411,9 @@ internal static class Program
             for (int at = 0; at < 160; at++)
             {
                 value = Read(); row = value.Entries.FirstOrDefault(item => item.Title == title);
-                if (sample.Expected && row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal))) break;
+                if (name == "center_001") Check(row == null || !row.Available && !row.Status.Contains("조건 충족", StringComparison.Ordinal),
+                    "Actual center_001 plus an explicitly never-met synthetic runtime switch cannot become green while descendants are preparing or capped");
+                if (sample.Expected && name != "center_001" && row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal))) break;
             }
             if (!sample.Expected)
             {
@@ -327,7 +422,7 @@ internal static class Program
                 continue;
             }
             Check(row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal)), "Actual " + name + " corpus preserves its known choice labels despite visual/runwait uncertainty");
-            Check(row.AutoText.StartsWith("경로 후보:", StringComparison.Ordinal) && !row.Available, "Actual " + name + " partial route is a visible candidate rather than a claimed exact current connection");
+            Check(!row.Available && (row.Status == "진행 가능성 있음" || row.Status == "지금 진행 불가"), "Actual " + name + " incomplete full-story evidence cannot be advertised as currently met");
             Check(row.AutoText.Length <= 220 && !row.AutoText.Contains("1회성 확인 불가", StringComparison.Ordinal), "Actual corpus automatic path is bounded and carries no unknown one-shot spam");
         }
         Check(failures.Count == 0, "Every followup script read by this independent corpus run matches its index SHA-256");
@@ -345,9 +440,17 @@ internal static class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); FixtureOwnership();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); FullStoryConditions(); FixtureOwnership();
         if (args.Length > 0) Metadata(args[0]);
         if (args.Length > 1) NativeCorpus(args[1]);
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");
     }
+}
+namespace Mortal.Story
+{
+    // Exact reflection boundaries used by PreviewConditions. Neither native
+    // Switch nor Condition is called, and count-based switches stay unknown.
+    public sealed class SwitchResultConfig { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
+    public sealed class SwitchResultData : UnityEngine.Object
+    { public bool _useCount; public int _count; public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
 }

@@ -169,6 +169,7 @@ internal static class Program
         d = Build(Use("clear")); d.Clear(); d.Advance(100); Check(d.Entries.Count == 0 && !d.IsPreparing, "lifecycle clear releases all route state");
         SharedGateAndProofBudget();
         MapStoryCases.Run(Check);
+        FullStoryConditionCases.Run(Check);
         Corpus();
         Check(manager.GameplayCalls == 0 && manager.RngCalls == 0 && manager.Counter == 0, "no gameplay condition/Position/RNG/counter changes");
         Console.WriteLine("PASS: MapRouteTests " + checks + " actual-route/syntax/current-reader assertions; resource/stat/game boundaries are explicit fixtures; Lua/Windows/native not executed.");

@@ -38,6 +38,35 @@ namespace DiceMaster.LiveLog
         public static PreviewCondition All(PreviewCondition left, PreviewCondition right)
         { return new PreviewCondition("and", left: left ?? Unknown, right: right ?? Unknown); }
 
+        private sealed class EffectSnapshot
+        {
+            internal readonly HashSet<string> Flags;
+            internal readonly bool Opaque;
+            internal EffectSnapshot(HashSet<string> flags, bool opaque) { Flags = flags; Opaque = opaque; }
+        }
+
+        // Capture definition-time effects, never sampled game values. A bound
+        // checkpoint keeps the effects preceding its own read, so a later flag
+        // write cannot retroactively change that already captured Lua value.
+        public static PreviewCondition CaptureCurrent(PreviewCondition condition, IEnumerable<string> flagWrites, bool opaque)
+        {
+            var flags = new HashSet<string>(StringComparer.Ordinal);
+            if (flagWrites != null) foreach (string flag in flagWrites)
+            { if (flags.Count >= 32 || flag == null || flag.Length > 256) { opaque = true; break; } flags.Add(flag); }
+            int work = 0;
+            return Capture(condition, new EffectSnapshot(flags, opaque), 0, ref work);
+        }
+        private static PreviewCondition Capture(PreviewCondition node, EffectSnapshot effects, int depth, ref int work)
+        {
+            if (node == null || depth > 64 || ++work > 512) return Unknown;
+            if (node.Operation == "captured") return node;
+            if (node.Operation == "Condition" || node.Operation == "Switch") return new PreviewCondition("captured", effects, left: node);
+            if (node.Left == null && node.Right == null) return node;
+            PreviewCondition left = node.Left == null ? null : Capture(node.Left, effects, depth + 1, ref work);
+            PreviewCondition right = node.Right == null ? null : Capture(node.Right, effects, depth + 1, ref work);
+            return new PreviewCondition(node.Operation, node.Literal, node.Key, left, right);
+        }
+
         public static PreviewCondition Parse(string expression, IDictionary<string, PreviewCondition> bindings = null)
         {
             if (expression == null || expression.Length > 4096) return Unknown;
@@ -163,6 +192,9 @@ namespace DiceMaster.LiveLog
             private bool managerRead;
             private readonly Dictionary<string, object> checkpoints = new Dictionary<string, object>(StringComparer.Ordinal);
             private readonly HashSet<object> active = new HashSet<object>(new Identity());
+            private readonly Dictionary<PreviewCondition, object> captured = new Dictionary<PreviewCondition, object>();
+            private HashSet<string> maskedFlags;
+            private sealed class AffectedInput : Exception { }
             private void Step() { if (++work > 16384) throw new InvalidOperationException("Preview condition read limit."); }
             internal static bool? Truth(object value)
             {
@@ -175,6 +207,22 @@ namespace DiceMaster.LiveLog
                 Step();
                 if (node == null || depth > 64 || node.Operation == "unknown") return null;
                 if (node.Operation == "literal") return node.Literal;
+                if (node.Operation == "captured")
+                {
+                    object result;
+                    if (captured.TryGetValue(node, out result)) return result;
+                    var effects = node.Literal as EffectSnapshot;
+                    if (effects == null || effects.Opaque) result = null;
+                    else if (effects.Flags.Count == 0) result = Value(node.Left, depth + 1);
+                    else
+                    {
+                        var previous = maskedFlags; maskedFlags = effects.Flags;
+                        try { result = ReadCheckpoint(node.Left.Operation, node.Left.Key); }
+                        catch (AffectedInput) { result = null; }
+                        finally { maskedFlags = previous; }
+                    }
+                    captured.Add(node, result); return result;
+                }
                 if (node.Operation == "Switch" || node.Operation == "Condition")
                 {
                     string key = node.Operation + ":" + node.Key;
@@ -342,7 +390,7 @@ namespace DiceMaster.LiveLog
                         {
                             case 1: ValidateStat(Field(reference, "_stat"), depth + 1); break;
                             case 2: Exact(Field(reference, "_relationship"), "Mortal.Core.RelationshipStat"); break;
-                            case 3: Exact(Field(reference, "_flag"), "Mortal.Core.FlagData"); break;
+                            case 3: ValidateFlag(Field(reference, "_flag")); break;
                             case 4: case 11: Exact(Field(reference, "_book"), "Mortal.Core.Book"); break;
                             case 5: Exact(Field(reference, "_misc"), "Mortal.Core.Misc"); break;
                             case 6: Exact(Field(reference, "_specialItem"), "Mortal.Core.SpecialItem"); break;
@@ -387,7 +435,7 @@ namespace DiceMaster.LiveLog
                             {
                                 case "Mortal.Core.GameStatConvertData": case "Mortal.Core.GameStatRateConvertData":
                                     ValidateStat(Field(conversion, "_statData"), depth + 1); break;
-                                case "Mortal.Core.FlagDataRateConvertData": Exact(Field(conversion, "_flagData"), "Mortal.Core.FlagData"); break;
+                                case "Mortal.Core.FlagDataRateConvertData": ValidateFlag(Field(conversion, "_flagData")); break;
                                 case "Mortal.Core.BookLevelStatConvertData": Exact(Field(conversion, "_book"), "Mortal.Core.Book"); break;
                                 case "Mortal.Core.UpgradeItemStatConvertData": Exact(Field(conversion, "_statData"), "Mortal.Core.UpgradeItemData"); break;
                                 default: throw new UnsupportedDisplayStatException();
@@ -396,6 +444,11 @@ namespace DiceMaster.LiveLog
                     }
                 }
                 finally { active.Remove(value); }
+            }
+            private void ValidateFlag(object value)
+            {
+                Exact(value, "Mortal.Core.FlagData");
+                if (maskedFlags != null && maskedFlags.Contains(Name(value))) throw new AffectedInput();
             }
         }
     }

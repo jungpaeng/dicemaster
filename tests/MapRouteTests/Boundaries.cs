@@ -24,12 +24,19 @@ namespace DiceMaster.LiveLog
 namespace UnityEngine { public class Object { public string name { get; set; } } }
 namespace Mortal.Core
 {
+    public sealed class FlagData : UnityEngine.Object { public int State; }
+    public sealed class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
+    public sealed class StatValueReference { public int _checkType, _constant; public bool _negative; public FlagData _flag; }
+    public sealed class StatCompareItem { public StatGroupVariable _value1 = new StatGroupVariable(), _value2 = new StatGroupVariable(); }
     public sealed class ConditionResultData : UnityEngine.Object
     { public List<ConditionResultItem> _items = new List<ConditionResultItem>(); public bool Current; }
     public sealed class ConditionResultItem { public List<object> _items = new List<object>(); public bool Current; }
 }
 namespace Mortal.Story
 {
+    public sealed class SwitchResultData : UnityEngine.Object
+    { public bool _useCount; public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
+    public sealed class SwitchResultConfig { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
     public sealed class ConditionResultConfig { public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>(); }
     public sealed class CheckPointManager
     {

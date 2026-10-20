@@ -460,7 +460,7 @@ namespace DiceMaster.Information
         private static void CollectStories(Place place, PositionController controller, Source source, List<Candidate> candidates)
         {
             // Rebuild this small definition index only when incremental parsing
-            // made progress. Warm .25 s reads only sample the cached first gates.
+            // made progress. Warm .25 s reads only sample cached story gates.
             if (source.StoryWork != source.Routes.WorkCount)
             {
                 source.StoryWork = source.Routes.WorkCount; source.Stories.Clear();
@@ -486,19 +486,19 @@ namespace DiceMaster.Information
             {
                 StoryGroup captured = group; bool sample = detailed || budget-- > 0;
                 candidates.Add(TryCandidate(place, "story/" + group.Id, () => {
-                    bool met = false, unknown = captured.Omitted || source.Routes.IsPreparing || source.Routes.IsPartial || source.Routes.HasReadFailure;
+                    bool met = false, unknown = captured.Omitted || source.Routes.IsPreparing || source.Routes.HasIncompleteStoryPaths || source.Routes.HasReadFailure;
                     if (sample) foreach (StoryLink link in captured.Links)
                     {
                         if (gates-- <= 0) { unknown = true; break; }
-                        MapRouteState state = link.Path.ReadEntryConditions(read);
+                        MapRouteState state = link.Path.ReadStoryConditions(read);
                         met |= state == MapRouteState.Met; unknown |= state == MapRouteState.Unknown;
                         if (met) break;
                     }
                     int rank = !sample ? 2 : met ? 0 : unknown ? 2 : 1;
                     var result = new Candidate { Id = "story/" + captured.Id, Name = ChoiceStoryLabels.DialogueName(captured.RawLabel, captured.DialogueCharacter),
                         Kind = "인물 대화", ChoiceStory = true, Rank = rank,
-                        Status = rank == 0 ? "진입 조건 충족 (현재)" : rank == 1 ? "진입 조건 미충족 (현재)" : "선택 화면에서 확인",
-                        Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백만 있는 경로는 안내 대상에서 제외합니다. 1회성을 뜻하지 않습니다.\n지도 시점의 첫 선택 조건입니다. 진입·대화 중 상태 변경과 이후 선택의 조건은 실제 선택 화면에서 다시 확인합니다. 이야기 발생이나 이후 선택 활성화를 보장하지 않습니다." };
+                        Status = StoryStatus(rank),
+                        Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백만 있는 경로는 안내 대상에서 제외합니다. 1회성을 뜻하지 않습니다.\n첫 선택뿐 아니라 해당 대화에 이르는 내부 분기 조건을 현재 값으로 읽습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락이 있으면 진행 가능성 있음으로 표시합니다. 이는 확률이나 이야기 발생 보증이 아닙니다." };
                     if (detailed)
                     {
                         var lines = new List<string>();
@@ -510,11 +510,17 @@ namespace DiceMaster.Information
                         result.Detail += "\n" + string.Join("\n", lines);
                         if (captured.Omitted) result.Detail += "\n경로 상한으로 일부 연결은 생략했습니다.";
                     }
+                    string conditionStatus = result.Status;
                     ApplyPlace(controller, result);
+                    // A known dispatch blocker takes precedence over story
+                    // conditions; never leave a positive prefix beside it.
+                    result.Status = StoryStatus(result.Rank) + result.Status.Substring(conditionStatus.Length);
                     return result;
                 }));
             }
         }
+        private static string StoryStatus(int rank)
+        { return rank == 0 ? "진행 가능" : rank == 1 ? "지금 진행 불가" : "진행 가능성 있음"; }
         private static Candidate Diagnostic(string name, string status, string detail)
         { return new Candidate { Id = "diagnostic/" + name, Name = name, Kind = "상태", StatusOnly = true, Rank = 2, Status = status, Detail = detail }; }
         private static MapGuideSnapshot Snapshot(Place place, PositionController controller, List<Candidate> candidates, bool guide, bool once)

@@ -92,6 +92,52 @@ namespace DiceMaster
             route = Create(); Finish(route);
             Check(Items(route, "Entries").Cast<object>().Any(x => (string)Member(x, "Pool") == "zero" && Member(x, "Current").ToString() == "Met" && !(bool)Member(x, "HasChoice")),
                 "actual DLL empty menu returns zero and preserves its non-choice continuation");
+
+            // Current-story conditions execute candidate IL against explicit
+            // synthetic checkpoint definitions. This is not a claim about the
+            // serialized configuration of any named game checkpoint.
+            var manager = Mortal.Story.CheckPointManager.Instance;
+            var previousConditions = manager._condition;
+            int groupCalls = Mortal.Core.StatGroupVariable.OriginalReads, compareCalls = Mortal.Core.StatCompareItem.OriginalReads;
+            int conditionCalls = Mortal.Core.ConditionResultData.Executions, randomCalls = UnityEngine.Random.Calls;
+            var comparison = new Mortal.Core.StatCompareItem {
+                _value1 = new Mortal.Core.StatGroupVariable { _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 0, _constant = 0 } } },
+                _value2 = new Mortal.Core.StatGroupVariable { _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 0, _constant = 1 } } }
+            };
+            var checkpoint = new Mortal.Core.ConditionResultData { name = "route_story_fixture", _count = 29,
+                _items = new List<Mortal.Core.ConditionResultItem> { new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { comparison } } } };
+            manager._condition = new Mortal.Story.ConditionResultConfig { _list = new List<Mortal.Core.ConditionResultData> { checkpoint } };
+            try
+            {
+                const string Menu = "local opts={'practice+free+practice'};local r=choose(opts);";
+                const string Dialogue = "setcharacter(characters.Get('girl5'));say(luamanager.GetStoryText('D_Fixture'))";
+                const string Guarded = "if checkpointmanager.Condition('route_story_fixture') then " + Dialogue + " end";
+                string StoryState(object graph)
+                {
+                    object story = Items(graph, "StoryEntries").Cast<object>().Single();
+                    return Invoke(story.GetType(), story, "ReadStoryConditions", Activator.CreateInstance(Type("Information.MapRouteRead"))).ToString();
+                }
+                scripts["root"] = Menu + Guarded; route = Create(); Finish(route);
+                Check(StoryState(route) == "NotMet" && !(bool)Member(route, "HasIncompleteStoryPaths"),
+                    "actual DLL false internal story gate rejects a plain enabled training option");
+                comparison._value1._value[0]._constant = 1;
+                Check(StoryState(route) == "Met", "actual DLL full-story snapshot updates with readonly current checkpoint data");
+                Check(Items(route, "StoryEntries").Cast<object>().All(x => Member(x, "Current").ToString() == "Unknown"),
+                    "actual DLL current-condition proof does not upgrade strict route execution certainty");
+                scripts["root"] = Menu + "unknown_callback();" + Dialogue; route = Create(); Finish(route);
+                Check(StoryState(route) == "Unknown", "actual DLL opaque callback cannot turn an unconditional NPC story green");
+                comparison._value1._value[0]._constant = 0;
+                scripts["root"] = Menu + "statmodifymanager.AddFlag('unrelated',1);" + Guarded; route = Create(); Finish(route);
+                Check(StoryState(route) == "NotMet", "actual DLL validated checkpoint without flag inputs stays false across a disjoint modeled flag write");
+                scripts["root"] = "luamanager.SetNextScript(checkpointmanager.Position('opaque_pool'))";
+                scripts["opaque_pool_result"] = Menu + Dialogue;
+                route = Create(); Finish(route);
+                Check(StoryState(route) == "Unknown", "actual DLL unselected pool result cannot promote a later literal-positive menu story");
+                Check(checkpoint._count == 29 && conditionCalls == Mortal.Core.ConditionResultData.Executions &&
+                    groupCalls == Mortal.Core.StatGroupVariable.OriginalReads && compareCalls == Mortal.Core.StatCompareItem.OriginalReads && randomCalls == UnityEngine.Random.Calls,
+                    "actual DLL full-story condition reads never call gameplay/RNG or increment checkpoint counters");
+            }
+            finally { manager._condition = previousConditions; }
             Console.WriteLine("PREVIEW actual map route IL passed; resource and pool definitions are fixtures");
         }
     }

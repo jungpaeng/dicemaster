@@ -200,8 +200,24 @@ namespace DiceMaster.Information
     public enum MapRouteState { Met, NotMet, Unknown }
     public class MapRouteRead { }
     public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; }
-    public class MapRoutePath { public string DialogueCharacter = ""; public List<MapChoiceStep> Steps = new List<MapChoiceStep>(); public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Unknown; }
-    public class MapStoryEntry { public List<MapRoutePath> Paths = new List<MapRoutePath>(); }
+    public class MapRoutePath
+    {
+        public string DialogueCharacter = ""; public List<MapChoiceStep> Steps = new List<MapChoiceStep>();
+        public MapRouteState StoryState = MapRouteState.Unknown;
+        public int StoryReads;
+        public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Met;
+        public MapRouteState ReadStoryConditions(MapRouteRead read) { StoryReads++; return StoryState; }
+    }
+    public class MapStoryEntry
+    {
+        public List<MapRoutePath> Paths = new List<MapRoutePath>();
+        public MapRouteState ReadStoryConditions(MapRouteRead read)
+        {
+            bool unknown = false; foreach (var path in Paths)
+            { var state = path.ReadStoryConditions(read); if (state == MapRouteState.Met) return state; unknown |= state == MapRouteState.Unknown; }
+            return unknown || Paths.Count == 0 ? MapRouteState.Unknown : MapRouteState.NotMet;
+        }
+    }
     public class MapRouteEvent
     {
         public object Event; public string ResultScript, Id;
@@ -218,6 +234,8 @@ namespace DiceMaster.Information
         public static int Builds, Advances;
         public static MapRouteState State = MapRouteState.Met;
         public static bool Choice;
+        public static bool StoryIncomplete;
+        public static readonly List<MapStoryEntry> StoryFixtures = new List<MapStoryEntry>();
         public readonly List<MapRouteEntry> Entries = new List<MapRouteEntry>();
         public readonly List<MapStoryEntry> StoryEntries = new List<MapStoryEntry>();
         public int WorkCount => Advances;
@@ -225,6 +243,7 @@ namespace DiceMaster.Information
         private bool done;
         public bool IsPreparing { get; private set; } = true;
         public bool IsPartial, HasReadFailure; public string Diagnostic = "";
+        public bool HasIncompleteStoryPaths => StoryIncomplete;
         public bool CanBuildBoundedProof(string script) => true;
         public MapRouteDefinitions(string key, Func<string,ScriptReadResult> source, Func<string,IList<MapRouteEvent>> poolReader)
         { root = key; reader = source; pools = poolReader; Builds++; }
@@ -235,6 +254,7 @@ namespace DiceMaster.Information
             {
                 var script = reader(root);
                 if (script.State != ScriptReadState.Success) throw new DataNotReadyException();
+                StoryEntries.AddRange(StoryFixtures);
                 if (!string.IsNullOrEmpty(script.Text))
                     foreach (var value in pools(script.Text)) Entries.Add(new MapRouteEntry { Event = value.Event, ResultScript = value.ResultScript, Id = value.Id, Pool = script.Text, Path = root + " -> " + script.Text });
                 done = true; IsPreparing = false;

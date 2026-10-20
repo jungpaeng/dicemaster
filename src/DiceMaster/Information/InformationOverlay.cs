@@ -130,7 +130,11 @@ namespace DiceMaster.Information
             {
                 string line = lines[at];
                 string positive = line.EndsWith(" · 진입 조건 충족 (현재)", StringComparison.Ordinal) ? "진입 조건 충족 (현재)" :
-                    line.EndsWith(" · 현재 이야기 진입 조건 충족", StringComparison.Ordinal) ? "현재 이야기 진입 조건 충족" : null;
+                    line.EndsWith(" · 현재 이야기 진입 조건 충족", StringComparison.Ordinal) ? "현재 이야기 진입 조건 충족" :
+                    line.EndsWith(" · 발생 조건 충족", StringComparison.Ordinal) ? "발생 조건 충족" :
+                    line.EndsWith(" · 진행 조건 충족", StringComparison.Ordinal) ? "진행 조건 충족" :
+                    line.EndsWith(" · 선택 후 진행 가능", StringComparison.Ordinal) ? "선택 후 진행 가능" :
+                    line.EndsWith(" · 진행 가능", StringComparison.Ordinal) ? "진행 가능" : null;
                 // Titles and names remain literal when trusted color markup
                 // is enabled. Apply formatting only while preparing the cache.
                 line = line.Replace("<", "＜").Replace(">", "＞");

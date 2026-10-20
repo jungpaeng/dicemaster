@@ -322,6 +322,43 @@ static class Program
         Check(Entry(snapshot, "fixed_entry").Status.Contains("진입 전 변경 여부 확인 불가") && !Entry(snapshot, "fixed_entry").Available, "Unreadable entry flags make the fixed activity unknown without executing the entry chain");
         Check(Counters.GameCalls == 0, "All map/one-shot/mission reads preserve game evaluator counters");
     }
+    private static void StoryConditionAggregation()
+    {
+        MapGuideSource.Clear(); MapGuideSource.Enabled = () => true;
+        MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryIncomplete = false;
+        var story = new MapStoryEntry();
+        MapRoutePath Path(MapRouteState state) => new MapRoutePath { DialogueCharacter = "brother4", StoryState = state,
+            Steps = new List<MapChoiceStep> { new MapChoiceStep { Script = "story_gate", SourceOffset = 7, Index = 1, RawLabel = "수련" } } };
+        var first = Path(MapRouteState.NotMet); var second = Path(MapRouteState.NotMet);
+        story.Paths.Add(first); story.Paths.Add(second); MapRouteDefinitions.StoryFixtures.Add(story);
+        DataHelper.Scripts["story_gate"] = "";
+        var controller = EmptyPlace(); controller._positionData._defaultScript = "story_gate"; MapGuideSource.Select(controller);
+        var value = Snapshot(); var row = Entry(value, "수련");
+        Check(row.Status == "지금 진행 불가" && !row.Available && !value.Summary.Available,
+            "True first-option fixture guards cannot override two false full NPC-story paths");
+        second.StoryState = MapRouteState.Met; value = Snapshot(); row = Entry(value, "수련");
+        Check(row.Status == "진행 가능" && row.Available && value.Summary.Available,
+            "One completely proven full story path makes its group positive without requiring every alternative");
+        second.StoryState = MapRouteState.Unknown; value = Snapshot();
+        Check(Entry(value, "수련").Status == "진행 가능성 있음" && !Entry(value, "수련").Available,
+            "A false path plus an unknown alternative remains possible rather than green or definitively blocked");
+        second.StoryState = MapRouteState.NotMet; MapRouteDefinitions.StoryIncomplete = true; value = Snapshot();
+        Check(Entry(value, "수련").Status == "진행 가능성 있음" && !Entry(value, "수련").Available,
+            "Structural omissions prevent an all-false sampled prefix from rejecting unexamined story alternatives");
+        MapRouteDefinitions.StoryIncomplete = false;
+
+        story = new MapStoryEntry();
+        for (int at = 0; at < 33; at++) story.Paths.Add(Path(at == 32 ? MapRouteState.Met : MapRouteState.NotMet));
+        MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryFixtures.Add(story);
+        controller._positionData._defaultScript = "story_gate_omitted"; DataHelper.Scripts["story_gate_omitted"] = "";
+        value = Snapshot(); row = Entry(value, "수련");
+        Check(row.Status == "진행 가능성 있음" && !row.Available && story.Paths[32].StoryReads == 0, "The provider's 32-path group bound cannot infer all-false or read a positive thirty-third path");
+        story.Paths[0].StoryState = MapRouteState.Met; value = Snapshot();
+        Check(Entry(value, "수련").Available && Entry(value, "수련").Status == "진행 가능",
+            "A proven retained positive path is sufficient even when later alternatives were omitted");
+        Check(Counters.GameCalls == 0, "Full-story aggregation is display-only and executes no game condition or result");
+        MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryIncomplete = false; MapGuideSource.Clear();
+    }
     private static void Options()
     {
         OptionHintSource.Clear(); OneShotProof.Clear(); OptionHintSource.Enabled = () => true;
@@ -374,5 +411,5 @@ static class Program
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Presentation(); Map(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

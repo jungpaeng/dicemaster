@@ -25,7 +25,7 @@ namespace DiceMaster.Information
         }
         public static string Notice(string name, string kind, int rank, bool waiting, bool mission, string sourceStatus)
         {
-            string status = rank == 1 ? "지금 진행 불가" : rank == 2 ? "진행 여부 확인 필요" :
+            string status = rank == 1 ? "지금 진행 불가" : rank == 2 ? "진행 가능성 있음" :
                 waiting ? "진행 가능" : mission ? "발생 조건 충족" :
                 (sourceStatus ?? "").Contains("선택 후") ? "선택 후 진행 가능" : "진행 조건 충족";
             string title = name ?? "";
