@@ -37,7 +37,7 @@ namespace DiceMaster.Information
             int count = notices == null ? 0 : notices.Count;
             if (!guide && count == 0) return "";
             var text = new StringBuilder();
-            if (count == 0) text.Append(preparing ? "이 장소의 안내를 확인하는 중" : "현재 확인된 인물 대화·임무·1회성 없음");
+            if (count == 0) text.Append(preparing ? "이 장소의 안내를 확인하는 중" : "현재 표시할 인물 대화·임무·1회성 없음");
             for (int index = 0; index < Math.Min(3, count); index++)
             {
                 if (text.Length != 0) text.Append('\n');

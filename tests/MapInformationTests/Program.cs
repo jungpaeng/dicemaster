@@ -85,7 +85,7 @@ static class Program
         Check(text.Contains("문파 방문 · 1회성 이야기 · 지금 진행 불가") && !text.Contains("나머지 이야기") && text.Contains("외 1개"), "Automatic notice bounds complete entries rather than cutting statuses midway");
         Check(text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && !text.Contains("단계 후보") && !text.Contains("확인 불가"), "Compact notice keeps the detail path and omits analysis jargon");
         Check(MapGuidePresentation.Summary(new List<string>(), true, true).StartsWith("이 장소의 안내를 확인하는 중"), "Preparing is distinct from confirmed empty");
-        Check(MapGuidePresentation.Summary(new List<string>(), true, false).StartsWith("현재 확인된 인물 대화·임무·1회성 없음"), "Empty notice describes only recognized supported items");
+        Check(MapGuidePresentation.Summary(new List<string>(), true, false).StartsWith("현재 표시할 인물 대화·임무·1회성 없음"), "Empty notice describes visible items without claiming that hidden blocked content does not exist");
         Check(MapGuidePresentation.Summary(new List<string>(), false, true) == "", "One-shot-only mode does not create an empty or unknown noise panel");
     }
     private static MapGuideSnapshot Snapshot(bool guide = true, bool once = true)
@@ -359,6 +359,45 @@ static class Program
         Check(Counters.GameCalls == 0, "Full-story aggregation is display-only and executes no game condition or result");
         MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryIncomplete = false; MapGuideSource.Clear();
     }
+    private static void AutomaticNoticeFiltering()
+    {
+        var controller = EmptyPlace(); MapGuideSource.Select(controller);
+        MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryIncomplete = false;
+        var paths = new List<MapRoutePath>();
+        void Story(string name, MapRouteState state)
+        {
+            var path = new MapRoutePath { DialogueCharacter = "brother4", StoryState = state,
+                Steps = new List<MapChoiceStep> { new MapChoiceStep { Script = "filtered_notices", SourceOffset = 7, Index = paths.Count + 1, RawLabel = name } } };
+            paths.Add(path); MapRouteDefinitions.StoryFixtures.Add(new MapStoryEntry { Paths = new List<MapRoutePath> { path } });
+        }
+        Story("숨김_대화_A", MapRouteState.NotMet); Story("열린_대화", MapRouteState.Met);
+        Story("제목에 지금 진행 불가", MapRouteState.Unknown); Story("불명_대화_B", MapRouteState.Unknown);
+        Story("숨김_대화_B", MapRouteState.NotMet); Story("불명_대화_C", MapRouteState.Unknown); Story("불명_대화_D", MapRouteState.Unknown);
+        var zero = Compare(Constant(0), Constant(1));
+        controller._missionsManager._subMissions._list.Add(Mission("숨김_임무", new MissionCheckData { name = "hidden-stage", _conditions = new[] { zero } }));
+        var flag = new FlagData { name = "hidden-once", State = 1 };
+        var once = Event("숨김_1회성", Compare(Flag(flag), Constant(0)));
+        CheckPointManager.Instance._position._list.Add(new PositionResultData { name = "FilteredPool", _scriptPrefix = "filtered_result", _list = new List<PositionEventData> { once } });
+        PositionEventCache.Parser.Actions["filtered_result_숨김_1회성"] = Result(Set("hidden-once", 1));
+        DataHelper.Scripts["filtered_notices"] = "FilteredPool"; controller._positionData._defaultScript = "filtered_notices";
+        var value = Snapshot();
+        Check(!Entry(value, "숨김_대화_A").Available && !Entry(value, "숨김_임무").Available && !Entry(value, "숨김_1회성").Available && Entry(value, "숨김_1회성").Status.Contains("1회성"),
+            "Blocked dialogue, mission and proven one-shot rows retain their individual status and detail publication");
+        Check(!value.Summary.AutoText.Contains("숨김_대화_A") && !value.Summary.AutoText.Contains("숨김_대화_B") && !value.Summary.AutoText.Contains("숨김_임무") && !value.Summary.AutoText.Contains("숨김_1회성"),
+            "Typed blocked candidates of every supported kind are omitted only from the automatic map notices");
+        Check(value.Summary.AutoText.Contains("열린_대화") && value.Summary.AutoText.Contains("제목에 지금 진행 불가") && value.Summary.AutoText.Contains("불명_대화_B"),
+            "Positive and unknown candidates remain visible, including an unknown title that literally contains the blocked-status words");
+        Check(Array.FindAll(value.Summary.AutoText.Split('\n'), line => line.StartsWith("• ", StringComparison.Ordinal)).Length == 3 && value.Summary.AutoText.Contains("외 2개") && !value.Summary.AutoText.Contains("외 6개"),
+            "The three complete automatic rows and remaining count are calculated after filtering blocked candidates");
+        foreach (var path in paths) path.StoryState = MapRouteState.NotMet;
+        value = Snapshot();
+        Check(value.Summary.AutoText.StartsWith("현재 표시할 인물 대화·임무·1회성 없음", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("• ") && !value.Summary.AutoText.Contains("외 "),
+            "An all-blocked map has an honest visible-empty message without hidden names, phantom rows or an overflow count");
+        Check(Entry(value, "열린_대화").Status == "지금 진행 불가" && Entry(value, "숨김_임무").Detail.Length > 0 && Entry(value, "숨김_1회성").Detail.Length > 0 && !value.Summary.Available,
+            "Filtering all automatic rows leaves their condition/effect details intact and does not invent an available summary");
+        Check(Counters.GameCalls == 0 && flag.State == 1, "Automatic filtering executes no game judgment, result, RNG or consumed one-shot flag write");
+        MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryIncomplete = false; MapGuideSource.Clear();
+    }
     private static void Options()
     {
         OptionHintSource.Clear(); OneShotProof.Clear(); OptionHintSource.Enabled = () => true;
@@ -411,5 +450,5 @@ static class Program
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

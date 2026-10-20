@@ -551,7 +551,9 @@ namespace DiceMaster.Information
                 if (value.Waiting) waiting++;
                 else if (value.Mission && value.Rank == 0) stages++;
                 else if (value.OneShot && value.Rank == 0) oneShots++;
-                if (guide && (value.Waiting || value.Mission || value.ChoiceStory) || value.OneShot)
+                // Keep blocked entries in the detail log, but leave them out
+                // before the passive list's row limit and remaining count.
+                if (value.Rank != 1 && (guide && (value.Waiting || value.Mission || value.ChoiceStory) || value.OneShot))
                     automatic.Add(value.ChoiceStory ? MapGuidePresentation.StoryNotice(title, value.Status) :
                         MapGuidePresentation.Notice(title, value.Mission ? (value.Main ? "주 임무" : "보조 임무") : "1회성 이야기", value.Rank, value.Waiting, value.Mission, value.Status));
             }
