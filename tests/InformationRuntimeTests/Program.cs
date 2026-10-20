@@ -24,7 +24,12 @@ static class Program {
   Check(ConfigManager.EnableBranchNotices.Value&&ConfigManager.EnableShopEffectInfo.Value,"independent settings retained");
   ShopEffectSource.Visible=true;InformationRuntime.Tick(null,true,11);Check(ShopEffectSource.Reads==1,"current shop queried");
   var row=LogBridge.Model.Tab("상점 효과").Snapshot.Rows[0];Check(row.Target==null&&!row.ReservationAllowed&&!row.CanReserve,"readonly publications never issue reservation authority");
+  Check(ShopEffectSource.Summary.Contains("근력 +5")&&ShopEffectSource.Summary.Contains("\n"),"shop receives multiline effect content instead of an analysis-only label");
   InformationRuntime.Tick("상점 효과",true,11.1f);Check(ShopEffectSource.Reads==1,"automatic and detail share same snapshot budget");
+  ShopEffectSource.Fail=true;InformationRuntime.Tick(null,true,11.26f);
+  Check(ShopEffectSource.Summary.StartsWith(RefreshEngine.RetainedFailureStatus+"\n")&&ShopEffectSource.Summary.Contains("근력 +5"),"retained shop effect is explicitly stale before the effect text");
+  int failedShopReads=ShopEffectSource.Reads;InformationRuntime.Tick(null,true,11.27f);
+  Check(ShopEffectSource.Reads==failedShopReads,"rendering a retained multiline effect does not bypass failure backoff");ShopEffectSource.Fail=false;
   ConfigManager.EnableShopEffectInfo.Fail=true;InformationRuntime.Tick(null,true,11.3f);Check(!InformationRuntime.Enabled(3)&&InformationRuntime.Enabled(2),"read failure disables only affected feature");
   int logs=DiceMaster.DicePlugin.Messages.Count;InformationRuntime.Tick(null,true,11.4f);Check(DiceMaster.DicePlugin.Messages.Count==logs,"repeated setting failure diagnosed once");
   ConfigManager.EnableShopEffectInfo.Fail=false;InformationRuntime.Tick(null,true,11.5f);Check(InformationRuntime.Enabled(3),"setting read recovery");

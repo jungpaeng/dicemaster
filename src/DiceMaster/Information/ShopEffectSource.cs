@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using DiceMaster.LiveLog;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,7 +18,8 @@ namespace DiceMaster.Information
         public static Func<bool> Enabled = delegate { return false; };
         private static object panel, item;
         private static Text description;
-        private static string original = "", appended = "", title = "", observedId = "";
+        private static string original = "", appended = "", title = "", observedId = "", summaryInput = "";
+        private static readonly Regex descriptionTags = new Regex(@"</?(?:color|size|b|i)(?:=[^<>\r\n]*)?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         private static long generation;
         public static bool Visible { get { return Live(panel) && !Gone(item) && description != null && SelectionId(item) == observedId; } }
         public static string ContextKey { get { return "shop:" + generation.ToString(CultureInfo.InvariantCulture); } }
@@ -97,6 +99,7 @@ namespace DiceMaster.Information
             title = heading == null ? "" : heading.text;
             original = description == null ? "" : description.text ?? "";
             appended = "";
+            summaryInput = "";
             if (changed) generation++;
         }
         public static void ObserveClosed(object owner) { if (ReferenceEquals(panel, owner)) Clear(); }
@@ -104,6 +107,7 @@ namespace DiceMaster.Information
         {
             if (description != null && appended.Length != 0 && description.text == appended) description.text = original;
             appended = "";
+            summaryInput = "";
         }
         public static void Clear()
         {
@@ -114,12 +118,17 @@ namespace DiceMaster.Information
             if (!Allowed() || !Visible) { Restore(); return; }
             if (!ReferenceEquals(description, Field(panel, "_dialogDesc"))) { Clear(); return; }
             string current = description.text ?? "";
-            if (current != appended) original = current;
             if (string.IsNullOrEmpty(text)) { Restore(); return; }
-            // The runtime passes only the cached name/kind/status AutoText.
-            string next = original + (original.Length == 0 ? "" : "\n\n") + Plain(text);
+            if (current == appended && text == summaryInput) return;
+            if (current != appended) original = current;
+            // The provider already prepared the effect text at refresh time.
+            // Keep its lines, remove formatter markup, and never query the game here.
+            string plain = descriptionTags.Replace(text, "").Replace("\r\n", "\n").Replace("\r", "\n")
+                .Replace("<", "〈").Replace(">", "〉").Replace("\0", "");
+            string next = original + (original.Length == 0 ? "" : "\n\n") + plain;
             if (current != next) description.text = next;
             appended = next;
+            summaryInput = text;
         }
         public static List<DisplayQuery> Discover()
         {
@@ -306,13 +315,15 @@ namespace DiceMaster.Information
             {
                 string name = Plain(DisplayNames.Text(string.IsNullOrWhiteSpace(observedTitle) ? Identity(selected) : observedTitle));
                 string kind = Kind(selected);
-                return new InformationRow(id, name, kind, "효과 해석 미지원", "이 물품의 조건·효과에 아직 해석하지 못하는 자료가 있음. 효과가 없거나 사용할 수 없다는 뜻이 아님. 게임 판정이나 사용·학습은 실행하지 않음.", name + " · " + kind + " · 효과 해석 미지원", selected);
+                return new InformationRow(id, name, kind, "효과 해석 미지원", "이 물품의 조건·효과에 아직 해석하지 못하는 자료가 있음. 효과가 없거나 사용할 수 없다는 뜻이 아님. 게임 판정이나 사용·학습은 실행하지 않음.",
+                    "사용·학습 효과:\n이 물품의 효과를 아직 해석할 수 없음. 효과가 없거나 사용할 수 없다는 뜻은 아님.", selected);
             }
         }
         private static InformationRow ReadKnown(object selected, string observedTitle, string id)
         {
             string kind = Kind(selected), name = string.IsNullOrWhiteSpace(observedTitle) ? Identity(selected) : observedTitle;
             StringBuilder detail = new StringBuilder();
+            string inline = null;
             string status;
             bool known = true;
             if (selected.GetType().FullName == "Mortal.Core.Consumables")
@@ -330,11 +341,12 @@ namespace DiceMaster.Information
                     status = "사용 경로 미확인"; known = false;
                     detail.AppendLine("현재 실제 적용 변화는 확인 불가 · 제공된 게임 코드에서 이 효과 자료의 사용 실행 경로를 확인하지 못함. 자료상 수치를 실제 사용 결과로 단정하지 않음.");
                 }
+                inline = detail.ToString();
             }
             else if (selected.GetType().FullName == "Mortal.Core.Misc" || selected.GetType().FullName == "Mortal.Core.SpecialItem")
             {
                 ShopUseEffects.Result use = ShopUseEffects.Read(selected.GetType().FullName == "Mortal.Core.Misc" ? "misc" : "special", Identity(selected));
-                status = use.Status; known = use.Known; detail.AppendLine(use.Detail);
+                status = use.Status; known = use.Known; detail.AppendLine(use.Detail); inline = use.InlineText;
             }
             else if (selected.GetType().FullName == "Mortal.Core.Book")
             {
@@ -342,27 +354,33 @@ namespace DiceMaster.Information
                 int current = Number(selected, "_currentMartialLevel");
                 if (current < 0 || current > levels.Count) throw new UnsupportedEffectException();
                 if (current == levels.Count)
-                { status = "학습 완료"; detail.AppendLine("최대 학습 레벨 · 확인된 다음 학습 효과 없음"); }
+                { status = "학습 완료"; detail.AppendLine("최대 학습 레벨 · 확인된 다음 학습 효과 없음"); inline = "학습 효과:\n학습 완료 · 최대 학습 레벨\n다음 학습 효과 없음"; }
                 else
                 {
                     object level = levels[current]; Exact(level, "MartialLevelData");
-                    detail.AppendLine("현재 학습 레벨 " + current + " → 다음 " + (current + 1) + " (현재 학습점 " + Number(selected, "_currentLevelPoint") + " / 필요 " + Number(level, "_points") + ")");
-                    detail.AppendLine("학습 조건:");
+                    string progress = "현재 학습 레벨 " + current + " → 다음 " + (current + 1) + " (현재 학습점 " + Number(selected, "_currentLevelPoint") + " / 필요 " + Number(level, "_points") + ")";
+                    var conditions = new StringBuilder("학습 조건:\n");
+                    var costs = new StringBuilder();
+                    var changes = new StringBuilder();
                     Evaluation evaluation = new Evaluation();
-                    bool? condition = evaluation.Conditions(Field(level, "_condition"), detail);
-                    evaluation.Costs(level, detail);
+                    bool? condition = evaluation.Conditions(Field(level, "_condition"), conditions);
+                    evaluation.Costs(level, costs);
                     IList effects = List(level, "_levelupStats");
-                    detail.AppendLine("다음 레벨 도달 시 효과 · 현재 상태와 위 소모를 기준으로 한 정적 변화:");
-                    foreach (object effect in effects) evaluation.AddModification(detail, effect, Number(selected, "_martialLevel"), true);
-                    if (effects.Count == 0) detail.AppendLine("  확인된 효과 없음");
+                    foreach (object effect in effects) evaluation.AddModification(changes, effect, Number(selected, "_martialLevel"), true);
+                    if (effects.Count == 0) changes.AppendLine("  확인된 효과 없음");
+                    detail.AppendLine(progress).Append(conditions).Append(costs);
+                    detail.AppendLine("다음 레벨 도달 시 효과 · 현재 상태와 위 소모를 기준으로 한 정적 변화:").Append(changes);
                     known = condition.HasValue && !evaluation.Unknown;
                     status = !condition.HasValue ? "학습 조건 일부 미지원" : evaluation.Unknown ? "학습 효과 일부 미지원" : condition.Value ? "학습 조건 충족" : "학습 조건 미충족";
                     detail.AppendLine("학습량·실제 레벨 도달·후속 이벤트는 예측하지 않음. 학습·소모·능력치 변경을 실행하지 않은 조회.");
+                    inline = "학습 효과:\n다음 레벨 도달 시 · 아래 소모와 조건을 기준으로 한 변화:\n" + changes + progress + "\n" + costs + conditions
+                        + "학습 조건: " + (condition.HasValue ? condition.Value ? "충족" : "미충족" : "일부 확인 불가")
+                        + "\n학습 조건·필요 학습점을 충족해야 적용됨. 실제 학습량·레벨 도달 시점은 예측하지 않음.";
                 }
             }
-            else { status = "효과 조회 미지원"; known = false; detail.AppendLine("미지원 물품 종류 · 장비 착용·강화·동적 효과는 조회 범위 밖"); }
+            else { status = "효과 조회 미지원"; known = false; detail.AppendLine("미지원 물품 종류 · 장비 착용·강화·동적 효과는 조회 범위 밖"); inline = "사용·학습 효과:\n이 물품 종류의 효과는 아직 조회할 수 없음. 장비 착용·강화 효과는 지원 범위 밖."; }
             name = Plain(DisplayNames.Text(name));
-            return new InformationRow(id, name, kind, status, detail.ToString().TrimEnd(), name + " · " + kind + " · " + status, selected, known);
+            return new InformationRow(id, name, kind, status, detail.ToString().TrimEnd(), (inline ?? detail.ToString()).TrimEnd(), selected, known);
         }
     }
 }

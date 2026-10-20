@@ -38,8 +38,8 @@ namespace DiceMaster.Information {
   public static List<DisplayQuery> Discover(bool g,bool o){Discoveries++;return new(){new DisplayQuery("map",()=>{Reads++;if(Fail)throw new InvalidOperationException();return new InformationRow("map","장소","지도","가능","조건과 효과");})};}public static void Clear(){Clears++;}public static void ClearSnapshots(){Clears++;}
  }
  public static class ShopEffectSource {
-  public static Func<bool> Enabled;public static bool Visible;public static string ContextKey="s";public static int Reads;public static string Summary;
-  public static List<DisplayQuery> Discover(){return new(){new DisplayQuery("shop",()=>{Reads++;return new InformationRow("shop","책","학습","현재 상태","학습 효과");})};}
+  public static Func<bool> Enabled;public static bool Visible,Fail;public static string ContextKey="s";public static int Reads;public static string Summary;
+  public static List<DisplayQuery> Discover(){return new(){new DisplayQuery("shop",()=>{Reads++;if(Fail)throw new InvalidOperationException();return new InformationRow("shop","책","학습","현재 상태","학습 효과","학습 효과:\n근력 +5\n학습 조건: 충족");})};}
   public static void Clear(){Visible=false;ContextKey+="c";}public static void RenderSummary(string s){Summary=s;}
  }
  public static class BranchHistory {

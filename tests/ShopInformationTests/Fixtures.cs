@@ -115,18 +115,22 @@ namespace DiceMaster.LiveLog
         public List<PreviewEffect> Effects = new List<PreviewEffect>();
         public PreviewAnalysisState State = PreviewAnalysisState.Supported;
     }
-    public static class PreviewDisplay { public static void Validate(PreviewAnalysis value) { } }
+    public static class PreviewDisplay
+    {
+        public const string PartialStatus = "추가 영향 가능", UnsupportedStatus = "결과는 진행 후 확인";
+        public static void Validate(PreviewAnalysis value) { }
+    }
 }
 namespace DiceMaster.LuaParse
 {
     public class Action { public DiceMaster.LiveLog.PreviewAnalysis Analysis; public string Description = ""; }
     public class LuaParser
     {
-        public static int Parses;
+        public static int Parses, Refreshes;
         public static Dictionary<string,List<Action>> Options = new Dictionary<string,List<Action>>();
         public bool IncompleteOptionDiscovery;
         public Dictionary<string,List<Action>> ExtractOptionActionsFromLua(string key, string source) { Parses++; return Options; }
-        public static void RefreshPreviewReads(List<Action> actions) { }
+        public static void RefreshPreviewReads(List<Action> actions) { Refreshes++; }
         public static string Description(List<Action> actions)
         { var lines = new List<string>(); foreach (var a in actions) lines.Add(a.Description); return string.Join("\n", lines); }
     }

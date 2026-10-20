@@ -2,6 +2,16 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
+## 상점 설명 후속 후보 — 효과를 직접 표시
+
+2026-10-21 사용자가 상점 설명에서 사용·학습 효과를 바로 보도록 요청했다. 상점의 자동 표시를 이름·종류·분석 상태로 제한하던 기존 #6 규칙은 이 요청에 따라 바꾸며 지도·1회성·분기의 규칙은 유지한다. 원래 `_dialogDesc` 아래에 사용 효과 또는 다음 학습 효과를 여러 줄로 추가하고, 전체 상세는 기존 로그에도 남긴다. 효과를 얻었는데도 부분 분석 진단만 제품 설명에 노출되던 문제가 대상이다.
+
+`ShopEffectSource`는 현재 선택의 캐시된 효과 문구를 게시한다. `ShopUseEffects`는 종류·ID로 연결한 사용 메뉴의 기존 설명기를 재사용해 수치·소모와 조건부·난수·부분 해석 표기를 유지한다. `사용 효과:` 또는 `학습 효과:` 아래에 효과를 먼저 표시하고 책은 현재·다음 단계와 학습 진행 → 소모 → 조건을 이어서 읽는다. 최대 단계·확인된 변화 없음·미지원·연결 실패를 구분한다. 기존 설명의 줄바꿈과 내용을 보존하며 중복 추가를 막고 OFF·닫기·선택 변경에서 자기 문구만 복원한다. 추가 효과 문구는 설명기의 서식 태그를 제거하고 알 수 없는 꺾쇠를 이스케이프해 텍스트로 붙인다.
+
+기존 `ShopPanel.OnItemHover` 관찰 경계를 공유해 패드 선택에도 연결하고 새 입력·입력 소비·포커스 이동을 추가하지 않는다. 구매·사용·학습·게임 조건 실행·세이브·RNG 호출을 추가하지 않는다. 정상 0.25초/실패 5초·숨김/OFF 조회 중단·문맥별 기존 Lua 연결 캐시·정상 갱신 재분석 없음 계약을 유지한다. 상위 `EnableOptionInfo`의 시작 시 적용과 `EnableShopEffectInfo`의 기본 ON·즉시 변경/저장·OFF 복원도 유지한다.
+
+원래 작업 폴더의 main에서 구현·검증하며 별도 브랜치/worktree를 만들지 않는다. 이 변경은 미게시 로컬 후보이고 공개 alpha.2·Latest 정식 v1.0.6은 그대로다. [구현·자동 검사·후보 식별값·실제 Windows 확인표](ISSUE-6-SHOP-DESCRIPTION.md)를 따른다. 아래 alpha.2·alpha.1은 해당 게시 버전의 이력이다.
+
 ## v1.0.7-alpha.2 — 선택 대상과 그리기 비용
 
 [2026-10-21 01:35:02 KST 공개 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2). 소스 `4bbdffb`의 고정 재빌드·18개 검사와 검토 후보의 입력/검사/패키지 일치·익명 다운로드 검증을 완료했습니다. 새 Windows·성능 확인과 #6 완료는 대기이며 main·기존 Release/Latest를 보존했습니다. [게시·검증 근거](ISSUE-6-SELECTED-MAP-SHOP.md#공개-prerelease-게시와-검증).

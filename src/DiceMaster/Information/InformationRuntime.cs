@@ -129,7 +129,7 @@ namespace DiceMaster.Information
                 {
                     DisplayRow row = shop.Rows[0];
                     summary = (row.Value as InformationRow)?.AutoText ?? "상점 효과 · " + row.Status;
-                    if (!string.IsNullOrEmpty(row.Status)) summary += " · " + row.Status;
+                    if (!string.IsNullOrEmpty(row.Status)) summary = row.Status + "\n" + summary;
                 }
                 ShopEffectSource.RenderSummary(summary);
             }
