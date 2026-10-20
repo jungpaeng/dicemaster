@@ -80,7 +80,7 @@ namespace DiceMaster.EventSelection
         private static ActionContext current;
         private static IList<EventCandidate> candidates = Empty;
         private static long epoch, sequence, scriptSequence;
-        private static bool waiting, displayVisible;
+        private static bool waiting, displayVisible, logVisible;
         private static readonly Dictionary<string, string> failures = new Dictionary<string, string>(StringComparer.Ordinal);
         public static Func<bool> Enabled;
         public static Func<bool> SwitchEnabled;
@@ -93,6 +93,11 @@ namespace DiceMaster.EventSelection
         public static long Token => current == null ? 0 : current.Token;
         public static IList<EventCandidate> Candidates => candidates;
         public static string Status { get; private set; } = "";
+        public static void SetLogVisible(bool visible)
+        {
+            if (visible && !logVisible) CancelConfirmation();
+            logVisible = visible;
+        }
         internal static long Epoch => epoch;
         public static void Install(Harmony harmony) { EventExecutionPatches.Install(harmony); }
 
@@ -262,6 +267,7 @@ namespace DiceMaster.EventSelection
                 Log("pass-through reason=concurrent-action");
                 return false;
             }
+            if (logVisible && current != null) return true;
             try
             {
                 if (BypassForReservation(false, name)) return false;
@@ -346,7 +352,7 @@ namespace DiceMaster.EventSelection
 
         public static bool Select(string id, bool force)
         {
-            if (!waiting || current == null || current.SelectedId != null || current.RandomRequested) return false;
+            if (logVisible || !waiting || current == null || current.SelectedId != null || current.RandomRequested) return false;
             foreach (EventCandidate item in candidates)
                 if (item.Id == id && (force ? item.CanForce : item.CanSelect))
                 {
@@ -369,7 +375,7 @@ namespace DiceMaster.EventSelection
 
         public static void ContinueRandom()
         {
-            if (!waiting || current == null || current.SelectedId != null || current.RandomRequested) return;
+            if (logVisible || !waiting || current == null || current.SelectedId != null || current.RandomRequested) return;
             current.RandomRequested = true;
             Status = "원래 판정으로 진행합니다.";
         }

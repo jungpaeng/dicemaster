@@ -98,24 +98,24 @@ namespace DiceMaster.Gamepad
         }
         private readonly Slot[] slots = { new Slot(), new Slot(), new Slot(), new Slot() };
         private bool logCapture;
-        private bool openerEnabled, openerFocused, openerOpen, openerOpening;
+        private bool openerEnabled, openerFocused, openerOpen, openerOpening, openerWhileCaptured;
         private int pendingOpen = -1;
         private readonly bool[] openerAwaitNeutral = { true, true, true, true };
         private readonly ushort[] openerFirst = new ushort[4];
 
         public bool LogOpening { get { lock (gate) return openerOpening; } }
 
-        public void ConfigureLogOpener(bool enabled, bool focused, bool open)
+        public void ConfigureLogOpener(bool enabled, bool focused, bool open, bool allowWhileCaptured = false)
         {
             lock (gate)
             {
-                if (enabled == openerEnabled && focused == openerFocused && open == openerOpen) return;
+                if (enabled == openerEnabled && focused == openerFocused && open == openerOpen && allowWhileCaptured == openerWhileCaptured) return;
                 bool reserved = openerEnabled && openerFocused;
                 // Hand off without a frame in which the gesture is released to
                 // the game before the ordinary log owner takes over.
                 if (open && focused && openerOpening) logCapture = true;
                 ResetOpener(reserved || openerOpening);
-                openerEnabled = enabled; openerFocused = focused; openerOpen = open;
+                openerEnabled = enabled; openerFocused = focused; openerOpen = open; openerWhileCaptured = allowWhileCaptured;
                 if (enabled && focused)
                     foreach (Slot slot in slots) slot.AwaitNeutral = true;
             }
@@ -154,7 +154,7 @@ namespace DiceMaster.Gamepad
 
         private void ObserveOpener(uint index, PadState raw)
         {
-            if (!openerEnabled || !openerFocused || openerOpen || openerOpening || logCapture) return;
+            if (!openerEnabled || !openerFocused || openerOpen || openerOpening || logCapture && !openerWhileCaptured) return;
             if (openerAwaitNeutral[index])
             {
                 if (IsNeutral(raw)) openerAwaitNeutral[index] = false;
@@ -222,7 +222,9 @@ namespace DiceMaster.Gamepad
                 if (active && !logCapture)
                     foreach (Slot slot in slots) if (slot.Seen) Capture(slot, slot.Raw);
                 logCapture = active;
-                if (active && openerOpening) ResetOpener(true);
+                // A popup already captures gameplay while its permitted log
+                // opener is queued. Keep that gesture until Update consumes it.
+                if (active && openerOpening && (!openerWhileCaptured || openerOpen)) ResetOpener(true);
             }
         }
         // Used on focus/mode/context boundaries, including previously blocked
@@ -322,7 +324,7 @@ namespace DiceMaster.Gamepad
             lock (gate)
             {
                 logCapture = false;
-                openerEnabled = openerFocused = openerOpen = false;
+                openerEnabled = openerFocused = openerOpen = openerWhileCaptured = false;
                 ResetOpener(false);
                 for (int i = 0; i < slots.Length; i++) slots[i] = new Slot();
             }

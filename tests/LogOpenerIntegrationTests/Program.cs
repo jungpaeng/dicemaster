@@ -25,7 +25,7 @@ internal static class Program
         internal readonly NativeXInput Native;
         internal readonly LogPadController Controller;
         internal readonly XInputHook Hook;
-        internal bool Open, Focused = true, Enabled = true;
+        internal bool Open, PopupWaiting, Focused = true, Enabled = true;
         internal float Time;
         internal int OpenRequests, GameActivations;
         internal Boundary(int owner = 0)
@@ -71,7 +71,7 @@ internal static class Program
         internal int Poll()
         {
             UnityEngine.Application.isFocused = Focused;
-            int owner = GamepadBridge.PollLogOpener(Enabled, Focused, Open, "unused-no-Win32-initialization");
+            int owner = GamepadBridge.PollLogOpener(Enabled, Focused, Open, "unused-no-Win32-initialization", PopupWaiting);
             if (owner >= 0) OpenRequests++;
             return owner;
         }
@@ -112,7 +112,7 @@ internal static class Program
         {
             UnityEngine.Application.isFocused = Focused;
             Time += .1f;
-            return GamepadBridge.TickLog(Open, Focused, GameInputModeResolver.Resolve(), Time, "unused-no-Win32-initialization");
+            return GamepadBridge.TickLog(Open || PopupWaiting, Focused, GameInputModeResolver.Resolve(), Time, "unused-no-Win32-initialization");
         }
         internal void Neutral(int owner)
         { State(owner); GamePollAll(); Check(Tick().Command == LogPadCommand.None, "neutral only rearms and never activates"); }
@@ -139,7 +139,9 @@ internal static class Program
         foreach (string schedule in new[] { "game", "bridge" })
             foreach (string mode in new[] { "Gamepad", "KeyboardMouse", "Unknown" })
                 foreach (int slot in new[] { 0, 2 }) cases.Add("open/" + schedule + "/" + mode + "/" + slot);
-        cases.AddRange(new[] { "raw-only", "no-polling", "pending-stale", "cancel", "disable", "focus", "disconnect", "cross-slot", "held-reopen", "entry-mode-hover", "hard-entry-boundaries", "full-neutral", "dice-roundtrip", "entry-readiness", "entry-disconnect", "held-order/left", "held-order/right", "half/cancel", "half/focus", "half/disconnect", "half/stale", "closing-half", "pure-gesture" });
+        foreach (string mode in new[] { "Gamepad", "KeyboardMouse", "Unknown" })
+            foreach (int slot in new[] { 0, 2 }) cases.Add("popup-log/" + mode + "/" + slot);
+        cases.AddRange(new[] { "raw-only", "no-polling", "pending-stale", "cancel", "disable", "focus", "disconnect", "cross-slot", "held-reopen", "entry-mode-hover", "hard-entry-boundaries", "full-neutral", "dice-roundtrip", "entry-readiness", "entry-disconnect", "held-order/left", "held-order/right", "half/cancel", "half/focus", "half/disconnect", "half/stale", "closing-half", "pure-gesture", "popup-filter", "popup-key-pointer" });
         int total = 0;
         foreach (string scenario in cases)
         {
@@ -177,6 +179,10 @@ internal static class Program
 
     private static void Run(string scenario)
     {
+        if (scenario.StartsWith("popup-log/", StringComparison.Ordinal))
+        { PopupLogRoundtrip(scenario); return; }
+        if (scenario == "popup-filter") { PopupFilters(); return; }
+        if (scenario == "popup-key-pointer") { PopupKeyboardPointer(); return; }
         if (scenario.StartsWith("open/", StringComparison.Ordinal))
         {
             string[] pieces = scenario.Split('/'); string mode = pieces[2]; int owner = int.Parse(pieces[3]);
@@ -394,6 +400,108 @@ internal static class Program
             return;
         }
         throw new InvalidOperationException("unknown scenario " + scenario);
+    }
+
+    // This is the shared native/controller ownership boundary used by both
+    // event and Switch popups. Candidate selection and Lua resumption are
+    // verified by the separate popup/runtime suites rather than fabricated here.
+    private static void PopupLogRoundtrip(string scenario)
+    {
+        string[] parts = scenario.Split('/'); string mode = parts[1]; int owner = int.Parse(parts[2]);
+        var b = new Boundary(owner); b.Connected[0] = true;
+        Mortal.Core.FakePlayerInput.Current.SetScheme(Scheme(mode)); b.Arm();
+        b.PopupWaiting = true;
+        GamepadBridge.SetModalCapture(true, true, "unused-no-Win32-initialization");
+        GameActionGate.SetLogState(true, true);
+        Check(b.Poll() == -1, "waiting popup enables its opener without manufacturing a request");
+        b.GamePollAll(); b.Tick(); b.Neutral(owner);
+        b.Captured("popup owns gameplay before opening log");
+        b.OpenGesture(owner);
+        // An unrelated refresh of the already-active capture must not erase
+        // the game callback's pending gesture before Update consumes it.
+        b.Native.LogActive = true; b.Native.LogActive = true;
+        Check(GamepadBridge.LogOpening, "repeated popup capture retains the pending permitted opener");
+        int requested = b.Poll();
+        Check(requested == owner && b.OpenRequests == 1, "captured popup accepts a fresh chord from its actual device");
+        b.Accept(requested, Scheme(mode));
+        FirstNavigation(b, owner, mode);
+        Check(b.Poll() == -1 && b.OpenRequests == 1,
+            "an already-open log cannot queue a second open even while its underlying popup waits");
+        b.Neutral(owner); b.State(owner, PadButtons.B); b.GamePollAll();
+        Check(b.Tick().Command == LogPadCommand.Back, "fresh B belongs to the foreground log");
+        b.Open = false;
+        GameActionGate.SetLogState(b.PopupWaiting, true);
+        GamepadBridge.CancelLogInput();
+        b.Poll();
+        Check(b.Tick().Command == LogPadCommand.None && b.Controller.Waiting,
+            "closing the log with B held cannot dismiss or confirm the restored popup");
+        b.Captured("log closes back into the still-captured popup");
+        b.State(owner, PadButtons.A); b.GamePollAll();
+        Check(b.Tick().Command == LogPadCommand.None && b.Controller.Waiting,
+            "changing the closing B directly into A without neutral cannot execute the popup");
+        b.Neutral(owner); b.State(owner, PadButtons.A); b.GamePollAll();
+        Check(b.Tick().Command == LogPadCommand.Activate,
+            "full release and a separate fresh A work in the restored popup");
+        b.Captured("fresh popup confirmation remains isolated from gameplay");
+        Check(Mortal.Core.FakePlayerInput.Current.currentControlScheme == Scheme(mode),
+            "the modal roundtrip never forces the game's input scheme");
+    }
+
+    private static void PopupFilters()
+    {
+        PadState State(ushort buttons = 0) => new PadState { Buttons = buttons };
+        foreach (bool allow in new[] { false, true })
+        {
+            var filter = new PadInputFilter();
+            filter.ConfigureLogOpener(true, true, false, allow);
+            filter.SetLogCapture(true);
+            filter.FilterGame(0, State(), false);
+            Check(PadInputFilter.IsNeutral(filter.FilterGame(0, State(Chord), false)),
+                "a popup's existing capture always hides the opening chord from gameplay");
+            filter.SetLogCapture(true);
+            Check(filter.TryConsumeLogOpen(out int owner) == allow && (!allow || owner == 0),
+                "opening through existing capture requires the explicit waiting-popup permission");
+        }
+        var foreground = new PadInputFilter();
+        foreground.ConfigureLogOpener(true, true, true, true); foreground.SetLogCapture(true);
+        foreground.FilterGame(0, State(), false); foreground.FilterGame(0, State(Chord), false);
+        Check(!foreground.LogOpening && !foreground.TryConsumeLogOpen(out _),
+            "the foreground log blocks the opener even when the underlying popup grants capture permission");
+        foreach (bool beginAllowed in new[] { false, true })
+        {
+            var changed = new PadInputFilter();
+            changed.ConfigureLogOpener(true, true, false, beginAllowed); changed.SetLogCapture(true);
+            changed.FilterGame(0, State(), false); changed.FilterGame(0, State(LeftThumb), false);
+            changed.ConfigureLogOpener(true, true, false, !beginAllowed);
+            changed.FilterGame(0, State(Chord), false);
+            Check(!changed.LogOpening && !changed.TryConsumeLogOpen(out _),
+                "changing waiting-popup permission invalidates a previously held half chord");
+            changed.ConfigureLogOpener(true, true, false, true);
+            changed.FilterGame(0, State(), false); changed.FilterGame(0, State(Chord), false);
+            Check(changed.TryConsumeLogOpen(out int owner) && owner == 0,
+                "permission changes recover only after real game-facing neutral and a fresh chord");
+        }
+    }
+
+    private static void PopupKeyboardPointer()
+    {
+        var b = new Boundary(); b.Arm(); b.PopupWaiting = true;
+        GamepadBridge.SetModalCapture(true, true, "unused-no-Win32-initialization");
+        GameActionGate.SetLogState(true, true); b.Poll();
+        foreach (bool touch in new[] { false, true })
+        {
+            UnityEngine.Input.anyKey = !touch; UnityEngine.Input.touchCount = touch ? 1 : 0;
+            UnityEngine.Input.Toggle = !touch;
+            // Match the same public ownership handoff as SetLogOpen. The
+            // delivered-plugin wiring test verifies this path is actually used.
+            b.Open = true; GameActionGate.SetLogState(true, true); GamepadBridge.CancelLogInput();
+            b.Captured(touch ? "touch opens log over popup" : "keyboard opens log over popup");
+            b.Open = false; GameActionGate.SetLogState(b.PopupWaiting, true); GamepadBridge.CancelLogInput();
+            b.Captured(touch ? "touch closes log back to popup" : "keyboard closes log back to popup");
+            UnityEngine.Input.Toggle = false; UnityEngine.Input.anyKey = false; UnityEngine.Input.touchCount = 0;
+            Check(!b.Action(2) && !b.Action(3) && b.Action(4),
+                "releasing the open/close key or touch never releases gameplay while the popup still owns focus");
+        }
     }
 
     private static void PureGestures()

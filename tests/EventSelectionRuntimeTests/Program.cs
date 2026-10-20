@@ -454,6 +454,7 @@ internal static class Program
         scenarios += PopupExecutionRegression.Run(Check);
         scenarios += SwitchExecutionRegression.Run(Check);
         scenarios += ReservationExecutionRegression.Run(Check);
+        scenarios += PopupLogFocusRegression.Run(Check);
         Console.WriteLine("PASS: event execution runtime " + assertions + " assertions across " + scenarios + " scenarios (actual supplied MoonSharp; explicit game/evaluator boundaries)");
     }
     private static void Main(string[] args) => RuntimeModeIntegration.Run(args);

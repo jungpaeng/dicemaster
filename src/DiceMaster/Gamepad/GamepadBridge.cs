@@ -28,11 +28,11 @@ namespace DiceMaster.Gamepad
         // Polling a configured opener is independent of the dice controller.
         // Detection and capture happen in the real game-facing native hook;
         // this main-thread boundary only accepts its queued owner identity.
-        public static int PollLogOpener(bool enabled, bool focused, bool open, string cacheRoot)
+        public static int PollLogOpener(bool enabled, bool focused, bool open, string cacheRoot, bool allowWhileCaptured = false)
         {
             if (enabled) Initialize(cacheRoot);
             if (!initialized || failed) return -1;
-            native.ConfigureLogOpener(enabled, focused, open);
+            native.ConfigureLogOpener(enabled, focused, open, allowWhileCaptured);
             if (!native.PollingFresh) { native.CancelLogOpener(); return -1; }
             int owner;
             return native.TryConsumeLogOpen(out owner) ? owner : -1;

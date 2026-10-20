@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
 namespace Mortal.Core {
-    public sealed class ConditionResultItem { public bool Value, Random, Broken; public int DisplayReads, GameplayReads; public Func<bool> Actual; }
+    public sealed class ConditionResultItem { public bool Value, Random, Broken, Unsupported, DescriptionBroken; public int DisplayReads, GameplayReads, DescriptionReads; public string Description; public Func<bool> Actual; }
     public sealed class ValueCompareItem { public int _compareOp, _value; }
 }
 namespace DiceMaster.LiveLog
@@ -17,6 +17,7 @@ namespace DiceMaster.LiveLog
             var condition = (Mortal.Core.ConditionResultItem)value;
             condition.DisplayReads++;
             if (condition.Broken) throw new InvalidOperationException("bad condition");
+            if (condition.Unsupported) throw new UnsupportedDisplayStatException();
             if (condition.Random) throw new RandomDisplayValueException();
             return condition.Value;
         }
@@ -102,7 +103,14 @@ namespace Mortal.Story
 namespace DiceMaster
 {
     public static class DataHelper
-    { public static string ExtractConditions(Mortal.Core.ConditionResultItem item, out bool period) { period = false; return item.Random ? "A10005 = 0 | 랜덤값0_30 <= 10" : "fixture condition"; } }
+    {
+        public static string ExtractConditions(Mortal.Core.ConditionResultItem item, out bool period)
+        {
+            item.DescriptionReads++; period = false;
+            if (item.DescriptionBroken) throw new InvalidOperationException("bad condition description");
+            return item.Description ?? (item.Random ? "A10005 = 0 | 랜덤값0_30 <= 10" : "fixture condition");
+        }
+    }
     public sealed class DicePlugin
     {
         internal Gamepad.LogInputMode eventInputMode = Gamepad.LogInputMode.Unknown;

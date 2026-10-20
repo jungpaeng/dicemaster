@@ -50,6 +50,9 @@ namespace DiceMaster.EventSelection
 
         private static EventEligibilitySnapshot SwitchCondition(object condition, bool countMode, int nextCount)
         {
+            // Keep the condition alongside its verdict, including unknown/read
+            // failures. A result description alone cannot explain this route.
+            string text = SwitchConditionText(condition, countMode, nextCount);
             try
             {
                 bool eligible;
@@ -70,19 +73,19 @@ namespace DiceMaster.EventSelection
                 }
                 return new EventEligibilitySnapshot(eligible ? EventEligibilityState.Eligible : EventEligibilityState.Ineligible,
                     eligible ? EventEligibilityReason.None : EventEligibilityReason.ConditionsNotMet, null,
-                    (eligible ? "현재 조건 충족 · " : "현재 조건 미충족 · ") + SwitchConditionText(condition, countMode, nextCount));
+                    (eligible ? "현재 조건 충족 · " : "현재 조건 미충족 · ") + text);
             }
             catch (RandomDisplayValueException)
-            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "난수 조건은 원래 판정 전에 확정할 수 없습니다. " + SwitchConditionText(condition, countMode, nextCount)); }
+            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "난수 조건은 원래 판정 전에 확정할 수 없습니다. " + text); }
             catch (UnsupportedDisplayStatException)
-            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "지원하지 않는 조건 계산입니다."); }
+            { return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "지원하지 않는 조건 계산입니다. " + text); }
             catch (InvalidOperationException error)
             {
                 if (error.Message.StartsWith("Unknown display", StringComparison.Ordinal))
-                    return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "지원하지 않는 조건 계산입니다.");
-                return EventEligibilitySnapshot.Unreadable("분기 조건을 읽지 못했습니다.");
+                    return new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Unsupported, null, "지원하지 않는 조건 계산입니다. " + text);
+                return EventEligibilitySnapshot.Unreadable("분기 조건을 읽지 못했습니다. " + text);
             }
-            catch (Exception) { return EventEligibilitySnapshot.Unreadable("분기 조건을 읽지 못했습니다."); }
+            catch (Exception) { return EventEligibilitySnapshot.Unreadable("분기 조건을 읽지 못했습니다. " + text); }
         }
 
         private static string SwitchConditionText(object condition, bool countMode, int nextCount)
@@ -96,9 +99,10 @@ namespace DiceMaster.EventSelection
                     return "이번 실행 횟수 " + nextCount + " " + operators[op] + " " + Convert.ToInt32(Field(condition, "_value"));
                 }
                 bool ignored;
-                return EventResultPreview.PlainText(DataHelper.ExtractConditions((Mortal.Core.ConditionResultItem)condition, out ignored));
+                string text = EventResultPreview.PlainText(DataHelper.ExtractConditions((Mortal.Core.ConditionResultItem)condition, out ignored));
+                return string.IsNullOrWhiteSpace(text) ? "조건 설명이 비어 있습니다." : text;
             }
-            catch (Exception) { return "조건 설명은 조건 탭에서 확인하세요."; }
+            catch (Exception) { return "조건 설명을 읽지 못했습니다."; }
         }
 
         private static List<EventEligibilitySnapshot> SwitchEligibility(ActionContext action, out int count)
@@ -107,20 +111,23 @@ namespace DiceMaster.EventSelection
             IList items = SwitchItems(action);
             var result = new List<EventEligibilitySnapshot>();
             bool previousTrue = false, previousUnknown = false, previousFailure = false;
+            EventEligibilityReason previousUnknownReason = EventEligibilityReason.None;
             for (int index = 0; index <= items.Count; index++)
             {
                 EventEligibilitySnapshot condition = index == items.Count ?
-                    new EventEligibilitySnapshot(EventEligibilityState.Eligible, EventEligibilityReason.None, null, "위 분기가 모두 불충족일 때 진행합니다.") :
+                    new EventEligibilitySnapshot(EventEligibilityState.Eligible, EventEligibilityReason.None, null,
+                        items.Count == 0 ? "앞 분기가 없는 기본 분기입니다." : "앞의 1~" + items.Count + "번 분기 조건이 모두 미충족일 때 진행합니다.") :
                     SwitchCondition(items[index], action.SwitchUseCount, unchecked(count + 1));
                 EventEligibilitySnapshot snapshot;
-                if (!condition.CanUseResult || previousFailure) snapshot = EventEligibilitySnapshot.Unreadable("이 분기 또는 앞 분기의 조건을 읽지 못했습니다.");
+                if (!condition.CanUseResult || previousFailure) snapshot = EventEligibilitySnapshot.Unreadable("이 분기 또는 앞 분기의 조건을 읽지 못했습니다. " + condition.Summary);
                 else if (previousTrue) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, null, "앞 분기가 먼저 선택됩니다. " + condition.Summary);
                 else if (!condition.IsEligible && condition.Reason == EventEligibilityReason.ConditionsNotMet) snapshot = condition;
-                else if (previousUnknown) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Unknown, EventEligibilityReason.Random, null, "앞 분기의 판정이 확정되지 않았습니다. " + condition.Summary);
+                else if (previousUnknown) snapshot = new EventEligibilitySnapshot(EventEligibilityState.Unknown, previousUnknownReason, null, "앞 분기의 판정이 확정되지 않았습니다. " + condition.Summary);
                 else snapshot = condition;
                 result.Add(snapshot);
                 previousFailure |= !condition.CanUseResult;
                 previousTrue |= condition.IsEligible;
+                if (!previousUnknown && condition.State == EventEligibilityState.Unknown) previousUnknownReason = condition.Reason;
                 previousUnknown |= condition.State == EventEligibilityState.Unknown;
             }
             return result;
@@ -159,6 +166,7 @@ namespace DiceMaster.EventSelection
         {
             if (scriptEpoch != epoch) return true;
             if (current != null && (!ReferenceEquals(current.Coroutine, coroutine) || current.Script != script || current.Site != site || current.SwitchPool == null)) return false;
+            if (logVisible && current != null) return true;
             try
             {
                 if (BypassForReservation(true, name)) return false;

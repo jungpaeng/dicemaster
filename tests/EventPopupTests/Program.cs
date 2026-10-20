@@ -21,6 +21,8 @@ namespace DiceMaster.EventSelection
         public string ResultSummaryRich { get => resultSummaryRich ?? EventResultPreview.Escape(ResultSummary); set => resultSummaryRich = value; }
         public string ResultDetailRich { get => resultDetailRich ?? EventResultPreview.Escape(ResultDetail); set => resultDetailRich = value; }
         public bool CanSelect, CanForce;
+        public EventEligibilitySnapshot Eligibility = new EventEligibilitySnapshot(EventEligibilityState.Unknown,
+            EventEligibilityReason.Unsupported, null, "판정 미확인");
         public object Target = new object();
     }
     public static class EventSelectionRuntime
@@ -62,8 +64,10 @@ internal static partial class Program
         EventSelectionRuntime.Selected = null;
         EventSelectionRuntime.Random = EventSelectionRuntime.Forced = false;
         EventSelectionRuntime.Candidates = new List<EventCandidate> {
-            new EventCandidate { Id = "eligible", Title = "정상 후보", CanSelect = true },
-            new EventCandidate { Id = "blocked", Title = "미충족 후보", State = "발동 불가 · 조건 미충족", CanForce = true },
+            new EventCandidate { Id = "eligible", Title = "정상 후보", CanSelect = true,
+                Eligibility = new EventEligibilitySnapshot(EventEligibilityState.Eligible, EventEligibilityReason.None, null, "현재 조건 충족") },
+            new EventCandidate { Id = "blocked", Title = "미충족 후보", State = "발동 불가 · 조건 미충족", CanForce = true,
+                Eligibility = new EventEligibilitySnapshot(EventEligibilityState.Ineligible, EventEligibilityReason.ConditionsNotMet, null, "현재 조건 미충족") },
             new EventCandidate { Id = "broken", Title = "읽기 실패 후보" }
         };
         Input.Held.Clear(); Application.isFocused = true; Input.touchCount = 0; Input.PointerSampleActive = false;
@@ -149,6 +153,7 @@ internal static partial class Program
         CandidateOnlyRegressions();
         KeyboardContextualConfirmation();
         SwitchPopupRegressions();
+        PopupLogControlRegressions();
 
         foreach (var size in new[] { (640, 480), (1280, 720), (1920, 1200), (2560, 1440) })
         foreach (int font in new[] { 12, 20, 64 })
@@ -309,7 +314,7 @@ internal static partial class Program
     private static bool RowCaption(string text, string id) => text.Contains(id == "eligible" ? "정상 후보"
         : id == "blocked" ? "미충족 후보" : id == "broken" ? "읽기 실패 후보" : "원래 게임 판정");
     private static bool InstructionCaption(string text) => text.StartsWith("[A / Enter]") || text.StartsWith("[B / Esc]");
-    private static bool SelectedRowCaption(string text) => text.StartsWith("▶ ") && text.Split('\n').Length == 2;
+    private static bool SelectedRowCaption(string text) => text.StartsWith("▶ ") && text.Split('\n').Length >= 2;
     private static Vector2 Point(EventPopupRenderer popup, Func<string, bool> match)
     {
         Draw(popup);

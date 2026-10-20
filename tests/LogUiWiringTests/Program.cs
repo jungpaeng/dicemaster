@@ -69,9 +69,17 @@ static class Program
     // game/UI values take both branches; an unsupported instruction fails the
     // proof conservatively. This checks display guards without executing Unity
     // or reproducing the renderer's geometry/default calculation.
-    static bool CanReachInitialization(MethodDefinition draw, MethodDefinition initialize, int screenWidth, int screenHeight)
+    static bool CanReachInitialization(MethodDefinition draw, MethodDefinition initialize, int screenWidth, int screenHeight) =>
+        CanReachCall(draw, initialize, call => call.DeclaringType.FullName == "UnityEngine.Screen"
+            ? call.Name == "get_width" ? screenWidth : call.Name == "get_height" ? screenHeight : null : null);
+
+    // Follow the compiled caller's branches with selected known input facts;
+    // all other values remain unknown. This is a wiring proof, not a second
+    // implementation of popup/log ownership or Unity event processing.
+    static bool CanReachCall(MethodDefinition entry, MethodDefinition target,
+        Func<MethodReference, int?> callValue, Func<FieldReference, int?> fieldValue = null)
     {
-        var instructions = draw.Body.Instructions;
+        var instructions = entry.Body.Instructions;
         var pending = new Stack<(int Index, List<int?> Stack, Dictionary<int, int?> Locals)>();
         pending.Push((0, new List<int?>(), new Dictionary<int, int?>()));
         int remaining = 10000;
@@ -97,12 +105,17 @@ static class Program
                     stack.Add((int)instruction.OpCode.Code - (int)Code.Ldc_I4_0); break;
                 case Code.Ldc_I4: case Code.Ldc_I4_S: stack.Add(Convert.ToInt32(instruction.Operand)); break;
                 case Code.Ldarg: case Code.Ldarg_S: case Code.Ldarg_0: case Code.Ldarg_1: case Code.Ldarg_2: case Code.Ldarg_3:
-                case Code.Ldsfld: case Code.Ldnull: stack.Add(null); break;
-                case Code.Ldfld: Pop(); stack.Add(null); break;
+                case Code.Ldarga: case Code.Ldarga_S: case Code.Ldstr: case Code.Ldnull: stack.Add(null); break;
+                case Code.Ldsfld: stack.Add(fieldValue?.Invoke((FieldReference)instruction.Operand)); break;
+                case Code.Ldfld: Pop(); stack.Add(fieldValue?.Invoke((FieldReference)instruction.Operand)); break;
+                case Code.Ldflda: Pop(); stack.Add(null); break;
+                case Code.Stfld: Pop(); Pop(); break;
+                case Code.Stsfld: Pop(); break;
                 case Code.Pop: Pop(); break;
                 case Code.Dup: stack.Add(stack.Count == 0 ? null : stack[^1]); break;
                 case Code.Ldloc: case Code.Ldloc_S:
                     stack.Add(locals.GetValueOrDefault(((VariableDefinition)instruction.Operand).Index)); break;
+                case Code.Ldloca: case Code.Ldloca_S: stack.Add(null); break;
                 case Code.Ldloc_0: case Code.Ldloc_1: case Code.Ldloc_2: case Code.Ldloc_3:
                     stack.Add(locals.GetValueOrDefault((int)instruction.OpCode.Code - (int)Code.Ldloc_0)); break;
                 case Code.Stloc: case Code.Stloc_S:
@@ -111,11 +124,15 @@ static class Program
                     local = (int)instruction.OpCode.Code - (int)Code.Stloc_0; locals[local] = Pop(); break;
                 case Code.Call: case Code.Callvirt:
                     var call = (MethodReference)instruction.Operand;
-                    if (call.FullName == initialize.FullName) return true;
+                    if (call.FullName == target.FullName) return true;
                     for (int parameter = 0; parameter < call.Parameters.Count + (call.HasThis ? 1 : 0); parameter++) Pop();
-                    if (call.ReturnType.FullName != "System.Void") stack.Add(call.DeclaringType.FullName == "UnityEngine.Screen"
-                        ? call.Name == "get_width" ? screenWidth : call.Name == "get_height" ? screenHeight : null : null);
+                    if (call.ReturnType.FullName != "System.Void") stack.Add(callValue(call));
                     break;
+                case Code.Newobj:
+                    var created = (MethodReference)instruction.Operand;
+                    for (int parameter = 0; parameter < created.Parameters.Count; parameter++) Pop();
+                    stack.Add(null); break;
+                case Code.Initobj: Pop(); break;
                 case Code.Br: case Code.Br_S:
                     PushPath(instructions.IndexOf((Instruction)instruction.Operand)); continue;
                 case Code.Brfalse: case Code.Brfalse_S: case Code.Brtrue: case Code.Brtrue_S:
@@ -143,6 +160,12 @@ static class Program
                     right = Pop(); left = Pop();
                     stack.Add(!left.HasValue || !right.HasValue ? null : instruction.OpCode.Code switch {
                         Code.Ceq => left == right ? 1 : 0, Code.Cgt => left > right ? 1 : 0, _ => left < right ? 1 : 0 });
+                    break;
+                case Code.And: case Code.Or:
+                    right = Pop(); left = Pop();
+                    stack.Add(instruction.OpCode.Code == Code.And
+                        ? left == 0 || right == 0 ? 0 : left.HasValue && right.HasValue ? left & right : null
+                        : left.HasValue && right.HasValue ? left | right : null);
                     break;
                 default: return true;
             }
@@ -183,6 +206,50 @@ static class Program
                 SuppliesResetReason(Method(plugin, "OnApplicationFocus"), "ApplicationFocusChanged") &&
                 updateCalls.Any(c => c.DeclaringType.FullName == plugin && c.Name == "ObserveEventInputMode"),
             "actual log/focus callbacks must supply their hard boundary reasons while Update continues observing automatic scheme changes");
+        int runtimeTick = Array.FindIndex(updateCalls, c => c.DeclaringType.FullName == runtime && c.Name == "Tick");
+        int[] openBoundaries = updateCalls.Select((call, index) => (call, index))
+            .Where(pair => pair.call.DeclaringType.FullName == plugin && pair.call.Name == "SetLogOpen")
+            .Select(pair => pair.index).ToArray();
+        Check(openBoundaries.Length >= 2 && openBoundaries.All(index => index < runtimeTick),
+            "keyboard and native log opening must cancel pending popup confirmation before this frame's runtime tick");
+        int? PopupFacts(MethodReference call) => call.DeclaringType.FullName == runtime && call.Name == "get_Waiting" ? 1
+            : call.DeclaringType.FullName == "UnityEngine.Application" && call.Name == "get_isFocused" ? 1
+            : call.DeclaringType.FullName == "UnityEngine.Input" && call.Name == "GetKeyDown" ? 0
+            : call.DeclaringType.FullName == pad && call.Name == "PollLogOpener" ? -1 : null;
+        int? ForegroundLog(FieldReference field) => field.DeclaringType.FullName == plugin && field.Name == "showLogWindow" ? 1 : null;
+        int? ForegroundPopup(FieldReference field) => field.DeclaringType.FullName == plugin && field.Name == "showLogWindow" ? 0 : null;
+        foreach (string name in new[] { "UpdateInput", "Handle", "Scroll" })
+        {
+            var popupEntry = Method(popup, name);
+            Check(!CanReachCall(update, popupEntry, PopupFacts, ForegroundLog) &&
+                    CanReachCall(update, popupEntry, PopupFacts, ForegroundPopup),
+                "actual Update must suspend hidden popup " + name + " while the foreground log owns input and resume it after closing");
+        }
+        Check(!CanReachCall(Method(plugin, "OnGUI"), Method(popup, "Draw"), PopupFacts, ForegroundLog) &&
+                CanReachCall(Method(plugin, "OnGUI"), Method(popup, "Draw"), PopupFacts, ForegroundPopup),
+            "actual OnGUI must render only the foreground log or the waiting popup, preserving exclusive keyboard/pointer ownership");
+        var popupDrawMethods = WithinTypeTree(Method(popup, "Draw"), types).ToArray();
+        Check(popupDrawMethods.SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == "log") &&
+                popupDrawMethods.SelectMany(Calls).Any(call => call.DeclaringType.FullName == popup && call.Name == "SafeButton") &&
+                popupDrawMethods.SelectMany(method => method.Body.Instructions).Any(instruction =>
+                    instruction.Operand is FieldReference field && field.DeclaringType.FullName == popup && field.Name == "OpenLog") &&
+                WithinTypeTree(Method(plugin, "Awake"), types).Any(method => method.Body.Instructions.Any(instruction =>
+                    instruction.OpCode == OpCodes.Stfld && instruction.Operand is FieldReference field &&
+                    field.DeclaringType.FullName == popup && field.Name == "OpenLog")) &&
+                WithinTypeTree(Method(plugin, "Awake"), types).Any(method => Calls(method).Any(call =>
+                    call.DeclaringType.FullName == plugin && call.Name == "SetLogOpen")),
+            "the visible native popup log control must invoke the actual plugin visibility boundary rather than a disconnected UI callback");
+        Check(Calls(Method(plugin, "SetLogOpen")).Any(c => c.DeclaringType.FullName == runtime && c.Name == "SetLogVisible") &&
+                new[] { "OnDisable", "OnDestroy" }.All(name => Calls(Method(plugin, name)).Any(c =>
+                    c.DeclaringType.FullName == runtime && c.Name == "SetLogVisible")),
+            "log visibility and both shutdown boundaries must update the runtime's explicit foreground-log pause ownership");
+        foreach (string name in new[] { "Wait", "WaitSwitch" })
+        {
+            Check(!CanReachCall(Method(runtime, name), Method(runtime, "BypassForReservation"), _ => null,
+                    field => field.DeclaringType.FullName == runtime && new[] { "current", "logVisible" }.Contains(field.Name) ? 1 : null),
+                "the actual " + name + " gate must pause an existing decision before a new reservation can resume Lua behind the foreground log");
+        }
         Check(Calls(Method(pad, "SetModalCapture")).Any(c => c.DeclaringType.FullName == "DiceMaster.Gamepad.NativeXInput" && c.Name == "set_LogActive") &&
                 Calls(Method(pad, "SetModalCapture")).Any(c => c.Name == "RequireNeutral") &&
                 types.Where(t => t.FullName == plugin || t.FullName.StartsWith(plugin + "/", StringComparison.Ordinal))
@@ -540,6 +607,14 @@ static class Program
                     field.DeclaringType.FullName == "DiceMaster.Config.ConfigManager" && field.Name == "EnableGamepadLogOpen") &&
                 Calls(Method(plugin, "SetLogOpen")).Any(c => c.DeclaringType.FullName == pad && c.Name == "BeginPadLog"),
             "delivered plugin must connect configured native open requests to the actual pad-origin window entry");
+        var pollOpen = update.Body.Instructions.Single(instruction => instruction.Operand is MethodReference call &&
+            call.DeclaringType.FullName == pad && call.Name == "PollLogOpener");
+        Check(((MethodReference)pollOpen.Operand).Parameters.Count == 5 &&
+                pollOpen.Previous.Operand is MethodReference popupPermission &&
+                popupPermission.DeclaringType.FullName == runtime && popupPermission.Name == "get_Waiting" &&
+                update.Body.Instructions.TakeWhile(instruction => instruction != pollOpen).TakeLast(10).Any(instruction =>
+                    instruction.Operand is FieldReference field && field.DeclaringType.FullName == plugin && field.Name == "showLogWindow"),
+            "native opener admission must distinguish actual foreground-log visibility from explicit waiting-popup capture permission");
         Check(Calls(Method("DiceMaster.Gamepad.XInputHook", "Invoke")).Any(c =>
                     c.DeclaringType.FullName == "DiceMaster.Gamepad.PadInputFilter" && c.Name == "FilterGame") &&
                 new[] { "ConfigureLogOpener", "TryConsumeLogOpen" }.All(name => Calls(Method(pad, "PollLogOpener")).Any(c =>

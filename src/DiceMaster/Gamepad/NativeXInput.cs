@@ -75,9 +75,9 @@ namespace DiceMaster.Gamepad
         public bool LogActive { set { Filter.SetLogCapture(value); } }
         public void RequireNeutral() { Filter.RequireNeutral(); }
         public bool CanUseRaw(uint user) { return Filter.CanUseRaw(user); }
-        public void ConfigureLogOpener(bool enabled, bool focused, bool open)
+        public void ConfigureLogOpener(bool enabled, bool focused, bool open, bool allowWhileCaptured = false)
         {
-            Filter.ConfigureLogOpener(enabled && !disposed, focused, open);
+            Filter.ConfigureLogOpener(enabled && !disposed, focused, open, allowWhileCaptured);
             if (!PollingFresh) Filter.CancelLogOpener();
         }
         public bool TryConsumeLogOpen(out int owner)

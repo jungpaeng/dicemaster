@@ -52,6 +52,94 @@ internal static class SwitchExecutionRegression
         check(CheckPointManager.Instance.SwitchCalls == 1 && pool._count == 1, "exactly one Switch invocation and counter increment");
         return result.String;
     }
+    private static int ConditionDescriptions()
+    {
+        const string threeBranches = "local r=checkpointmanager.Switch('branch'); if r==1 then return 'first' elseif r==2 then return 'second' elseif r==3 then return 'fallback' end";
+        Begin(true);
+        condition.Description = "<color=#00ff00>A10005(0) = 0(0) | 명성(20) >= 10(10)</color>";
+        var co = Engine(); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains("A10005(0) = 0(0) | 명성(20) ＞= 10(10)") &&
+            !Branch(1).Summary.Contains("<color") && Branch(1).Eligibility.IsEligible,
+            "eligible Switch displays the complete plain condition expression alongside its verdict");
+        check(condition.DescriptionReads == 1 && condition.GameplayReads == 0 && pool._count == 0,
+            "condition text is read once without gameplay evaluation or counter mutation");
+        check(Branch(2).Summary.Contains("앞 분기가 먼저") && Branch(2).Summary.Contains("모두 미충족") &&
+            Branch(2).Eligibility.State == EventEligibilityState.Ineligible,
+            "fallback preserves its all-prior-false condition when an earlier branch blocks it");
+
+        Begin(false); condition.Description = "A10005(1) = 0(0)";
+        co = Engine(); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains("A10005(1) = 0(0)") &&
+            Branch(1).Eligibility.State == EventEligibilityState.Ineligible && Branch(1).CanForce,
+            "definitely unmet condition remains visible with explicit override available");
+        check(Branch(2).Eligibility.IsEligible && Branch(2).Summary.Contains("모두 미충족"),
+            "eligible fallback explains why it applies instead of inventing its own condition");
+
+        Begin(true); condition.Description = "첫 조건";
+        var later = new ConditionResultItem { Value = false, Description = "두 번째 조건: 무공(2) ≥ 5(5)" };
+        pool._items.Add(later);
+        co = Engine(threeBranches); co.Coroutine.Resume();
+        check(Branch(2).Summary.Contains(later.Description) && Branch(2).Summary.Contains("앞 분기가 먼저") &&
+            Branch(2).Eligibility.State == EventEligibilityState.Ineligible,
+            "priority-blocked branch retains its own condition rather than only an earlier-match explanation");
+        check(Branch(3).Summary.Contains("1~2번") && Branch(3).Eligibility.State == EventEligibilityState.Ineligible,
+            "fallback identifies the complete set of preceding conditions");
+
+        Begin(false, true); condition.Description = "A10005(0) = 0(0) | 랜덤값0_30(??) ≤ 10(10)";
+        co = Engine(); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains(condition.Description) && Branch(1).Eligibility.State == EventEligibilityState.Unknown &&
+            Branch(1).Eligibility.Reason == EventEligibilityReason.Random && Branch(1).CanForce,
+            "random expression stays visible and unknown rather than being labeled unmet");
+        check(Branch(2).Summary.Contains("모두 미충족") && Branch(2).Eligibility.State == EventEligibilityState.Unknown &&
+            condition.GameplayReads == 0 && pool._count == 0,
+            "random-dependent fallback remains unknown without consuming gameplay RNG or count");
+
+        Begin(); condition.Unsupported = true; condition.Description = "외부 능력치(??) ≥ 3(3)";
+        co = Engine(); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains(condition.Description) &&
+            Branch(1).Eligibility.Reason == EventEligibilityReason.Unsupported && Branch(1).CanForce,
+            "unsupported evaluation retains readable conditions without claiming a failed condition");
+        check(Branch(2).Eligibility.Reason == EventEligibilityReason.Unsupported && Branch(2).Summary.Contains("모두 미충족"),
+            "fallback depending on unsupported conditions is not mislabeled as a random condition");
+
+        Begin(); condition.Broken = true; condition.Description = "앞 조건: 호감(??) ≥ 10(10)";
+        later = new ConditionResultItem { Value = true, Description = "다음 조건: 명성(20) ≥ 10(10)" };
+        pool._items.Add(later);
+        co = Engine(threeBranches); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains(condition.Description) && !Branch(1).CanForce,
+            "unreadable evaluation retains available expression but cannot authorize an override");
+        check(Branch(2).Summary.Contains(later.Description) && !Branch(2).CanForce &&
+            Branch(3).Summary.Contains("모두 미충족") && !Branch(3).CanForce,
+            "preceding read failure does not erase the later branch or fallback conditions");
+
+        Begin(true); condition.DescriptionBroken = true;
+        co = Engine(); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains("조건 설명을 읽지 못했습니다") && Branch(1).CanSelect && pool._count == 0,
+            "condition-description failure is explicit and does not replace safely evaluated eligibility");
+        Begin(true); condition.Description = "";
+        co = Engine(); co.Coroutine.Resume();
+        check(Branch(1).Summary.Contains("조건 설명이 비어") && Branch(1).CanSelect,
+            "empty formatted text never invents a failed condition");
+
+        foreach (int operation in new[] { 0, 1, 2, 3, 4, 5 })
+        {
+            Begin(); pool._useCount = true; pool._count = 2;
+            pool._countItems.Add(new ValueCompareItem { _compareOp = operation, _value = 3 });
+            co = Engine(); co.Coroutine.Resume();
+            string[] operators = { "=", "≠", "<", "≤", ">", "≥" };
+            bool pass = operation == 0 || operation == 3 || operation == 5;
+            check(Branch(1).Summary.Contains("이번 실행 횟수 3 " + operators[operation] + " 3") &&
+                Branch(1).CanSelect == pass && Branch(2).CanSelect != pass && pool._count == 2 && condition.GameplayReads == 0,
+                "count condition uses the next count and exact comparison without executing the switch: " + operation);
+        }
+        Begin(); pool._useCount = true;
+        pool._countItems.Add(new ValueCompareItem { _compareOp = 99, _value = 3 });
+        co = Engine(); co.Coroutine.Resume();
+        check(!Branch(1).CanSelect && !Branch(1).CanForce && !Branch(2).CanForce &&
+            Branch(1).Summary.Contains("조건 설명을 읽지 못했습니다"),
+            "unknown count comparison remains unreadable and cannot be chosen from misleading text");
+        return 15;
+    }
     internal static int Run(Action<bool, string> assertion)
     {
         check = assertion;
@@ -158,6 +246,6 @@ internal static class SwitchExecutionRegression
         check(EventSelectionRuntime.Waiting && EventSelectionRuntime.Token != outer && pool._count == 1 && Branch(1).ResultDetail != null, "nested same-key call owns fresh exact site and counter");
         check(EventSelectionRuntime.Select(Branch(1).Id, false), "nested selected"); result = co.Coroutine.Resume();
         check(result.String == "nested" && pool._count == 2 && pool.OriginalCalls == 0, "nested same-key sites execute once each");
-        return 18;
+        return 18 + ConditionDescriptions();
     }
 }
