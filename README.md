@@ -15,11 +15,11 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 현재 정식 버전은 **[v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)**입니다. **[DiceMaster-v1.0.6.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.6/DiceMaster-v1.0.6.zip)**을 설치하세요. 직전 정식 v1.0.5에 이벤트·조건 선택 팝업, 조건 상세의 분기 예약, 공통 조건 판정·한국어 표시와 클릭·터치 입력 수정을 더했습니다. [변경·파일 확인·검증 기록](docs/ISSUE-5-STABLE-RELEASE.md)
 
-2026-10-21 사용자가 **“v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”**라고 확인했습니다. 이 포괄 확인을 PRD #6의 착수 근거로 기록하며 세부 장치·환경별 시험 결과를 추정하지 않습니다. 아래 기존 조작은 v1.0.6을 기준으로 유지하고, 새 정보 기능은 별도의 로컬 후보에서 제공합니다. [확인 범위](docs/ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)
+2026-10-21 사용자가 **“v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”**라고 확인했습니다. 이 포괄 확인을 PRD #6의 착수 근거로 기록하며 세부 장치·환경별 시험 결과를 추정하지 않습니다. 아래 기존 조작은 v1.0.6을 기준으로 유지하고, 새 정보 기능은 아래 별도 prerelease에서 제공합니다. [확인 범위](docs/ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)
 
-## PRD #6 로컬 후보 — 지도·1회성·분기·상점 정보
+## PRD #6 시험판 — 지도·1회성·분기·상점 정보
 
-`v1.0.7-alpha.1`은 새 정보 기능의 **로컬 검증 후보**입니다. 공개 Release를 게시한 상태가 아니며 위 최신 정식 링크는 v1.0.6입니다. 새 후보의 자동 검사·패키지 식별값은 [후보 안내](docs/ISSUE-6-CANDIDATE.md)에, 실제 게임에서 확인할 항목은 [Windows 확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)에 구분합니다. **새 후보의 사용자 Windows·실제 장치 확인은 아직 남아 있습니다.**
+**[v1.0.7-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)**를 2026-10-21 00:46:36 KST에 게시했습니다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip)**은 검토 후보·고정 소스 재빌드와 익명 공개 다운로드의 바이트·해시가 일치합니다. 최신 정식은 v1.0.6으로 유지합니다. 새 후보의 자동 검사·패키지 식별값은 [후보 안내](docs/ISSUE-6-CANDIDATE.md)에, 실제 게임에서 확인할 항목은 [Windows 확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)에 구분합니다. **새 후보의 사용자 Windows·실제 장치 확인은 아직 남아 있습니다.**
 
 | 기능 | 게임 화면의 짧은 표시 | 로그 도구에서 읽는 내용 |
 | --- | --- | --- |

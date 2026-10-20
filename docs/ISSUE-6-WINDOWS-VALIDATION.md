@@ -2,7 +2,7 @@
 
 [후보·설치·파일 확인](ISSUE-6-CANDIDATE.md) · [구현·지원 한계](ISSUE-6-IMPLEMENTATION.md) · [사용자 안내](../README.md) · [패드](GAMEPAD.md)
 
-대상은 **새 로컬 후보 v1.0.7-alpha.1**이다. 아래 실제 게임·장치 항목은 아직 미실행이다. 자동 검사나 v1.0.6 사용자 Windows 확인 완료·잔여 문제 없음 답변을 새 후보 통과로 바꾸지 않는다. 최종 후보 DLL/ZIP의 식별값과 고정 소스 재빌드 검증은 후보 기록에 확정했으며 실제 설치한 파일의 해시는 아래에 남긴다. 이 문서 자체로 #6을 완료로 닫지 않는다.
+대상은 **[공개 prerelease v1.0.7-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)**이다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip)의 익명 다운로드·CRC·두 파일·내부 바이트·해시는 검토 후보와 일치했다. 아래 실제 게임·장치 항목은 아직 미실행이다. 자동 검사나 v1.0.6 사용자 Windows 확인 완료·잔여 문제 없음 답변을 새 후보 통과로 바꾸지 않는다. 최종 후보 DLL/ZIP의 식별값과 고정 소스 재빌드 검증은 후보 기록에 확정했으며 실제 설치한 파일의 해시는 아래에 남긴다. 이 문서 자체로 #6을 완료로 닫지 않는다.
 
 ## 환경과 파일
 

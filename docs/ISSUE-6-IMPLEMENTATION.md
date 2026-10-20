@@ -2,7 +2,7 @@
 
 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6) · [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [후보·설치·자동 검사](ISSUE-6-CANDIDATE.md) · [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)
 
-상태: **v1.0.7-alpha.1 로컬 후보 자동 검사·고정 소스 재빌드 검증 완료 / 사용자 Windows 확인 미실행**. 이 문서는 실제 구현 경계와 남은 확인을 기록한다. 공개 Release·GitHub 이슈 종료를 수행하지 않았고 후보의 자동 검사 결과·해시·소스 식별값은 확정된 영수증과 후보 문서에 기록했다.
+상태: **[v1.0.7-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1) 게시·자동 검사·고정 소스 재빌드·익명 공개 ZIP 검증 완료 / 사용자 Windows 확인 미실행**. 이 문서는 실제 구현 경계와 남은 확인을 기록한다. GitHub 이슈 #6은 open으로 유지하며 자동 검사·게시 결과·해시·소스 식별값은 [후보·게시 기록](ISSUE-6-CANDIDATE.md)에 기록했다.
 
 ## 착수 근거와 작업 보존
 

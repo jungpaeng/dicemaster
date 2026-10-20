@@ -2,9 +2,9 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.7-alpha.1 로컬 후보 — 읽기 전용 정보 조회
+## v1.0.7-alpha.1 prerelease — 읽기 전용 정보 조회
 
-이 절은 새 로컬 후보의 조작 안내다. 2026-10-21 사용자는 정식 v1.0.6의 Windows 확인 완료·잔여 문제 없음을 답했으며 [확인 근거](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)를 #6 착수에 사용한다. **새 v1.0.7-alpha.1의 실제 Windows Xbox/XInput·Unity·물리 장치 확인은 미실행**이다. 아래 과거 후보 기록의 미실행·수치·조작 변경은 당시 이력으로 보존한다.
+이 절은 [새 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)의 조작 안내다. [설치·공개 검증·파일 확인](ISSUE-6-CANDIDATE.md)을 따른다. 2026-10-21 사용자는 정식 v1.0.6의 Windows 확인 완료·잔여 문제 없음을 답했으며 [확인 근거](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)를 #6 착수에 사용한다. **새 v1.0.7-alpha.1의 실제 Windows Xbox/XInput·Unity·물리 장치 확인은 미실행**이다. 아래 과거 후보 기록의 미실행·수치·조작 변경은 당시 이력으로 보존한다.
 
 지도 장소와 상점 물품은 게임의 현재 선택을 따라 짧은 정보를 표시한다. 가상 마우스·새 단축키를 요구하지 않는다. 자동 표시는 이름·종류·상태만 제공하며 포커스를 옮기거나 입력을 소비하지 않는다. 조건과 효과는 기존 로그에서 읽는다.
 

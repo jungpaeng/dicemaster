@@ -1,8 +1,8 @@
-# 지도·1회성·분기·상점 정보 — v1.0.7-alpha.1 로컬 후보
+# 지도·1회성·분기·상점 정보 — v1.0.7-alpha.1 prerelease
 
 [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [구현·지원 범위](ISSUE-6-IMPLEMENTATION.md) · [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [변경 이력](../CHANGELOG.md)
 
-상태: **로컬 설치 후보·자동 검사·고정 소스 재빌드 검증 완료 / 새 사용자 Windows 확인 미실행**. 공개 Release·태그·Latest 변경·이슈 종료는 수행하지 않았다. 공개 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. 아래 최종 설치 파일·소스·해시는 검토 후보와 고정 소스 재빌드에서 일치했다. 이전 후보 파일·검사 수치·사용자 확인을 새 후보에 옮기지 않는다.
+상태: **[prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1) 게시·자동 검사·고정 소스 재빌드·익명 공개 ZIP 검증 완료 / 새 사용자 Windows 확인 미실행**. 2026-10-21 00:46:36 KST에 게시했으며 Latest 정식 v1.0.6과 이슈 #6 open을 유지한다. 공개 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. 아래 최종 설치 파일·소스·해시는 검토 후보와 고정 소스 재빌드에서 일치했다. 이전 후보 파일·검사 수치·사용자 확인을 새 후보에 옮기지 않는다.
 
 ## 이번 변경
 
@@ -27,7 +27,7 @@
 
 표시는 게임 RNG·판정/실행 횟수·예약·세이브·능력치·아이템을 변경하지 않는다. 현재 보이는 문맥만 정상 0.25초·실패 5초로 읽고 자동·상세 모두 숨김/OFF면 표시 조회는 0회다. 기존 캐시를 재사용해 정상 주기마다 Lua를 재분석하지 않는다. 데이터 대기·빈 대상·확인 불가·읽기 실패·같은 문맥 이전 값을 구분하고 대상 교체 때 오래된 자료를 버린다.
 
-## 로컬 설치 파일과 자동 검사
+## 설치 파일과 자동 검사
 
 | 최종 기록 항목 | 결과 |
 | --- | --- |
@@ -39,7 +39,7 @@
 | DiceMaster.dll | 717312바이트 · SHA-256 `02ba6280037c80b0dc467dfa7564347f2bdd9eb9321467aeb7d00d8a1766ebed` |
 | DiceMaster.cfg | 12509바이트 · SHA-256 `7f77b7f23de885333f9ecdf5d402be506b759be391ac1bd37f2a76622b07702c` |
 | 설치 ZIP | 303887바이트 · SHA-256 `dbbf9f7421f0e20dc96c269f7c4a34c4d63ef61a31b79108a876ff8ef48a998d` |
-| 설치 ZIP | `artifacts/releases/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip` · 원래 작업 폴더 `artifacts/issue-6/v1.0.7-alpha.1/`에도 동일 파일 제공 |
+| 설치 ZIP | [공개 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip) · 로컬 `artifacts/releases/v1.0.7-alpha.1/`와 원래 작업 폴더 `artifacts/issue-6/v1.0.7-alpha.1/`에도 동일 파일 제공 |
 | 영수증 | `artifacts/releases/v1.0.7-alpha.1/release-verification.json` · `reviewed-candidate-comparison.json` · `build-manifest.json` · `preview-verifier-tests.log` |
 | 실제 Windows·Unity·물리 장치·비용/할당량 | **미실행·사용자 확인 대기** |
 
@@ -87,4 +87,15 @@ ZIP은 DLL/cfg 두 파일만 포함하고 게임 DLL·게임 소스를 배포하
 
 검토 후보와 고정 소스 재빌드의 DLL/cfg/ZIP 바이트·SHA-256, 빌드 입력 227개, 소스/리소스 95개, 고정 참조 15개, 18개 검사 프로그램 결과가 모두 일치했다. ZIP CRC·정확히 두 항목·내부 바이트와 cfg 네 기본 true도 다시 확인했다. 후보 검증기 Python 회귀는 20개 PASS다. 재빌드에는 기존 관리 모드 DLL·Git 디렉터리·게임 참조를 복사하지 않았다. 외부 참조는 무변경이다.
 
-빌드 소스는 위 커밋이며 이후 결과 보충 문서 커밋은 생산·검사·빌드 입력을 바꾸지 않는다. 공개 업로드·push·태그·실제 Windows 실행·이슈 종료는 수행하지 않았다.
+빌드 소스는 위 커밋이며 이후 결과 보충 문서 커밋은 생산·검사·빌드 입력을 바꾸지 않는다. 게시 전 영수증의 `published:false`는 당시 상태로 보존하고 아래 별도 게시·공개 검증 영수증으로 후속 결과를 기록한다. 실제 Windows 실행·이슈 종료는 수행하지 않았다.
+
+## 공개 prerelease 게시와 검증
+
+사용자가 “커밋하고 prerelease를 진행해”라고 명시한 뒤 **2026-10-21 00:46:36 KST에 [v1.0.7-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)을 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip).
+
+- 빌드 소스·주석 태그는 `949ebcc88792a9c05d2c96dfda97d1f77f84271a`, 태그 객체는 `ef1a3331f89b8db2802c419c8cfe591e022bef69`다. 구현·검증 보충 문서 커밋은 `codex/prd6-information`에 올렸으며 원격 main `375c39715c91d9a2bcdc629dbfe8a88ac0ff127a`과 다른 세션 작업을 보존했다. 태그와 설치 파일은 이후 문서 보충 커밋으로 바꾸지 않는다.
+- Release `418579272`·asset `659749168`, `draft=false`·`prerelease=true`·`make_latest=false`다. 기존 42개 Release·43개 태그·자산을 보존하고 Latest 정식 v1.0.6을 유지했다. 이슈 #2 closed·#4 closed·#5 open·#6 open을 유지했다.
+- 인증 없는 공개 API·페이지·ZIP 다운로드를 확인했다. ZIP 303,887바이트·SHA-256 `dbbf9f7421f0e20dc96c269f7c4a34c4d63ef61a31b79108a876ff8ef48a998d`, CRC·정확히 두 파일·내부 DLL/cfg 바이트·해시가 검토 후보 및 고정 소스 재빌드와 일치했다. 공개 API에서 주석 태그가 검증 소스를 가리킴도 확인했다.
+- 로컬 영수증: `artifacts/releases/v1.0.7-alpha.1/publication-preflight/`, `github-publication.json`, `github-upload.json`, `anonymous-verification.json`, `tag-verification.json`. 이 경로는 Git 제외 자료이며 공개 Release에서는 이 문서로 연결한다.
+
+실제 Windows·Unity·물리 장치·비용/할당량 확인은 미실행이다. [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)를 전달하며 #6 전체 완료·이슈 종료로 처리하지 않는다.

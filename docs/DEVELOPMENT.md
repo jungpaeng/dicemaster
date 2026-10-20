@@ -2,9 +2,9 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## PRD #6 — 네 정보 기능의 로컬 후보
+## PRD #6 — 네 정보 기능의 prerelease
 
-`v1.0.7-alpha.1`은 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6)의 로컬 구현·검증 후보다. 사용자가 2026-10-21 같은 채팅에서 “v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”라고 답해 #5 착수 조건을 충족했다. 확인 버전·파일·기준 커밋과 미제공 환경은 [#5 후속 기록](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)에, 새 구현·검사·한계는 [#6 구현 기록](ISSUE-6-IMPLEMENTATION.md)에 구분한다. 새 후보는 Windows 미실행이며 공개 Release·이슈 종료를 수행한 상태가 아니다.
+[v1.0.7-alpha.1 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)는 [PRD #6](https://github.com/jungpaeng/dicemaster/issues/6)의 구현·자동 검사·고정 소스 재빌드 검증 후보다. 사용자가 2026-10-21 같은 채팅에서 “v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”라고 답해 #5 착수 조건을 충족했다. 확인 버전·파일·기준 커밋과 미제공 환경은 [#5 후속 기록](ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)에, 새 구현·검사·한계는 [#6 구현 기록](ISSUE-6-IMPLEMENTATION.md)에 구분한다. 새 후보는 2026-10-21 00:46:36 KST에 공개했고 익명 ZIP·기존 Release/태그/Latest 보존을 검증했다. 검증 소스 태그 `949ebcc`와 `codex/prd6-information` 브랜치를 원격에 반영했으며 main은 변경하지 않았다. [게시 기록](ISSUE-6-CANDIDATE.md#공개-prerelease-게시와-검증)을 따른다. 새 Windows 확인은 미실행이고 #6은 open이다.
 
 `InformationRuntime`은 기존 `RefreshEngine`을 기능별로 소유하고 `InformationRow`만 게시한다. 지도·상점의 `DisplayQuery`는 현재 소속·ID·문맥을 검증하고 숨은 전체 맵이나 게임 실행 경로를 탐색하지 않는다. 정상 0.25초·실패 5초와 숨김/OFF 표시 조회 0, 같은 문맥의 실패에만 이전 값 유지, 새 대상·로드·장면 뒤 스냅샷 폐기를 유지한다. Lua 정의·결과 분석은 기존 캐시로 재사용하며 GUI는 게시 문자열만 읽는다.
 

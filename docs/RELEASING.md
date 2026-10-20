@@ -4,6 +4,16 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 지도·1회성·실제 분기·상점 정보 — v1.0.7-alpha.1 prerelease
+
+사용자의 커밋·prerelease 지시 후 **2026-10-21 00:46:36 KST에 [v1.0.7-alpha.1](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.1)을 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.1/DiceMaster-v1.0.7-alpha.1.zip) · [변경·설치·고정 소스·공개 검증](ISSUE-6-CANDIDATE.md) · [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md).
+
+고정 소스·주석 태그 `949ebcc88792a9c05d2c96dfda97d1f77f84271a`와 `codex/prd6-information` 브랜치를 원격에 반영했다. main `375c39715c91d9a2bcdc629dbfe8a88ac0ff127a`과 다른 세션 변경은 보존했다. 후보와 기존 관리 모드 DLL 0개인 고정 소스 재빌드에서 각각 18개 검사와 227개 입력·95개 소스/리소스·15개 참조·전체 검사 결과·DLL/cfg/ZIP 바이트를 대조했고 Python 검증기 회귀 20개를 통과했다. 익명 공개 ZIP의 CRC·정확히 두 파일·내부 바이트·SHA-256과 공개 주석 태그를 확인했다.
+
+Release `418579272`·asset `659749168`, `draft=false`·`prerelease=true`·`make_latest=false`다. 기존 42개 Release·43개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 이슈 #2 closed·#4 closed·#5 open·#6 open을 유지했다. v1.0.6 사용자 Windows 완료·잔여 문제 없음은 #6 착수 근거이며 새 DLL의 실제 Windows 확인은 대기다.
+
+영수증은 로컬 `artifacts/releases/v1.0.7-alpha.1/`에 보관한다. 게시 전 영수증은 당시 상태로 보존하고 후속 공개 검증을 별도 기록한다. 게시 보충 문서 커밋은 생산·검사·빌드 입력이나 태그·설치 파일을 변경하지 않는다.
+
 ## 이벤트·조건 선택과 일회 예약 — v1.0.6 정식
 
 사용자가 정식 `v1.0.6`을 명시적으로 선택한 뒤 **2026-10-20 23:36:49 KST에 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)을 게시했다.** v1.0.5 이후의 선택 팝업·조건 상세 예약·공통 조건/한국어 표시·클릭/터치 수정을 모으고 팝업의 로그 열기 버튼을 제거했다. README는 v1.0.6의 현재 설치·조작 안내로 정리했다. [변경·설치·자동 검사·Windows 확인표](ISSUE-5-STABLE-RELEASE.md).
