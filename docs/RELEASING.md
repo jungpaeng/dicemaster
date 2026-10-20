@@ -4,6 +4,12 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
+## 지도 임무·후속 기회와 상점 직접 효과 — v1.0.7-alpha.3 prerelease
+
+2026-10-21 03:26:15 KST에 [v1.0.7-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3)을 게시했다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.3/DiceMaster-v1.0.7-alpha.3.zip) · 소스/주석 태그 `9a9b6176e038595d55d72ef152a7df0910fb3a4e`. main과 태그를 atomic push하고 기존 관리 모드 DLL 0개인 고정 소스 재빌드의 20개 검사·검토 후보의 239개 입력/전체 결과/DLL·cfg·ZIP 바이트 일치를 확인했다.
+
+익명 공개 API·페이지·설치 ZIP의 CRC·두 파일·내부 바이트·SHA-256을 확인하고 기존 44개 Release·45개 태그·자산·Latest 정식 v1.0.6과 이슈 상태를 보존했다. Release 418727216·asset 660123096, draft=false·prerelease=true·make_latest=false다. [전체 구현·검사·파일·새 Windows 확인표](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 기록한다. 실제 Windows·Unity·물리 입력·비용 확인과 #6 완료는 대기이며 게시 결과 보충은 별도 main 문서 커밋이다.
+
 ## 선택 장소 지도·상점 사용 효과 — v1.0.7-alpha.2 prerelease
 
 사용자의 커밋·prerelease 지시에 따라 **2026-10-21 01:35:02 KST에 [v1.0.7-alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2)를 게시했다.** [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.2/DiceMaster-v1.0.7-alpha.2.zip)은 [검토 후보](ISSUE-6-SELECTED-MAP-SHOP.md)와 같은 바이트이며 파일명만 DiceMaster-v1.0.7-alpha.2.zip으로 지정했다.

@@ -2,7 +2,7 @@
 
 [사용자 안내](../README.md) · [개발 안내](DEVELOPMENT.md) · [패드](GAMEPAD.md) · [공개 alpha.2 기록](ISSUE-6-SELECTED-MAP-SHOP.md)
 
-후속: 이 상점 변경은 [지도 개선 v1.0.7-alpha.3 후보](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 포함한다. 아래 파일 해시·미게시 상태·검사 결과는 상점 단독 로컬 후보 당시 기록이며 새 후보의 파일·공개 상태·Windows 확인으로 승계하지 않는다.
+후속: 이 상점 변경은 [공개 지도 개선 v1.0.7-alpha.3](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 포함한다. 아래 파일 해시·미게시 상태·검사 결과는 상점 단독 로컬 후보 당시 기록이며 새 후보의 파일·공개 상태·Windows 확인으로 승계하지 않는다.
 
 상태: **미게시 로컬 후속 후보 / 새 실제 Windows 확인 대기**. 원래 작업 폴더의 main에서 구현·검증한다. 공개 시험판 v1.0.7-alpha.2와 Latest 정식 v1.0.6의 태그·파일은 변경하지 않는다. #6 전체 완료나 이슈 종료로 처리하지 않는다.
 

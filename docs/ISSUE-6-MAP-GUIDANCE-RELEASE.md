@@ -2,7 +2,7 @@
 
 [사용자 안내](../README.md) · [분석 설계](ISSUE-6-MAP-GUIDANCE-ANALYSIS.md) · [상점 직접 효과](ISSUE-6-SHOP-DESCRIPTION.md) · [패드](GAMEPAD.md)
 
-상태: **구현·전체 자동 검사·후보 ZIP 검증 완료 / 게시 전 / 새 Windows 확인 대기**. main에서만 작업하며 별도 branch·worktree를 생성하지 않는다. 공개 alpha.1·alpha.2와 Latest 정식 v1.0.6을 보존한다. 이번 새 main 소스로 후보를 만들며 제외했던 과거 작업을 복원하지 않는다.
+상태: **[prerelease 공개](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3)·전체 자동 검사·고정 소스 재빌드·공개 ZIP 검증 완료 / 새 Windows 확인 대기**. main에서만 작업하며 별도 branch·worktree를 생성하지 않는다. 공개 alpha.1·alpha.2와 Latest 정식 v1.0.6을 보존한다. 이번 새 main 소스로 후보를 만들며 제외했던 과거 작업을 복원하지 않는다.
 
 ## 달라지는 동작
 
@@ -78,9 +78,19 @@ MapRouteTests는 번체 2,198개 본문의 색인/본문 해시와 실제 room/d
 
 로컬 영수증은 artifacts/issue-6/map-guidance-candidate/full-final/의 build-manifest.json·build.log와 상위 independent-final-review/verification.json·one-shot-audit/다. 고정 커밋 재빌드·공개 배포 결과는 아래 별도 기록으로 보충한다. 분석 단계 자료·첫 full 후보의 결과와 최종 파일을 혼합하지 않는다.
 
+## 공개 prerelease 게시와 검증
+
+2026-10-21 03:26:15 KST에 **[v1.0.7-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3)**을 게시했다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.3/DiceMaster-v1.0.7-alpha.3.zip)** · 빌드 소스/주석 태그 `9a9b6176e038595d55d72ef152a7df0910fb3a4e`. 원래 main에 구현 커밋과 태그를 atomic push했으며 상점 직접 효과 커밋 5e951cf도 포함한다. 별도 작업 branch/worktree는 만들지 않았다.
+
+고정 커밋만 추출한 새 소스 스냅샷에는 기존 관리 모드 DLL이 0개였다. verify-preview-release.py --scope prd6로 다시 20개 검사 프로그램을 실행했고 검토 후보와 SDK·239개 입력·100개 소스/리소스·15개 외부 참조·전체 검사 결과·DLL/cfg/ZIP 바이트가 일치했다. Python 후보 검증기 회귀 20개도 통과했다.
+
+Release `418727216`·asset `660123096`, draft=false·prerelease=true·make_latest=false다. 익명 공개 API·페이지·ZIP 다운로드에서 CRC·정확히 두 파일·내부 바이트·SHA-256을 확인했다. 기존 44개 Release·45개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 이슈 #2 closed·#4 closed·#5 open·#6 open 상태도 유지했다.
+
+영수증은 로컬 artifacts/releases/v1.0.7-alpha.3/의 release-verification.json·build-manifest.json·build.log·reviewed-candidate-comparison.json·publication-preflight-summary.json·github-publication.json·anonymous-verification.json·release-body.md에 보존한다. release-verification의 published=false는 게시 전 검증 시점이며 원본을 바꾸지 않는다. 게시 결과 보충은 별도 main 문서 커밋이며 위 빌드 소스·태그·설치 파일을 변경하지 않는다.
+
 ## 설치와 실제 Windows 확인
 
-게시 후 이 버전의 설치 ZIP을 사용한다. 게임을 종료하고 기존 DLL/cfg를 백업한 뒤 **DLL만 교체해 cfg를 보존**한다. 최초 설치만 config·plugins 두 파일을 넣는다. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복구는 이미 진행·저장한 게임 상태를 되돌리지 않는다.
+위에 연결한 이 버전의 설치 ZIP을 사용한다. 게임을 종료하고 기존 DLL/cfg를 백업한 뒤 **DLL만 교체해 cfg를 보존**한다. 최초 설치만 config·plugins 두 파일을 넣는다. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복구는 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
 아래는 모두 **미실행·사용자 확인 대기**다.
 

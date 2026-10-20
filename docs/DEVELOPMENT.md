@@ -2,7 +2,9 @@
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## 지도 안내 개선 — v1.0.7-alpha.3 준비
+## 지도 안내 개선 — v1.0.7-alpha.3 prerelease
+
+[2026-10-21 03:26:15 KST 공개 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3). 소스 `9a9b6176e038595d55d72ef152a7df0910fb3a4e`의 고정 재빌드에서 20개 검사와 검토 후보의 입력·결과·패키지 바이트 일치를 확인했다. 새 Windows 확인과 #6 완료는 대기다.
 
 main `5e951cf`에서 작성한 [분석 설계](ISSUE-6-MAP-GUIDANCE-ANALYSIS.md)를 사용자의 후속 구현·커밋·prerelease 지시에 따라 구현한다. 기존 대기/현재 조건/dispatch 구분·장소 무관 임무·Symbolic Position 반환 경로·단일 패널/개별 로그 행과 준비/캐시 경계를 연결한다. [현재 구현·검사·배포·Windows 확인](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 확정 결과를 기록하며 아래 상점 후보·공개 alpha.2/alpha.1은 각각 당시 이력이다.
 

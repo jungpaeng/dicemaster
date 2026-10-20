@@ -2,13 +2,13 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## v1.0.7-alpha.3 준비 — 지도 개별 항목·상점 직접 효과
+## v1.0.7-alpha.3 prerelease — 지도 개별 항목·상점 직접 효과
 
 선택 장소의 패널 하나에 대기 임무·현재 단계 후보·확인된 1회성을 구분하고, 기존 Y 도구 → 지도 안내 조회에서 개별 항목의 조건·효과·경로를 읽는다. 일반 활동·미확인 항목은 기타 연결 정보, 장소 무관 임무는 별도 묶음이다. 관찰된 현재 지도 세션에서는 장소 미선택에도 장소 무관 임무를 읽는다. 메뉴 선택·이동 후 기회와 현재 조건/실행 대기를 구분하며 조회로 게임 선택·예약을 실행하지 않는다.
 
 기존 게임의 패드 선택을 따라 상점의 원래 설명 아래 사용 효과와 책·비급의 다음 학습 효과도 바로 표시한다. 전체 상세는 상점 효과 조회에서도 읽으며 OFF·닫기·선택 변경에는 자기 설명만 복원한다.
 
-새 단축키·가상 마우스·hover 전용 동선은 추가하지 않는다. ↑↓/왼쪽 스틱은 개별 행, 오른쪽 스틱은 상세, B/Esc는 도구로 복귀하며 LB/RB는 기존 네 탭으로 이동한다. 버튼 해제·스틱/트리거 중립과 기존 입력 소유권을 유지한다. **게시 전 후보이며 실제 Windows·Xbox/XInput·Unity 가독성/입력/성능 확인은 대기**다. [구현·검사·설치·Windows 확인표](ISSUE-6-MAP-GUIDANCE-RELEASE.md). 과거 alpha.2의 범위·게시 기록은 [이전 문서](ISSUE-6-SELECTED-MAP-SHOP.md), 상점 수정 근거는 [상점 문서](ISSUE-6-SHOP-DESCRIPTION.md)에 보존한다.
+새 단축키·가상 마우스·hover 전용 동선은 추가하지 않는다. ↑↓/왼쪽 스틱은 개별 행, 오른쪽 스틱은 상세, B/Esc는 도구로 복귀하며 LB/RB는 기존 네 탭으로 이동한다. 버튼 해제·스틱/트리거 중립과 기존 입력 소유권을 유지한다. **[공개 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3)의 자동 검사·파일 검증을 마쳤으며 실제 Windows·Xbox/XInput·Unity 가독성/입력/성능 확인은 대기**다. [구현·검사·설치·Windows 확인표](ISSUE-6-MAP-GUIDANCE-RELEASE.md). 과거 alpha.2의 범위·게시 기록은 [이전 문서](ISSUE-6-SELECTED-MAP-SHOP.md), 상점 수정 근거는 [상점 문서](ISSUE-6-SHOP-DESCRIPTION.md)에 보존한다.
 
 ## PRD #6 공통 조작 — 읽기 전용 정보 조회
 

@@ -17,9 +17,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 2026-10-21 사용자가 **“v1.0.6 Windows 확인을 완료했고 남은 문제가 없습니다.”**라고 확인했습니다. 이 포괄 확인을 PRD #6의 착수 근거로 기록하며 세부 장치·환경별 시험 결과를 추정하지 않습니다. 아래 기존 조작은 v1.0.6을 기준으로 유지하고, 새 정보 기능은 아래 별도 prerelease에서 제공합니다. [확인 범위](docs/ISSUE-5-STABLE-RELEASE.md#2026-10-21-사용자-windows-후속-확인)
 
-## 지도 안내 개선 시험판 준비 — v1.0.7-alpha.3
+## 시험판 v1.0.7-alpha.3 — 지도 임무·후속 기회 안내
 
-현재 main에 지도 안내를 임무·기회 중심으로 개선했습니다. **전체 20개 자동 검사·후보 ZIP 검증을 마친 게시 전 후보이며 확정 파일·검사 결과는 [변경·검증 기록](docs/ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 기록합니다.** 최신 정식은 v1.0.6이며 이전 공개 [alpha.2](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.2)는 보존합니다.
+**[v1.0.7-alpha.3 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.3/DiceMaster-v1.0.7-alpha.3.zip)**. 2026-10-21 03:26:15 KST에 게시했고 고정 소스 재빌드의 전체 20개 검사·공개 ZIP 바이트/해시 대조를 통과했습니다. 최신 정식은 v1.0.6이며 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요.
 
 | 기능 | 게임 화면 | 로그 도구의 상세 |
 | --- | --- | --- |
