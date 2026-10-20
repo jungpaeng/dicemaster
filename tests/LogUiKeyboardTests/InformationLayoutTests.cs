@@ -48,14 +48,22 @@ internal static partial class Program
             Screen.width = 1920; Screen.height = 1080;
             InformationRuntime.TestFlags = new[] { true, true, false, true };
             MapGuideSource.Selected = new object();
-            InformationRuntime.TestMap(new InformationRow("map/one", "선택 장소", "지도", "후보 1", "전체 상세", "후보 1 · 진행 가능 1", MapGuideSource.Selected, true));
+            var initial = new InformationRow("map/one", "선택 장소", "지도", "후보 1", "전체 상세",
+                "• <color=red>사사형</color> · 인물 대화 · 진입 조건 충족 (현재)\n• 다른 인물 · 인물 대화 · 진입 조건 미충족 (현재)\n• 미확인 · 인물 대화 · 선택 화면에서 확인\n자세히: 로그 → 도구 → 지도 안내", MapGuideSource.Selected, true);
+            InformationRuntime.TestMap(initial);
             int measures = GUIStyle.Measurements;
             for (int i = 0; i < 1000; i++) { GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, i); }
             Check(GUIStyle.Measurements == measures + 1, "1000 GUI calls measure the unchanged panel once");
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("선택 장소: 선택 장소\n", StringComparison.Ordinal), "one explicitly named selected-place panel only");
+            Check(GUI.PassiveLabels[0].RichText && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진입 조건 충족 (현재)</color>") &&
+                !GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진입 조건 미충족") && GUI.PassiveLabels[0].Text.Contains("＜color=red＞사사형＜/color＞"),
+                "only the met entry status is green; mixed statuses and literal title markup cannot recolor the panel");
             Rect stable = GUI.PassiveLabels[0].Rect;
             InformationRuntime.Draw(false, false, default, 1001);
             Check(GUI.PassiveLabels[1].Rect == stable, "stable repaint retains exact placement");
+            InformationRuntime.TestMap(initial, "갱신 실패 · 이전 값"); GUI.PassiveLabels.Clear();
+            InformationRuntime.Draw(false, false, default, 1001.5f);
+            Check(!GUI.PassiveLabels[0].Text.Contains("<color="), "a failed refresh never colors an old positive entry as current");
             MapGuideSource.Selected = new object(); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1002);
             Check(GUI.PassiveLabels.Count == 0, "selection change hides the previous publication before refresh");
@@ -101,11 +109,14 @@ internal static partial class Program
             InformationRuntime.TestChoices(choice); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1011);
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 연결 이야기") && GUI.PassiveLabels[0].Text.Contains("사사형 → 대화 항목") && !GUI.PassiveLabels[0].Text.Contains("다른 항목"), "choice overlay follows only the published current pad selection");
+            Check(GUI.PassiveLabels[0].RichText && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>현재 이야기 진입 조건 충족</color>"),
+                "the current choice's positive entry status uses the same green text");
             measures = GUIStyle.Measurements;
             for (int at = 0; at < 1000; at++) { GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1012); }
             Check(GUIStyle.Measurements == measures, "one thousand unchanged choice draws reuse measured cached text");
             ChoiceStorySource.Selected = nextChoice; GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1013);
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("다른 항목") && !GUI.PassiveLabels[0].Text.Contains("사사형"), "changing native selection switches cached path without a provider query");
+            Check(!GUI.PassiveLabels[0].Text.Contains("<color="), "an uncertain choice path retains its neutral status color");
             ChoiceStorySource.Current = null; GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1014);
             Check(GUI.PassiveLabels.Count == 0, "old menu publication is hidden immediately and cannot reveal an underlying map");
             InformationRuntime.TestFlags[0] = false; InformationRuntime.TestFlags[1] = true;

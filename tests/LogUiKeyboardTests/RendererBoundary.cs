@@ -104,8 +104,8 @@ namespace UnityEngine
     public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
     {
-        public static readonly List<(Rect Rect, string Text)> PassiveLabels = new List<(Rect, string)>();
-        public static void Label(Rect rect, GUIContent content, GUIStyle style) { PassiveLabels.Add((rect, content.text)); }
+        public static readonly List<(Rect Rect, string Text, bool RichText)> PassiveLabels = new List<(Rect, string, bool)>();
+        public static void Label(Rect rect, GUIContent content, GUIStyle style) { PassiveLabels.Add((rect, content.text, style.richText)); }
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
         private static string focusedControl;
         public sealed class FocusCall

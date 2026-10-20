@@ -14,15 +14,15 @@ namespace DiceMaster.Information
             internal Rect Rect;
             private string text;
             private int font, screenWidth, screenHeight;
-            private bool right;
+            private bool right, richText;
             private Rect avoid;
             private readonly List<Rect> obstacles = new List<Rect>(1);
             internal void Prepare(string value, GUIStyle style, bool topRight, Rect occlusion)
             {
                 if (text == value && font == style.fontSize && screenWidth == Screen.width &&
-                    screenHeight == Screen.height && right == topRight && avoid == occlusion) return;
+                    screenHeight == Screen.height && right == topRight && richText == style.richText && avoid == occlusion) return;
                 text = value; font = style.fontSize; screenWidth = Screen.width; screenHeight = Screen.height;
-                right = topRight; avoid = occlusion; Content.text = value;
+                right = topRight; richText = style.richText; avoid = occlusion; Content.text = value;
                 float margin = Math.Min(12, Math.Max(0, (Math.Min(Screen.width, Screen.height) - 1) * .5f));
                 var viewport = new Rect(margin, margin, Math.Max(1, Screen.width - margin * 2), Math.Max(1, Screen.height - margin * 2));
                 float width = Math.Min(viewport.width, Math.Min(420, Math.Max(160, Screen.width * (topRight ? .35f : .5f))));
@@ -100,10 +100,10 @@ namespace DiceMaster.Information
                     string heading = selected.Title.Length <= 48 ? selected.Title : selected.Title.Substring(0, 45) + "…";
                     // The provider already limits complete notice rows. Never
                     // cut through a status or through the detail navigation hint.
-                    mapText = "선택 장소: " + heading + (status.Length == 0 ? "" : " · " + status) + "\n" + selected.AutoText;
+                    mapText = EntryConditionColors("선택 장소: " + heading + (status.Length == 0 ? "" : " · " + status) + "\n" + selected.AutoText, status.Length == 0);
                 }
-                // Aggregate green used to imply that every listed story was
-                // ready. These panels now use neutral text and explicit states.
+                // Only the exact positive entry status is green. Mixed rows,
+                // headings and stale publications keep their neutral color.
                 DrawPassive(mapLabel, mapText, false, default(Rect), false, true);
             }
             if (choice != null)
@@ -117,14 +117,32 @@ namespace DiceMaster.Information
                     if (current != null) lines.Add("• " + current.AutoText);
                     else for (int at = 0; at < Math.Min(3, choice.Entries.Count); at++) lines.Add("• " + choice.Entries[at].AutoText);
                     lines.Add("자세히: 로그 → 도구 → 지도 안내");
-                    choiceText = string.Join("\n", lines);
+                    choiceText = EntryConditionColors(string.Join("\n", lines), choiceStatus.Length == 0);
                 }
                 DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true);
             }
             if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available);
         }
+        private static string EntryConditionColors(string text, bool current)
+        {
+            var lines = text.Split('\n');
+            for (int at = 0; at < lines.Length; at++)
+            {
+                string line = lines[at];
+                string positive = line.EndsWith(" · 진입 조건 충족 (현재)", StringComparison.Ordinal) ? "진입 조건 충족 (현재)" :
+                    line.EndsWith(" · 현재 이야기 진입 조건 충족", StringComparison.Ordinal) ? "현재 이야기 진입 조건 충족" : null;
+                // Titles and names remain literal when trusted color markup
+                // is enabled. Apply formatting only while preparing the cache.
+                line = line.Replace("<", "＜").Replace(">", "＞");
+                if (current && positive != null && line.StartsWith("• ", StringComparison.Ordinal))
+                    line = line.Substring(0, line.Length - positive.Length) + "<color=#BFFFCC>" + positive + "</color>";
+                lines[at] = line;
+            }
+            return string.Join("\n", lines);
+        }
         private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available, bool neutral = false)
         {
+            informationStyle.richText = neutral;
             label.Prepare(text, informationStyle, right, occlusion);
             if (string.IsNullOrEmpty(label.Content.text)) return;
             informationStyle.normal.textColor = neutral ? new Color(.95f, .95f, .95f) : available ? new Color(.75f, 1f, .8f) : new Color(1f, .88f, .55f);
