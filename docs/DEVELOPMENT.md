@@ -1,12 +1,12 @@
 # 개발 안내
 
-2026-10-21 04:50:33 KST에 소스·태그 `a26603bf746bff0332ea2d4fde2642c000008426`의 [alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.5)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 248개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 46개 Release·47개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [최종 수치·파일·게시·Windows 확인](ISSUE-6-ALPHA5-RELEASE.md).
+2026-10-21 05:19:19 KST에 소스·태그 `08b9fb623c43cd62b42fcae8a24fb913f372027c`의 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 47개 Release·48개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [분류 기준·파일·게시·Windows 확인](ISSUE-6-ALPHA6-RELEASE.md).
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
 
-## 현재 수정 후보 — alpha.6 예정, 미게시
+## v1.0.7-alpha.6 — 인물 대화·1회성 안내
 
-사용자가 기본 반복 활동인 남제자방 휴식의 진입 조건 안내를 제외하고, 안전하게 판별된 1회성 또는 인물 대화만 안내하도록 요청했다. 원래 작업 폴더의 `main`에서 작업하며 공개 alpha.5 파일과 당시 검사 기록은 보존한다. 새 후보 전체 소스의 21개 자동 검사·실제 DLL 연결·ZIP 검증을 통과했고 [후보 기록](ISSUE-6-ALPHA6-RELEASE.md)에 식별값을 남긴다. 고정 커밋 재빌드·게시와 Windows·물리 패드·화면/성능 확인은 [새 확인표](ISSUE-6-WINDOWS-VALIDATION.md)에 별도로 남긴다.
+사용자가 기본 반복 활동인 남제자방 휴식의 진입 조건 안내를 제외하고, 안전하게 판별된 1회성 또는 인물 대화만 안내하도록 요청했다. 원래 작업 폴더의 `main`에서 작업하며 공개 alpha.5 파일과 당시 검사 기록은 보존한다. 새 후보 전체 소스의 21개 자동 검사·실제 DLL 연결·ZIP 검증을 통과했고 [후보 기록](ISSUE-6-ALPHA6-RELEASE.md)에 식별값을 남긴다. 고정 커밋 재빌드·게시·공개 파일 대조도 통과했으며 Windows·물리 패드·화면/성능 확인은 [새 확인표](ISSUE-6-WINDOWS-VALIDATION.md)에 별도로 남긴다.
 
 원인은 경로의 실제 `say` 호출이면 안내·독백도 `MapStoryEntry`로 수집하던 분류다. 남제자방 휴식 표본에는 이 형식의 안내·독백만 있고, 사사형 경로에는 인물 발화가 연결된다. `talk` 원문 종류나 `D_` 접두사는 플레이어만 등장하는 표본에도 있어 인물 대화의 충분한 근거가 아니다. 새 분류는 같은 지원 경로에서 원본의 명시적인 플레이어 이외 화자와 실제 발화를 연결하고, 동적/미확정 화자·플레이어 독백·기본 설명을 양성으로 만들지 않는다. 기존 원본 활성 조건에 연결된 엄격한 1회성 증명은 별도로 유지한다.
 
@@ -36,7 +36,7 @@
 
 main `5e951cf`에서 작성한 [분석 설계](ISSUE-6-MAP-GUIDANCE-ANALYSIS.md)를 사용자의 후속 구현·커밋·prerelease 지시에 따라 구현한다. 기존 대기/현재 조건/dispatch 구분·장소 무관 임무·Symbolic Position 반환 경로·단일 패널/개별 로그 행과 준비/캐시 경계를 연결한다. [현재 구현·검사·배포·Windows 확인](ISSUE-6-MAP-GUIDANCE-RELEASE.md)에 확정 결과를 기록하며 아래 상점 후보·공개 alpha.2/alpha.1은 각각 당시 이력이다.
 
-## 상점 설명 후속 후보 — 효과를 직접 표시
+## alpha.3 게시 전 상점 설명 후보 기록 — 효과를 직접 표시
 
 2026-10-21 사용자가 상점 설명에서 사용·학습 효과를 바로 보도록 요청했다. 상점의 자동 표시를 이름·종류·분석 상태로 제한하던 기존 #6 규칙은 이 요청에 따라 바꾸며 지도·1회성·분기의 규칙은 유지한다. 원래 `_dialogDesc` 아래에 사용 효과 또는 다음 학습 효과를 여러 줄로 추가하고, 전체 상세는 기존 로그에도 남긴다. 효과를 얻었는데도 부분 분석 진단만 제품 설명에 노출되던 문제가 대상이다.
 
@@ -44,7 +44,7 @@ main `5e951cf`에서 작성한 [분석 설계](ISSUE-6-MAP-GUIDANCE-ANALYSIS.md)
 
 기존 `ShopPanel.OnItemHover` 관찰 경계를 공유해 패드 선택에도 연결하고 새 입력·입력 소비·포커스 이동을 추가하지 않는다. 구매·사용·학습·게임 조건 실행·세이브·RNG 호출을 추가하지 않는다. 정상 0.25초/실패 5초·숨김/OFF 조회 중단·문맥별 기존 Lua 연결 캐시·정상 갱신 재분석 없음 계약을 유지한다. 상위 `EnableOptionInfo`의 시작 시 적용과 `EnableShopEffectInfo`의 기본 ON·즉시 변경/저장·OFF 복원도 유지한다.
 
-원래 작업 폴더의 main에서 구현·검증하며 별도 브랜치/worktree를 만들지 않는다. 이 변경은 미게시 로컬 후보이고 공개 alpha.2·Latest 정식 v1.0.6은 그대로다. [구현·자동 검사·후보 식별값·실제 Windows 확인표](ISSUE-6-SHOP-DESCRIPTION.md)를 따른다. 아래 alpha.2·alpha.1은 해당 게시 버전의 이력이다.
+원래 작업 폴더의 main에서 구현·검증하며 별도 브랜치/worktree를 만들지 않는다. 이 절은 alpha.3 게시 전 로컬 후보 당시 기록이며 당시 공개 alpha.2·Latest 정식 v1.0.6을 보존했다. [구현·자동 검사·후보 식별값·실제 Windows 확인표](ISSUE-6-SHOP-DESCRIPTION.md)를 따른다. 아래 alpha.2·alpha.1은 해당 게시 버전의 이력이다.
 
 ## v1.0.7-alpha.2 — 선택 대상과 그리기 비용
 

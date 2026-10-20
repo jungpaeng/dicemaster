@@ -1,6 +1,6 @@
-# 기본 휴식 제외·인물 대화 안내 — v1.0.7-alpha.6 후보
+# 기본 휴식 제외·인물 대화 안내 — v1.0.7-alpha.6 prerelease
 
-원래 작업 폴더의 `main`에서 기본 활동 안내를 줄이고 인물 대화의 원본 근거를 구분했다. **전체 소스 후보의 21개 자동 검사와 실제 DLL 연결·패키지 검증을 통과했다. 커밋 고정 재빌드와 prerelease 게시·공개 파일 대조는 대기다.** 현재 공개 시험판은 [alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.5), 최신 정식은 v1.0.6이다. 새 DLL의 실제 Windows·물리 입력·가독성·성능 확인은 대기이며 PRD #6은 open으로 유지한다.
+원래 작업 폴더의 `main`에서 기본 활동 안내를 줄이고 인물 대화의 원본 근거를 구분했다. **2026-10-21 05:19:19 KST에 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)를 게시하고 익명 공개 ZIP을 대조했다.** 전체·고정 소스 재빌드의 21개 검사 결과와 DLL/cfg/ZIP 바이트가 같다. 최신 정식은 v1.0.6이며 새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 PRD #6 전체 완료는 대기다.
 
 [사용자 안내](../README.md) · [구현 계약](ISSUE-6-IMPLEMENTATION.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [패드](GAMEPAD.md) · [alpha.5 당시 기록](ISSUE-6-ALPHA5-RELEASE.md)
 
@@ -57,13 +57,19 @@ alpha.5는 선택 뒤 지원된 `say`와 리터럴 대사 참조가 있으면 �
 | --- | ---: | --- |
 | DiceMaster.dll | 790016 | `cbd19644255a43a928b10d3f6f066595af7b3366fce54a5dc46b2ba4c1075b88` |
 | DiceMaster.cfg | 12912 | `442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a` |
-| DiceMaster-source-candidate.zip | 336123 | `c875801a4167912207dc772a350ac02f7e8166961851445f98c841acb846316a` |
+| DiceMaster-v1.0.7-alpha.6.zip | 336123 | `c875801a4167912207dc772a350ac02f7e8166961851445f98c841acb846316a` |
 
-ZIP은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 두 파일로 구성한다. 소스 커밋·태그·게시 파일명·공개 다운로드 검증은 커밋 고정 재빌드 후 확정한다. 위 해시는 이번 로컬 후보 식별값이며 게시 완료를 뜻하지 않는다.
+ZIP은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 두 파일로 구성하며 CRC·내부 파일·바이트·해시가 위 값과 일치한다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.6/DiceMaster-v1.0.7-alpha.6.zip)은 소스·태그 [`08b9fb6`](https://github.com/jungpaeng/dicemaster/commit/08b9fb623c43cd62b42fcae8a24fb913f372027c)의 고정 재빌드와 같다.
+
+## 고정 커밋 재빌드와 게시
+
+기존 관리 모드 DLL 0개인 고정 소스에서 같은 SDK·249개 입력·103개 소스/리소스·15개 참조로 21개 검사를 다시 실행했다. 전체 검사 성공 기록과 DLL/cfg/ZIP 바이트가 로컬 후보와 같다. 검증기 Python 회귀 20개와 독립 관리 대역의 화자·별칭·분기·warm cache 회귀도 통과했다. Lua/Windows/native 게임 실행이나 실제 FPS 검증은 아니다.
+
+Release `418832910`·asset `660380127`, `draft=false`·`prerelease=true`·`make_latest=false`다. 기존 47개 Release·48개 태그·자산과 Latest 정식 v1.0.6을 보존했다. main과 주석 태그를 atomic push했고 이슈 #2/#4 closed·#5/#6 open을 유지했다. 원래 작업 트리 하나와 main만 사용하며 `.agents/`·`skills-lock.json`은 보존했다. 게시 보충 문서는 별도 main 커밋이며 빌드 입력·태그·설치 파일을 바꾸지 않는다.
 
 ## 설치와 실제 Windows 확인
 
-게시할 설치 후보와 고정 소스 재빌드 결과가 확정되면 위 파일과 대조한다. 게임 종료 후 기존 DLL/cfg를 백업하고 **DLL만 교체해 기존 cfg를 보존**한다. 문제가 있으면 종료 후 백업 DLL과 필요한 cfg 또는 정식 v1.0.6으로 복구한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
+[게시한 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.6/DiceMaster-v1.0.7-alpha.6.zip)은 위 파일과 일치한다. 게임 종료 후 기존 DLL/cfg를 백업하고 **DLL만 교체해 기존 cfg를 보존**한다. 문제가 있으면 종료 후 백업 DLL과 필요한 cfg 또는 정식 v1.0.6으로 복구한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.
 
 - [ ] **미실행** — 남제자방 기본 휴식과 일반 안내·독백에 불필요한 이야기/진입 조건 자동 표시가 사라지고 원래 선택·게임 진행은 유지된다. `talk`/`D_`를 쓰는 플레이어 독백도 인물 대화로 잘못 표시하지 않는다.
 - [ ] **미실행** — 사사형 인물 대화와 필요한 선택 경로가 유지된다. 표시 화자 대표·현재 첫 조건과 실제 이후 발생 보장을 구분하고 긴 이름/경로가 읽힌다.

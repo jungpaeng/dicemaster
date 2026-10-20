@@ -1,10 +1,16 @@
 # 소스 기반 Release와 게시 이력
 
-2026-10-21 04:50:33 KST에 소스·태그 `a26603bf746bff0332ea2d4fde2642c000008426`의 [alpha.5](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.5)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 248개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 46개 Release·47개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [최종 수치·파일·게시·Windows 확인](ISSUE-6-ALPHA5-RELEASE.md).
+2026-10-21 05:19:19 KST에 소스·태그 `08b9fb623c43cd62b42fcae8a24fb913f372027c`의 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 47개 Release·48개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [분류 기준·파일·게시·Windows 확인](ISSUE-6-ALPHA6-RELEASE.md).
 
 [Release 작성 가이드](RELEASE-WRITING.md) · [사용자 안내](../README.md) · [소스 빌드·검증](SOURCE-BUILD.md)
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
+
+## 기본 휴식 제외·인물 대화 안내 — v1.0.7-alpha.6 prerelease
+
+2026-10-21 05:19:19 KST에 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)를 게시했다. 기본 휴식·독백을 제외하고 명시된 다른 인물의 발화가 있는 경로를 대화로 안내한다. 기존 임무·증명된 1회성·휴식 뒤 후속 연결은 유지한다. [범위·검사·파일·Windows 확인](ISSUE-6-ALPHA6-RELEASE.md).
+
+고정 소스·주석 태그 `08b9fb623c43cd62b42fcae8a24fb913f372027c`와 main을 atomic push했다. 기존 관리 모드 DLL 0개인 커밋 재빌드에서 21개 프로그램·249개 입력·103개 소스/리소스·15개 참조·전체 검사 성공 기록·DLL/cfg/ZIP이 로컬 후보와 같았다. 익명 공개 페이지/API/설치 ZIP도 대조했다. Release `418832910`·asset `660380127`, prerelease이며 Latest 정식 v1.0.6과 기존 배포·이슈 상태를 보존했다. 실제 새 Windows 확인과 #6 완료는 대기다.
 
 ## 지도 이야기·선택 경로 — v1.0.7-alpha.5 prerelease
 

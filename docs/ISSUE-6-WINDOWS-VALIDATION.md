@@ -1,6 +1,6 @@
 # PRD #6 — 새 후보 실제 Windows 확인표
 
-**현재 수정 후보는 alpha.6 예정이며 미게시다.** 기본 휴식·독백까지 안내하던 범위를 줄여, 안전하게 증명한 원본 1회성 또는 명시된 플레이어 이외 화자와 실제 발화가 연결된 인물 대화만 지도·선택 안내에 포함한다. 임무와 기존 1회성은 유지하며 휴식 뒤 연결을 탐색에서 제거하지 않는다. 자동 검사·DLL/ZIP 식별값·게시·사용자 Windows 확인은 각각 별도 상태다. 새 파일의 버전·커밋·해시를 확정한 뒤 아래 환경표에 실제 설치 파일을 기록한다. 현재 공개 다운로드는 alpha.5이며 그 확인을 새 후보 통과로 승계하지 않는다.
+**현재 확인 대상은 [공개 alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)이며 실제 Windows 확인은 대기다.** 소스·태그 `08b9fb623c43cd62b42fcae8a24fb913f372027c`, DLL SHA-256 `cbd19644255a43a928b10d3f6f066595af7b3366fce54a5dc46b2ba4c1075b88`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.6/DiceMaster-v1.0.7-alpha.6.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했으며 [파일·범위 기록](ISSUE-6-ALPHA6-RELEASE.md)을 따른다. 기본 휴식·독백을 제외하고 명시된 다른 인물의 발화가 있는 대화·기존 증명된 1회성·임무를 안내한다. 이전 버전의 사용자 확인은 이번 파일의 확인을 대신하지 않는다.
 
 ## 현재 수정 후보의 추가 확인 — 모두 미실행
 
