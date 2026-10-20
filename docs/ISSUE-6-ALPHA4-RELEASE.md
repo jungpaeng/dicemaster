@@ -75,6 +75,14 @@ ZIP의 정확히 두 경로 `config/DiceMaster.cfg`, `plugins/DiceMaster/DiceMas
 | 17개 임무의 공유 조건 | 대표 16개 공유 조건 getter 1회, 17번째 0회; 전체 조건/효과 설명 0회 |
 | 변하지 않은 선택지 1,000회 그리기 | 라벨 text 재조회·동일 문구 재쓰기·Lua 분석 0회 |
 
+## 고정 소스 재빌드와 공개 게시
+
+소스·주석 태그 커밋은 `8e052e1001bcfa3187fd05880c76197b0ebef8c4`다. 이 커밋만 추출해 기존 관리 모드 DLL 0개에서 다시 빌드하고 전체 20개 프로그램을 재실행했다. 검토 후보와 입력 241개·소스/리소스 100개·검사 결과·DLL/cfg/ZIP 바이트·SHA-256이 모두 일치했다. `artifacts/releases/v1.0.7-alpha.4/release-verification.json`에 고정 재빌드 결과를 기록했다.
+
+2026-10-21 03:53:15 KST / 2026-10-20 18:53:15 UTC에 **[v1.0.7-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.4)**와 **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.4/DiceMaster-v1.0.7-alpha.4.zip)**을 게시했다. Release ID `418751083`, asset ID `660185761`, draft=false·prerelease=true·make_latest=false다. 익명 공개 API·페이지·설치 ZIP을 읽어 CRC·정확히 두 파일·내부 바이트·해시를 확인했다.
+
+기존 45개 Release·46개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 이슈 #2/#4 closed·#5/#6 open 상태를 유지한다. main과 새 태그를 atomic push했으며 후속 게시 기록은 별도 main 문서 커밋에 남긴다. 새 branch/worktree를 만들지 않고 원래 `.agents/`·`skills-lock.json`을 보존했다. 공개 검증 영수증은 같은 산출물 경로의 `anonymous-verification.json`이다.
+
 ## 설치와 실제 Windows 확인
 
 게임을 종료하고 DLL·cfg를 백업한다. 업데이트는 설치 ZIP의 `plugins/DiceMaster/DiceMaster.dll`만 교체해 기존 cfg를 보존한다. 최초 설치는 BepInEx 아래에 ZIP의 config·plugins 두 경로를 넣는다. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 진행·저장한 게임 상태를 되돌리지 않는다.

@@ -4,6 +4,8 @@
 
 ## 현재 후속 — 짧은 상점 효과·지도 비용·1회성 표시
 
+2026-10-21 03:53:15 KST에 [v1.0.7-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.4)를 게시했다. 소스·태그 `8e052e1`의 전체·고정 재빌드에서 20개 프로그램과 입력/파일 동일성, 익명 공개 ZIP을 확인했다. 기존 정식/시험판과 이슈 상태는 보존하며 실제 Windows·화면/입력/속도 확인과 #6 완료는 대기다.
+
 사용자 피드백에 따라 상점 AutoText를 조활 0.3.33 기준의 짧은 수치/성장 방향으로 바꾸고 학습 전문을 Detail에만 둔다. 지도는 Discover의 details 모드와 Runtime 문맥을 구분하여 명시적 상세에서만 전체 조건/결과를 준비하며, 자동 경로는 공통 조건 조회·정의 증명을 재사용한다. 자동 배지는 Proven만, Unknown/실패는 캐시된 상세 delegate로 게시한다. [현재 수정·검사·Windows 확인](ISSUE-6-ALPHA4-RELEASE.md)을 따른다. 아래 alpha.3과 상점의 긴 설명은 당시 기록이다.
 
 ## 지도 안내 개선 — v1.0.7-alpha.3 prerelease

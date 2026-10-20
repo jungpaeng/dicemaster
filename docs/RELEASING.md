@@ -4,9 +4,9 @@
 
 제목·본문·설치 안내·검증 상태를 쓰거나 기존 Release를 정리할 때는 [작성 가이드](RELEASE-WRITING.md)를 따른다. 아래 버전별 절은 게시 준비와 실행 당시의 기록이며, 과거의 미게시·확인 대기 문구를 현재 상태로 해석하지 않는다. 현재 정식판·시험판과 최신 사용자 확인은 [README](../README.md#다운로드와-지원-환경) 및 각 버전의 후속 기록에서 확인한다.
 
-## 현재 수정 후보 — v1.0.7-alpha.4
+## 짧은 상점 효과·가벼운 지도 안내 — v1.0.7-alpha.4 prerelease
 
-짧은 상점 효과·가벼운 지도 자동 조회·양성 1회성 배지를 main에서 구현한다. [원인·지원 경계·자동 검사·새 Windows 확인표](ISSUE-6-ALPHA4-RELEASE.md)에 새 파일의 검증을 기록한다. 기존 Release/태그/자산과 Latest v1.0.6·이슈 #6 open을 보존하며 고정 소스 재빌드·두 파일 ZIP 대조 후 별도 prerelease로 게시한다. 아래 alpha.3은 이전 공개 버전의 기록이다.
+2026-10-21 03:53:15 KST에 소스·주석 태그 `8e052e1001bcfa3187fd05880c76197b0ebef8c4`로 [v1.0.7-alpha.4](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.4)를 게시했다. Release 418751083·asset 660185761, draft=false·prerelease=true·make_latest=false다. 전체·고정 재빌드 20개 프로그램·241개 입력·DLL/cfg/ZIP 동일성과 익명 공개 설치 ZIP 대조를 확인했다. 기존 45개 Release·46개 태그·자산, Latest v1.0.6·이슈 #6 open을 보존했다. [원인·지원 경계·자동 검사·새 Windows 확인표](ISSUE-6-ALPHA4-RELEASE.md)에 새 파일의 결과를 기록한다. 아래 alpha.3은 이전 공개 버전의 기록이다.
 
 ## 지도 임무·후속 기회와 상점 직접 효과 — v1.0.7-alpha.3 prerelease
 

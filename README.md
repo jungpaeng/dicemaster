@@ -19,7 +19,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 시험판 v1.0.7-alpha.4 — 짧은 상점 효과·가벼운 지도 안내
 
-alpha.4 후보의 구현·자동 검증을 진행하고 있습니다. 직전 공개 후보는 [v1.0.7-alpha.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.3)이며 최신 정식은 v1.0.6입니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [수정 근거·새 후보 검증·Windows 확인표](docs/ISSUE-6-ALPHA4-RELEASE.md).
+**[v1.0.7-alpha.4 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.4)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.4/DiceMaster-v1.0.7-alpha.4.zip)**. 2026-10-21 03:53:15 KST에 게시했습니다. 전체·고정 커밋 재빌드의 20개 자동 검사와 공개 ZIP 바이트·해시 대조를 통과했으며 최신 정식은 v1.0.6입니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [수정 근거·검증·Windows 확인표](docs/ISSUE-6-ALPHA4-RELEASE.md).
 
 | 기능 | 게임 화면 | 로그 도구의 상세 |
 | --- | --- | --- |
@@ -138,10 +138,10 @@ alpha.4 후보의 구현·자동 검증을 진행하고 있습니다. 직전 공
 | `EnableOptionInfo` | `true` | 선택지 효과·로그·예약·팝업과 후보의 네 정보 기능 상위 옵션. 시작 시 적용 |
 | `EnableEventSelectionPopup` | `true` | 지원하는 이벤트 판정의 선택 팝업 |
 | `EnableSwitchSelectionPopup` | `false` | 지원하는 대화 중 조건 분기의 선택 팝업 |
-| `EnableMapGuide` | `true` | 선택 장소의 대기 임무·현재 단계 후보, 로그의 장소 무관·기타 연결 안내 |
-| `EnableOneShotHints` | `true` | 지도·선택지·이벤트의 안전한 1회성 정보 |
+| `EnableMapGuide` | `true` | 선택 장소와 최대 세 항목의 이름·진행 상태. 전체 목록·조건·효과는 지도 로그 |
+| `EnableOneShotHints` | `true` | 증명한 항목만 1회성 표식. 미확인·실패 사유는 상세 |
 | `EnableBranchNotices` | `true` | 실제 분기 알림과 메모리 기록 |
-| `EnableShopEffectInfo` | `true` | 상점 설명 아래 사용·학습 효과 직접 표시, OFF 때 원래 설명 복원 |
+| `EnableShopEffectInfo` | `true` | 상점의 짧은 효과 요약. 학습 조건·소모·학습점은 상세, OFF 때 원래 설명 복원 |
 | `LogMenuToggleKey` | `Tab` | 로그 열기·닫기 키 |
 | `EnableGamepadLogOpen` | `true` | L3/R3 겹침으로 로그 열기 |
 | `LogWindowX` / `LogWindowY` | `20` / `20` | 창 위치 |
