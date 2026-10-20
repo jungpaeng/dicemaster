@@ -2,7 +2,7 @@
 
 [사용자 안내](../README.md) · [개발·빌드 안내](DEVELOPMENT.md) · [Release 등록](RELEASING.md)
 
-## alpha.10 — 현재 조건에 따른 대화 안내 정리
+## [v1.0.7-alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10) — 현재 조건에 따른 대화 안내 정리
 
 조건이 꺼진 인물 대화는 지도 자동 안내에서 제외하고 로그 → 도구 → 지도 안내 상세에는 남긴다. 마우스 호버 없이 **L3/R3 겹침 → 해제·중립 → Y 도구 → 지도 안내 → B 복귀**로 조회한다. 기존 선택 화면·입력 소유권·해제/중립·설정과 키보드·마우스·터치를 유지한다. 새 DLL의 실제 Windows·물리 Xbox/XInput·프레임/가독성 확인은 [대기](ISSUE-6-ALPHA10-RELEASE.md)다.
 

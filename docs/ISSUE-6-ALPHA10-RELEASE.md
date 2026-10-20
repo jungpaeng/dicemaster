@@ -1,7 +1,7 @@
-# 현재 필수 조건의 false 보존 — v1.0.7-alpha.10 후보
+# 현재 필수 조건의 false 보존 — v1.0.7-alpha.10 prerelease
 
 <!-- alpha10-current-status -->
-main에서 구현한 새 후보다. 자동 검사·고정 재빌드·게시 결과는 확정 후 기록한다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open이다.**
+2026-10-21 07:05:30 KST에 소스·주석 태그 [`05c4880`](https://github.com/jungpaeng/dicemaster/commit/05c4880ff11e0e8a79ea545495b04c6c28772bed)의 [alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10)을 게시했다. 랜덤 AND의 확정 false와 현재 필수 선택 조건의 미충족을 보존하여 불가능한 대화의 자동 지도를 정리했다. 전체·고정 커밋 재빌드 21개 프로그램·252개 입력·103개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 51개 Release·52개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.**
 <!-- /alpha10-current-status -->
 
 [구현 계약](ISSUE-6-IMPLEMENTATION.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [이전 alpha.9](ISSUE-6-ALPHA9-RELEASE.md) · [패드](GAMEPAD.md)
@@ -26,7 +26,7 @@ main에서 구현한 새 후보다. 자동 검사·고정 재빌드·게시 결�
 
 ## 자동 검증
 
-SDK `8.0.426`, `2026-10-20T22:02:42.050376+00:00`의 전체 소스 후보에서 21개 프로그램·252개 입력·103개 소스/리소스·15개 참조·실제 DLL 연결·제공 게임 API 경계·설치 ZIP 검증을 통과했다. Python 배포 검증기 회귀 20개도 별도로 통과했다. **고정 커밋 재빌드·게시·공개 파일 대조는 대기다.**
+SDK `8.0.426`, `2026-10-20T22:02:42.050376+00:00`의 전체 소스 후보에서 21개 프로그램·252개 입력·103개 소스/리소스·15개 참조·실제 DLL 연결·제공 게임 API 경계·설치 ZIP 검증을 통과했다. Python 배포 검증기 회귀 20개도 별도로 통과했다. 소스 `05c4880ff11e0e8a79ea545495b04c6c28772bed`를 기존 관리 모드 DLL 0개인 격리 소스에서 같은 SDK·21개 프로그램·252개 입력·103개 소스/리소스·15개 참조로 재빌드해 전체 성공 기록·DLL/cfg/ZIP 바이트를 대조했다. [익명 공개 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.10/DiceMaster-v1.0.7-alpha.10.zip)도 같다. Release `418927336`·asset `660620010`, `draft=false`·`prerelease=true`·`make_latest=false`다. main·주석 태그를 atomic push했다. 게시 보충 문서는 별도 main 커밋이며 빌드 입력·태그·자산은 바꾸지 않는다.
 
 | 검사 프로그램 | 이번 실행의 성공 기록 |
 | --- | --- |
@@ -56,7 +56,7 @@ SDK `8.0.426`, `2026-10-20T22:02:42.050376+00:00`의 전체 소스 후보에서 
 | --- | ---: | --- |
 | DiceMaster.dll | 803328 | `6ab3d39f3a1730f85a86bb8de3b277487d205128dbe0571e6549249036482d12` |
 | DiceMaster.cfg | 12912 | `442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a` |
-| DiceMaster-source-candidate.zip | 340957 | `b6df91798112d5d22f01f2fadd38c6bd4f154023d485213d877be7bbe9df5bd4` |
+| DiceMaster-v1.0.7-alpha.10.zip | 340957 | `b6df91798112d5d22f01f2fadd38c6bd4f154023d485213d877be7bbe9df5bd4` |
 
 ZIP은 config·DLL 정확히 두 파일이며 CRC·내부 바이트·해시를 대조했다. 영수증은 `artifacts/issue-6/map-current-blockers-candidate/full-final/build-manifest.json`에 보존한다.
 
@@ -64,6 +64,6 @@ SHA를 확인한 실제 원문의 메뉴·후속 경로에 명시적 합성 조�
 
 ## 설치·복구와 실제 Windows 확인
 
-설치 후보의 버전·소스·해시와 공개 ZIP은 게시 후 아래에 기록한다. Windows용 BepInEx 모드 베이스가 필요하다. 게임 종료 후 DLL/cfg를 백업하고 ZIP의 `plugins/DiceMaster/DiceMaster.dll`만 교체해 기존 cfg를 보존한다. 최초 설치는 config·plugins를 BepInEx 아래에 넣는다. GitHub Source code 압축은 설치용이 아니다.
+[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.10/DiceMaster-v1.0.7-alpha.10.zip)의 소스·해시는 위 기록을 따른다. Windows용 BepInEx 모드 베이스가 필요하다. 게임 종료 후 DLL/cfg를 백업하고 ZIP의 `plugins/DiceMaster/DiceMaster.dll`만 교체해 기존 cfg를 보존한다. 최초 설치는 config·plugins를 BepInEx 아래에 넣는다. GitHub Source code 압축은 설치용이 아니다.
 
 문제가 있으면 종료 후 백업 DLL/cfg 또는 정식 v1.0.6으로 복구한다. DLL 복원은 이미 저장한 게임 진행을 되돌리지 않는다. [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)의 alpha.10 항목은 모두 미실행이다. 새 파일의 사용자 확인 전에는 전체 완료나 이슈 종료로 처리하지 않는다.

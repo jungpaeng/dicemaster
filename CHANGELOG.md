@@ -1,12 +1,14 @@
 # 변경 이력
 
-## Unreleased — v1.0.7-alpha.10 후보
+## [v1.0.7-alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10) — 2026-10-21 (prerelease)
 
 - 랜덤 조건이 포함된 AND에서도 다른 필수 조건의 확정 false를 보존합니다. OR의 확정 true와 Switch의 대안·우선순위도 무작위 추첨 없이 구분합니다.
 - 현재 꺼진 필수 선택 조건 때문에 불가능한 인물 대화를 지도 자동 안내에서 제외합니다. 첫 대화 이후 일반 대화가 실제로 남아 있으면 계속 안내합니다.
 - 현재 조건의 false만 표시 제외에 사용하며 true·Unknown으로 전체 이야기의 진행 가능을 올리지 않습니다. 기존 로그 상세·갱신·캐시·설정·입력을 유지합니다.
-- 자동 검사·고정 재빌드·게시 결과와 새 Windows 확인을 [후보 기록](docs/ISSUE-6-ALPHA10-RELEASE.md)에 구분합니다. 새 실제 Windows 확인과 #6 전체 완료는 대기입니다.
+- 자동 검사·고정 재빌드·게시 결과와 새 Windows 확인을 [게시 기록](docs/ISSUE-6-ALPHA10-RELEASE.md)에 구분합니다. 새 실제 Windows 확인과 #6 전체 완료는 대기입니다.
 
+
+2026-10-21 07:05:30 KST에 소스·주석 태그 [`05c4880`](https://github.com/jungpaeng/dicemaster/commit/05c4880ff11e0e8a79ea545495b04c6c28772bed)의 [alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10)을 게시했다. 랜덤 AND의 확정 false와 현재 필수 선택 조건의 미충족을 보존하여 불가능한 대화의 자동 지도를 정리했다. 전체·고정 커밋 재빌드 21개 프로그램·252개 입력·103개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 51개 Release·52개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.**
 
 ## [v1.0.7-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9) — 2026-10-21 (prerelease)
 
