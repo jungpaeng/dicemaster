@@ -19,7 +19,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-**[v1.0.7-alpha.6 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.6/DiceMaster-v1.0.7-alpha.6.zip)**. 2026-10-21 05:19:19 KST에 게시했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [변경·자동 검사·파일·Windows 확인표](docs/ISSUE-6-ALPHA6-RELEASE.md).
+**[v1.0.7-alpha.7 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.7/DiceMaster-v1.0.7-alpha.7.zip)**. 2026-10-21 05:27:56 KST에 게시했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [변경·자동 검사·파일·Windows 확인표](docs/ISSUE-6-ALPHA7-RELEASE.md).
+
+지도·선택 화면의 **진입 조건 충족 문구는 초록색**으로 표시합니다. 같은 패널의 이름·미충족·확인 필요·경로 후보는 중립색이며, 갱신 실패의 이전 값에는 초록 표시를 붙이지 않습니다. 초록은 현재 첫 조건의 충족이며 이후 이야기 발생 보장이 아닙니다.
 
 남제자방의 기본 휴식·독백까지 이야기로 안내하던 범위를 줄였습니다. 지도·선택 안내에는 원본에서 다른 인물의 발화가 확인되는 대화와 기존에 안전하게 증명한 1회성·임무를 남깁니다. `talk` 종류나 대사 키만으로 인물 대화·1회성을 추정하지 않습니다. 휴식 뒤의 특수 인물 대화·1회성 연결은 계속 탐색하며, 표시가 없다고 전체 기회가 없거나 반복 가능하다는 뜻은 아닙니다.
 

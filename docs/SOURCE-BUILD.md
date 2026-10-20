@@ -1,12 +1,23 @@
 # 전체 소스 빌드 — 이슈 #3
 
-2026-10-21 05:19:19 KST에 소스·태그 `08b9fb623c43cd62b42fcae8a24fb913f372027c`의 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 47개 Release·48개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [분류 기준·파일·게시·Windows 확인](ISSUE-6-ALPHA6-RELEASE.md).
+2026-10-21 05:27:56 KST에 소스·태그 `4aa5d2c524f63a21197668407f1f70c67a089ab1`의 [alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)를 게시했다. 현재 진입 조건 충족 문구를 초록색으로 표시한다. 전체·고정 커밋 재빌드 21개 프로그램·249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 48개 Release·49개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [색 표시·파일·게시·Windows 확인](ISSUE-6-ALPHA7-RELEASE.md).
 
 [개발 안내](DEVELOPMENT.md) · [Release·전환 조건](RELEASING.md) · [PRD #3](https://github.com/jungpaeng/dicemaster/issues/3)
 
 전체 소스 빌드를 기본 개발·배포 경로로 전환하고 [정식 v1.0.3](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3)을 2026-10-19 00:10:53 KST에 게시했습니다. 소스 태그 커밋은 `ced38df9f0560a212559e34fd281fddbd2581ff4`이며 이슈 #3은 같은 날 00:11:02 KST에 완료로 닫았습니다. 일반 컴파일은 기존 모드 DLL 없이 `src/DiceMaster/`의 C#·모드 리소스와 읽기 전용 외부 게임 참조를 사용합니다. 기존 패치 도구는 비교·복구용으로 보존하며 기준 DLL은 고정 Git 이력에서 해시를 검증해 재생성합니다. 후보 출력 이름 `artifacts/source-candidate/`는 기존 명령 호환성을 위해 유지합니다. 기본 정책·사용자 확인과 정식 전환 근거는 `build/release-policy.json`에 기록합니다.
 
 2026-10-19 사용자가 공개 [v1.0.3-alpha.4 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.3-alpha.4)을 직접 내려받아 Windows 검증을 완료했다고 확인했습니다. 확인 대상은 아래 alpha.4 해시이며 현재 주석 정리 DLL을 새로 실행한 결과로 간주하지 않습니다. [사용자 확인과 기본 전환](#사용자-windows-확인과-기본-전환)에 근거 범위를 구분하고 [배포 기록](ISSUE-3-RELEASE.md)에 정식 게시·공개 다운로드·이슈 완료 결과를 기록했습니다. 이슈 #1·#2의 기능이나 상태는 추가 변경하지 않습니다.
+
+## 현재 조건 색 구분 — alpha.7
+
+소스 `4aa5d2c524f63a21197668407f1f70c67a089ab1`의 전체·고정 커밋 재빌드에서 21개 프로그램·249개 입력·전체 검사 성공 기록·DLL/cfg/ZIP을 대조했다. 렌더러 회귀는 이번 실행 5,309개이며 새 값·실패 이전 값·혼합 상태·rich text/배치 캐시를 포함한다. [파일·검사·Windows 확인](ISSUE-6-ALPHA7-RELEASE.md).
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/entry-color-candidate/full-final
+python3 build/verify-preview-release.py --scope prd6 --references '<읽기 전용 참조 루트>' --source-commit 4aa5d2c524f63a21197668407f1f70c67a089ab1 --version v1.0.7-alpha.7 --expected-dll-sha256 7ec09ad68a786de23616ef5e626cecf387f33f61ab57a1a3078514be502f570d --expected-config-sha256 442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a --output-dir artifacts/releases/v1.0.7-alpha.7
+```
+
+출력 폴더는 없거나 비어 있어야 하며 재실행은 새 출력 경로를 사용한다. 선택적 corpus를 썼다면 고정 재빌드에도 같은 SHA 검증 입력을 제공한다. 실제 Windows·Unity 렌더링·물리 입력·성능 확인은 대기다. 다음 절은 이전 게시 기록이다.
 
 ## 인물 대화 분류 수정 — alpha.6
 

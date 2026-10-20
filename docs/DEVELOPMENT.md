@@ -1,8 +1,12 @@
 # 개발 안내
 
-2026-10-21 05:19:19 KST에 소스·태그 `08b9fb623c43cd62b42fcae8a24fb913f372027c`의 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램, 249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 47개 Release·48개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·FPS/할당량 확인과 #6 전체 완료는 대기다. [분류 기준·파일·게시·Windows 확인](ISSUE-6-ALPHA6-RELEASE.md).
+2026-10-21 05:27:56 KST에 소스·태그 `4aa5d2c524f63a21197668407f1f70c67a089ab1`의 [alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)를 게시했다. 현재 진입 조건 충족 문구를 초록색으로 표시한다. 전체·고정 커밋 재빌드 21개 프로그램·249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 48개 Release·49개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [색 표시·파일·게시·Windows 확인](ISSUE-6-ALPHA7-RELEASE.md).
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
+
+## alpha.7 — 진입 조건 충족 초록 표시
+
+지도 `진입 조건 충족 (현재)`와 선택 화면 `현재 이야기 진입 조건 충족`의 상태 문구만 기존 연녹색(`#BFFFCC`)으로 표시한다. 이름·미충족·불명·연결 후보는 중립색이고 실패 이전 값에는 초록을 붙이지 않는다. 첫 조건의 현재값과 이후 발생 보장은 별개다. 원문 꺾쇠를 literal 처리하고 색 문자열은 게시 내용 변경 때만 준비하며 rich text 모드를 배치 캐시 키에 포함한다. 입력·조회·Lua 해석·설정 계약은 유지한다. [파일·자동 검사·Windows 확인](ISSUE-6-ALPHA7-RELEASE.md).
 
 ## v1.0.7-alpha.6 — 인물 대화·1회성 안내
 

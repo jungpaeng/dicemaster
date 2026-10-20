@@ -1,10 +1,10 @@
 # 변경 이력
 
-## Unreleased — v1.0.7-alpha.7 예정
+## [v1.0.7-alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7) — 2026-10-21 (prerelease)
 
 - 지도·선택 안내에서 현재 진입 조건을 충족한 상태 문구만 연녹색(`#BFFFCC`)으로 표시합니다. 이름·제목·미충족·불명·경로 후보와 갱신 실패의 이전 값은 중립색으로 유지합니다. 색과 함께 기존 상태 문구도 제공합니다.
 - 초록 표시는 첫 선택 조건의 현재값이며 이후 이야기 발생이나 조건 충족을 보장하지 않습니다. 기존 인물 대화 필터·엄격 1회성·임무·설정·입력·캐시·갱신 계약을 유지합니다.
-- [후보 기록과 Windows 확인](docs/ISSUE-6-ALPHA7-RELEASE.md). 전체 소스 후보의 21개 자동 검사·실제 DLL 연결·ZIP 검증은 통과했습니다. 고정 커밋 재빌드·게시와 실제 Windows 확인은 대기입니다. 현재 공개 시험판은 alpha.6이며 #6 전체 완료로 처리하지 않습니다.
+- 2026-10-21 05:27:56 KST에 소스·태그 `4aa5d2c`로 게시했습니다. 전체·고정 소스 재빌드의 21개 자동 검사·실제 DLL 연결·249개 입력·DLL/cfg/ZIP 동일성·익명 공개 ZIP 대조를 통과했습니다. [검사·파일·Windows 확인](docs/ISSUE-6-ALPHA7-RELEASE.md). 최신 정식 v1.0.6과 기존 배포를 보존하며 새 Windows 확인·#6 전체 완료는 대기입니다.
 
 ## [v1.0.7-alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6) — 2026-10-21 (prerelease)
 

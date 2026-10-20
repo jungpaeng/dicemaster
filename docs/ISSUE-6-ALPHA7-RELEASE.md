@@ -1,6 +1,6 @@
-# 현재 진입 조건의 색 구분 — v1.0.7-alpha.7 후보
+# 현재 진입 조건의 색 구분 — v1.0.7-alpha.7 prerelease
 
-원래 작업 폴더의 `main`에서 지도·선택 안내의 현재 조건 충족 문구를 연녹색으로 구분한다. **전체 소스 후보의 21개 자동 검사·실제 DLL 연결·패키지 검증은 통과했다. 고정 커밋 재빌드·prerelease 게시·공개 파일 대조는 대기다.** 현재 공개 시험판은 [alpha.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.6), 최신 정식은 v1.0.6이다. 새 후보의 실제 Windows 확인과 PRD #6 전체 완료는 대기이며 이슈는 open으로 유지한다.
+원래 작업 폴더의 `main`에서 지도·선택 안내의 현재 조건 충족 문구를 연녹색으로 구분했다. **2026-10-21 05:27:56 KST에 [alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)을 게시하고 익명 공개 ZIP을 대조했다.** 전체·고정 소스 재빌드의 21개 검사 결과와 DLL/cfg/ZIP 바이트가 같다. 최신 정식은 v1.0.6이며 새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 PRD #6 전체 완료는 대기다.
 
 [사용자 안내](../README.md) · [기존 분류·검사 범위](ISSUE-6-ALPHA6-RELEASE.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [패드](GAMEPAD.md)
 
@@ -24,15 +24,15 @@
 | --- | ---: | --- |
 | DiceMaster.dll | 790528 | `7ec09ad68a786de23616ef5e626cecf387f33f61ab57a1a3078514be502f570d` |
 | DiceMaster.cfg | 12912 | `442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a` |
-| DiceMaster-source-candidate.zip | 336316 | `e9aa6039d47dcf93d1f4b9bd81081da46e5c5756996002ca69569c89be37e7c8` |
+| DiceMaster-v1.0.7-alpha.7.zip | 336316 | `e9aa6039d47dcf93d1f4b9bd81081da46e5c5756996002ca69569c89be37e7c8` |
 
-ZIP의 두 파일은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`이며 CRC·내부 바이트를 대조했다. 소스 커밋 고정 재빌드·태그·게시와 공개 파일 대조는 대기다.
+ZIP의 두 파일은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll`이며 CRC·내부 바이트를 대조했다. 소스·주석 태그 [`4aa5d2c`](https://github.com/jungpaeng/dicemaster/commit/4aa5d2c524f63a21197668407f1f70c67a089ab1)를 관리 모드 DLL 0개인 격리 소스에서 같은 SDK·249개 입력·103개 소스/리소스·15개 참조로 재빌드해 21개 검사 성공 기록·DLL/cfg/ZIP 바이트를 대조했다. [게시 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.7/DiceMaster-v1.0.7-alpha.7.zip)도 같다. Release `418840582`·asset `660400796`, `draft=false`·`prerelease=true`·`make_latest=false`이며 기존 48개 Release·49개 태그·자산·Latest v1.0.6·이슈 상태를 보존했다. main과 주석 태그를 atomic push했다. 게시 보충 문서는 별도 main 커밋이며 빌드 입력·태그·설치 파일은 변경하지 않는다.
 
 실제 DLL 연결·관리 대역 검사와 Windows·Unity 화면·물리 입력 확인은 별도다. 자동 배치·캐시 검사를 실제 Windows 가독성이나 FPS 측정으로 바꾸지 않는다.
 
 ## 설치와 실제 Windows 확인 — 대기
 
-설치 후보가 확정되면 게임 종료 후 DLL/cfg를 백업하고 **DLL만 교체해 기존 cfg를 보존**한다. 문제가 있으면 종료 후 백업 DLL과 필요한 cfg 또는 정식 v1.0.6으로 복구한다. DLL 복원은 이미 저장한 게임 진행을 되돌리지 않는다.
+[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.7/DiceMaster-v1.0.7-alpha.7.zip)을 사용한다. 게임 종료 후 DLL/cfg를 백업하고 **DLL만 교체해 기존 cfg를 보존**한다. 문제가 있으면 종료 후 백업 DLL과 필요한 cfg 또는 정식 v1.0.6으로 복구한다. DLL 복원은 이미 저장한 게임 진행을 되돌리지 않는다.
 
 - [ ] **미실행** — 지도·현재 선택의 정확한 양성 상태 문구만 연녹색으로 보인다. 이름·제목과 미충족·불명·경로 후보가 함께 있을 때 각 상태를 구별할 수 있다.
 - [ ] **미실행** — 현재 조건 변화·선택/장소 이동·갱신 실패·메뉴 닫기·OFF에서 이전 초록 표시가 남지 않는다. 기존 인물 대화·1회성·임무 분류도 유지된다.
