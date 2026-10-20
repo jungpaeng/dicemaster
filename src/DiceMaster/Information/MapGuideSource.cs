@@ -47,6 +47,7 @@ namespace DiceMaster.Information
         private sealed class StoryGroup
         {
             internal string Id, RawLabel, DialogueCharacter;
+            internal PreviewCondition CurrentPrerequisite;
             internal readonly List<StoryLink> Links = new List<StoryLink>();
             internal bool Omitted;
         }
@@ -475,8 +476,12 @@ namespace DiceMaster.Information
                         if (!groups.TryGetValue(id, out group))
                         {
                             if (groups.Count >= 256) break;
-                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel, DialogueCharacter = path.DialogueCharacter }); source.Stories.Add(group);
+                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel, DialogueCharacter = path.DialogueCharacter,
+                                CurrentPrerequisite = path.CurrentPrerequisite }); source.Stories.Add(group);
                         }
+                        else group.CurrentPrerequisite = MapRoutePath.CommonPrerequisite(group.CurrentPrerequisite, path.CurrentPrerequisite);
+                        // Include every observed path in the common prefix,
+                        // including paths omitted from the bounded detail list.
                         if (group.Links.Count < 32) group.Links.Add(new StoryLink { Story = story, Path = path });
                         else group.Omitted = true;
                     }
@@ -487,18 +492,44 @@ namespace DiceMaster.Information
                 StoryGroup captured = group; bool sample = detailed || budget-- > 0;
                 candidates.Add(TryCandidate(place, "story/" + group.Id, () => {
                     bool met = false, unknown = captured.Omitted || source.Routes.IsPreparing || source.Routes.HasIncompleteStoryPaths || source.Routes.HasReadFailure;
-                    if (sample) foreach (StoryLink link in captured.Links)
+                    MapChoiceStep first = captured.Links.Count == 0 || captured.Links[0].Path.Steps.Count == 0 ? null : captured.Links[0].Path.Steps[0];
+                    bool sharedFirst = sample && first != null && !captured.Omitted && !source.Routes.IsPreparing && !source.Routes.HasReadFailure;
+                    if (sharedFirst) foreach (StoryLink link in captured.Links)
                     {
-                        if (gates-- <= 0) { unknown = true; break; }
+                        if (link.Path.Steps.Count == 0 || !ReferenceEquals(first, link.Path.Steps[0])) { sharedFirst = false; break; }
+                    }
+                    // This complete root-menu prerequisite is a negative-only
+                    // current snapshot, never a shortcut to positive eligibility.
+                    bool currentBlocked = false;
+                    if (sharedFirst && gates > 0)
+                    { gates--; currentBlocked = first.ReadCurrentBlocker(read); }
+                    if (sample && !currentBlocked && first != null && !source.Routes.IsPreparing && !source.Routes.HasReadFailure &&
+                        captured.CurrentPrerequisite != null && !ReferenceEquals(captured.CurrentPrerequisite, PreviewConditions.Unknown) && gates > 0)
+                    {
+                        gates--;
+                        if (read.Current(captured.CurrentPrerequisite) == PreviewConditionState.NotMet)
+                            currentBlocked = source.Routes.CurrentOmissionsBlocked(first, read, ref gates);
+                    }
+                    bool allPathsBlocked = captured.Links.Count > 0 && !captured.Omitted && !source.Routes.IsPreparing && !source.Routes.HasReadFailure;
+                    if (sample && !currentBlocked) foreach (StoryLink link in captured.Links)
+                    {
+                        if (gates-- <= 0) { unknown = true; allPathsBlocked = false; break; }
+                        // Each admitted path has at most two bounded projections
+                        // sharing the scheduled read's memoized checkpoint data.
                         MapRouteState state = link.Path.ReadStoryConditions(read);
                         met |= state == MapRouteState.Met; unknown |= state == MapRouteState.Unknown;
                         if (met) break;
+                        if (allPathsBlocked && !link.Path.ReadCurrentBlocker(read)) allPathsBlocked = false;
                     }
-                    int rank = !sample ? 2 : met ? 0 : unknown ? 2 : 1;
+                    if (sample && !currentBlocked && !met && unknown && allPathsBlocked && first != null)
+                        currentBlocked = source.Routes.CurrentOmissionsBlocked(first, read, ref gates);
+                    int rank = !sample ? 2 : currentBlocked ? 1 : met ? 0 : unknown ? 2 : 1;
                     var result = new Candidate { Id = "story/" + captured.Id, Name = ChoiceStoryLabels.DialogueName(captured.RawLabel, captured.DialogueCharacter),
                         Kind = "인물 대화", ChoiceStory = true, Rank = rank,
                         Status = StoryStatus(rank),
                         Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백만 있는 경로는 안내 대상에서 제외합니다. 1회성을 뜻하지 않습니다.\n첫 선택뿐 아니라 해당 대화에 이르는 내부 분기 조건을 현재 값으로 읽습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락이 있으면 진행 가능성 있음으로 표시합니다. 이는 확률이나 이야기 발생 보증이 아닙니다." };
+                    if (currentBlocked)
+                        result.Detail += "\n현재 필수 진입 조건이 미충족하여 자동 안내에서 제외합니다. 현재 값 기준의 표시 판정이며 진입 뒤 상태 변경이나 미래 실행 불가를 증명하지 않습니다.";
                     if (detailed)
                     {
                         var lines = new List<string>();

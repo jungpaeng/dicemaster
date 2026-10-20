@@ -182,6 +182,16 @@ namespace DiceMaster.LiveLog
             public int GetHashCode(object value) { return RuntimeHelpers.GetHashCode(value); }
         }
 
+        // Read-only alternatives, not a sampled switch result. Earlier unknown
+        // items may win; an earlier known-true item excludes all later indices.
+        private sealed class SwitchChoices
+        {
+            internal readonly HashSet<int> Values;
+            internal readonly int Minimum, Maximum;
+            internal SwitchChoices(List<int> values)
+            { Values = new HashSet<int>(values); Minimum = values[0]; Maximum = values[values.Count - 1]; }
+        }
+
         private sealed class Snapshot
         {
             // Known truth does not imply a known operand value: Lua's and/or
@@ -218,7 +228,7 @@ namespace DiceMaster.LiveLog
                     {
                         var previous = maskedFlags; maskedFlags = effects.Flags;
                         try { result = ReadCheckpoint(node.Left.Operation, node.Left.Key); }
-                        catch (AffectedInput) { result = null; }
+                        catch (Exception) { result = null; }
                         finally { maskedFlags = previous; }
                     }
                     captured.Add(node, result); return result;
@@ -228,7 +238,11 @@ namespace DiceMaster.LiveLog
                     string key = node.Operation + ":" + node.Key;
                     object result;
                     if (!checkpoints.TryGetValue(key, out result))
-                    { result = ReadCheckpoint(node.Operation, node.Key); checkpoints.Add(key, result); }
+                    {
+                        try { result = ReadCheckpoint(node.Operation, node.Key); }
+                        catch (Exception) { result = null; }
+                        checkpoints.Add(key, result);
+                    }
                     return result;
                 }
                 object left = Value(node.Left, depth + 1);
@@ -241,6 +255,7 @@ namespace DiceMaster.LiveLog
                 if (node.Operation == "or") return leftTruth == false ? right : rightTruth == true ? truthy : null;
                 if (left == null || right == null || ReferenceEquals(left, truthy) || ReferenceEquals(left, falsey) ||
                     ReferenceEquals(right, truthy) || ReferenceEquals(right, falsey)) return null;
+                if (left is SwitchChoices || right is SwitchChoices) return CompareChoices(node.Operation, left, right);
                 if (node.Operation == "==") return left.GetType() == right.GetType() && left.Equals(right);
                 if (node.Operation == "~=") return left.GetType() != right.GetType() || !left.Equals(right);
                 if (!(left is int) || !(right is int)) return null;
@@ -250,6 +265,36 @@ namespace DiceMaster.LiveLog
                     case "<=": return (int)left <= (int)right;
                     case ">": return (int)left > (int)right;
                     case ">=": return (int)left >= (int)right;
+                    default: return null;
+                }
+            }
+            private object CompareChoices(string operation, object left, object right)
+            {
+                var a = left as SwitchChoices; var b = right as SwitchChoices;
+                if (a == null && !(left is int) || b == null && !(right is int))
+                    return operation == "==" ? (object)false : operation == "~=" ? true : (object)null;
+                int minA = a == null ? (int)left : a.Minimum, maxA = a == null ? (int)left : a.Maximum;
+                int minB = b == null ? (int)right : b.Minimum, maxB = b == null ? (int)right : b.Maximum;
+                if (operation == "==" || operation == "~=")
+                {
+                    bool? equal;
+                    if (minA == maxA && minB == maxB) equal = minA == minB;
+                    else
+                    {
+                        bool overlap = false;
+                        if (a == null) overlap = b.Values.Contains((int)left);
+                        else if (b == null) overlap = a.Values.Contains((int)right);
+                        else foreach (int value in a.Values) { Step(); if (b.Values.Contains(value)) { overlap = true; break; } }
+                        equal = overlap ? (bool?)null : false;
+                    }
+                    return !equal.HasValue ? null : (object)(operation == "==" ? equal.Value : !equal.Value);
+                }
+                switch (operation)
+                {
+                    case "<": return maxA < minB ? (object)true : minA >= maxB ? false : (object)null;
+                    case "<=": return maxA <= minB ? (object)true : minA > maxB ? false : (object)null;
+                    case ">": return minA > maxB ? (object)true : maxA <= minB ? false : (object)null;
+                    case ">=": return minA >= maxB ? (object)true : maxA < minB ? false : (object)null;
                     default: return null;
                 }
             }
@@ -321,8 +366,7 @@ namespace DiceMaster.LiveLog
                 {
                     object condition = Find(Field(manager, "_condition"), "Mortal.Story.ConditionResultConfig", "Mortal.Core.ConditionResultData", key);
                     if (condition == null) return null;
-                    ValidateConditionData(condition, 0);
-                    return SafeDisplayEvaluation.CheckConditionData(condition);
+                    return ReadConditionData(condition, 0);
                 }
                 Array configs = Field(manager, "_switchList") as Array;
                 if (configs == null || configs.Rank != 1 || configs.Length > 256) return null;
@@ -333,14 +377,68 @@ namespace DiceMaster.LiveLog
                     if (data == null) continue;
                     if (!(Field(data, "_useCount") is bool) || (bool)Field(data, "_useCount")) return null;
                     IList items = List(data, "_items", 256);
-                    // Validate every alternative first. A random comparison in
-                    // any alternative keeps the whole branch group unknown.
-                    foreach (object item in items) ValidateCondition(item, 0);
+                    var possible = new List<int>(); bool stopped = false;
                     for (int i = 0; i < items.Count; i++)
-                        if (SafeDisplayEvaluation.CheckCondition(items[i])) return i + 1;
-                    return items.Count + 1;
+                    {
+                        bool? value = ReadCondition(items[i], 0);
+                        if (value != false) possible.Add(i + 1);
+                        if (value == true) { stopped = true; break; }
+                    }
+                    if (!stopped) possible.Add(items.Count + 1);
+                    return possible.Count == 1 ? (object)possible[0] : new SwitchChoices(possible);
                 }
                 return null;
+            }
+            private bool? ReadConditionData(object value, int depth)
+            {
+                Enter(value, depth);
+                try
+                {
+                    Exact(value, "Mortal.Core.ConditionResultData"); bool unknown = false;
+                    foreach (object item in List(value, "_items", 256))
+                    {
+                        bool? state = ReadCondition(item, depth + 1);
+                        if (state == true) return true;
+                        unknown |= !state.HasValue;
+                    }
+                    return unknown ? (bool?)null : false;
+                }
+                finally { active.Remove(value); }
+            }
+            private bool? ReadCondition(object value, int depth)
+            {
+                bool entered = false;
+                try
+                {
+                    Enter(value, depth); entered = true; Exact(value, "Mortal.Core.ConditionResultItem");
+                    int logic = Convert.ToInt32(Field(value, "_logicOp"));
+                    if (logic != 0 && logic != 1) return null;
+                    IList items = List(value, "_items", 256);
+                    if (items.Count == 0) return false;
+                    bool unknown = false;
+                    foreach (object item in items)
+                    {
+                        bool? state = ReadComparison(item, depth + 1);
+                        if (logic == 0 && state == false || logic == 1 && state == true) return logic == 1;
+                        unknown |= !state.HasValue;
+                    }
+                    return unknown ? (bool?)null : logic == 0;
+                }
+                catch (Exception) { return null; }
+                finally { if (entered) active.Remove(value); }
+            }
+            private bool? ReadComparison(object value, int depth)
+            {
+                try
+                {
+                    Step(); if (depth > 32) return null; Exact(value, "Mortal.Core.StatCompareItem");
+                    ValidateGroup(Field(value, "_value1"), depth + 1);
+                    ValidateGroup(Field(value, "_value2"), depth + 1);
+                    return SafeDisplayEvaluation.CheckComparison(value);
+                }
+                // A random, affected or malformed comparison is one unknown
+                // operand. It must not hide a separate false AND / true OR.
+                catch (Exception) { return null; }
             }
             private void Enter(object value, int depth)
             {

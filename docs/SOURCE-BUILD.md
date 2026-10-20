@@ -1,5 +1,14 @@
 # 전체 소스 빌드 — 이슈 #3
 
+<!-- alpha10-current-status -->
+alpha.10 후보는 랜덤이 포함된 AND의 확정 false를 보존하고, 현재 필수 선택 조건이 꺼진 인물 대화를 자동 지도 안내에서 제외한다. 남아 있는 일반 대화와 불확실한 대안은 유지한다. 새 파일의 실제 Windows·물리 입력·성능 확인과 #6 전체 완료는 대기다. [수정·검사·파일·확인표](ISSUE-6-ALPHA10-RELEASE.md).
+<!-- /alpha10-current-status -->
+
+## alpha.10 — 현재 필수 조건의 false 보존
+
+이번 수정의 실제 Lua 원문은 SHA를 확인한 `room_001`, `talk_brother4`, `girlroom_001`, `center_001`, `center_girl_03_01`을 사용한다. 조건 설정과 현재 flag는 명시적 관리 코드 fixture다. 게임 조건 실행·RNG는 호출하지 않는다. 전체 후보와 고정 소스 재빌드에서 동일한 SDK·입력·참조·성공 기록·DLL/cfg/ZIP 바이트를 대조하고 공개 다운로드도 별도로 검사한다. 영수증은 `artifacts/issue-6/map-current-blockers-candidate/full-final/` 및 `artifacts/releases/v1.0.7-alpha.10/`에 남긴다.
+
+
 2026-10-21 06:25:46 KST에 소스·태그 `1a782f206f1aa7ab9f9e490125fbe916aabbad66`의 [alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9)를 게시했다. 지도 오버레이에서 진행 불가 항목을 제외하고 로그 상세의 조건·사유는 보존한다. 전체·고정 커밋 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 50개 Release·51개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [필터·파일·게시·Windows 확인](ISSUE-6-ALPHA9-RELEASE.md).
 
 [개발 안내](DEVELOPMENT.md) · [Release·전환 조건](RELEASING.md) · [PRD #3](https://github.com/jungpaeng/dicemaster/issues/3)

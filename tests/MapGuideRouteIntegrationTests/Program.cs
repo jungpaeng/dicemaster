@@ -1,5 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 using DiceMaster;
 using DiceMaster.Information;
 using DiceMaster.EventSelection;
@@ -104,6 +109,9 @@ internal static class Program
         ChoiceStoryMap();
         MeaningfulDialogueMap();
         FullStoryGateMap();
+        CurrentRequiredGuardMap();
+        string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
+        if (!string.IsNullOrEmpty(corpus)) NativeCurrentGuardMap(corpus);
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
     }
     private static void ChoiceStoryMap()
@@ -234,6 +242,103 @@ internal static class Program
         Check(!value.Summary.AutoText.Contains("수련", StringComparison.Ordinal) && Find(value, "수련").Detail.Contains("선택 경로", StringComparison.Ordinal),
             "A proven false dialogue is filtered from automatic notices without losing the real route detail");
         Check(Counters.GameCalls == 0 && gate.State == 1, "Integrated full-story classification never executes native judgments, writes, RNG or item operations");
+    }
+    private static void CurrentRequiredGuardMap()
+    {
+        MapGuideSource.Clear(); MapGuideSource.Enabled = () => true;
+        var manager = CheckPointManager.Instance = new CheckPointManager();
+        var completed = new FlagData { name = "completed-dialogue", State = 0 };
+        var active = new FlagData { name = "active-dialogue", State = 0 };
+        manager._condition._list.Add(new ConditionResultData { name = "completed_dialogue", _items = new List<ConditionResultItem> { IsZero(completed) } });
+        manager._condition._list.Add(new ConditionResultData { name = "active_dialogue", _items = new List<ConditionResultItem> { IsZero(active) } });
+        DataHelper.Scripts["current_required_root"] = "runwait(flowcharts.LoadView('room'));getvar(flowcharts.view,'ViewName').value='room';runblock(flowcharts.view,'view');mainui.DisplayTitle('P_Room_01');setmenudialog(menudialogs.Room);local a={};a[1]=checkpointmanager.Condition('completed_dialogue') and '완료 대화' or '~x';a[2]=checkpointmanager.Condition('active_dialogue') and '활성 대화' or '~x';a[3]=checkpointmanager.Condition('unknown_dialogue') and '불명 대화' or '~x';local r=choose(a);if r==1 or r==2 or r==3 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_current_dialogue')) end";
+        var controller = new PositionController { _positionData = new FreePositionData { name = "Hall", _defaultScript = "current_required_root" } };
+        MapGuideSource.Select(controller); MapGuideSnapshot value = null;
+        for (int at = 0; at < 24; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        Check(Find(value, "완료 대화").Status == "진행 가능성 있음" && !Find(value, "완료 대화").Available,
+            "A true first-option guard does not upgrade an opaque complete-story path into a current positive");
+        string identity = Find(value, "완료 대화").Id; int resources = DataHelper.Reads;
+        completed.State = 1; value = Read(true);
+        Check(Find(value, "완료 대화").Id == identity && Find(value, "완료 대화").Status == "지금 진행 불가" && Find(value, "완료 대화").Detail.Contains("미충족", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("완료 대화", StringComparison.Ordinal),
+            "A freshly false current required option gate hides a completed conversation despite opaque/global partial state, while detail explains the current negative");
+        Check(value.Summary.AutoText.Contains("활성 대화", StringComparison.Ordinal) && value.Summary.AutoText.Contains("불명 대화", StringComparison.Ordinal) && Find(value, "불명 대화").Status == "진행 가능성 있음",
+            "The negative-only filter preserves another currently active conversation and an unsupported/unknown alternative");
+        for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        Check(DataHelper.Reads == resources && !value.Summary.AutoText.Contains("완료 대화", StringComparison.Ordinal) && completed.State == 1 && active.State == 0 && Counters.GameCalls == 0,
+            "Current required-gate refresh reuses the static definition cache without stale reappearance, flag effects, RNG or native judgment calls");
+
+        var beforeWrite = new FlagData { name = "guard-before-write", State = 1 };
+        manager._condition._list.Add(new ConditionResultData { name = "guard_before_write", _items = new List<ConditionResultItem> { IsZero(beforeWrite) } });
+        DataHelper.Scripts["saved_guard_before_write"] = "local allowed=checkpointmanager.Condition('guard_before_write');statmodifymanager.SetFlag('guard-before-write',1);local a={};a[1]=allowed and '쓰기 전 활성 조건' or '~x';local r=choose(a);if r==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_saved_guard')) end";
+        controller._positionData._defaultScript = "saved_guard_before_write";
+        for (int at = 0; at < 20; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        Check(Find(value, "쓰기 전 활성 조건").Status == "지금 진행 불가" && !value.Summary.AutoText.Contains("쓰기 전 활성 조건", StringComparison.Ordinal),
+            "The map previews a fresh script entry, so a currently false guard read before a later write remains a negative fresh-entry path rather than an already displayed menu's historical value");
+    }
+    private static void NativeCurrentGuardMap(string indexPath)
+    {
+        var paths = new Dictionary<string, (string Path, string Sha)>(StringComparer.OrdinalIgnoreCase);
+        using (JsonDocument document = JsonDocument.Parse(File.ReadAllText(indexPath)))
+            foreach (JsonElement item in document.RootElement.EnumerateArray()) paths[item.GetProperty("name").GetString()] = (item.GetProperty("path").GetString(), item.GetProperty("sha256").GetString());
+        var failures = new List<string>();
+        foreach (var sample in new[] {
+            (Script: "girlroom_001", Raw: "talk+talk+sister1", Guard: "Talk_Sister1_00", Center: false),
+            (Script: "room_001", Raw: "talk+talk+brother4", Guard: "Talk_Brother4", Center: false),
+            (Script: "center_001", Raw: "practice+free+practice", Guard: "Center_001_001", Center: true)
+        })
+        {
+            MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true;
+            var manager = CheckPointManager.Instance = new CheckPointManager();
+            var flag = new FlagData { name = "synthetic-" + sample.Guard, State = 0 };
+            var condition = IsZero(flag);
+            condition._items.Insert(0, new StatCompareItem { _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 7 } } }, _value2 = Constant(1) });
+            if (sample.Center)
+            {
+                var time = new GameTimeData { GameTime = new GameTime { Year = 1, Month = 4, Stage = 1, _roundsPerMonth = 3 } };
+                condition._items.Add(new StatCompareItem { _compareOp = 5, _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 9, _gameTime = time } } }, _value2 = Constant(10) });
+                manager._switchList = new object[] { new SwitchResultConfig { _list = new List<SwitchResultData> {
+                    new SwitchResultData { name = sample.Guard, _items = new List<ConditionResultItem> { condition } }
+                } } };
+                ChoiceStoryLabels.DialogueNameReader = (raw, character) => "연무장 " + character;
+            }
+            else manager._condition._list.Add(new ConditionResultData { name = sample.Guard, _items = new List<ConditionResultItem> { condition } });
+            // The Lua bytes are original; this flag/RNG condition and empty
+            // native pools are explicit test data, not the user's game config.
+            var cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            ScriptReadResult Exact(string key)
+            {
+                if (cache.TryGetValue(key, out string body)) return new ScriptReadResult { State = ScriptReadState.Success, Text = body };
+                if (!paths.TryGetValue(key, out var record)) return new ScriptReadResult { State = ScriptReadState.Missing };
+                byte[] bytes = File.ReadAllBytes(record.Path);
+                if (!Convert.ToHexString(SHA256.HashData(bytes)).Equals(record.Sha, StringComparison.OrdinalIgnoreCase))
+                { failures.Add(key); return new ScriptReadResult { State = ScriptReadState.Failed }; }
+                cache[key] = body = new UTF8Encoding(false, true).GetString(bytes);
+                foreach (Match match in Regex.Matches(body, "checkpointmanager\\.Position\\(\"([^\"]+)\"\\)"))
+                {
+                    string pool = match.Groups[1].Value;
+                    if (!manager._position._list.Exists(item => item.name == pool)) manager._position._list.Add(new PositionResultData { name = pool });
+                }
+                return new ScriptReadResult { State = ScriptReadState.Success, Text = body };
+            }
+            Check(Exact(sample.Script).State == ScriptReadState.Success, "Current required-gate map test uses SHA-pinned original " + sample.Script + " bytes");
+            DataHelper.ExternalReader = Exact;
+            var controller = new PositionController { _positionData = new FreePositionData { name = "NativeRoom", _defaultScript = sample.Script } };
+            controller._gameStatManager._gameTimeData.GameTime.Month = 4; controller._gameStatManager._gameTimeData.GameTime.Stage = 1;
+            MapGuideSource.Select(controller); MapGuideSnapshot value = null;
+            for (int at = 0; at < 180; at++) { Time.unscaledTime += .25f; value = Read(false); }
+            string title = sample.Center ? "연무장 girl5" : sample.Raw;
+            var before = Find(value, title);
+            Check(before != null && before.Status == "진행 가능성 있음" && value.Summary.AutoText.Contains(title, StringComparison.Ordinal), "The actual " + sample.Script + " NPC route remains possible with a true synthetic flag and an unknown random operand");
+            int resources = DataHelper.Reads, parses = LuaParser.Parses; flag.State = 1;
+            value = Read(true); var after = Find(value, title);
+            Check(after != null && after.Id == before.Id && after.Status == "지금 진행 불가" && after.Detail.Contains("미충족", StringComparison.Ordinal) && !value.Summary.AutoText.Contains(title, StringComparison.Ordinal),
+                "A false current required guard removes the original " + sample.Script + " NPC conversation from the map while preserving its current-negative detail; actual=" + (after == null ? "missing" : after.Status));
+            for (int at = 0; at < 40; at++)
+            { Time.unscaledTime += .25f; value = Read(false); Check(!value.Summary.AutoText.Contains(title, StringComparison.Ordinal), "The consumed actual NPC entry stays absent across cached scheduled map refreshes"); }
+            Check(DataHelper.Reads == resources && LuaParser.Parses == parses && flag.State == 1 && Counters.GameCalls == 0, "The SHA-original map transition performs no definition reload, full analyzer work, game condition/RNG calls or flag execution");
+            DataHelper.ExternalReader = null; ChoiceStoryLabels.DialogueNameReader = null;
+        }
+        Check(failures.Count == 0, "All root and followup scripts used for original NPC map transitions match their pinned SHA-256");
     }
     private static void Limits()
     {

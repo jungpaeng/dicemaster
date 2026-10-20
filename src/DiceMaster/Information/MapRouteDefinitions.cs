@@ -13,13 +13,14 @@ namespace DiceMaster.Information
         private sealed class Value
         {
             internal string Script, Pool, Literal;
-            internal PreviewCondition Condition, StoryCondition;
+            internal PreviewCondition Condition, StoryCondition, SnapshotCondition;
             internal Dictionary<string, string> Table;
             internal Dictionary<string, PreviewCondition> TableGates;
-            internal Dictionary<string, PreviewCondition> TableStoryGates;
-            internal Value Copy() { return new Value { Script = Script, Pool = Pool, Literal = Literal, Condition = Condition, StoryCondition = StoryCondition,
+            internal Dictionary<string, PreviewCondition> TableStoryGates, TableSnapshotGates;
+            internal Value Copy() { return new Value { Script = Script, Pool = Pool, Literal = Literal, Condition = Condition, StoryCondition = StoryCondition, SnapshotCondition = SnapshotCondition,
                 Table = Table == null ? null : new Dictionary<string, string>(Table, StringComparer.Ordinal),
                 TableGates = TableGates == null ? null : new Dictionary<string, PreviewCondition>(TableGates, StringComparer.Ordinal),
+                TableSnapshotGates = TableSnapshotGates == null ? null : new Dictionary<string, PreviewCondition>(TableSnapshotGates, StringComparer.Ordinal),
                 TableStoryGates = TableStoryGates == null ? null : new Dictionary<string, PreviewCondition>(TableStoryGates, StringComparer.Ordinal) }; }
         }
         private sealed class Plan
@@ -32,10 +33,14 @@ namespace DiceMaster.Information
         private sealed class Job
         {
             internal string Script, Pool, Identity = "", Path = "", DialogueCharacter;
-            internal int Depth, At, End, PoolCursor;
-            internal bool Started, Uncertain, HasChoice, StoryChoice, EntryUncertain, OpaqueEffects;
+            internal int Depth, At, End, PoolCursor, PendingEnd = -1;
+            internal bool Started, Uncertain, HasChoice, StoryChoice, EntryUncertain, SnapshotOpaque, CutRecorded, RootEntry = true;
+            private bool opaqueEffects;
+            internal bool OpaqueEffects { get { return opaqueEffects; } set { opaqueEffects = value; if (value) { SnapshotOpaque = true; RootEntry = false; } } }
+            internal string SnapshotDialog;
             internal PreviewCondition Gate = PreviewConditions.Constant(true);
             internal PreviewCondition StoryGate = PreviewConditions.Constant(true);
+            internal PreviewCondition SnapshotGate = PreviewConditions.Constant(true);
             internal PreviewCondition EntryGate;
             internal List<MapChoiceStep> Steps = new List<MapChoiceStep>();
             internal Value Pending;
@@ -47,8 +52,9 @@ namespace DiceMaster.Information
             internal IList<MapRouteEvent> PoolItems;
             internal Job Copy()
             {
-                var n = new Job { Script = Script, Pool = Pool, Identity = Identity, Path = Path, Depth = Depth, At = At, End = End,
+                var n = new Job { Script = Script, Pool = Pool, Identity = Identity, Path = Path, Depth = Depth, At = At, End = End, PendingEnd = PendingEnd,
                     Started = Started, Uncertain = Uncertain, HasChoice = HasChoice, StoryChoice = StoryChoice, Gate = Gate, StoryGate = StoryGate, Pending = Pending, DialogueCharacter = DialogueCharacter, OpaqueEffects = OpaqueEffects,
+                    SnapshotGate = SnapshotGate, SnapshotOpaque = SnapshotOpaque, CutRecorded = CutRecorded, RootEntry = RootEntry, SnapshotDialog = SnapshotDialog,
                     EntryGate = EntryGate, EntryUncertain = EntryUncertain, Steps = new List<MapChoiceStep>(Steps),
                     InvalidManagers = new HashSet<string>(InvalidManagers, StringComparer.Ordinal),
                     FlagWrites = new HashSet<string>(FlagWrites, StringComparer.Ordinal),
@@ -74,6 +80,32 @@ namespace DiceMaster.Information
         private readonly Dictionary<string, MapStoryEntry> storyIndex = new Dictionary<string, MapStoryEntry>(StringComparer.Ordinal);
         private readonly List<MapChoiceStep> choiceSteps = new List<MapChoiceStep>();
         private readonly List<string> reasons = new List<string>();
+        private sealed class SnapshotCut
+        { internal MapChoiceStep First; internal PreviewCondition Gate; }
+        private readonly List<SnapshotCut> snapshotCuts = new List<SnapshotCut>();
+        private bool snapshotCoverageLost;
+        // Structural omissions retain only a bounded necessary prefix. A
+        // false prefix excludes that omitted alternative; true never proves it.
+        private void RecordCut(Job job)
+        {
+            var first = job.Steps.Count == 0 ? null : job.Steps[0];
+            foreach (var cut in snapshotCuts) if (ReferenceEquals(cut.First, first) && ReferenceEquals(cut.Gate, job.SnapshotGate)) return;
+            if (snapshotCuts.Count >= 32) { snapshotCoverageLost = true; return; }
+            snapshotCuts.Add(new SnapshotCut { First = first, Gate = job.SnapshotGate });
+        }
+        public bool CurrentOmissionsBlocked(MapChoiceStep first, MapRouteRead read, ref int budget)
+        {
+            if (read == null) throw new ArgumentNullException("read");
+            if (IsPreparing || HasReadFailure || snapshotCoverageLost) return false;
+            foreach (var cut in snapshotCuts)
+            {
+                if (cut.First != null && !SameChoice(cut.First, first)) continue;
+                if (budget-- <= 0 || read.Current(cut.Gate) != PreviewConditionState.NotMet) return false;
+            }
+            return true;
+        }
+        private static bool SameChoice(MapChoiceStep a, MapChoiceStep b)
+        { return a != null && b != null && a.Script == b.Script && a.SourceOffset == b.SourceOffset && a.Index == b.Index && a.RawLabel == b.RawLabel; }
         private int admitted, choices, characters, tokens;
         private int resourceBudget, poolBudget;
         private bool limited, cleared, incompleteStoryPaths;
@@ -141,7 +173,7 @@ namespace DiceMaster.Information
             else if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가");
         }
         public void Clear()
-        { cleared = true; jobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); }
+        { cleared = true; jobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); }
         private void Reason(string value, bool incompleteStory = true)
         { incompleteStoryPaths |= incompleteStory; if (reasons.Count < 8 && !reasons.Contains(value)) reasons.Add(value); }
         private static bool ValidScript(string value)
@@ -153,7 +185,7 @@ namespace DiceMaster.Information
         private void Admit(Job job)
         {
             if (admitted >= limits.MaxContexts || job.Depth > limits.MaxDepth)
-            { limited = true; Reason("경로 깊이/대기열 상한 · 일부 연결 확인 불가"); return; }
+            { RecordCut(job); limited = true; Reason("경로 깊이/대기열 상한 · 일부 연결 확인 불가"); return; }
             admitted++; jobs.Enqueue(job);
         }
         public void Advance(float now, int maxWork = 8192)
@@ -172,7 +204,7 @@ namespace DiceMaster.Information
                 if (used == 0) { if (++blocked >= jobs.Count) break; } else blocked = 0;
             }
             if (WorkCount >= limits.MaxWork && jobs.Count > 0)
-            { limited = true; jobs.Clear(); Reason("경로 누적 작업 상한 · 일부 연결 확인 불가"); }
+            { foreach (var pending in jobs) RecordCut(pending); limited = true; jobs.Clear(); Reason("경로 누적 작업 상한 · 일부 연결 확인 불가"); }
         }
         private Plan GetPlan(string script, float now, out bool blocked)
         {
@@ -200,9 +232,10 @@ namespace DiceMaster.Information
         private bool Process(Job job, float now, int budget, out int used)
         {
             used = 0;
-            if (!job.Started && job.Ancestors.Contains(job.Script)) { Reason("경로 순환 · 이후 연결 확인 불가"); used = 1; return true; }
+            if (job.SnapshotOpaque && !job.CutRecorded) { RecordCut(job); job.CutRecorded = true; }
+            if (!job.Started && job.Ancestors.Contains(job.Script)) { RecordCut(job); Reason("경로 순환 · 이후 연결 확인 불가"); used = 1; return true; }
             bool blocked; Plan plan = GetPlan(job.Script, now, out blocked);
-            if (plan == null) { used = 1; return true; }
+            if (plan == null) { RecordCut(job); used = 1; return true; }
             if (blocked) return false;
             var syntax = plan.Syntax;
             if (!syntax.Ready)
@@ -215,8 +248,8 @@ namespace DiceMaster.Information
             }
             used = 1;
             if (EnvironmentCells(job) < 0)
-            { Reason("경로 환경/복사 상한 · 해당 경로 확인 불가"); return true; }
-            if (syntax.Limited || syntax.Malformed) { job.Uncertain = true; }
+            { RecordCut(job); Reason("경로 환경/복사 상한 · 해당 경로 확인 불가"); return true; }
+            if (syntax.Limited || syntax.Malformed) { RecordCut(job); job.RootEntry = false; job.SnapshotOpaque = true; job.Uncertain = true; }
             if (!job.Started) { job.Started = true; job.End = syntax.Tokens.Count; job.Ancestors.Add(job.Script); }
             if (job.At >= job.End)
             {
@@ -229,6 +262,20 @@ namespace DiceMaster.Information
                 Finish(job); return true;
             }
             var t = syntax.Tokens; int at = job.At; string text = t[at].Text;
+            if (at == 0 && job.Depth == 0 && job.Steps.Count == 0 &&
+                TrySnapshotPrelude(syntax, out int preludeEnd, out string dialog))
+            {
+                // This is a projection of CURRENT prerequisite values for
+                // omission only. A Fungus view block is not declared pure and
+                // cannot strengthen the full-story/future execution verdict.
+                job.OpaqueEffects = true; job.SnapshotOpaque = false; job.RootEntry = true;
+                job.SnapshotDialog = dialog; job.Uncertain = true;
+                Reason("화면 준비 뒤 경로 · 현재 조건으로 표시 제외만 확인");
+                job.At = preludeEnd; return false;
+            }
+            if (job.SnapshotDialog != null && job.Depth == 0 && job.Steps.Count == 1 &&
+                TryDialogClose(syntax, at, job.SnapshotDialog, out int dialogEnd))
+            { job.SnapshotDialog = null; job.At = dialogEnd; return false; }
             if (t[at].IsString) { job.At++; return false; }
             MapRouteSyntax.Control control;
             if (syntax.Controls.TryGetValue(at, out control))
@@ -246,11 +293,11 @@ namespace DiceMaster.Information
                 job.At = Math.Min(control.End + 1, job.End); return false;
             }
             if (text == "goto" || text == "break" || text == "continue" || text == ":" && at + 1 < job.End && t[at + 1].Text == ":")
-            { Reason("미지원 이동 제어 · 해당 경로 확인 불가"); return true; }
+            { RecordCut(job); Reason("미지원 이동 제어 · 해당 경로 확인 불가"); return true; }
             if (text == "return")
             {
                 if (at + 1 < job.End && t[at + 1].Text != ";")
-                { Reason("반환식 실행 확인 불가 · 해당 경로 중단"); return true; }
+                { RecordCut(job); Reason("반환식 실행 확인 불가 · 해당 경로 중단"); return true; }
                 Finish(job); return true;
             }
             if (text == "and" || text == "or" || text == "..") { job.OpaqueEffects = true; job.Uncertain = true; Reason("미지원 값/표현식 · 현재 경로 확인 필요"); }
@@ -261,7 +308,7 @@ namespace DiceMaster.Information
             {
                 string name = t[variable].Text;
                 if (MultipleAssignment(syntax, variable, job.End))
-                { Reason("다중 대입 미지원 · 해당 경로 확인 불가"); return true; }
+                { RecordCut(job); Reason("다중 대입 미지원 · 해당 경로 확인 불가"); return true; }
                 if (local && variable + 1 < job.End && t[variable + 1].Text == "function") { job.At++; return false; }
                 if (variable + 1 < job.End && t[variable + 1].Text == "=")
                 {
@@ -273,7 +320,7 @@ namespace DiceMaster.Information
                     { job.Bindings[name] = new Value(); job.At = function.End + 1; return false; }
                     if (rhs < job.End && t[rhs].Text == "choose" && TryCall(syntax, rhs, out string co, out string cn, out int op, out int cl))
                     {
-                        if (job.Bindings.ContainsKey("choose")) { Reason("재정의된 choose · 선택 경로 확인 불가"); return true; }
+                        if (job.Bindings.ContainsKey("choose")) { RecordCut(job); Reason("재정의된 choose · 선택 경로 확인 불가"); return true; }
                         Choose(job, syntax, name, op, cl); return true;
                     }
                     int end; Value value = ReadValue(job, syntax, rhs, out end);
@@ -290,9 +337,9 @@ namespace DiceMaster.Information
                         string rawKey = t[variable + 2].Text; Value keyValue;
                         if (!t[variable + 2].IsString && job.Bindings.TryGetValue(rawKey, out keyValue)) rawKey = keyValue.Literal;
                         string key = CanonicalLiteral(rawKey);
-                        if (key == null) { Reason("동적 선택지 인덱스 · 해당 경로 확인 불가"); return true; }
+                        if (key == null) { RecordCut(job); Reason("동적 선택지 인덱스 · 해당 경로 확인 불가"); return true; }
                         if (t[close + 2].IsString && PreviewSyntax.TryString(t[close + 2].Text, out string label))
-                        { table.Table[key] = label; if (table.TableGates != null) table.TableGates.Remove(key); if (table.TableStoryGates != null) table.TableStoryGates.Remove(key); }
+                        { table.Table[key] = label; if (table.TableGates != null) table.TableGates.Remove(key); if (table.TableStoryGates != null) table.TableStoryGates.Remove(key); if (table.TableSnapshotGates != null) table.TableSnapshotGates.Remove(key); }
                         else
                         {
                             // The game's enabled option form is predicate and
@@ -313,6 +360,8 @@ namespace DiceMaster.Information
                                 table.TableGates[key] = PreviewConditions.ParseTokens(t, first, and, bindings);
                                 if (table.TableStoryGates == null) table.TableStoryGates = new Dictionary<string, PreviewCondition>(StringComparer.Ordinal);
                                 table.TableStoryGates[key] = StoryCondition(job, PreviewConditions.ParseTokens(t, first, and, Conditions(job, true)));
+                                if (table.TableSnapshotGates == null) table.TableSnapshotGates = new Dictionary<string, PreviewCondition>(StringComparer.Ordinal);
+                                table.TableSnapshotGates[key] = SnapshotCondition(job, PreviewConditions.ParseTokens(t, first, and, Conditions(job, false, true)));
                                 if (!table.TableStoryGates[key].IsKnownSyntax) { incompleteStoryPaths = true; job.OpaqueEffects = true; }
                                 end = and + 4;
                             }
@@ -345,7 +394,7 @@ namespace DiceMaster.Information
                     // Speaker evidence is definition metadata, not permission
                     // to execute this UI call or strengthen a route verdict.
                     bool displayOnly = DisplayCharacterSetter(job, syntax, open, closing);
-                    job.OpaqueEffects |= !displayOnly; job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요", !displayOnly);
+                    if (!displayOnly) job.OpaqueEffects = true; job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요", !displayOnly);
                     job.At = closing + 1; return false;
                 }
                 if (owner == "characters" && method == "Focus" && !job.InvalidManagers.Contains(owner) &&
@@ -377,11 +426,25 @@ namespace DiceMaster.Information
                     // the definition itself unsupported or incomplete.
                     job.Uncertain = true; job.At = closing + 1; return false;
                 }
+                if (owner == "luamanager" && method == "Init" && !job.InvalidManagers.Contains(owner) &&
+                    closing == open + 1 && job.Pending != null &&
+                    (!string.IsNullOrEmpty(job.Pending.Script) || job.Pending.Pool != null) &&
+                    (job.PendingEnd == at || job.PendingEnd + 1 == at && t[job.PendingEnd].Text == ";") && TerminalTail(job, syntax, closing + 1))
+                {
+                    // The fresh terminal registration's target is followed by
+                    // Finish/ProcessPool. Do not invent a second missing target
+                    // for this call. Init remains a state-changing boundary;
+                    // child scripts/pools retain opaque inputs and their own cuts.
+                    job.OpaqueEffects = true; job.Uncertain = true;
+                    Reason("등록한 후속 실행 · 현재 조건 이후 상태 확인 필요");
+                    Finish(job); return true;
+                }
                 if (owner == "luamanager" && (method == "SetNextScript" || method == "SetCurrentStoryScript") && !job.InvalidManagers.Contains(owner))
                 {
                     int end; job.Pending = ReadValue(job, syntax, open + 1, out end);
                     if (end != closing) job.Pending = new Value();
-                    if (job.Pending.Script == null && job.Pending.Pool == null) Reason("동적/미지원 후속 대상 · 연결 확인 불가");
+                    job.PendingEnd = closing + 1;
+                    if (job.Pending.Script == null && job.Pending.Pool == null) { RecordCut(job); Reason("동적/미지원 후속 대상 · 연결 확인 불가"); }
                 }
                 else if (owner == "checkpointmanager" && method == "Position" && !job.InvalidManagers.Contains(owner))
                 { job.OpaqueEffects = true; job.Uncertain = true; Reason("등록에 사용되지 않은 Position 반환값"); }
@@ -442,7 +505,7 @@ namespace DiceMaster.Information
                     if (name == "Switch" || name == "Condition")
                     {
                         PreviewCondition condition = PreviewConditions.ParseTokens(t, at, close + 1);
-                        return new Value { Condition = condition, StoryCondition = StoryCondition(job, condition) };
+                        return new Value { Condition = condition, StoryCondition = StoryCondition(job, condition), SnapshotCondition = SnapshotCondition(job, condition) };
                     }
                 }
                 job.DialogueCharacter = null; job.OpaqueEffects = true; job.Uncertain = true; Reason("미지원 실행 호출 · 현재 경로 확인 필요"); return new Value();
@@ -460,6 +523,62 @@ namespace DiceMaster.Information
                 return new Value { Literal = t[at].Text, Condition = PreviewConditions.ParseTokens(t, at, at + 1) };
             job.OpaqueEffects = true; job.Uncertain = true; Reason("미지원 값/표현식 · 현재 경로 확인 필요"); return new Value();
         }
+        private static bool TerminalTail(Job job, MapRouteSyntax syntax, int at)
+        {
+            int budget = MapRouteLimits.MaxHeaderTokens;
+            if (!EmptyTail(syntax, at, job.End, ref budget)) return false;
+            foreach (var frame in job.Frames)
+                if (!EmptyTail(syntax, frame.At, frame.End, ref budget)) return false;
+            return true;
+        }
+        private static bool EmptyTail(MapRouteSyntax syntax, int at, int end, ref int budget)
+        {
+            for (; at < end; at++) if (budget-- <= 0 || syntax.Tokens[at].Text != ";") return false;
+            return true;
+        }
+        // Closed, bounded root menu preparation profile. This does not run
+        // calls or certify the view block's purity. Only a current false guard
+        // may suppress an automatic suggestion; full-story proof is unchanged.
+        private static bool TrySnapshotPrelude(MapRouteSyntax syntax, out int end, out string dialog)
+        {
+            end = 0; dialog = null; int at = 0;
+            if (syntax.Malformed || syntax.Limited || !Take(syntax, ref at, "runwait", "(", "flowcharts", ".", "LoadView", "(")) return false;
+            if (!TakeString(syntax, ref at, out string view) || !Take(syntax, ref at, ")", ")")) return false;
+            Separator(syntax, ref at);
+            if (!Take(syntax, ref at, "getvar", "(", "flowcharts", ".", "view", ",") ||
+                !TakeString(syntax, ref at, out string variable) || variable != "ViewName" || !Take(syntax, ref at, ")", ".", "value", "=") ||
+                !TakeString(syntax, ref at, out string sameView) || sameView != view) return false;
+            Separator(syntax, ref at);
+            if (!Take(syntax, ref at, "runblock", "(", "flowcharts", ".", "view", ",") ||
+                !TakeString(syntax, ref at, out string block) || block != "view" || !Take(syntax, ref at, ")")) return false;
+            Separator(syntax, ref at);
+            if (!Take(syntax, ref at, "mainui", ".", "DisplayTitle", "(") ||
+                !TakeString(syntax, ref at, out string title) || !Take(syntax, ref at, ")")) return false;
+            Separator(syntax, ref at);
+            if (!Take(syntax, ref at, "setmenudialog", "(", "menudialogs", ".") || at >= syntax.Tokens.Count || !syntax.Tokens[at].IsIdentifier) return false;
+            dialog = syntax.Tokens[at++].Text;
+            if (!Take(syntax, ref at, ")")) return false;
+            Separator(syntax, ref at); end = at; return at <= 64;
+        }
+        private static bool TryDialogClose(MapRouteSyntax syntax, int start, string dialog, out int end)
+        {
+            end = start; int at = start;
+            if (!Take(syntax, ref at, "menudialogs", ".", dialog, ".", "SetActive", "(", "false", ")")) return false;
+            end = at; return true;
+        }
+        private static bool Take(MapRouteSyntax syntax, ref int at, params string[] values)
+        {
+            if (at + values.Length > syntax.Tokens.Count) return false;
+            foreach (string value in values) if (syntax.Tokens[at++].Text != value) return false;
+            return true;
+        }
+        private static bool TakeString(MapRouteSyntax syntax, ref int at, out string value)
+        {
+            value = null;
+            return at < syntax.Tokens.Count && syntax.Tokens[at].IsString && PreviewSyntax.TryString(syntax.Tokens[at++].Text, out value);
+        }
+        private static void Separator(MapRouteSyntax syntax, ref int at)
+        { if (at < syntax.Tokens.Count && syntax.Tokens[at].Text == ";") at++; }
         private static bool TryCall(MapRouteSyntax syntax, int at, out string owner, out string name, out int open, out int close)
         {
             owner = name = ""; open = close = -1; var t = syntax.Tokens;
@@ -532,9 +651,11 @@ namespace DiceMaster.Information
         }
         private static PreviewCondition StoryCondition(Job job, PreviewCondition condition)
         { return PreviewConditions.CaptureCurrent(condition, job.FlagWrites, job.OpaqueEffects); }
+        private static PreviewCondition SnapshotCondition(Job job, PreviewCondition condition)
+        { return PreviewConditions.CaptureCurrent(condition, job.FlagWrites, job.SnapshotOpaque); }
         private MapRoutePath Path(Job job, string dialogueCharacter = null)
         { return new MapRoutePath(job.Identity, job.Path, job.HasChoice, job.Uncertain, job.Gate, job.Steps, job.EntryGate, job.EntryUncertain,
-            dialogueCharacter, () => IsPreparing || HasIncompleteStoryPaths, job.StoryGate, job.OpaqueEffects || job.FlagWrites.Count > 0, job.OpaqueEffects); }
+            dialogueCharacter, () => IsPreparing || HasIncompleteStoryPaths, job.StoryGate, job.OpaqueEffects || job.FlagWrites.Count > 0, job.OpaqueEffects, job.SnapshotGate); }
         private void AddStory(Job job, int offset, string key)
         {
             if (!job.StoryChoice || job.Steps.Count == 0 || string.IsNullOrEmpty(job.DialogueCharacter)) return;
@@ -543,21 +664,21 @@ namespace DiceMaster.Information
             MapStoryEntry entry;
             if (!storyIndex.TryGetValue(identity, out entry))
             {
-                if (storyEntries.Count >= limits.MaxEntries) { limited = true; Reason("선택 이야기 항목 상한 · 일부 연결 확인 불가"); return; }
+                if (storyEntries.Count >= limits.MaxEntries) { limited = true; RecordCut(job); Reason("선택 이야기 항목 상한 · 일부 연결 확인 불가"); return; }
                 storyEntries.Add(entry = new MapStoryEntry(identity, job.Script, offset, key, last.RawLabel, () => IsPreparing || IsPartial));
                 storyIndex.Add(identity, entry);
             }
             // All lines in the same selected dialogue segment share a path.
             // Keep its first qualifying NPC witness, not a complete list of
             // conversation participants or another array for every paragraph.
-            if (!entry.HasPath(job.Identity) && !entry.Add(Path(job, job.DialogueCharacter))) { limited = true; Reason("이야기 경로 수 상한 · 생략된 경로 확인 불가"); }
+            if (!entry.HasPath(job.Identity) && !entry.Add(Path(job, job.DialogueCharacter))) { limited = true; RecordCut(job); Reason("이야기 경로 수 상한 · 생략된 경로 확인 불가"); }
         }
         private void Choose(Job job, MapRouteSyntax syntax, string variable, int open, int close)
         {
             var t = syntax.Tokens; Value table;
             if (open + 1 >= close || !job.Bindings.TryGetValue(t[open + 1].Text, out table) || table.Table == null)
             {
-                job.Bindings[variable] = new Value(); job.Uncertain = true; job.At = close + 1; Admit(job); Reason("선택지 테이블 확인 불가"); return;
+                RecordCut(job); job.RootEntry = false; job.SnapshotOpaque = true; job.Bindings[variable] = new Value(); job.Uncertain = true; job.At = close + 1; Admit(job); Reason("선택지 테이블 확인 불가"); return;
             }
             if (!table.Table.ContainsKey("1"))
             {
@@ -567,23 +688,23 @@ namespace DiceMaster.Information
                 bool sparse = false;
                 foreach (string key in table.Table.Keys)
                     if (decimal.TryParse(key, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal n) && n >= 2 && n == decimal.Truncate(n)) sparse = true;
-                job.At = close + 1;
+                job.RootEntry = false; job.At = close + 1;
                 job.Bindings[variable] = new Value { Literal = "0", Condition = PreviewConditions.Parse("0") };
                 if (sparse) { job.OpaqueEffects = true; job.Uncertain = true; Reason("희소 선택지 배열 길이 미확정 · 반환 0 후 경로 가능"); }
                 Admit(job); return;
             }
             int cells = EnvironmentCells(job);
             if (job.Steps.Count >= MapRouteLimits.MaxChoiceSteps || table.Table.Count > MapRouteLimits.MaxChoiceArms || cells < 0 || (long)cells * table.Table.Count > MapRouteLimits.MaxForkCells)
-            { Reason("선택 분기/복사 상한 · 해당 경로 확인 불가"); return; }
+            { RecordCut(job); Reason("선택 분기/복사 상한 · 해당 경로 확인 불가"); return; }
             // The supplied lua/fungus choose uses ipairs: numeric contiguous
             // keys starting at one only. Any '~' prefix disables that option.
             for (int index = 1; index <= MapRouteLimits.MaxChoiceArms; index++)
             {
                 string label, key = index.ToString(CultureInfo.InvariantCulture);
                 if (!table.Table.TryGetValue(key, out label)) break;
-                if (admitted >= limits.MaxContexts) { limited = true; Reason("경로 대기열 상한"); break; }
+                if (admitted >= limits.MaxContexts) { limited = true; RecordCut(job); Reason("경로 대기열 상한"); break; }
                 if (label.StartsWith("~", StringComparison.Ordinal)) continue;
-                if (++choices > limits.MaxChoices) { limited = true; Reason("선택 노드 상한"); break; }
+                if (++choices > limits.MaxChoices) { limited = true; RecordCut(job); Reason("선택 노드 상한"); break; }
                 Job arm = job.Copy(); arm.At = close + 1; arm.HasChoice = arm.StoryChoice = true;
                 arm.Identity += "/" + job.Script + ":choose:" + t[open].Start + ":" + key;
                 arm.Path += " → " + label;
@@ -594,7 +715,11 @@ namespace DiceMaster.Information
                 PreviewCondition storyGate = PreviewConditions.Constant(true);
                 if (table.TableStoryGates != null && table.TableStoryGates.TryGetValue(key, out PreviewCondition currentOptionGate)) storyGate = currentOptionGate;
                 arm.StoryGate = PreviewConditions.All(arm.StoryGate, storyGate);
-                var step = new MapChoiceStep(job.Script, t[open].Start, index, label, arm.Gate, gate, job.Uncertain);
+                PreviewCondition snapshotGate = PreviewConditions.Constant(true);
+                if (table.TableSnapshotGates != null && table.TableSnapshotGates.TryGetValue(key, out PreviewCondition snapshotOptionGate)) snapshotGate = snapshotOptionGate;
+                arm.SnapshotGate = PreviewConditions.All(arm.SnapshotGate, snapshotGate);
+                var step = new MapChoiceStep(job.Script, t[open].Start, index, label, arm.Gate, gate, job.Uncertain,
+                    arm.SnapshotGate, job.RootEntry && job.FlagWrites.Count == 0 && job.Depth == 0 && job.Steps.Count == 0 && !syntax.Limited && !syntax.Malformed);
                 arm.Steps.Add(step); choiceSteps.Add(step);
                 if (arm.EntryGate == null) { arm.EntryGate = arm.Gate; arm.EntryUncertain = job.Uncertain; }
                 arm.Bindings[variable] = new Value { Literal = key, Condition = PreviewConditions.Parse(key) };
@@ -638,22 +763,23 @@ namespace DiceMaster.Information
         private void Fork(Job job, MapRouteSyntax syntax, MapRouteSyntax.Control control)
         {
             if (control.Branches.Count > MapRouteLimits.MaxBranchArms)
-            { Reason("분기 수 상한 · 해당 경로 확인 불가"); return; }
+            { RecordCut(job); Reason("분기 수 상한 · 해당 경로 확인 불가"); return; }
             int cells = EnvironmentCells(job), headers = 0;
             foreach (var b in control.Branches)
             {
                 int count = b.HeaderEnd - b.Header;
-                if (count > MapRouteLimits.MaxHeaderTokens) { Reason("분기 조건 길이 상한 · 해당 경로 확인 불가"); return; }
+                if (count > MapRouteLimits.MaxHeaderTokens) { RecordCut(job); Reason("분기 조건 길이 상한 · 해당 경로 확인 불가"); return; }
                 headers += Math.Max(0, count);
             }
             if (control.Branches.Count > MapRouteLimits.MaxBranchArms || cells < 0 || (long)cells * control.Branches.Count + headers > MapRouteLimits.MaxForkCells)
-            { Reason("분기/복사 상한 · 해당 경로 확인 불가"); return; }
-            PreviewCondition remaining = PreviewConditions.Constant(true), remainingStory = PreviewConditions.Constant(true);
+            { RecordCut(job); Reason("분기/복사 상한 · 해당 경로 확인 불가"); return; }
+            if (job.Steps.Count == 0) job.RootEntry = false;
+            PreviewCondition remaining = PreviewConditions.Constant(true), remainingStory = PreviewConditions.Constant(true), remainingSnapshot = PreviewConditions.Constant(true);
             bool hasElse = false, provenTaken = false, speakerUnknown = false;
             foreach (var branch in control.Branches)
             {
-                if (admitted >= limits.MaxContexts) { limited = true; Reason("경로 대기열 상한"); return; }
-                if (branch.HeaderEnd < 0 || branch.End < branch.Start) { Reason("미완결 분기"); return; }
+                if (admitted >= limits.MaxContexts) { limited = true; RecordCut(job); Reason("경로 대기열 상한"); return; }
+                if (branch.HeaderEnd < 0 || branch.End < branch.Start) { RecordCut(job); Reason("미완결 분기"); return; }
                 bool? known = branch.Else ? (bool?)true : LiteralBranch(job, syntax.Tokens, branch.Header, branch.HeaderEnd);
                 if (known == false) continue;
                 Job arm = job.Copy(); arm.At = branch.Start; arm.End = branch.End;
@@ -665,23 +791,27 @@ namespace DiceMaster.Information
                     var bindings = Conditions(job);
                     var predicate = PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, bindings);
                     var storyPredicate = StoryCondition(job, PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, Conditions(job, true)));
+                    var snapshotPredicate = SnapshotCondition(job, PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, Conditions(job, false, true)));
                     if (!predicate.IsKnownSyntax) { arm.Uncertain = true; arm.OpaqueEffects = true; arm.DialogueCharacter = null; speakerUnknown = true; incompleteStoryPaths = true; }
                     arm.Gate = PreviewConditions.All(job.Gate, PreviewConditions.All(remaining, predicate));
                     arm.StoryGate = PreviewConditions.All(job.StoryGate, PreviewConditions.All(remainingStory, storyPredicate));
+                    arm.SnapshotGate = PreviewConditions.All(job.SnapshotGate, PreviewConditions.All(remainingSnapshot, snapshotPredicate));
+                    remainingSnapshot = PreviewConditions.All(remainingSnapshot, PreviewConditions.Not(snapshotPredicate));
                     remaining = PreviewConditions.All(remaining, PreviewConditions.Not(predicate));
                     remainingStory = PreviewConditions.All(remainingStory, PreviewConditions.Not(storyPredicate));
                 }
-                else { arm.Gate = PreviewConditions.All(job.Gate, remaining); arm.StoryGate = PreviewConditions.All(job.StoryGate, remainingStory); }
+                else { arm.Gate = PreviewConditions.All(job.Gate, remaining); arm.StoryGate = PreviewConditions.All(job.StoryGate, remainingStory); arm.SnapshotGate = PreviewConditions.All(job.SnapshotGate, remainingSnapshot); }
                 Admit(arm); hasElse |= branch.Else;
                 if (known == true) { provenTaken = true; break; }
             }
             if (!hasElse && !provenTaken)
-            { var tail = job.Copy(); if (speakerUnknown) { tail.DialogueCharacter = null; tail.OpaqueEffects = true; } tail.At = control.End + 1; tail.Gate = PreviewConditions.All(job.Gate, remaining); tail.StoryGate = PreviewConditions.All(job.StoryGate, remainingStory); Admit(tail); }
+            { var tail = job.Copy(); if (speakerUnknown) { tail.DialogueCharacter = null; tail.OpaqueEffects = true; } tail.At = control.End + 1; tail.Gate = PreviewConditions.All(job.Gate, remaining); tail.StoryGate = PreviewConditions.All(job.StoryGate, remainingStory); tail.SnapshotGate = PreviewConditions.All(job.SnapshotGate, remainingSnapshot); Admit(tail); }
         }
         private static int EnvironmentCells(Job job)
         {
             if (job.Bindings.Count > MapRouteLimits.MaxBindings || job.Frames.Count > MapRouteLimits.MaxFrames || job.Steps.Count > MapRouteLimits.MaxChoiceSteps) return -1;
-            // Story gates pair with the same already bounded option cells.
+            // Full-story and negative-only gates pair with the same bounded
+            // logical option cells (at most three AST references per cell).
             // The separate effect-key set has its own fixed 32-key cap.
             int cells = job.Bindings.Count + job.Steps.Count; var seen = new HashSet<Value>();
             foreach (var value in job.Bindings.Values)
@@ -705,10 +835,10 @@ namespace DiceMaster.Information
             }
             return cells;
         }
-        private static Dictionary<string, PreviewCondition> Conditions(Job job, bool story = false)
+        private static Dictionary<string, PreviewCondition> Conditions(Job job, bool story = false, bool snapshot = false)
         {
             var result = new Dictionary<string, PreviewCondition>(StringComparer.Ordinal);
-            foreach (var p in job.Bindings) if (p.Value.Condition != null) result[p.Key] = story ? p.Value.StoryCondition ?? p.Value.Condition : p.Value.Condition;
+            foreach (var p in job.Bindings) if (p.Value.Condition != null) result[p.Key] = snapshot ? p.Value.SnapshotCondition ?? p.Value.Condition : story ? p.Value.StoryCondition ?? p.Value.Condition : p.Value.Condition;
             return result;
         }
         private void Finish(Job job)
@@ -722,6 +852,7 @@ namespace DiceMaster.Information
             }
             else if (!string.IsNullOrEmpty(job.Pending.Script))
                 Admit(new Job { Script = job.Pending.Script, Depth = job.Depth + 1, Gate = job.Gate, StoryGate = job.StoryGate, Uncertain = job.Uncertain, OpaqueEffects = job.OpaqueEffects,
+                    SnapshotGate = job.SnapshotGate, SnapshotOpaque = job.SnapshotOpaque, CutRecorded = job.CutRecorded, RootEntry = false, SnapshotDialog = job.SnapshotDialog,
                     HasChoice = job.HasChoice, StoryChoice = job.StoryChoice, Steps = new List<MapChoiceStep>(job.Steps),
                     EntryGate = job.EntryGate, EntryUncertain = job.EntryUncertain,
                     InvalidManagers = new HashSet<string>(job.InvalidManagers, StringComparer.Ordinal),
@@ -751,23 +882,24 @@ namespace DiceMaster.Information
             }
             used = 1;
             if (job.PoolCursor >= job.PoolItems.Count) return true;
-            if (job.PoolCursor >= limits.MaxEntries) { limited = true; Reason("풀 항목 상한 · 일부 연결 확인 불가"); return true; }
+            if (job.PoolCursor >= limits.MaxEntries) { limited = true; RecordCut(job); Reason("풀 항목 상한 · 일부 연결 확인 불가"); return true; }
             MapRouteEvent item = job.PoolItems[job.PoolCursor++];
             if (item == null || item.Target == null || !ValidScript(item.ResultScript))
-            { Reason("이벤트 결과 연결 확인 불가"); return false; }
+            { RecordCut(job); Reason("이벤트 결과 연결 확인 불가"); return false; }
             MapRouteEntry entry = null;
             foreach (var candidate in entries) if (ReferenceEquals(candidate.Event, item.Target) && candidate.ResultScript == item.ResultScript) { entry = candidate; break; }
             if (entry == null)
             {
-                if (entries.Count >= limits.MaxEntries) { limited = true; Reason("종단 항목 상한 · 일부 연결 확인 불가"); return true; }
+                if (entries.Count >= limits.MaxEntries) { limited = true; RecordCut(job); Reason("종단 항목 상한 · 일부 연결 확인 불가"); return true; }
                 entries.Add(entry = new MapRouteEntry(item, job.Pool, () => IsPreparing || IsPartial));
             }
             if (!entry.Add(Path(job)))
-            { limited = true; Reason("항목 경로 수 상한 · 생략된 경로 확인 불가"); }
+            { limited = true; RecordCut(job); Reason("항목 경로 수 상한 · 생략된 경로 확인 불가"); }
             // Keep the terminal itself, then look for later menu/Position
             // routes. The intervening event may mutate any current-state
             // input, so descendants can never inherit current certainty.
             Admit(new Job { Script = item.ResultScript, Depth = job.Depth + 1, Gate = job.Gate, StoryGate = job.StoryGate, Uncertain = true, OpaqueEffects = true,
+                SnapshotGate = job.SnapshotGate, SnapshotOpaque = true, RootEntry = false,
                 HasChoice = job.HasChoice, Steps = new List<MapChoiceStep>(job.Steps), EntryGate = job.EntryGate, EntryUncertain = job.EntryUncertain,
                 InvalidManagers = new HashSet<string>(job.InvalidManagers, StringComparer.Ordinal),
                 FlagWrites = new HashSet<string>(job.FlagWrites, StringComparer.Ordinal),

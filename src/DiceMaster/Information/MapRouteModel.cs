@@ -46,9 +46,14 @@ namespace DiceMaster.Information
         public readonly int SourceOffset, Index;
         public readonly bool Uncertain;
         public readonly PreviewCondition Gate, OptionGate;
+        private readonly PreviewCondition snapshotGate;
+        private readonly bool rootEntry;
         internal MapChoiceStep(string script, int offset, int index, string label,
-            PreviewCondition gate, PreviewCondition optionGate, bool uncertain)
-        { Script = script; SourceOffset = offset; Index = index; RawLabel = label; Gate = gate; OptionGate = optionGate; Uncertain = uncertain; }
+            PreviewCondition gate, PreviewCondition optionGate, bool uncertain, PreviewCondition currentSnapshotGate = null, bool completeRootEntry = false)
+        { Script = script; SourceOffset = offset; Index = index; RawLabel = label; Gate = gate; OptionGate = optionGate; Uncertain = uncertain; snapshotGate = currentSnapshotGate; rootEntry = completeRootEntry; }
+        // Negative-only current prerequisite projection. Never grants Met.
+        public bool ReadCurrentBlocker(MapRouteRead read)
+        { if (read == null) throw new ArgumentNullException("read"); return rootEntry && snapshotGate != null && read.Current(snapshotGate) == PreviewConditionState.NotMet; }
         public MapRouteState Current { get { return ReadCurrent(new MapRouteRead()); } }
         public MapRouteState ReadCurrent(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return Uncertain ? MapRouteState.Unknown : MapRoutePath.State(read.Current(Gate)); }
@@ -68,12 +73,12 @@ namespace DiceMaster.Information
         public readonly bool EntryUncertain;
         public readonly IList<MapChoiceStep> Steps;
         private readonly Func<bool> storyIncomplete;
-        private readonly PreviewCondition storyGate;
+        private readonly PreviewCondition storyGate, snapshotGate;
         private readonly bool opaqueStoryEffects;
         internal MapRoutePath(string identity, string description, bool choice, bool uncertain, PreviewCondition gate,
             IList<MapChoiceStep> steps = null, PreviewCondition entryGate = null, bool entryUncertain = false, string dialogueCharacter = null,
             Func<bool> incompleteStoryPaths = null, PreviewCondition fullStoryGate = null, bool storyConditionsMayHaveChanged = false,
-            bool hasOpaqueStoryEffects = false)
+            bool hasOpaqueStoryEffects = false, PreviewCondition currentSnapshotGate = null)
         {
             Identity = identity; Description = description; HasChoice = choice; Uncertain = uncertain; Gate = gate;
             Steps = new List<MapChoiceStep>(steps ?? new MapChoiceStep[0]).AsReadOnly();
@@ -82,8 +87,24 @@ namespace DiceMaster.Information
             storyIncomplete = incompleteStoryPaths;
             storyGate = fullStoryGate ?? gate;
             StoryConditionsMayHaveChanged = storyConditionsMayHaveChanged;
-            opaqueStoryEffects = hasOpaqueStoryEffects;
+            opaqueStoryEffects = hasOpaqueStoryEffects; snapshotGate = currentSnapshotGate;
         }
+        // Intersection of necessary AND-prefixes, computed only while building
+        // the bounded definition index. It compresses many known alternatives
+        // without discarding an observed bypass; no sampled values are cached.
+        public PreviewCondition CurrentPrerequisite { get { return snapshotGate; } }
+        public static PreviewCondition CommonPrerequisite(PreviewCondition left, PreviewCondition right)
+        {
+            if (left == null || right == null) return PreviewConditions.Unknown;
+            var ancestors = new HashSet<PreviewCondition>();
+            for (int i = 0; right != null && i < 65; i++)
+            { ancestors.Add(right); right = right.Operation == "and" ? right.Left : null; }
+            for (int i = 0; left != null && i < 65; i++)
+            { if (ancestors.Contains(left)) return left; left = left.Operation == "and" ? left.Left : null; }
+            return PreviewConditions.Unknown;
+        }
+        public bool ReadCurrentBlocker(MapRouteRead read)
+        { if (read == null) throw new ArgumentNullException("read"); return snapshotGate != null && read.Current(snapshotGate) == PreviewConditionState.NotMet; }
         internal static MapRouteState State(PreviewConditionState value)
         { return value == PreviewConditionState.Met ? MapRouteState.Met : value == PreviewConditionState.NotMet ? MapRouteState.NotMet : MapRouteState.Unknown; }
         public MapRouteState ReadEntry(MapRouteRead read)

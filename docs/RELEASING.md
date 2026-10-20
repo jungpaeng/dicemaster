@@ -1,5 +1,14 @@
 # 소스 기반 Release와 게시 이력
 
+<!-- alpha10-current-status -->
+alpha.10 후보는 랜덤이 포함된 AND의 확정 false를 보존하고, 현재 필수 선택 조건이 꺼진 인물 대화를 자동 지도 안내에서 제외한다. 남아 있는 일반 대화와 불확실한 대안은 유지한다. 새 파일의 실제 Windows·물리 입력·성능 확인과 #6 전체 완료는 대기다. [수정·검사·파일·확인표](ISSUE-6-ALPHA10-RELEASE.md).
+<!-- /alpha10-current-status -->
+
+## alpha.10 — 현재 필수 조건의 false 보존
+
+main에서 구현하고 기존 Release·태그·자산·Latest v1.0.6과 #6 open을 보존한다. 후보 빌드 검증 후 소스 커밋을 고정해 깨끗한 격리 재빌드를 수행한다. main과 주석 태그를 atomic push하고 새 prerelease만 게시한다. 게시 결과 문서 커밋은 빌드 입력과 자산을 바꾸지 않는다.
+
+
 2026-10-21 06:25:46 KST에 소스·태그 `1a782f206f1aa7ab9f9e490125fbe916aabbad66`의 [alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9)를 게시했다. 지도 오버레이에서 진행 불가 항목을 제외하고 로그 상세의 조건·사유는 보존한다. 전체·고정 커밋 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 50개 Release·51개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [필터·파일·게시·Windows 확인](ISSUE-6-ALPHA9-RELEASE.md).
 
 [Release 작성 가이드](RELEASE-WRITING.md) · [사용자 안내](../README.md) · [소스 빌드·검증](SOURCE-BUILD.md)

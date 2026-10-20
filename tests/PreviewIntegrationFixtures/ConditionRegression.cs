@@ -128,9 +128,9 @@ namespace DiceMaster
                 var random = ConstantCondition(1, 1);
                 random._items[0]._value1._value[0]._checkType = 7;
                 data._items.Add(ConstantCondition(1, 1)); data._items.Add(random);
-                State("Unknown", first, "A random later switch alternative keeps the entire group neutral");
+                State("Met", first, "A known-true first switch item excludes a later random alternative");
                 condition._items.Add(ConstantCondition(1, 1)); condition._items.Add(random);
-                State("Unknown", Parse("required", bindings), "Random condition alternatives must not be sampled");
+                State("Met", Parse("required", bindings), "A known-true condition alternative dominates an unknown random alternative without sampling it");
                 data._items.Clear();
                 var recursive = ConstantCondition(1, 1);
                 var group = recursive._items[0]._value1;
@@ -249,10 +249,66 @@ namespace DiceMaster
             finally { CheckPointManager.Instance = previous; }
         }
 
+        static void PartialLogic()
+        {
+            CheckPointManager previous = CheckPointManager.Instance;
+            int switches = SwitchResultData.Executions, conditions = ConditionResultData.Executions;
+            int groups = StatGroupVariable.OriginalReads, comparisons = StatCompareItem.OriginalReads, rng = UnityEngine.Random.Calls;
+            try
+            {
+                StatCompareItem RandomCompare()
+                {
+                    var item = ConstantCondition(1, 1)._items[0];
+                    item._value1._value[0]._checkType = 7; return item;
+                }
+                var no = ConstantCondition(0, 1)._items[0]; var yes = ConstantCondition(1, 1)._items[0];
+                var data = new ConditionResultData { name = "partial_fixture", _count = 31 };
+                var sw = new SwitchResultData { name = "partial_switch", _count = 43 };
+                CheckPointManager.Instance = new CheckPointManager {
+                    _condition = new ConditionResultConfig { _list = new List<ConditionResultData> { data } },
+                    _switchList = new[] { new SwitchResultConfig { _list = new List<SwitchResultData> { sw } } }
+                };
+                const string condition = "checkpointmanager.Condition('partial_fixture')";
+                const string branch = "checkpointmanager.Switch('partial_switch')";
+                foreach (bool randomFirst in new[] { true, false })
+                {
+                    var random = RandomCompare();
+                    data._items = new List<ConditionResultItem> { new ConditionResultItem {
+                        _items = randomFirst ? new List<StatCompareItem> { random, no, yes } : new List<StatCompareItem> { no, yes, random } } };
+                    State("NotMet", Parse(condition), "actual DLL random AND false comparison is false in either source order");
+                    data._items[0]._logicOp = LogicOperatorType.Or;
+                    State("Met", Parse(condition), "actual DLL random OR true comparison is true in either source order");
+                }
+                data._items = new List<ConditionResultItem> { new ConditionResultItem { _items = new List<StatCompareItem> { RandomCompare() } } };
+                State("Unknown", Parse(condition), "actual DLL isolated random comparison remains unknown");
+                foreach (string expression in new[] { condition + " and false", "false and " + condition })
+                    State("NotMet", Parse(expression), "actual DLL random checkpoint leaf does not abort a false AST sibling");
+                foreach (string expression in new[] { condition + " or true", "true or " + condition })
+                    State("Met", Parse(expression), "actual DLL random checkpoint leaf does not abort a true AST sibling");
+                data._items = null;
+                State("NotMet", Parse(condition + " and false"), "actual DLL malformed checkpoint is isolated to its AST leaf");
+                State("Met", Parse(condition + " or true"), "actual DLL malformed checkpoint preserves a separate true OR operand");
+                sw._items = new List<ConditionResultItem> { ConstantCondition(0, 1), new ConditionResultItem { _items = new List<StatCompareItem> { RandomCompare() } } };
+                State("NotMet", Parse(branch + "==1"), "actual DLL false first item excludes switch result one despite later randomness");
+                State("Met", Parse(branch + ">1"), "actual DLL possible switch indices retain proven bounds");
+                State("Unknown", Parse(branch + "==2"), "actual DLL random second item is possible rather than sampled");
+                sw._items = new List<ConditionResultItem> { new ConditionResultItem { _items = new List<StatCompareItem> { RandomCompare() } }, ConstantCondition(1, 1), ConstantCondition(1, 1) };
+                State("NotMet", Parse(branch + "==3"), "actual DLL known-true second item excludes a later branch");
+                State("Unknown", Parse(branch + "==1"), "actual DLL unknown earlier item retains its possible priority");
+                sw._useCount = true;
+                State("Unknown", Parse(branch + "==3"), "actual DLL count-dependent switch remains protected");
+                Check(data._count == 31 && sw._count == 43 && switches == SwitchResultData.Executions && conditions == ConditionResultData.Executions,
+                    "actual DLL partial condition evaluation preserves checkpoint counters and never executes originals");
+                Check(groups == StatGroupVariable.OriginalReads && comparisons == StatCompareItem.OriginalReads && rng == UnityEngine.Random.Calls,
+                    "actual DLL partial condition evaluation never calls original comparison/group/RNG paths");
+            }
+            finally { CheckPointManager.Instance = previous; }
+        }
+
         public static int Run()
         {
             assertions = 0;
-            Syntax(); CurrentFields(); TraceAndDisplay(); FlatAlternativesRemainBounded();
+            Syntax(); CurrentFields(); PartialLogic(); TraceAndDisplay(); FlatAlternativesRemainBounded();
             Console.WriteLine("PREVIEW readonly current condition backend passed");
             return assertions;
         }

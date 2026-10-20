@@ -17,7 +17,7 @@ namespace Mortal.Core
     public enum StatKind { 行動次數 = 19 }
     public class FlagData : UnityEngine.Object { private int state; public int StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
     public class StatValueReference
-    { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup; }
+    { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup, _gameTime; }
     public class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
     public class StatCompareItem { public int _compareOp; public StatGroupVariable _value1, _value2; }
     public class ConditionResultItem
@@ -26,7 +26,7 @@ namespace Mortal.Core
     { public List<ConditionResultItem> _items = new List<ConditionResultItem>(); }
     public class GameStat { public StatKind _type = StatKind.行動次數; public object _statAdditionData; public int _value = 3; public int FinalValue => _value; }
     public class PlayerStatData { public List<GameStat> _list = new List<GameStat> { new GameStat() }; }
-    public class GameTime { public int Year = 1, Month = 5, Stage = 1; }
+    public class GameTime { public int Year = 1, Month = 5, Stage = 1, _roundsPerMonth = 3; }
     public class GameTimeData { public GameTime GameTime = new GameTime(); }
     public class PlayerStatManagerData { public PlayerStatData _stats = new PlayerStatData(); public GameTimeData _gameTimeData = new GameTimeData(); }
     public class MissionCheckData : UnityEngine.Object
@@ -93,6 +93,8 @@ namespace Mortal.Story
     public class PositionResultData : UnityEngine.Object { public string _scriptPrefix = "result"; public List<PositionEventData> _list = new List<PositionEventData>(); }
     public class PositionResultConfig { public List<PositionResultData> _list = new List<PositionResultData>(); }
     public class ConditionResultConfig { public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>(); }
+    public class SwitchResultConfig { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
+    public class SwitchResultData : UnityEngine.Object { public bool _useCount; public int _count; public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
     public class CheckPointManager
     {
         public static CheckPointManager Instance { get; set; }
@@ -167,8 +169,8 @@ namespace DiceMaster
     { public static readonly DiceMaster.LuaParse.LuaParser Parser = new DiceMaster.LuaParse.LuaParser(); public static DiceMaster.LuaParse.LuaParser GetDefinitionParser() => Parser; }
     public static class DataHelper
     {
-        public static int Reads; public static readonly Dictionary<string, string> Scripts = new Dictionary<string, string>();
-        public static ScriptReadResult ReadPreviewScript(string key) { Reads++; string result; return Scripts.TryGetValue(key, out result) ? new ScriptReadResult { State = ScriptReadState.Success, Text = result } : new ScriptReadResult { State = ScriptReadState.Waiting }; }
+        public static Func<string, ScriptReadResult> ExternalReader; public static int Reads; public static readonly Dictionary<string, string> Scripts = new Dictionary<string, string>();
+        public static ScriptReadResult ReadPreviewScript(string key) { Reads++; if (ExternalReader != null) return ExternalReader(key); string result; return Scripts.TryGetValue(key, out result) ? new ScriptReadResult { State = ScriptReadState.Success, Text = result } : new ScriptReadResult { State = ScriptReadState.Waiting }; }
         public static string GetEventName(Mortal.Story.PositionEventData value) => value.name;
     }
     public static class LocationTranslations { public static string TranslateLocation(string value) => value; }
@@ -193,13 +195,19 @@ namespace Mortal.Core
 }
 
 #if !MAP_ROUTE_INTEGRATION
+namespace DiceMaster.LiveLog
+{
+    public enum PreviewConditionState { Unknown, Met, NotMet }
+    public class PreviewCondition { }
+    public static class PreviewConditions { public static readonly PreviewCondition Unknown = new PreviewCondition(); }
+}
 namespace DiceMaster.Information
 {
     // Provider tests isolate the route builder. The real builder/parser and
     // its bounded preparation are covered by MapRouteTests and DLL linkage.
     public enum MapRouteState { Met, NotMet, Unknown }
-    public class MapRouteRead { }
-    public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; }
+    public class MapRouteRead { public PreviewConditionState Current(PreviewCondition condition) => PreviewConditionState.Unknown; }
+    public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; public bool ReadCurrentBlocker(MapRouteRead read) => false; }
     public class MapRoutePath
     {
         public string DialogueCharacter = ""; public List<MapChoiceStep> Steps = new List<MapChoiceStep>();
@@ -207,6 +215,9 @@ namespace DiceMaster.Information
         public int StoryReads;
         public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Met;
         public MapRouteState ReadStoryConditions(MapRouteRead read) { StoryReads++; return StoryState; }
+        public bool ReadCurrentBlocker(MapRouteRead read) => false;
+        public PreviewCondition CurrentPrerequisite => PreviewConditions.Unknown;
+        public static PreviewCondition CommonPrerequisite(PreviewCondition left, PreviewCondition right) => PreviewConditions.Unknown;
     }
     public class MapStoryEntry
     {
@@ -244,6 +255,8 @@ namespace DiceMaster.Information
         public bool IsPreparing { get; private set; } = true;
         public bool IsPartial, HasReadFailure; public string Diagnostic = "";
         public bool HasIncompleteStoryPaths => StoryIncomplete;
+        public bool CurrentOmissionsBlocked(MapChoiceStep first, MapRouteRead read) => false;
+        public bool CurrentOmissionsBlocked(MapChoiceStep first, MapRouteRead read, ref int budget) => false;
         public bool CanBuildBoundedProof(string script) => true;
         public MapRouteDefinitions(string key, Func<string,ScriptReadResult> source, Func<string,IList<MapRouteEvent>> poolReader)
         { root = key; reader = source; pools = poolReader; Builds++; }
@@ -273,8 +286,9 @@ namespace DiceMaster.Information
     // tests keep game locale/UI objects at an explicit identity boundary.
     public static class ChoiceStoryLabels
     {
+        public static Func<string,string,string> DialogueNameReader;
         public static string Resolve(string raw) => raw;
-        public static string DialogueName(string raw, string character) => raw;
+        public static string DialogueName(string raw, string character) => DialogueNameReader == null ? raw : DialogueNameReader(raw, character);
         public static string Path(System.Collections.Generic.IList<MapChoiceStep> steps)
         { var labels = new System.Collections.Generic.List<string>(); foreach (var step in steps) labels.Add(step.RawLabel); return string.Join(" → ", labels); }
     }

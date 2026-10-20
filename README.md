@@ -19,6 +19,10 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
+<!-- alpha10-current-status -->
+alpha.10 후보는 랜덤이 포함된 AND의 확정 false를 보존하고, 현재 필수 선택 조건이 꺼진 인물 대화를 자동 지도 안내에서 제외한다. 남아 있는 일반 대화와 불확실한 대안은 유지한다. 새 파일의 실제 Windows·물리 입력·성능 확인과 #6 전체 완료는 대기다. [수정·설치·확인표](docs/ISSUE-6-ALPHA10-RELEASE.md).
+<!-- /alpha10-current-status -->
+
 **[v1.0.7-alpha.9 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.9/DiceMaster-v1.0.7-alpha.9.zip)**. 2026-10-21 06:25:46 KST에 게시했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [변경·자동 검사·파일·Windows 확인표](docs/ISSUE-6-ALPHA9-RELEASE.md).
 
 지도 오버레이에서는 **`지금 진행 불가`인 인물 대화·임무·1회성을 제외**합니다. `진행 가능` 등 확인된 양성과 `진행 가능성 있음`은 계속 표시하며, 남은 목록으로 최대 세 행과 `외 N개`를 계산합니다. 제외된 항목의 조건과 불가 사유는 **로그 → 도구 → 지도 안내**에서 읽습니다. 정상 빈 목록은 `현재 표시할 인물 대화·임무·1회성 없음`으로 안내하고 기존 자료 상태 문구는 유지합니다. 이는 게임 전체의 기회 없음·반복 가능을 뜻하지 않습니다.
@@ -44,7 +48,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 기존 네 영구 설정은 기본 ON이며 상위 `EnableOptionInfo`는 시작 시 적용합니다. `EnableMapGuide`가 지도·선택 경로를 함께 제어합니다. 분기 알림·기록은 저장·로드·장면 전환·OFF에서 지우며 메모리에만 보관합니다. 정상 0.25초·실패 5초·숨김/OFF 조회 중단과 정상 주기 Lua 재분석 없음 계약을 유지합니다. [설정](#설정) · [패드](docs/GAMEPAD.md).
 
-이번 파일은 전체·고정 소스 재빌드의 21개 자동 검사와 실제 DLL 연결·공개 ZIP 바이트·해시 대조를 통과했습니다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open입니다.** 지도 불가 행 제외·남은 목록과 개수·로그 상세 유지·패드 복귀·지도 지연을 [확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)로 확인합니다. 최신 정식은 v1.0.6이며 이전 시험판 기록은 [변경 이력](CHANGELOG.md)에 보존합니다.
+공개 alpha.9 파일은 전체·고정 소스 재빌드의 21개 자동 검사와 실제 DLL 연결·공개 ZIP 바이트·해시 대조를 통과했습니다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open입니다.** 지도 불가 행 제외·남은 목록과 개수·로그 상세 유지·패드 복귀·지도 지연을 [확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)로 확인합니다. 최신 정식은 v1.0.6이며 이전 시험판 기록은 [변경 이력](CHANGELOG.md)에 보존합니다.
 
 ## 설치와 업데이트
 

@@ -438,11 +438,90 @@ internal static class Program
             "The scene keeps all three native button kinds alive while the production observer uses weak references");
         Reset(); Check(liveSceneControls.Count == 0, "Fixture reset releases the previous scene's component ownership");
     }
+    private static void NativeCurrentGuardChanges(string indexPath)
+    {
+        var paths = new Dictionary<string, (string Path, string Sha)>(StringComparer.OrdinalIgnoreCase);
+        using (JsonDocument document = JsonDocument.Parse(File.ReadAllText(indexPath)))
+            foreach (JsonElement item in document.RootElement.EnumerateArray()) paths[item.GetProperty("name").GetString()] = (item.GetProperty("path").GetString(), item.GetProperty("sha256").GetString());
+        var failures = new List<string>();
+        foreach (var sample in new[] {
+            (Script: "girlroom_001", Raw: "talk+talk+sister1", Guard: "Talk_Sister1_00", Position: true),
+            (Script: "room_001", Raw: "talk+talk+brother4", Guard: "Talk_Brother4", Position: true),
+            (Script: "talk_brother4", Raw: "talk+O_Talk_Brother4_003+0+0", Guard: "Talk_Brother4_00_01", Position: false)
+        })
+        {
+            Reset();
+            // Only script bytes are actual game evidence. This explicit test
+            // configuration models a current required flag AND an unknown RNG
+            // comparison; the user's save and native config are not supplied.
+            var flag = Condition(sample.Guard, 0);
+            var guard = CheckPointManager.Instance._condition._list.Find(item => item.name == sample.Guard)._items[0];
+            guard._items.Insert(0, new StatCompareItem {
+                _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 7 } } },
+                _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 1 } } }
+            });
+            Condition("Talk_Brother4_00_02", 0);
+            var cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            ScriptReadResult Exact(string key)
+            {
+                if (cache.TryGetValue(key, out string body)) return ScriptReadResult.Success(body);
+                if (!paths.TryGetValue(key, out var record)) return new ScriptReadResult { State = ScriptReadState.Missing };
+                byte[] bytes = File.ReadAllBytes(record.Path);
+                if (!Convert.ToHexString(SHA256.HashData(bytes)).Equals(record.Sha, StringComparison.OrdinalIgnoreCase))
+                { failures.Add(key); return new ScriptReadResult { State = ScriptReadState.Failed }; }
+                cache[key] = body = new UTF8Encoding(false, true).GetString(bytes); return ScriptReadResult.Success(body);
+            }
+            DataHelper.ExternalReader = Exact; var root = Exact(sample.Script);
+            Check(root.State == ScriptReadState.Success, "The current-guard transition observes the SHA-pinned actual " + sample.Script + " bytes");
+            ChoiceStorySource.ObserveScript(root.Text, sample.Script + ".LuaScript");
+            if (sample.Position) Position(sample.Raw, "완료 대상"); else Break(sample.Raw, "완료 대상");
+            BreakOptionButton other = null;
+            if (!sample.Position)
+            { other = Break("talk+O_Talk_Brother4_004+0+0", "다른 활성 대화"); Break("talk+O_Talk_Brother4_005+0+0", "다른 불명 대화"); }
+            ForceCollection(); ChoiceStorySnapshot value = null;
+            for (int at = 0; at < 160; at++) value = Read(true);
+            var before = Linked(value, "완료 대상");
+            Check(before.Status == "진행 가능성 있음" && !before.Available, "A true flag paired with an unknown random input never promotes the first menu guard into full-story readiness");
+            int resources = DataHelper.Reads; flag.State = 1;
+            value = Read(true); var after = Linked(value, "완료 대상");
+            string expected = sample.Position ? "지금 진행 불가" : "진행 가능성 있음";
+            Check(after.Id == before.Id && after.Status == expected && !after.Available && (!sample.Position || after.Detail.Contains("미충족", StringComparison.Ordinal)),
+                "The fresh actual " + sample.Script + " guard uses only the closed root profile for negative suppression; a nonprofile talk menu remains unknown rather than reinterpreting a previously captured guard; actual=" + after.Status);
+            for (int at = 0; at < 40; at++) { value = Read(true); Check(Linked(value, "완료 대상").Status == expected, "Warm scheduled refreshes preserve the current profile's safe negative/unknown distinction"); }
+            Check(DataHelper.Reads == resources && flag.State == 1 && Counters.GameCalls == 0, "The transition reuses definitions without reload, native judgments, RNG or flag execution");
+            if (other != null)
+            {
+                Check(Linked(value, "다른 활성 대화").Status != "지금 진행 불가" && Linked(value, "다른 불명 대화").Status == "진행 가능성 있음", "Completing one real brother4 topic preserves another active topic and an unknown topic");
+                EventSystem.current.currentSelectedGameObject = other.gameObject;
+                Check(ChoiceStorySource.CurrentRow(value)?.Title == "다른 활성 대화", "The retained alternative still follows passive native pad focus without hover");
+            }
+        }
+        Check(failures.Count == 0, "Every original and followup source used in the current-guard transitions matches its corpus SHA-256");
+    }
+    private static void CurrentRequiredChoice()
+    {
+        Reset(); var flag = Condition("completed_option", 0);
+        ChoiceStorySource.ObserveScript("runwait(flowcharts.LoadView('room'));getvar(flowcharts.view,'ViewName').value='room';runblock(flowcharts.view,'view');mainui.DisplayTitle('P_Room_01');setmenudialog(menudialogs.Room);local a={};a[1]=checkpointmanager.Condition('completed_option') and 'O_topic' or '~x';a[2]='O_other';local r=choose(a);if r==1 or r==2 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_current_option')) end", "current_required_choice.LuaScript");
+        Normal("O_topic", "완료 대상"); var other = Normal("O_other", "다른 항목");
+        var value = Ready(true); var before = Linked(value, "완료 대상");
+        Check(before.Status == "진행 가능성 있음" && !before.Available, "A current true option guard cannot promote an opaque full path into a confirmed positive");
+        int resources = DataHelper.Reads; flag.State = 1; value = Read(true); var after = Linked(value, "완료 대상");
+        Check(after.Id == before.Id && after.Status == "지금 진행 불가" && after.Detail.Contains("미충족", StringComparison.Ordinal), "The current required option's negative survives the global partial/opaque uncertainty boundary");
+        Check(Linked(value, "다른 항목").Status == "진행 가능성 있음", "An independent unknown path is retained when another option is completed");
+        EventSystem.current.currentSelectedGameObject = other.gameObject;
+        Check(ChoiceStorySource.CurrentRow(value)?.Title == "다른 항목" && DataHelper.Reads == resources && flag.State == 1 && Counters.GameCalls == 0, "Current negative filtering preserves passive pad focus and performs no script read or game execution");
+
+        Reset(); flag = Condition("guard_before_write", 1);
+        ChoiceStorySource.ObserveScript("local allowed=checkpointmanager.Condition('guard_before_write');statmodifymanager.SetFlag('guard_before_write',1);local a={};a[1]=allowed and 'O_topic' or '~x';local r=choose(a);if r==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_saved_guard')) end", "guard_saved_before_write.LuaScript");
+        Normal("O_topic", "쓰기 전 저장한 활성 조건"); value = Ready(true);
+        Check(Linked(value, "쓰기 전 저장한 활성 조건").Status == "진행 가능성 있음" && !Linked(value, "쓰기 전 저장한 활성 조건").Available,
+            "A menu guard captured before a gameplay flag write cannot be reinterpreted from the post-write current value as a disabled option");
+    }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); FullStoryConditions(); FixtureOwnership();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership();
         if (args.Length > 0) Metadata(args[0]);
-        if (args.Length > 1) NativeCorpus(args[1]);
+        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");
     }
 }

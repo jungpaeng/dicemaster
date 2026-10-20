@@ -19,18 +19,56 @@ namespace DiceMaster.LiveLog
         public static int ConditionReads;
         public static bool CheckConditionData(object value) { ConditionReads++; return ((Mortal.Core.ConditionResultData)value).Current; }
         public static bool CheckCondition(object value) { return ((Mortal.Core.ConditionResultItem)value).Current; }
+        public static bool CheckComparison(object value)
+        {
+            ConditionReads++; var comparison = (Mortal.Core.StatCompareItem)value;
+            int Number(Mortal.Core.StatGroupVariable group)
+            {
+                int n = 0;
+                foreach (var reference in group._value)
+                {
+                    int current = reference._checkType == 0 ? reference._constant : reference._checkType == 3 ? reference._flag.State : throw new Exception("Unsupported primitive fixture");
+                    n += reference._negative ? -current : current;
+                }
+                return n;
+            }
+            int left = Number(comparison._value1), right = Number(comparison._value2);
+            switch (comparison._compareOp)
+            {
+                case 0: return left == right; case 1: return left != right;
+                case 2: return left < right; case 3: return left <= right;
+                case 4: return left > right; case 5: return left >= right;
+                default: throw new Exception("Unsupported comparison fixture");
+            }
+        }
     }
 }
-namespace UnityEngine { public class Object { public string name { get; set; } } }
+namespace UnityEngine
+{
+    public class Object { public string name { get; set; } }
+    public static class Random { public static int Calls; public static int Range(int min, int max) { Calls++; throw new Exception("Forbidden RNG"); } }
+}
 namespace Mortal.Core
 {
     public sealed class FlagData : UnityEngine.Object { public int State; }
     public sealed class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
     public sealed class StatValueReference { public int _checkType, _constant; public bool _negative; public FlagData _flag; }
-    public sealed class StatCompareItem { public StatGroupVariable _value1 = new StatGroupVariable(), _value2 = new StatGroupVariable(); }
+    public sealed class StatCompareItem { public int _compareOp; public StatGroupVariable _value1 = new StatGroupVariable(), _value2 = new StatGroupVariable(); }
     public sealed class ConditionResultData : UnityEngine.Object
-    { public List<ConditionResultItem> _items = new List<ConditionResultItem>(); public bool Current; }
-    public sealed class ConditionResultItem { public List<object> _items = new List<object>(); public bool Current; }
+    {
+        private readonly StatValueReference fixtureValue = new StatValueReference(); private bool current; public int _count = 29;
+        public List<ConditionResultItem> _items = new List<ConditionResultItem>();
+        public bool Current { get { return current; } set { current = value; fixtureValue._constant = value ? 1 : 0; } }
+        public ConditionResultData()
+        {
+            var item = new ConditionResultItem();
+            item._items.Add(new StatCompareItem {
+                _value1 = new StatGroupVariable { _value = new List<StatValueReference> { fixtureValue } },
+                _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 1 } } }
+            }); _items.Add(item);
+        }
+    }
+    public sealed class ConditionResultItem { public int _logicOp; public List<object> _items = new List<object>(); public bool Current; }
 }
 namespace Mortal.Story
 {

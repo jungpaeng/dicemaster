@@ -170,6 +170,8 @@ internal static class Program
         SharedGateAndProofBudget();
         MapStoryCases.Run(Check);
         FullStoryConditionCases.Run(Check);
+        PartialConditionCases.Run(Check);
+        CurrentBlockerCases.Run(Check);
         Corpus();
         Check(manager.GameplayCalls == 0 && manager.RngCalls == 0 && manager.Counter == 0, "no gameplay condition/Position/RNG/counter changes");
         Console.WriteLine("PASS: MapRouteTests " + checks + " actual-route/syntax/current-reader assertions; resource/stat/game boundaries are explicit fixtures; Lua/Windows/native not executed.");

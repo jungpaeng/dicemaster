@@ -229,13 +229,20 @@ namespace DiceMaster.Information
                 if (!bindings.TryGetValue(option.Raw, out binding) || binding.Stories.Count == 0) continue;
                 bool ambiguous = binding.Nodes.Count != 1;
                 bool incomplete = routes.IsPreparing || routes.HasReadFailure || routes.HasIncompleteStoryPaths || indexing;
-                MapRouteState state = ambiguous || incomplete ? MapRouteState.Unknown : CurrentStoryConditions(binding.Paths, current);
+                List<MapChoiceStep> alternatives = null;
+                if (!ambiguous) foreach (var node in binding.Nodes.Values) { alternatives = node; break; }
+                // Only a current, uniquely matched required option guard can
+                // reject a path across unrelated downstream uncertainty. A
+                // true guard never upgrades the whole story to available.
+                bool blocked = !ambiguous && !routes.IsPreparing && !indexing && CurrentOptionBlocked(alternatives, current);
+                MapRouteState state = blocked ? MapRouteState.NotMet : ambiguous || incomplete ? MapRouteState.Unknown : CurrentStoryConditions(binding.Paths, current);
                 string status = state == MapRouteState.Met ? "진행 가능" : state == MapRouteState.NotMet ? "지금 진행 불가" : "진행 가능성 있음";
                 string detail = (ambiguous || incomplete ? "현재 메뉴 원문과 일치하는 연결 후보입니다. 현재 메뉴의 스크립트 위치는 아직 확정하지 않았습니다." : "실제 현재 메뉴의 원본 선택지와 정확히 연결한 자료입니다.") +
                     " 표시만 수행하며 선택·조건 판정·게임 진행을 실행하지 않습니다.\n원본 선택지: " + option.Raw;
                 if (binding.Nodes.Count != 1) detail += "\n같은 스크립트에 동일한 원문 선택지가 여러 번 있어 현재 메뉴의 위치를 안전하게 구분하지 못했습니다.";
                 else if (incomplete) detail += "\n경로를 전부 확인하지 못해 같은 이름의 다른 선택 화면이 없는지 아직 확정하지 않았습니다.";
                 detail += "\n연결 이야기의 내부 분기 조건: " + (state == MapRouteState.Met ? "현재 값으로 충족" : state == MapRouteState.NotMet ? "현재 값으로 미충족" : "안전하게 확정하지 못함");
+                if (blocked) detail += "\n현재 선택지의 필수 조건이 미충족입니다. 이후 경로의 불확실성과 구분한 현재 조건 확인 결과입니다.";
                 detail += "\n진행 가능성 있음은 확률을 뜻하지 않습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락은 충족으로 간주하지 않으며 실제 이야기 발생을 보장하지 않습니다.";
                 if (details)
                 {
@@ -311,6 +318,12 @@ namespace DiceMaster.Information
                 unknown |= state == MapRouteState.Unknown;
             }
             return unknown ? MapRouteState.Unknown : MapRouteState.NotMet;
+        }
+        private static bool CurrentOptionBlocked(IList<MapChoiceStep> alternatives, MapRouteRead current)
+        {
+            if (alternatives == null || alternatives.Count == 0 || alternatives.Count > 32) return false;
+            foreach (MapChoiceStep step in alternatives) if (!step.ReadCurrentBlocker(current)) return false;
+            return true;
         }
         internal static MapRouteState CurrentConditions(IList<MapChoiceStep> alternatives, MapRouteRead current)
         {

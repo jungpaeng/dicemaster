@@ -1,5 +1,14 @@
 # 개발 안내
 
+<!-- alpha10-current-status -->
+alpha.10 후보는 랜덤이 포함된 AND의 확정 false를 보존하고, 현재 필수 선택 조건이 꺼진 인물 대화를 자동 지도 안내에서 제외한다. 남아 있는 일반 대화와 불확실한 대안은 유지한다. 새 파일의 실제 Windows·물리 입력·성능 확인과 #6 전체 완료는 대기다. [수정·검사·파일·확인표](ISSUE-6-ALPHA10-RELEASE.md).
+<!-- /alpha10-current-status -->
+
+## alpha.10 — 현재 필수 조건의 false 보존
+
+`PreviewConditions`는 체크포인트 내부의 AND/OR를 3상태로 집계하고, RNG·미지원·예외는 해당 비교만 Unknown으로 둔다. Switch는 무작위 추첨 없이 가능한 우선순위 인덱스 집합을 유지한다. `SnapshotGate`는 읽기 시점의 선행 플래그 쓰기와 미지원 호출을 마스킹한 현재 필수 조건이다. 확정 false만 자동 표시 제외에 사용하고 전체 경로의 Met 보호를 해제하지 않는다. 정확히 연속된 루트 화면 준비 5문장과 짝지은 메뉴 닫기만 현재값 투영으로 구분한다. 임의 콜백·재바인딩·다른 화면 문법은 보수적으로 남긴다. 첫 루트 메뉴 조건은 단일 직선 정의일 때만 공통 필요조건으로 사용한다. 구조 생략은 최대 32개 prefix와 예산으로 보호하며 생략 대안을 배제하지 못하면 Unknown을 유지한다. 기존 논리 환경 셀·분기·깊이 상한은 그대로이고 셀마다 AST 참조가 하나 늘어난다. 정상 주기 Lua 재분석은 없다. 이미 열린 선택 화면에서는 첫 메뉴 전 선행 플래그 쓰기가 하나라도 있으면 기존 guard를 현재값으로 재판정해 미충족으로 내리지 않는다. 경로 예산은 논리 조회 단위이고 경로당 전체 상태와 미충족 조건의 두 투영을 고정 상한으로 읽는다. 32개를 넘는 관찰 경로도 정의 인덱스를 만들 때 모든 경로의 공통 AND prefix를 교집합으로 압축하므로, 이미 확인한 우회 대안을 잃지 않고 미충족 근거를 보존한다. fresh 후속 등록 바로 뒤의 정확한 terminal `luamanager.Init()`은 모든 남은 scope가 비었을 때만 이미 추적한 대상의 중복 누락 표식을 생략하고 `Finish`로 넘긴다. Init의 full/snapshot opaque와 자식 스크립트·풀의 별도 누락 보호는 유지하며 순수 호출로 취급하지 않는다.
+
+
 2026-10-21 06:25:46 KST에 소스·태그 `1a782f206f1aa7ab9f9e490125fbe916aabbad66`의 [alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9)를 게시했다. 지도 오버레이에서 진행 불가 항목을 제외하고 로그 상세의 조건·사유는 보존한다. 전체·고정 커밋 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 50개 Release·51개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [필터·파일·게시·Windows 확인](ISSUE-6-ALPHA9-RELEASE.md).
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
