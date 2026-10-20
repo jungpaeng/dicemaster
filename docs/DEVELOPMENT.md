@@ -1,8 +1,12 @@
 # 개발 안내
 
-2026-10-21 06:06:11 KST에 소스·태그 `90cba0b8e754db606d311394f05a7f05aca8efb5`의 [alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)을 게시했다. 첫 선택과 이야기 내부 조건을 분리하고 `진행 가능`·`지금 진행 불가`·`진행 가능성 있음`을 안내한다. 전체·고정 커밋 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 49개 Release·50개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [판정·파일·게시·Windows 확인](ISSUE-6-ALPHA8-RELEASE.md).
+2026-10-21 06:25:46 KST에 소스·태그 `1a782f206f1aa7ab9f9e490125fbe916aabbad66`의 [alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9)를 게시했다. 지도 오버레이에서 진행 불가 항목을 제외하고 로그 상세의 조건·사유는 보존한다. 전체·고정 커밋 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 50개 Release·51개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [필터·파일·게시·Windows 확인](ISSUE-6-ALPHA9-RELEASE.md).
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
+
+## alpha.9 — 지도 불가 항목 제외
+
+`MapGuideSource.Snapshot`의 상세 `Entries`를 먼저 보존하고, 자동 notices 누적에서 최종 `Rank == 1`을 제외한다. guide/once OR 전체에 적용하여 1회성 전용 모드도 일관되게 제외한다. 기존 판정·실패/준비·조건·입력은 바꾸지 않는다. 필터 후 목록으로 상위 세 행·나머지 수를 계산하고 정상 빈 문구는 현재 표시 대상이 없다는 의미로 바꾼다. 전체·고정 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조·실제 DLL 연결·공개 ZIP을 대조했다. [검사·파일·새 Windows 확인](ISSUE-6-ALPHA9-RELEASE.md).
 
 ## alpha.8 — 이야기 내부 조건과 진행 상태
 

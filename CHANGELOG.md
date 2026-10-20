@@ -1,10 +1,12 @@
 # 변경 이력
 
-## Unreleased — v1.0.7-alpha.9 예정
+## [v1.0.7-alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9) — 2026-10-21 (prerelease)
 
 - 지도 오버레이에서 지금 진행 불가로 판정한 항목을 제외합니다. `진행 가능`과 `진행 가능성 있음`은 유지하며, 필터 후 남은 항목만 최대 세 행과 `외 N개`에 계산합니다.
 - 제외한 항목의 조건·불가 사유는 기존 지도 로그 상세에 그대로 남깁니다. 정상 빈 안내는 `현재 표시할 인물 대화·임무·1회성 없음`으로 알리며 전체 게임의 기회 없음이나 반복 가능을 뜻하지 않습니다.
-- 현재 선택 화면·원래 게임 선택지·판정·설정·색·입력·갱신/캐시는 유지합니다. [후보·새 확인표](docs/ISSUE-6-ALPHA9-RELEASE.md). 새 자동 검사·고정 소스 재빌드·게시·Windows 확인은 대기이며 현재 공개 시험판은 alpha.8입니다.
+- 현재 선택 화면·원래 게임 선택지·판정·설정·색·입력·갱신/캐시는 유지합니다. [필터·새 확인표](docs/ISSUE-6-ALPHA9-RELEASE.md).
+
+2026-10-21 06:25:46 KST에 소스·주석 태그 `1a782f2`로 게시했습니다. 전체·고정 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조·실제 DLL 연결·DLL/cfg/ZIP 동일성과 공개 다운로드를 대조했습니다. [파일·검사·새 Windows 확인](docs/ISSUE-6-ALPHA9-RELEASE.md). 실제 새 Windows 확인과 #6 전체 완료는 대기입니다.
 
 ## [v1.0.7-alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8) — 2026-10-21 (prerelease)
 

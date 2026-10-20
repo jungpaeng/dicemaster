@@ -1,6 +1,6 @@
 # PRD #6 — 새 후보 실제 Windows 확인표
 
-**alpha.9 지도 필터 수정 후보는 미게시이며 새 확인은 모두 대기다.** 지도 오버레이의 불가 항목만 제외하고 상세의 조건·사유는 보존한다. 양성·`진행 가능성 있음`과 현재 선택 화면·원래 게임 선택지는 유지한다. 새 자동 검사·고정 재빌드·설치 파일·게시 결과는 [후보 기록](ISSUE-6-ALPHA9-RELEASE.md)에 확정한 뒤 실제 파일과 대조한다.
+**현재 확인 대상은 [공개 alpha.9](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.9)이며 실제 새 Windows 확인은 모두 대기다.** 소스·태그 `1a782f206f1aa7ab9f9e490125fbe916aabbad66`, DLL SHA-256 `b11b1af675cc656e87602e9fbedb98e28669497102708603028aa13813810362`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.9/DiceMaster-v1.0.7-alpha.9.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했다. 지도 불가 항목만 제외하고 로그 상세·가능/가능성·현재 선택 안내를 유지한다. [필터·파일·범위 기록](ISSUE-6-ALPHA9-RELEASE.md)을 따른다.
 
 사용자의 **“아까 그 문제가 해결된 건 확인했어.”**은 alpha.8 내부 조건 안내 문제에 대한 부분 확인으로 기록한다. 설치 해시·환경·항목별 결과가 추가 확인된 것은 아니며 두 인물의 개별 만남·다른 기능·Windows 전체 통과나 alpha.9 새 필터 확인으로 확대하지 않는다. 아래 alpha.8의 미실행 표시는 게시 당시 기록이다.
 
@@ -14,7 +14,7 @@
 
 ## alpha.8 게시 당시 확인 대기
 
-**현재 확인 대상은 [공개 alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)이며 실제 Windows 확인은 모두 대기다.** 소스·태그 `90cba0b8e754db606d311394f05a7f05aca8efb5`, DLL SHA-256 `da97db93c5a84c7dba5f6531e5d4f4c0f800cd90a00cfa0c2fc12295eb8c26a1`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.8/DiceMaster-v1.0.7-alpha.8.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했다. 첫 선택과 이야기 내부 조건·양성 색을 구분하며 [파일·범위 기록](ISSUE-6-ALPHA8-RELEASE.md)을 따른다. 이전 후보의 확인은 이번 파일의 실제 Windows 확인을 대신하지 않는다.
+**alpha.8 게시 당시 확인 대상은 [공개 alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)이며 실제 Windows 확인은 모두 대기다.** 소스·태그 `90cba0b8e754db606d311394f05a7f05aca8efb5`, DLL SHA-256 `da97db93c5a84c7dba5f6531e5d4f4c0f800cd90a00cfa0c2fc12295eb8c26a1`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.8/DiceMaster-v1.0.7-alpha.8.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했다. 첫 선택과 이야기 내부 조건·양성 색을 구분하며 [파일·범위 기록](ISSUE-6-ALPHA8-RELEASE.md)을 따른다. 이전 후보의 확인은 이번 파일의 실제 Windows 확인을 대신하지 않는다.
 
 ## alpha.8 이야기 조건 추가 확인 — 모두 미실행
 
