@@ -19,9 +19,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-**[v1.0.7-alpha.7 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.7/DiceMaster-v1.0.7-alpha.7.zip)**. 2026-10-21 05:27:56 KST에 게시했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [변경·자동 검사·파일·Windows 확인표](docs/ISSUE-6-ALPHA7-RELEASE.md).
-
-**아래 기능 설명은 alpha.8 수정 후보 기준이며 새 전체 검사·고정 소스 재빌드·게시 수치는 아직 확정 전입니다.** 현재 다운로드는 위 공개 alpha.7입니다. [새 후보·확인표](docs/ISSUE-6-ALPHA8-RELEASE.md).
+**[v1.0.7-alpha.8 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.8/DiceMaster-v1.0.7-alpha.8.zip)**. 2026-10-21 06:06:11 KST에 게시했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. [변경·자동 검사·파일·Windows 확인표](docs/ISSUE-6-ALPHA8-RELEASE.md).
 
 지도·선택의 인물 대화는 첫 메뉴를 고를 수 있는지만이 아니라 **해당 이야기까지 이어지는 조건**으로 `진행 가능`·`지금 진행 불가`·`진행 가능성 있음`을 구분합니다. 알려진 장소·행동 제한이 있으면 `지금 진행 불가 · 이유`로 표시합니다. `진행 가능성 있음`은 안전하게 확정하지 못했다는 뜻이며 발생 확률이나 만남 보장이 아닙니다. 연무장 단련처럼 앞선 상태 변경·불명 처리·경로 상한이 있는 경우 이 상태로 남을 수 있습니다.
 
@@ -44,7 +42,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 기존 네 영구 설정은 기본 ON이며 상위 `EnableOptionInfo`는 시작 시 적용합니다. `EnableMapGuide`가 지도·선택 경로를 함께 제어합니다. 분기 알림·기록은 저장·로드·장면 전환·OFF에서 지우며 메모리에만 보관합니다. 정상 0.25초·실패 5초·숨김/OFF 조회 중단과 정상 주기 Lua 재분석 없음 계약을 유지합니다. [설정](#설정) · [패드](docs/GAMEPAD.md).
 
-공개 alpha.7은 전체·고정 소스 재빌드의 21개 자동 검사와 실제 DLL 연결·공개 ZIP 대조를 통과했습니다. 이 결과를 alpha.8 수정 후보의 검사 결과로 사용하지 않습니다. **새 후보의 전체 검사·게시와 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open입니다.** 이야기 조건의 세 상태·색·기본 휴식 제외·후속 경로·패드 상세/복귀·지도 지연을 [확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)로 확인합니다. 최신 정식은 v1.0.6이며 이전 시험판 기록은 [변경 이력](CHANGELOG.md)에 보존합니다.
+이번 파일은 전체·고정 소스 재빌드의 21개 자동 검사와 실제 DLL 연결·공개 ZIP 바이트·해시 대조를 통과했습니다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open입니다.** 이야기 조건의 세 상태·색·기본 휴식 제외·후속 경로·패드 상세/복귀·지도 지연을 [확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)로 확인합니다. 최신 정식은 v1.0.6이며 이전 시험판 기록은 [변경 이력](CHANGELOG.md)에 보존합니다.
 
 ## 설치와 업데이트
 

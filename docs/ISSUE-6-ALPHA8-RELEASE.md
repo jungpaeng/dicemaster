@@ -1,6 +1,6 @@
-# 이야기 경로의 진행 상태 — v1.0.7-alpha.8 후보
+# 이야기 경로의 진행 상태 — v1.0.7-alpha.8 prerelease
 
-원래 작업 폴더의 `main`에서 인물 대화의 진행 상태를 첫 메뉴 조건과 분리하는 수정 후보를 구현했다. 전체 소스 빌드와 21개 검사 프로그램·250개 빌드 입력·103개 소스/리소스·15개 참조, 실제 DLL 연결·설치 ZIP 검증을 통과했다. **고정 커밋 재빌드·prerelease 게시·공개 파일 대조는 대기다.** 현재 공개 시험판은 [alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7), 최신 정식은 v1.0.6이다. 새 DLL의 실제 Windows·물리 입력·가독성·성능 확인은 대기이며 PRD #6은 open이다.
+원래 작업 폴더의 `main`에서 첫 선택과 인물 이야기 내부 조건을 분리했다. **2026-10-21 06:06:11 KST에 [alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)을 게시하고 익명 공개 ZIP을 대조했다.** 전체·고정 소스 재빌드의 21개 검사 성공 기록과 DLL/cfg/ZIP 바이트가 같다. 최신 정식은 v1.0.6이며 새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 PRD #6 전체 완료는 대기다.
 
 [구현 계약](ISSUE-6-IMPLEMENTATION.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [공개 alpha.7 기록](ISSUE-6-ALPHA7-RELEASE.md) · [패드](GAMEPAD.md)
 
@@ -60,12 +60,12 @@ SDK `8.0.426`, 생성 시각 `2026-10-20T21:03:29.872609+00:00`의 전체 후보
 | --- | ---: | --- |
 | DiceMaster.dll | 794624 | `da97db93c5a84c7dba5f6531e5d4f4c0f800cd90a00cfa0c2fc12295eb8c26a1` |
 | DiceMaster.cfg | 12912 | `442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a` |
-| DiceMaster-source-candidate.zip | 337694 | `460fc96c6990ec2e91b327b37cc07bfb0bc8b940d778f21b617f4c0cb6dd7443` |
+| DiceMaster-v1.0.7-alpha.8.zip | 337694 | `460fc96c6990ec2e91b327b37cc07bfb0bc8b940d778f21b617f4c0cb6dd7443` |
 
-ZIP은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 정확히 두 파일이며 CRC·내부 바이트·해시를 대조했다. 실제 DLL 메서드와 제공 게임 API 연결 검사는 관리 코드 경계의 검증이며 게임 실행은 아니다. 고정 소스 재빌드·소스 커밋/태그·게시와 공개 다운로드 대조는 대기다. 새 DLL의 실제 Windows·Unity 화면·물리 입력·가독성·성능 확인은 별도로 남긴다.
+ZIP은 `config/DiceMaster.cfg`와 `plugins/DiceMaster/DiceMaster.dll` 정확히 두 파일이며 CRC·내부 바이트·해시를 대조했다. 실제 DLL 메서드와 제공 게임 API 연결 검사는 관리 코드 경계의 검증이며 게임 실행은 아니다. 소스·주석 태그 [`90cba0b`](https://github.com/jungpaeng/dicemaster/commit/90cba0b8e754db606d311394f05a7f05aca8efb5)를 기존 관리 모드 DLL 0개인 격리 소스에서 SDK `8.0.426`·동일한 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조로 재빌드해 전체 검사 성공 기록·DLL/cfg/ZIP 바이트를 대조했다. [게시 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.8/DiceMaster-v1.0.7-alpha.8.zip)도 같다. Release `418877120`·asset `660487213`, `draft=false`·`prerelease=true`·`make_latest=false`이며 기존 49개 Release·50개 태그·자산·Latest v1.0.6·이슈 상태를 보존했다. main과 주석 태그를 atomic push했다. 게시 보충 문서는 별도 main 커밋이며 빌드 입력·태그·설치 파일은 바꾸지 않는다. 새 DLL의 실제 Windows·Unity 화면·물리 입력·가독성·성능 확인은 별도로 남긴다.
 
 ## 설치와 실제 Windows 확인 — 대기
 
-설치 후보가 확정되면 게임 종료 후 DLL/cfg를 백업하고 **DLL만 교체해 기존 cfg를 보존**한다. 문제가 있으면 종료 후 백업 DLL과 필요한 cfg 또는 정식 v1.0.6으로 복구한다. DLL 교체로 이미 저장한 게임 진행이 되돌아가지는 않는다.
+[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.8/DiceMaster-v1.0.7-alpha.8.zip)을 사용한다. 게임 종료 후 DLL/cfg를 백업하고 **DLL만 교체해 기존 cfg를 보존**한다. 문제가 있으면 종료 후 백업 DLL과 필요한 cfg 또는 정식 v1.0.6으로 복구한다. DLL 교체로 이미 저장한 게임 진행이 되돌아가지는 않는다.
 
 [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md)의 alpha.8 항목에서 실제 조건 양성·입증된 불가·불명 문구, 연무장 같은 첫 선택/후속 분기, 장소·메뉴 수명, 기존 인물/1회성/임무와 물리 입력·화면·성능을 확인한다. 환경·설치 DLL 해시·관찰 근거를 남기기 전에는 Windows 통과나 #6 전체 완료로 처리하지 않는다.

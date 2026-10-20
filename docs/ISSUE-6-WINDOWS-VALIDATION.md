@@ -1,6 +1,6 @@
 # PRD #6 — 새 후보 실제 Windows 확인표
 
-**alpha.8 수정 후보는 미게시이며 새 확인은 모두 대기다.** 첫 메뉴가 아닌 실제 인물 이야기까지의 경로 조건으로 `진행 가능`·`지금 진행 불가`·`진행 가능성 있음`을 구분한다. 양성 `진행 가능`만 초록색이며, 불명 문구는 확률이나 발생 보장이 아니다. 새 파일의 검사·고정 재빌드·해시·게시를 [후보 기록](ISSUE-6-ALPHA8-RELEASE.md)에 확정한 뒤 실제 설치 파일과 대조한다. 아래 alpha.7은 현재 공개 파일의 당시 기록이며 새 후보 통과 근거로 사용하지 않는다.
+**현재 확인 대상은 [공개 alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)이며 실제 Windows 확인은 모두 대기다.** 소스·태그 `90cba0b8e754db606d311394f05a7f05aca8efb5`, DLL SHA-256 `da97db93c5a84c7dba5f6531e5d4f4c0f800cd90a00cfa0c2fc12295eb8c26a1`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.8/DiceMaster-v1.0.7-alpha.8.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했다. 첫 선택과 이야기 내부 조건·양성 색을 구분하며 [파일·범위 기록](ISSUE-6-ALPHA8-RELEASE.md)을 따른다. 이전 후보의 확인은 이번 파일의 실제 Windows 확인을 대신하지 않는다.
 
 ## alpha.8 이야기 조건 추가 확인 — 모두 미실행
 
@@ -10,11 +10,11 @@
 - [ ] **미실행** — 현재 선택 화면과 지도·로그 상세가 같은 이야기 경로를 가리킨다. 장소/메뉴 전환·로드·OFF·실패 이전 값에 옛 양성 초록이 남지 않는다. 기본 휴식 제외·사사형·후속 특수 인물·기존 임무/1회성도 유지된다.
 - [ ] **미실행** — Xbox/XInput 선택·로그 열기/상세/복귀와 키보드·마우스·터치·해제/중립 보호를 확인한다. 같은 지도에서 프레임/할당량과 정상 0.25초·실패 5초·숨김/OFF 조회 중단·정상 주기 재분석 없음을 관찰하고, 조회 전후 RNG·조건 횟수·세이브·능력치·아이템이 변하지 않는다.
 
-## 공개 alpha.7 확인 대기
+## 이전 공개 alpha.7 당시 확인 대기
 
-**현재 확인 대상은 [공개 alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)이며 실제 Windows 확인은 대기다.** 소스·태그 `4aa5d2c524f63a21197668407f1f70c67a089ab1`, DLL SHA-256 `7ec09ad68a786de23616ef5e626cecf387f33f61ab57a1a3078514be502f570d`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.7/DiceMaster-v1.0.7-alpha.7.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했다. [색·파일·범위 기록](ISSUE-6-ALPHA7-RELEASE.md). 현재 진입 조건 충족 문구를 초록으로 표시하며 기존 인물 대화·1회성·임무와 입력을 유지한다. 이전 후보의 Windows 확인은 이번 파일의 확인을 대신하지 않는다.
+**alpha.7 당시 확인 대상은 [공개 alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)이며 실제 Windows 확인은 대기다.** 소스·태그 `4aa5d2c524f63a21197668407f1f70c67a089ab1`, DLL SHA-256 `7ec09ad68a786de23616ef5e626cecf387f33f61ab57a1a3078514be502f570d`의 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.7/DiceMaster-v1.0.7-alpha.7.zip)을 사용한다. 전체·고정 소스 재빌드 21개 자동 검사와 공개 ZIP 대조는 통과했다. [색·파일·범위 기록](ISSUE-6-ALPHA7-RELEASE.md). 현재 진입 조건 충족 문구를 초록으로 표시하며 기존 인물 대화·1회성·임무와 입력을 유지한다. 이전 후보의 Windows 확인은 이번 파일의 확인을 대신하지 않는다.
 
-## 현재 수정 후보의 추가 확인 — 모두 미실행
+## alpha.7 공개 당시 추가 확인 — 모두 미실행
 
 - [ ] **미실행** — 지도와 선택 화면의 진입 조건 충족 문구만 초록색이다. 혼합 목록의 이름·미충족·확인 필요·경로 후보와 실패 이전 값은 중립색이다. 작은 창·큰 글자·한국어 줄바꿈·꺾쇠 이름에서 색 태그가 노출되거나 문구가 잘리지 않는다.
 - [ ] **미실행** — 남제자방의 기본 휴식과 그 뒤 일반 안내·독백에는 연결 이야기/진입 조건 자동 표시가 나오지 않는다. 휴식 선택과 원래 게임 설명·진행은 그대로 동작한다.

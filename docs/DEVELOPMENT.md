@@ -1,8 +1,12 @@
 # 개발 안내
 
-2026-10-21 05:27:56 KST에 소스·태그 `4aa5d2c524f63a21197668407f1f70c67a089ab1`의 [alpha.7](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.7)를 게시했다. 현재 진입 조건 충족 문구를 초록색으로 표시한다. 전체·고정 커밋 재빌드 21개 프로그램·249개 입력과 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 48개 Release·49개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [색 표시·파일·게시·Windows 확인](ISSUE-6-ALPHA7-RELEASE.md).
+2026-10-21 06:06:11 KST에 소스·태그 `90cba0b8e754db606d311394f05a7f05aca8efb5`의 [alpha.8](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.8)을 게시했다. 첫 선택과 이야기 내부 조건을 분리하고 `진행 가능`·`지금 진행 불가`·`진행 가능성 있음`을 안내한다. 전체·고정 커밋 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 DLL/cfg/ZIP 동일성·익명 공개 다운로드 대조를 통과했다. 기존 49개 Release·50개 태그·자산과 Latest 정식 v1.0.6을 보존했다. 새 DLL의 실제 Windows·물리 패드·가독성·성능 확인과 #6 전체 완료는 대기다. [판정·파일·게시·Windows 확인](ISSUE-6-ALPHA8-RELEASE.md).
 
 [사용자 안내](../README.md) · [변경 이력](../CHANGELOG.md) · [Release 등록](RELEASING.md) · [전체 소스 빌드](SOURCE-BUILD.md) · [이슈 #1 검증 기록](ISSUE-1-VALIDATION.md) · [게임 API 분석 개요](GAME-API-AUDIT.md) · [실제 게임 API 분석](REAL-GAME-API-FINDINGS.md) · [수명주기 분석](GAME-LIFECYCLE-ANALYSIS.md)
+
+## alpha.8 — 이야기 내부 조건과 진행 상태
+
+첫 선택 조건과 이야기 내부 조건을 별도로 보관하고 읽는다. `ReadStoryConditions`는 리터럴 플래그 쓰기의 영향과 조건 그래프의 의존 입력을 bounded 조회로 대조하고 관련 쓰기·불명 효과·누락을 Unknown으로 둔다. 불투명 효과 뒤의 무조건 대화와 미선택 풀의 후속도 양성으로 올리지 않는다. 이미 열린 선택 화면의 선행 변경은 앞선 조건을 현재 값으로 재해석하지 않는다. 엄격한 기존 이벤트/실행 API는 유지한다. 안전한 전체 조건 양성은 진행 가능, 완전한 음성은 지금 진행 불가, 나머지는 진행 가능성 있음이다. 기존 정확한 양성 상태 문구와 진행 가능은 초록이며 실패 이전 값은 중립이다. 읽기 전용·입력·캐시·0.25초/5초·숨김 조회 중단 계약을 유지한다. 전체·고정 재빌드 21개 프로그램·250개 입력·103개 소스/리소스·15개 참조와 실제 DLL 연결·공개 ZIP을 대조했다. [검사·파일·Windows 확인](ISSUE-6-ALPHA8-RELEASE.md).
 
 ## alpha.7 — 진입 조건 충족 초록 표시
 
