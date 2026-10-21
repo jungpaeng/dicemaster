@@ -1,6 +1,8 @@
 # PRD #6 alpha.16 — 금색 이야기 배지와 지도 핀
 
-현재 main에서 구현하고 전체 21개 검사 프로그램·267개 입력·111개 소스/리소스·16개 고정 참조와 실제 DLL 연결을 통과했다. 고정 커밋 재빌드와 공개 게시 검증은 이어서 진행한다. 실제 Windows·가독성·프레임 성능과 물리 입력 확인은 대기이며 #6을 완료/종료하지 않는다.
+<!-- alpha16-publication -->
+2026-10-21 22:40:23 KST에 소스·주석 태그 [`f6f10d5`](https://github.com/jungpaeng/dicemaster/commit/f6f10d5aca59aaee04b1a7fd2b5f0f1858a1c06c)의 [alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.16)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·267개 입력·111개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 57개 Release·58개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.**
+<!-- /alpha16-publication -->
 
 ## 표시와 입력
 
@@ -20,13 +22,13 @@ alpha.15의 기준을 유지한다. 실제 등록된 대기 임무의 현재 실
 
 ## 자동 검사·설치·Windows 확인
 
-전체 21개 검사 프로그램·267개 입력·111개 소스/리소스·16개 참조와 실제 DLL 연결·설치 ZIP의 정확한 두 경로/CRC/바이트 검사를 통과했다. UI 5,382개·정보 런타임/연결 4,424개·메뉴 2,424개·지도 677개·패드 262,831개 검사를 포함한다. 검증 도구 자체 20개 검사와 git diff --check도 통과했다. 기존 컴파일 경고 7개·오류 0개이며 기존 8개 내장 리소스의 바이트를 보존했다. 공유 UI 검사 대체 코드와 기존 리소스 계약을 새 이미지에 연결하기 전 실패는 artifacts/issue-6/gold-story-pins/*failure.log에 따로 보존한다. 기존 8개 리소스의 이름/바이트를 보존하고 새 이미지까지 이름/해시로 확인하며, 최종 성공 기록과 혼용하지 않는다. 로컬 검토 증거: artifacts/issue-6/gold-story-pins/reviewed/build-manifest.json 및 build-run.log. 고정 커밋/공개 검증 증거: artifacts/releases/v1.0.7-alpha.16/.
+전체 21개 검사 프로그램·267개 입력·111개 소스/리소스·16개 참조와 실제 DLL 연결·설치 ZIP의 정확한 두 경로/CRC/바이트 검사를 통과했다. UI 5,382개·정보 런타임/연결 4,424개·메뉴 2,424개·지도 677개·패드 262,831개 검사를 포함한다. 검증 도구 자체 20개 검사와 git diff --check도 통과했다. 기존 컴파일 경고 7개·오류 0개이며 기존 8개 내장 리소스의 바이트를 보존했다. 공유 UI 검사 대체 코드와 기존 리소스 계약을 새 이미지에 연결하기 전 실패는 artifacts/issue-6/gold-story-pins/*failure.log에 따로 보존한다. 기존 8개 리소스의 이름/바이트를 보존하고 새 이미지까지 이름/해시로 확인하며, 최종 성공 기록과 혼용하지 않는다. 로컬 검토 증거: artifacts/issue-6/gold-story-pins/reviewed/build-manifest.json 및 build-run.log. 고정 커밋/공개 검증 증거: artifacts/releases/v1.0.7-alpha.16/release-verification.json 및 anonymous-verification.json. 모든 빌드 입력·21개 프로그램 성공 기록·DLL/cfg/ZIP은 검토 후보와 일치한다. 공개 ZIP의 두 경로·CRC·바이트·SHA-256도 익명 다운로드로 대조했다.
 
 새 검사는 지도 상단 중앙/메뉴 모서리 분리·화면 경계/연결선·배지를 포함한 설명 회피·새 배지 호버·패드/정지 마우스 소유권·천 회 표시의 이미지 업로드 한 번·GUI 색 복원·종료 해제·실패 백 회의 시도 한 번·실제 DLL의 내장 리소스/이미지 렌더러 호출을 확인한다. 관리 코드 경계 검사는 Unity 렌더링·실제 Windows FPS 확인을 대신하지 않는다.
 
 [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha16--금색-지도-핀선택지-배지-확인-대기). 업데이트는 게임 종료 후 DLL만 교체해 기존 cfg를 보존한다. 최초 설치는 ZIP의 config·plugins를 BepInEx 아래에 넣는다. 이전 후보/v1.0.6의 사용자 확인을 이번 DLL의 확인으로 대체하지 않는다.
 
-검토 후보의 파일 식별값:
+[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.16/DiceMaster-v1.0.7-alpha.16.zip)의 파일 식별값(검토·고정 커밋·공개 다운로드 일치):
 
 | 파일 | bytes | SHA-256 |
 | --- | ---: | --- |

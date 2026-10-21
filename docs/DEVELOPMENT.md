@@ -2,6 +2,10 @@
 
 ## alpha.16 — 금색 이야기 배지와 지도 핀
 
+<!-- alpha16-publication -->
+2026-10-21 22:40:23 KST에 소스·주석 태그 [`f6f10d5`](https://github.com/jungpaeng/dicemaster/commit/f6f10d5aca59aaee04b1a7fd2b5f0f1858a1c06c)의 [alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.16)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·267개 입력·111개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 57개 Release·58개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·검증·확인표](ISSUE-6-ALPHA16-RELEASE.md).
+<!-- /alpha16-publication -->
+
 main에서 금색 두루마리 아이콘과 화면별 배치를 구현했다. 당문 지도는 장소 선택 영역 상단 중앙의 핀/짧은 연결선, 실제 선택 메뉴는 버튼 모서리 배지다. 현재 기회 판정·일반 대화 설명·개별 설정·입력/캐시 계약은 alpha.15를 유지한다. 아이콘은 DLL 내장 이미지 한 번 업로드/재사용이며 모드 종료 시 해제한다. **새 후보의 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [구현·검증·후보](ISSUE-6-ALPHA16-RELEASE.md).
 
 ## alpha.15 — 현재 기회와 일반 대화 판정 분리

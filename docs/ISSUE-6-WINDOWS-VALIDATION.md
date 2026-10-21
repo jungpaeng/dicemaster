@@ -2,6 +2,10 @@
 
 ## alpha.16 — 금색 지도 핀·선택지 배지 확인 대기
 
+<!-- alpha16-publication -->
+2026-10-21 22:40:23 KST에 소스·주석 태그 [`f6f10d5`](https://github.com/jungpaeng/dicemaster/commit/f6f10d5aca59aaee04b1a7fd2b5f0f1858a1c06c)의 [alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.16)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·267개 입력·111개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 57개 Release·58개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·검증·확인표](ISSUE-6-ALPHA16-RELEASE.md).
+<!-- /alpha16-publication -->
+
 대상은 [alpha.16 후보 기록](ISSUE-6-ALPHA16-RELEASE.md)의 DLL/ZIP/소스다. 아래는 모두 실제 Windows에서 확인 대기다. 자동 관리 코드 검사·실제 DLL 연결/패키지 검증과 구분한다.
 
 - [ ] 당문 지도에서 현재 기회가 있는 장소 상단 중앙에 금색 두루마리 핀과 짧은 선이 붙는다. 여러 기회는 핀 하나와 기존 여러 행 설명으로 읽는다. 이동/해상도/글자 크기 12–24/화면 가장자리에서 원래 장소명·다른 핀과 겹치거나 잘리지 않는지 확인한다.
