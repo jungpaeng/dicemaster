@@ -1,5 +1,10 @@
 # 변경 이력
 
+## v1.0.7-alpha.17 — 두루마리 아이콘 변경 (게시 준비 중)
+
+- 금색 테두리·바탕과 지도 핀/메뉴 모서리 배치를 유지하고 내부 문양만 요청한 두루마리로 바꿉니다. 원본 SVG의 Lucide ISC 고지를 DLL에 포함합니다.
+- 표시 기준·조작·설정·캐시와 cfg는 유지합니다. [범위·검증·확인표](docs/ISSUE-6-ALPHA17-RELEASE.md).
+
 ## [v1.0.7-alpha.16](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.16) — 2026-10-21 (prerelease)
 
 <!-- alpha16-publication -->
