@@ -3,7 +3,7 @@
 ## alpha.23 — 원문 관찰과 실행 변환의 경계
 
 <!-- alpha23-publication -->
-전체 소스 빌드의 21개 검사 프로그램·275개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/내부 바이트 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·Unity 화면·물리 입력·FPS 확인과 #6 전체 완료는 대기다.**
+2026-10-22 03:06:00 KST에 소스 [`fc5dc7f`](https://github.com/jungpaeng/dicemaster/commit/fc5dc7fabc0977b01ee6acdb92a3987148e77370)의 [alpha.23](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.23)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha23-publication -->
 
 선택 안내는 로드의 첫 Prefix에 저장한 호출별 원문을 성공 Finalizer에서 분석한다. #5의 마지막 Prefix가 만든 실행용 래퍼는 이야기 정의가 아니다. 실제 변환기·관찰 훅·원본 corpus·DLL 우선순위를 함께 검사한다. [원인·설계·한계](ISSUE-6-CHOICE-LOAD-SOURCE.md).

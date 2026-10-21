@@ -3,7 +3,7 @@
 ## alpha.23 후속 — 실제 로드 경계의 원문 손실
 
 <!-- alpha23-publication -->
-전체 소스 빌드의 21개 검사 프로그램·275개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/내부 바이트 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·Unity 화면·물리 입력·FPS 확인과 #6 전체 완료는 대기다.**
+2026-10-22 03:06:00 KST에 소스 [`fc5dc7f`](https://github.com/jungpaeng/dicemaster/commit/fc5dc7fabc0977b01ee6acdb92a3987148e77370)의 [alpha.23](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.23)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha23-publication -->
 
 아래 원문 기반 검사만으로는 #5가 변환한 컴파일 인수를 뒤늦게 관찰하는 경계를 검증하지 못했다. 실제 변환문에서 완료 인사 잔존을 재현하고 호출별 원문 캡처로 보완한다. [추가 원인과 검증](ISSUE-6-CHOICE-LOAD-SOURCE.md).

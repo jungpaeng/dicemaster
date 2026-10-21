@@ -3,7 +3,7 @@
 ## alpha.23 — 변환된 컴파일 인수의 완료 조건 손실
 
 <!-- alpha23-publication -->
-전체 소스 빌드의 21개 검사 프로그램·275개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/내부 바이트 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·Unity 화면·물리 입력·FPS 확인과 #6 전체 완료는 대기다.**
+2026-10-22 03:06:00 KST에 소스 [`fc5dc7f`](https://github.com/jungpaeng/dicemaster/commit/fc5dc7fabc0977b01ee6acdb92a3987148e77370)의 [alpha.23](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.23)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha23-publication -->
 
 alpha.22 사용자 상세는 초회 인사 room_001/D_Room_001_001·조건 미확정·20개 경로/직접 1개였다. 원문 대신 #5 래퍼를 분석해 완료 조건이 손실되는 경계를 재현하고 원문 캡처로 수정했다. 조회 상한 누락과 구분하며 새 Windows 확인이 필요하다. [근거·검사](ISSUE-6-CHOICE-LOAD-SOURCE.md).
