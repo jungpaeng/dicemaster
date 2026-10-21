@@ -2,7 +2,9 @@
 
 ## alpha.13 — 새 성능 확인 대기
 
-설치 파일·커밋·해시는 [alpha.13 후보 기록](ISSUE-6-ALPHA13-RELEASE.md)에 확정한다. 이전 후보·v1.0.6의 확인은 이번 DLL의 Windows 통과 근거가 아니다.
+2026-10-21 18:06:04 KST에 소스·주석 태그 [`53d6f6a`](https://github.com/jungpaeng/dicemaster/commit/53d6f6a2165b3c57f786e1920ff2b114e2144719)의 [alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.13)을 게시했다. 전체·고정 커밋 재빌드 21개 검사·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 54개 Release·55개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·파일·비교 기록](ISSUE-6-ALPHA13-RELEASE.md).
+
+설치 파일·커밋·해시는 [alpha.13 게시 기록](ISSUE-6-ALPHA13-RELEASE.md)을 따른다. 이전 후보·v1.0.6의 확인은 이번 DLL의 Windows 통과 근거가 아니다.
 
 - [ ] 같은 세이브·장소에서 1회성 OFF/ON 각각 최초 진입과 100회 이상 warm 갱신, 지도 ↔ 현재 선택 화면 전환을 비교한다. 지도 조회 성능의 모드별 p95/최대/할당량과 외부 Unity 프레임 측정을 구분해 기록한다.
 - [ ] OFF의 대기 임무·행동력/우선순위는 정상이고, ON의 증명된 1회성은 플래그 변화에 따라 갱신된다. 일반 후속 이야기는 자동 목록에 없고 상세에 남는다.

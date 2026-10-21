@@ -21,9 +21,9 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 지도 조회 성능 개선 후보는 대기 임무를 먼저 읽고, **1회성 표시 OFF이면 자동 지도에서 Lua 준비를 생략**합니다. 일반 이야기의 숨은 경로 조건과 표시하지 않을 상세 행도 자동 주기에 만들지 않습니다. 로그 → 도구 → 지도 안내의 `지도 조회 성능`에서 최근 64회 시간과 지원되는 런타임의 할당량을 읽습니다. 전체 프레임 시간은 별도 Windows 측정이 필요합니다. [개선 범위·확인표](docs/ISSUE-6-ALPHA13-RELEASE.md).
 
-<!-- alpha12-current-status -->
-**[v1.0.7-alpha.12 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.12)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.12/DiceMaster-v1.0.7-alpha.12.zip)**. 2026-10-21 16:38:52 KST 게시. 지도 자동 안내는 실행 가능한 기존 대기 임무와 도달 가능성을 확인한 1회성으로 제한하고, 후속 대화·미등록 단계는 상세로 옮겼습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. 전체·고정 커밋 재빌드 21개 프로그램과 실제 DLL 연결·공개 ZIP 대조를 통과했습니다. **이번 DLL의 실제 Windows·물리 입력·가독성·성능 확인은 대기이며 #6은 open입니다.** [변경·해시·확인표](docs/ISSUE-6-ALPHA12-RELEASE.md).
-<!-- /alpha12-current-status -->
+<!-- alpha13-current-status -->
+**[v1.0.7-alpha.13 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.13)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.13/DiceMaster-v1.0.7-alpha.13.zip)**. 2026-10-21 18:06:04 KST 게시. 자동 지도의 불필요한 조회를 줄이고 완성 구문 재사용·준비 양보·상세 성능 표본을 추가했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. 전체·고정 커밋 재빌드 21개 검사와 실제 DLL 연결·공개 ZIP 대조를 통과했습니다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기이며 #6은 open입니다.** [변경·해시·확인표](docs/ISSUE-6-ALPHA13-RELEASE.md).
+<!-- /alpha13-current-status -->
 
 지도 자동 안내는 **이번 클릭에 실행 가능한, 이미 등록된 대기 임무**와 **1회성 증명·현재 조건·경로를 각각 확인한 항목**을 최대 세 행으로 표시합니다. 행동력·장소 활성·임무 우선순위를 반영하고, 미등록 임무 단계와 일반 대화의 후속 예측은 **로그 → 도구 → 지도 안내**에서만 제공합니다. 상세 조회의 `진행 가능성 있음`을 지도에 자동으로 띄우지 않습니다. 지도에 표시가 없어도 게임 전체에 기회가 없다는 뜻은 아닙니다.
 

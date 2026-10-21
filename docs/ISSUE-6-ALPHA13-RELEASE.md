@@ -1,6 +1,6 @@
 # PRD #6 alpha.13 — 지도 자동 조회 비용 개선
 
-상태: main 구현·21개 자동 검사·실제 DLL 연결 통과 / prerelease 게시 준비 중. 새 Windows 확인은 대기이며 #6은 open으로 유지한다. 게시 후 소스·태그·파일 해시와 설치 링크를 이 문서에 확정한다.
+2026-10-21 18:06:04 KST에 소스·주석 태그 [`53d6f6a`](https://github.com/jungpaeng/dicemaster/commit/53d6f6a2165b3c57f786e1920ff2b114e2144719)의 [alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.13)을 게시했다. 전체·고정 커밋 재빌드 21개 검사·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 54개 Release·55개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.**
 
 ## 바뀐 동작
 
@@ -27,10 +27,18 @@ warm 리소스 읽기와 게임 판정 호출은 전후 모두 0이다. 이 수�
 
 ## 자동 검증 기록
 
-전체 소스 빌드의 21개 검사 프로그램, 254개 빌드 입력·104개 소스/리소스·15개 고정 참조 검증, 실제 DLL 연결·읽기 전용 IL·기존 패드/팝업/로그/예약/주사위 회귀를 통과했다. prerelease 검증 도구 자체의 20개 검사와 git diff --check도 통과했다. 로컬 검증물은 artifacts/issue-6/performance-scope/reviewed에 보존한다. 고정 소스 재빌드와 공개 ZIP 검증은 게시 단계에서 별도로 기록한다.
+전체 소스 빌드의 21개 검사 프로그램, 254개 빌드 입력·104개 소스/리소스·15개 고정 참조 검증, 실제 DLL 연결·읽기 전용 IL·기존 패드/팝업/로그/예약/주사위 회귀를 통과했다. prerelease 검증 도구 자체의 20개 검사와 git diff --check도 통과했다. 로컬 검증물은 artifacts/issue-6/performance-scope/reviewed에 보존한다. 고정 커밋 재빌드도 동일한 21개 프로그램을 통과했고 검토 DLL/cfg/ZIP과 일치했다. prerelease 게시 후 익명 ZIP 다운로드·정확한 두 경로·CRC·바이트·해시를 대조했다. 로컬 게시 영수증은 artifacts/releases/v1.0.7-alpha.13/release-verification.json 및 anonymous-verification.json에 보존한다.
 
 모드별 성능 표본은 여러 선택 장소의 최근 64회를 합산하므로 같은 장소에서 64회 이상 모은 뒤 비교한다. UI 전체 비용·선택 화면 자체의 프레임 비용은 별도 측정이 필요하다.
 
 ## 설치
 
-게시 파일이 확정되면 새 후보 링크와 SHA-256을 추가한다. 업데이트는 게임 종료 후 ZIP의 DLL만 교체하고 기존 cfg를 보존한다.
+[prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.13) · [DiceMaster-v1.0.7-alpha.13.zip 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.13/DiceMaster-v1.0.7-alpha.13.zip). Windows 활협전용 BepInEx 모드 베이스가 필요하다. 게임 종료 후 DLL/cfg를 백업하고, 업데이트는 ZIP의 DLL만 교체해 기존 cfg를 보존한다. 최초 설치에는 ZIP의 두 파일을 각 경로에 넣는다. 복구는 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다.
+
+| 파일 | 바이트 | SHA-256 |
+| --- | ---: | --- |
+| DiceMaster.dll | 832512 | `089a169363d5d6bb3927496be222e9a75f23eda5e7da199a530198490affe380` |
+| DiceMaster-v1.0.7-alpha.13.zip | 353797 | `31ec4d85002dba7c41ea1a676e8fa6fb7308622ee9797ac6f7669088d3028d34` |
+| DiceMaster.cfg | 13078 | `a7d0d90884e032c69f8177b8193751a5543fe7b5fda7a66ab97dcffc01d6658e` |
+
+소스·주석 태그: `53d6f6a2165b3c57f786e1920ff2b114e2144719`. Release ID `419351523` / asset ID `661940318`. 게시 옵션은 draft=false·prerelease=true·make_latest=false이며 기존 Release·태그를 수정하지 않았다. 새 후보의 실제 Windows 확인이 끝나기 전에는 #6 전체 완료나 이슈 종료로 처리하지 않는다.
