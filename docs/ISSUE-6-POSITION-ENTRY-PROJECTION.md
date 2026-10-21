@@ -1,6 +1,10 @@
 # 지도 진입 플래그의 읽기 전용 가상 조회
 
-2026-10-22 원래 작업 폴더의 main에서 구현한 alpha.27 후보다. 사용자 지시에 따라 커밋·고정 소스 재빌드·새 prerelease를 진행한다. 새 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
+2026-10-22 원래 작업 폴더의 main에서 구현한 alpha.27이다. 사용자 지시에 따라 커밋·고정 소스 재빌드·새 prerelease를 완료했다. 새 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
 
 ## 관찰과 원인
 
@@ -51,6 +55,6 @@ EnableMapGuide에 속하며 새 키·기본값·cfg 변경은 없다. 상위 시
 
 전달 후보 DLL의 실제 IL에서도0→1 예측·false/unknown/같은 대상값·진단·누락 자료를 실행한다. 게임 참조의 필드 타입과 진입 Setup의 실제 쓰기를 고정 메타데이터에 대조하며, 생산 판독기에는 게임 evaluator/setup·플래그 setter·반사 쓰기·게임 필드 쓰기가 없음을 검사한다. 실제 Lua/Windows/물리 입력을 실행한 검사는 아니다.
 
-전체21개 검사 프로그램·283개 빌드 입력·113개 소스/리소스·16개 제공 참조, 실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/DLL/cfg 바이트 대조를 통과했다. 배포 검증기 자체 회귀20개도 통과했다. 초기에는 한도 초과 표본 크기, 새 진단 대역 메서드, IL 대역의 숫자 타입 기본값을 수정했고 각 실패 로그를 별도 보존한 뒤 전체 검사를 다시 통과했다. 최종 고정 커밋 재빌드·게시 기록은 [alpha.27 후보 기록](ISSUE-6-ALPHA27-RELEASE.md)에 보충한다.
+전체21개 검사 프로그램·283개 빌드 입력·113개 소스/리소스·16개 제공 참조, 실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/DLL/cfg 바이트 대조를 통과했다. 배포 검증기 자체 회귀20개도 통과했다. 초기에는 한도 초과 표본 크기, 새 진단 대역 메서드, IL 대역의 숫자 타입 기본값을 수정했고 각 실패 로그를 별도 보존한 뒤 전체 검사를 다시 통과했다. 최종 고정 커밋 재빌드·게시·공개 파일 검증은 [alpha.27 게시 기록](ISSUE-6-ALPHA27-RELEASE.md)을 따른다.
 
 게임 종료 후 DLL/cfg를 백업하고 새 설치 ZIP의 plugins/DiceMaster/DiceMaster.dll만 교체해 기존 cfg를 보존한다. [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha27--진입-플래그-가상-조회-확인-대기)에 남제자방 초회/해금 주제/완료·잠김·반복 대련과 입력/성능을 구분한다. #6 전체 완료나 이슈 종료로 처리하지 않는다.

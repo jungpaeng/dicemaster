@@ -2,6 +2,10 @@
 
 ## alpha.27 — 진입 플래그 가상 조회 확인 대기
 
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
 [후보 파일·검증](ISSUE-6-ALPHA27-RELEASE.md) · [설계·합성 측정](ISSUE-6-POSITION-ENTRY-PROJECTION.md). 아래는 새 DLL에서 실제 Windows 확인 대기다.
 
 - [ ] 같은 세이브에서 남제자방 포커스와 안쪽 사사형 선택지의 초회 인사·색종이 등 해금된 주제를 비교한다. 실제 해금되지 않은 주제는 표시하지 않는지 확인한다.

@@ -1,6 +1,10 @@
 # 후속 대화 경로 가상 조회와 성능 검증
 
-후속 alpha.27 후보는 [지도 진입 플래그의 읽기 전용 가상 조회](ISSUE-6-POSITION-ENTRY-PROJECTION.md)를 추가한다. 아래 진입 쓰기 마스크와 파일·측정은 각 과거 버전의 기록이며 새 후보의 진입 예측과 구분한다.
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
+후속 alpha.27은 [지도 진입 플래그의 읽기 전용 가상 조회](ISSUE-6-POSITION-ENTRY-PROJECTION.md)를 추가한다. 아래 진입 쓰기 마스크와 파일·측정은 각 과거 버전의 기록이며 새 후보의 진입 예측과 구분한다.
 
 <!-- alpha26-publication -->
 2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**

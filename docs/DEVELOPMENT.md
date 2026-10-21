@@ -2,6 +2,10 @@
 
 ## alpha.27 — 읽기 전용 진입 플래그 예측
 
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
 PreviewConditions.Reader.ProjectPositionEntry가 직렬화 조건을 해석해 조회별 가상 값에 순서대로 대입한다. 조건32그룹/대상32개·2,048단계 하위 한도는 기존 조건16,384단계 안에서 소비한다. strict 증명·기회 마커에는 적용하지 않는다. 전용 한도 예외로 남은 피연산자 순회를 중단하며 파생 getter·행동 소비 뒤 조건은 보수적으로 보류한다. [상세 설계·검사·측정](ISSUE-6-POSITION-ENTRY-PROJECTION.md) · [후보·실제 확인 대기](ISSUE-6-ALPHA27-RELEASE.md).
 
 ## alpha.26 — 지도 이야기의 공통 필터·이어 읽기

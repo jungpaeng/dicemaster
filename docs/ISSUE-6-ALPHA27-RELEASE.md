@@ -1,6 +1,10 @@
 # v1.0.7-alpha.27 — 지도 진입 후 대화 조건 안내
 
-현재 상태는 게시 준비다. 사용자의 커밋·prerelease 지시에 따라 main의 소스를 고정해 재빌드하고 검토 후보와 대조한다. 새 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
+사용자의 커밋·prerelease 지시에 따라 main의 소스를 고정해 재빌드하고 검토 후보와 대조한 뒤 새 prerelease를 게시했다. 새 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
 
 지금은 잠겨 있어도 장소 클릭 시 설정되는 플래그로 열리는 대화 선택지를 지도 툴팁에서 확인할 수 있도록 한다. 진입 조건을 안전하게 판독한 가상 값만 사용하며 실제 플래그를 임시 변경·복원하지도 않는다. 남제자방의 현재 Talk_Brother4=0/비교1 보고를 계기로 일반적인 직렬화 진입 설정을 처리하며 인물·플래그 예외 목록을 추가하지 않는다. 사용자 세이브 자체를 재생한 Windows 검증은 아니다.
 
@@ -10,7 +14,7 @@
 
 ## 자동 검사와 성능 경계
 
-전체 소스 빌드의21개 검사 프로그램·283개 입력·113개 소스/리소스·16개 참조, 실제 후보 DLL IL/참조 연결·설치 ZIP의 두 경로/CRC/DLL/cfg 바이트와 배포 검증기 회귀20개를 통과했다. 고정 커밋 재빌드·공개 파일 검증 결과는 게시 후 보충한다.
+전체 소스 빌드의21개 검사 프로그램·283개 입력·113개 소스/리소스·16개 참조, 실제 후보 DLL IL/참조 연결·설치 ZIP의 두 경로/CRC/DLL/cfg 바이트와 배포 검증기 회귀20개를 통과했다. 고정 커밋 재빌드도21개 프로그램·283개 입력·113개 소스/리소스·16개 고정 참조를 통과했다. 검토 후보와 모든 빌드 입력·DLL/cfg/ZIP 바이트가 일치하며 공개 ZIP의 해시·두 경로·CRC·내부 바이트도 익명 다운로드로 대조했다.
 
 검토 후보의 주요 성공 기록:
 
@@ -37,3 +41,9 @@ SHA 원본 Lua+합성 직렬화 조건과 관리 코드/입력 경계 검사이�
 남제자방 포커스에서 초회 인사/해금 주제 안내, 완료·잠김·반복 대련만 남은 경우의 제거, 로그의 현재/진입 가상 값 구분, 기존 기회 마커·행동력/우선순위·창 가림·Xbox/XInput/키보드/마우스/터치와 #5/로그 네 탭/예약/주사위/상점/실제 분기 기록을 확인한다. 초기화 자료 미확인·미지원/난수 진입·행동 소비 뒤 조건은 안전하게 확정하지 못하면 안내를 보류한다. [확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha27--진입-플래그-가상-조회-확인-대기).
 
 검토 후보·측정 원자료는 artifacts/issue-6/entry-flag-projection/, 고정 커밋·게시·공개 다운로드 영수증은 artifacts/releases/v1.0.7-alpha.27/에 구분한다. 기존 Latest v1.0.6과 이전 Release·태그·자산·이슈 상태를 보존하며 #6을 종료하지 않는다.
+
+전체21개 프로그램의 성공 기록도 검토 후보와 고정 커밋 재빌드가 정확히 일치한다.
+
+게시 시각 2026-10-22 06:29:59 KST, Release `420075315`·asset `663842450`, draft=false·prerelease=true·make_latest=false다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.27/DiceMaster-v1.0.7-alpha.27.zip)**. 기존 68개 Release·69개 태그·자산·Latest v1.0.6과 #6 open을 보존했다. source/tag는 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)이다.
+
+게시 후 보충 문서는 별도 main 커밋이며 소스 태그·빌드 입력·설치 파일을 바꾸지 않는다. 영수증은 artifacts/releases/v1.0.7-alpha.27/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json에 보존한다.

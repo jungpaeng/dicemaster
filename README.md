@@ -19,9 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-alpha.27 후보는 장소 진입 시 설정되는 플래그를 읽기 전용으로 계산해, 지금 값만으로는 잠겨 보이는 대화 경로도 진입 후 해금이 확인되면 지도 툴팁에 안내합니다. 실제 플래그를 임시 변경하지 않으며 미확정은 보류합니다. 로그는 현재 값과 진입 후 가상 진단을 구분합니다. 일반 경로의 마커·완료/반복 활동 필터와 정상0.25초 갱신을 유지합니다. [설계·측정·검사](docs/ISSUE-6-POSITION-ENTRY-PROJECTION.md) · [파일·설치·Windows 확인](docs/ISSUE-6-ALPHA27-RELEASE.md).
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
 
-**[v1.0.7-alpha.27 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.27/DiceMaster-v1.0.7-alpha.27.zip)** — 게시 준비 중입니다. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 새 DLL의 실제 Windows·화면·물리 입력·FPS 확인은 대기입니다. 이전 [alpha.26 게시 기록](docs/ISSUE-6-ALPHA26-RELEASE.md)은 별도 보존합니다.
+alpha.27은 장소 진입 시 설정되는 플래그를 읽기 전용으로 계산해, 지금 값만으로는 잠겨 보이는 대화 경로도 진입 후 해금이 확인되면 지도 툴팁에 안내합니다. 실제 플래그를 임시 변경하지 않으며 미확정은 보류합니다. 로그는 현재 값과 진입 후 가상 진단을 구분합니다. 일반 경로의 마커·완료/반복 활동 필터와 정상0.25초 갱신을 유지합니다. [설계·측정·검사](docs/ISSUE-6-POSITION-ENTRY-PROJECTION.md) · [파일·설치·Windows 확인](docs/ISSUE-6-ALPHA27-RELEASE.md).
+
+**[v1.0.7-alpha.27 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.27/DiceMaster-v1.0.7-alpha.27.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 이전 [alpha.26 게시 기록](docs/ISSUE-6-ALPHA26-RELEASE.md)은 별도 보존합니다.
 
 현재 정보 기능 후보는 확인된 기회를 **작은 금색 두루마리**로 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. 두루마리 문양은 요청한 Lucide scroll-text로 교체합니다. [alpha.17 변경·검증·Windows 확인](docs/ISSUE-6-ALPHA17-RELEASE.md).
 

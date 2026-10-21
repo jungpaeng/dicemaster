@@ -2,6 +2,10 @@
 
 ## alpha.27 — 진입 후 값으로 지도 경로 안내
 
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
 남제자방 같은 장소에 기존 패드/키보드 포커스를 두거나 마우스를 옮기면 확인한 진입 후 플래그로 열리는 대화 경로도 읽는다. 일반 경로만으로 마커를 추가하지 않는다. 로그 → 도구 → 지도 안내는 현재 값과 진입 후 가상 진단을 구분한다. 새 조작은 없고 A/Enter/클릭/터치·입력 소유권/해제/중립·창 가림을 유지한다. [변경·실제 확인 대기](ISSUE-6-ALPHA27-RELEASE.md).
 
 ## alpha.26 — 지도 초회 인사·후속 경로

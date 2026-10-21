@@ -2,6 +2,10 @@
 
 ## alpha.27 — 지도 진입 설정의 가상 값
 
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
+
 사용자의 alpha.26 보고(남제자방 지도만 미표시, Talk_Brother4 현재0/비교1·행동4/필요1)를 근거로 진입 플래그를 일반적인 읽기 전용 판독기로 해석한다. 실제 플래그·조건/RNG·세이브는 건드리지 않고 미확정은 해금으로 승격하지 않는다. 로그에 현재/진입 예상값을 분리하고 기존 이야기/마커/입력/캐시와 예산을 유지한다. [원인·외부 비교·성능·검사](ISSUE-6-POSITION-ENTRY-PROJECTION.md) · [후보·새 Windows 확인 대기](ISSUE-6-ALPHA27-RELEASE.md). 앞선 사용자 확인을 새 DLL 통과로 승계하지 않는다.
 
 ## alpha.26 — 지도 이야기 필터·조회 연속성

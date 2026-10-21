@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.27 후보 — 지도 진입 후 대화 조건
+## [v1.0.7-alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27) — 2026-10-22 (prerelease)
+
+<!-- alpha27-publication -->
+2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha27-publication -->
 
 - 장소가 클릭될 때 설정하는 플래그를 조회용 가상 값으로 반영해 현재0/진입후1인 대화 경로도 지도에서 확인한다. 실제 상태의 임시 변경·복원이나 게임 조건/RNG 호출은 없다.
 - 순서가 있는 진입 대입·미확정·상한을 구분하고 로그에 현재 값/진입 후 가상 진단을 함께 제공한다. 기존 마커·해금/완료/반복 활동·입력·0.25초/5초를 유지하며 cfg 변경은 없다. [설계·측정](docs/ISSUE-6-POSITION-ENTRY-PROJECTION.md) · [후보·Windows 대기](docs/ISSUE-6-ALPHA27-RELEASE.md).
