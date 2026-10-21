@@ -440,31 +440,26 @@ namespace DiceMaster.Information
                         !current.UnresolvedEntrySwitch(path.CurrentPrerequisite, ref choiceBudget);
                     if (!direct && !following) continue;
                 }
-                if (path.ReadStoryKind(current, ref classificationBudget) == MapStoryKind.ActivityResponse)
-                { selection.HiddenActivity = true; Reject(ref selection, path, "반복 활동의 고정 반응"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
-                if (path.StoryKind == MapStoryKind.ActivityResponse && !path.ReadActivityIndependence(current, ref classificationBudget).HasValue)
-                { selection.HiddenActivityUnknown = true; Reject(ref selection, path, "활동 조건의 독립성 미확인"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
-                if (raw != null)
+                int step = raw == null ? -1 : CurrentStep(path, raw);
+                MapRouteState state = MapRouteState.Unknown;
+                MapGuidanceRejection rejected = raw != null && step < 0 ? MapGuidanceRejection.Choices :
+                    path.ReadGuidance(current, step, raw != null, currentRoot, ref choiceBudget, ref classificationBudget, out state);
+                if (rejected != MapGuidanceRejection.None)
                 {
-                    int step = CurrentStep(path, raw);
-                    MapRouteState choices = step < 0 ? MapRouteState.Unknown : path.ReadChoiceAvailability(current, ref choiceBudget, step);
-                    if (choices != MapRouteState.Met)
-                    {
-                        selection.HiddenChoices = true;
-                        Reject(ref selection, path, "후속 선택지 잠김/해금 미확인");
-                        if (choices == MapRouteState.Unknown && selection.Path == null) selection.State = MapRouteState.Unknown;
-                        continue;
-                    }
-                    if (step == path.Steps.Count - 1 && current.UnresolvedEntrySwitch(path.CurrentPrerequisite, ref choiceBudget))
-                    { selection.HiddenEntry = true; Reject(ref selection, path, "진입 대화의 완료 근거 미확인"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
+                    selection.HiddenActivity |= rejected == MapGuidanceRejection.Activity;
+                    selection.HiddenActivityUnknown |= rejected == MapGuidanceRejection.ActivityUnknown;
+                    selection.HiddenChoices |= rejected == MapGuidanceRejection.Choices;
+                    selection.HiddenEntry |= rejected == MapGuidanceRejection.Entry;
+                    string reason = rejected == MapGuidanceRejection.Activity ? "반복 활동의 고정 반응" :
+                        rejected == MapGuidanceRejection.ActivityUnknown ? "활동 조건의 독립성 미확인" :
+                        rejected == MapGuidanceRejection.Choices ? "후속 선택지 잠김/해금 미확인" :
+                        rejected == MapGuidanceRejection.Entry ? "진입 대화의 완료 근거 미확인" : "현재 필수 조건 미충족";
+                    Reject(ref selection, path, reason);
+                    if (selection.Path == null && rejected != MapGuidanceRejection.Conditions &&
+                        (rejected != MapGuidanceRejection.Choices || state == MapRouteState.Unknown)) selection.State = MapRouteState.Unknown;
+                    continue;
                 }
-                // Only a uniquely matched, closed root menu may reuse the
-                // map's negative projection. Inputs affected by future writes
-                // are already masked in that projection; earlier captured
-                // menu guards must never be reinterpreted after a write.
-                MapRouteState state = currentRoot && path.ReadCurrentBlocker(current) ? MapRouteState.NotMet :
-                    unresolved || path.StoryConditionsMayHaveChanged ? MapRouteState.Unknown : path.ReadStoryConditions(current);
-                if (state == MapRouteState.NotMet) { Reject(ref selection, path, "현재 필수 조건 미충족"); continue; }
+                if (unresolved) state = MapRouteState.Unknown;
                 if (selection.Paths == null) selection.Paths = new List<MapRoutePath>();
                 selection.Paths.Add(path);
                 if (incomplete) state = MapRouteState.Unknown;

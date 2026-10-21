@@ -1,5 +1,7 @@
 # 후속 대화 경로 가상 조회와 성능 검증
 
+후속 alpha.26 후보는 [지도 이야기 공통 필터·이어 읽기](ISSUE-6-MAP-STORY-SCAN.md)를 따른다. 초회 인사의 한 단계 경로도 지도에 포함한다. 아래 두 단계 제한과 측정·파일 정보는 공개 alpha.25 당시 기록이다.
+
 <!-- alpha25-publication -->
 2026-10-22 04:43:58 KST에 소스 [`e81a0c4`](https://github.com/jungpaeng/dicemaster/commit/e81a0c420602c5cbaa472a59d1617131e830e3f9)의 [alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha25-publication -->

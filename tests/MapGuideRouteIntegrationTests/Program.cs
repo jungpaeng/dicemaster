@@ -41,8 +41,9 @@ internal static partial class Program
         Check(queries.Count == 1, "One provider query owns summary and every detail entry");
         return (MapGuideSnapshot)queries[0].Read();
     }
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--map-guidance-benchmark") { SelectedStoryBenchmark(); return; }
         MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true; Time.unscaledTime = 0;
         DataHelper.Scripts.Clear(); PositionEventCache.Parser.Actions.Clear();
         var gateFlag = new FlagData { name = "entry-gate", State = 0 };
@@ -117,8 +118,9 @@ internal static partial class Program
         CurrentRequiredGuardMap();
         IndividualTopicsAndActivitiesMap();
         SelectedFollowupProjection();
+        SelectedStoryScanCases();
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
-        if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); }
+        if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); NativeSelectedStoryScan(corpus); }
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
     }
     private static void CachedMarkerRoutes(PositionController controller, FlagData gate, FlagData once)

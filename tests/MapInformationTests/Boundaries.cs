@@ -13,6 +13,7 @@ namespace UnityEngine
 }
 namespace Mortal.Core
 {
+    public class ValueCompareItem { public int _compareOp, _value; }
     public enum PositionType { 無, Hall, Kitchen }
     public enum StatKind { 行動次數 = 19 }
     public class FlagData : UnityEngine.Object { private int state; public int _default, StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
@@ -96,7 +97,7 @@ namespace Mortal.Story
     public class PositionResultConfig { public List<PositionResultData> _list = new List<PositionResultData>(); }
     public class ConditionResultConfig { public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>(); }
     public class SwitchResultConfig { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
-    public class SwitchResultData : UnityEngine.Object { public bool _useCount; public int _count; public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
+    public class SwitchResultData : UnityEngine.Object { public bool _useCount; public int _count; public List<Mortal.Core.ValueCompareItem> _countItems = new List<Mortal.Core.ValueCompareItem>(); public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
     public class CheckPointManager
     {
         public static CheckPointManager Instance { get; set; }

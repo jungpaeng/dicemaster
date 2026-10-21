@@ -1,5 +1,9 @@
 # 개발 안내
 
+## alpha.26 — 지도 이야기의 공통 필터·이어 읽기
+
+MapRoutePath.ReadGuidance를 지도/현재 선택 화면이 공유한다. MapRouteDefinitions.StoryPaths의 append-only 정의 목록을 선택 장소당64셀씩 색인하고, 현재 조회는32경로/조건·분류 예산의 커서에서 이어 진행한다. 직전 성공 경로는 정의 참조만 보관하고 새 Reader로 재확인한다. [원인·안전 경계·성능·검사](ISSUE-6-MAP-STORY-SCAN.md). alpha.26 후보이며 아래 alpha.25의 설치 파일/확인 이력과 구분한다.
+
 ## alpha.25 — 후속 경로 가상 조회
 
 <!-- alpha25-publication -->

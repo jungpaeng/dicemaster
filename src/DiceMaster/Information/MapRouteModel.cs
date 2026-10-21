@@ -6,6 +6,15 @@ namespace DiceMaster.Information
 {
     public enum MapRouteState { Unknown, Met, NotMet }
     public enum MapStoryKind { Unclassified, Story, ActivityResponse }
+    internal enum MapGuidanceRejection { None, Activity, ActivityUnknown, Choices, Entry, Conditions }
+
+    // Append-only definition witnesses; no current condition result is stored.
+    public sealed class MapStoryPath
+    {
+        public readonly MapStoryEntry Story;
+        public readonly MapRoutePath Path;
+        internal MapStoryPath(MapStoryEntry story, MapRoutePath path) { Story = story; Path = path; }
+    }
 
     // Owned by one scheduled map read. Shared tails/pools often have exactly
     // the same gate, so neither its predicate nor checkpoint graph is read
@@ -178,6 +187,28 @@ namespace DiceMaster.Information
         // the bounded definition index. It compresses many known alternatives
         // without discarding an observed bypass; no sampled values are cached.
         public PreviewCondition CurrentPrerequisite { get { return snapshotGate; } }
+        // Both a future map entry and an already active native option use the
+        // same story filters. Only the latter may skip its observed current
+        // button's unlock check. Neither form grants an opportunity marker.
+        internal MapGuidanceRejection ReadGuidance(MapRouteRead read, int afterStep, bool checkChoices, bool currentRoot,
+            ref int choices, ref int kinds, out MapRouteState state)
+        {
+            state = MapRouteState.Unknown;
+            if (ReadStoryKind(read, ref kinds) == MapStoryKind.ActivityResponse) return MapGuidanceRejection.Activity;
+            if (StoryKind == MapStoryKind.ActivityResponse && !ReadActivityIndependence(read, ref kinds).HasValue)
+                return MapGuidanceRejection.ActivityUnknown;
+            if (checkChoices)
+            {
+                state = ReadChoiceAvailability(read, ref choices, afterStep);
+                if (state != MapRouteState.Met) return MapGuidanceRejection.Choices;
+                state = MapRouteState.Unknown;
+                if ((afterStep < 0 || afterStep == Steps.Count - 1) && read.UnresolvedEntrySwitch(CurrentPrerequisite, ref choices))
+                    return MapGuidanceRejection.Entry;
+            }
+            state = currentRoot && ReadCurrentBlocker(read) ? MapRouteState.NotMet :
+                StoryConditionsMayHaveChanged ? MapRouteState.Unknown : ReadStoryConditions(read);
+            return state == MapRouteState.NotMet ? MapGuidanceRejection.Conditions : MapGuidanceRejection.None;
+        }
         public static PreviewCondition CommonPrerequisite(PreviewCondition left, PreviewCondition right)
         {
             if (left == null || right == null) return PreviewConditions.Unknown;

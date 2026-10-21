@@ -130,8 +130,21 @@ namespace DiceMaster
                 scripts["root"] = Menu + Guarded; route = Create(); Finish(route);
                 Check(StoryState(route) == "NotMet" && !(bool)Member(route, "HasIncompleteStoryPaths"),
                     "actual DLL false internal story gate rejects a plain enabled training option");
+                string Guidance(object graph)
+                {
+                    var witnesses = Items(graph, "StoryPaths");
+                    object witness = witnesses[0], path = Member(witness, "Path");
+                    Check(witnesses.Count == 1 && ReferenceEquals(Member(witness, "Story"), Items(graph, "StoryEntries")[0]),
+                        "actual DLL append-only witness index refers to the original retained story/path");
+                    var method = path.GetType().GetMethod("ReadGuidance", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                    object[] arguments = { Activator.CreateInstance(Type("Information.MapRouteRead")), -1, true, true, 32, 32,
+                        Enum.Parse(Type("Information.MapRouteState"), "Unknown") };
+                    return method.Invoke(path, arguments).ToString();
+                }
+                Check(Guidance(route) == "Conditions", "actual DLL shared map/choice guidance rejects a known false prerequisite");
                 comparison._value1._value[0]._constant = 1;
                 Check(StoryState(route) == "Met", "actual DLL full-story snapshot updates with readonly current checkpoint data");
+                Check(Guidance(route) == "None", "actual DLL shared guidance freshly accepts the changed condition without executing it");
                 Check(Items(route, "StoryEntries").Cast<object>().All(x => Member(x, "Current").ToString() == "Unknown"),
                     "actual DLL current-condition proof does not upgrade strict route execution certainty");
                 scripts["root"] = Menu + "unknown_callback();" + Dialogue; route = Create(); Finish(route);

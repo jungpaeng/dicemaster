@@ -190,6 +190,8 @@ static class Program {
   Check(m.GetType("DiceMaster.Information.MapGuideSource").Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference call&&call.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&call.Name=="AdvanceBudgeted")),"delivered map provider prepares actual bounded route engine");
   Check(publish.Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.ChoiceStorySnapshot"&&f.Name=="Entries"),"delivered choice snapshot uses the existing read-only map log publication");
   var choice=m.GetType("DiceMaster.Information.ChoiceStorySource");
+  foreach(var consumer in new[]{choice,m.GetType("DiceMaster.Information.MapGuideSource")})
+   Check(DeepTypes(consumer).SelectMany(x=>x.Methods).Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapRoutePath"&&c.Name=="ReadGuidance"),"delivered map and active-choice tooltips share story eligibility: "+consumer.Name);
   var loadHook=m.GetType("DiceMaster.Information.ChoiceStoryPatches").NestedTypes.Single(x=>x.Name=="ScriptLoaded");
   var capture=loadHook.Methods.Single(x=>x.Name=="Prefix");var complete=loadHook.Methods.Single(x=>x.Name=="Finalizer");
   int PriorityOf(MethodDefinition method)=>(int)method.CustomAttributes.Single(x=>x.AttributeType.FullName=="HarmonyLib.HarmonyPriority").ConstructorArguments[0].Value;

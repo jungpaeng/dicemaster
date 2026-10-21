@@ -45,6 +45,14 @@ namespace DiceMaster.Information
             internal readonly List<StoryGroup> Stories = new List<StoryGroup>();
             internal int StoryWork = -1;
             internal int EventWork = -1;
+            internal readonly SelectedStoryScan SelectedStories = new SelectedStoryScan();
+        }
+        private sealed class SelectedStoryScan
+        {
+            internal readonly List<StoryLink> Candidates = new List<StoryLink>();
+            internal int Indexed, Cursor;
+            // A definition hint, always revalidated with a fresh Reader.
+            internal StoryLink Preferred;
         }
         private sealed class StoryGroup
         {

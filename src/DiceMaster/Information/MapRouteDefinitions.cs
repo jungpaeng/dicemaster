@@ -138,6 +138,7 @@ namespace DiceMaster.Information
         private readonly List<MapRouteEntry> entries = new List<MapRouteEntry>();
         private readonly List<MapScriptEntry> scriptEntries = new List<MapScriptEntry>();
         private readonly List<MapStoryEntry> storyEntries = new List<MapStoryEntry>();
+        private readonly List<MapStoryPath> storyPaths = new List<MapStoryPath>();
         private readonly Dictionary<string, MapStoryEntry> storyIndex = new Dictionary<string, MapStoryEntry>(StringComparer.Ordinal);
         private readonly List<MapChoiceStep> choiceSteps = new List<MapChoiceStep>();
         private readonly List<string> reasons = new List<string>();
@@ -236,6 +237,7 @@ namespace DiceMaster.Information
         public IList<MapRouteEntry> Entries { get { return entries.AsReadOnly(); } }
         public IList<MapScriptEntry> ScriptEntries { get { return scriptEntries.AsReadOnly(); } }
         public IList<MapStoryEntry> StoryEntries { get { return storyEntries.AsReadOnly(); } }
+        public IList<MapStoryPath> StoryPaths { get { return storyPaths.AsReadOnly(); } }
         // Include utility/menu choices too: absence of a linked story cannot
         // establish that an identical visible label names a unique node.
         // Alternative guard definitions are deliberately retained. Consumers
@@ -295,7 +297,7 @@ namespace DiceMaster.Information
             else { rootCoverageLost = true; if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가"); }
         }
         public void Clear()
-        { cleared = true; jobs.Clear(); followupJobs.Clear(); pendingRootJobs = 0; plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
+        { cleared = true; jobs.Clear(); followupJobs.Clear(); pendingRootJobs = 0; plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyPaths.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
         private void Reason(string value, bool incompleteStory = true, bool immediateHandoff = false)
         { incompleteStoryPaths |= incompleteStory; incompleteOpportunityPaths |= incompleteStory && !immediateHandoff; if (reasons.Count < 8 && !reasons.Contains(value)) reasons.Add(value); }
         private static bool ValidScript(string value)
@@ -962,7 +964,9 @@ namespace DiceMaster.Information
             if (entry.HasPath(job.Identity)) return;
             Plan selectedPlan; var profile = plans.TryGetValue(job.Script, out selectedPlan) ? StoryProfile(selectedPlan, job) : null;
             var kind = ActivityKind(job, profile);
-            if (!entry.HasPath(job.Identity) && !entry.Add(Path(job, job.DialogueCharacter, kind))) { limited = true; RecordCut(job); Reason("이야기 경로 수 상한 · 생략된 경로 확인 불가"); }
+            var path = Path(job, job.DialogueCharacter, kind);
+            if (entry.Add(path)) storyPaths.Add(new MapStoryPath(entry, path));
+            else { limited = true; RecordCut(job); Reason("이야기 경로 수 상한 · 생략된 경로 확인 불가"); }
         }
         private void Choose(Job job, MapRouteSyntax syntax, string variable, int open, int close)
         {
