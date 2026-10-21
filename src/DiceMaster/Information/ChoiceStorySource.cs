@@ -36,6 +36,7 @@ namespace DiceMaster.Information
             internal readonly Dictionary<string, List<MapChoiceStep>> Nodes = new Dictionary<string, List<MapChoiceStep>>(StringComparer.Ordinal);
             internal readonly List<MapStoryEntry> Stories = new List<MapStoryEntry>();
             internal readonly List<MapRoutePath> Paths = new List<MapRoutePath>();
+            internal int DirectPaths;
             internal readonly Dictionary<MapRoutePath, MapStoryEntry> PathStories = new Dictionary<MapRoutePath, MapStoryEntry>();
             internal PreviewCondition CurrentPrerequisite;
             internal readonly List<MapRouteEntry> Events = new List<MapRouteEntry>();
@@ -234,6 +235,7 @@ namespace DiceMaster.Information
                 if (option.Raw == null || option.Context != Context || !ReferenceEquals(option.Menu, menu) || !Live(option.Control.Target, menu) || !Interactable(option.Control.Target)) continue;
                 Binding binding;
                 if (!bindings.TryGetValue(option.Raw, out binding) || binding.Stories.Count == 0) continue;
+                int collectedPaths = binding.Paths.Count, directPaths = binding.DirectPaths;
                 // Keep oversized/unresolved bindings conservative. A current
                 // lookup never scans an unbounded collection to prove absence.
                 if (binding.Paths.Count <= 32 && !routes.IsPreparing && !routes.HasReadFailure && !indexing)
@@ -288,6 +290,7 @@ namespace DiceMaster.Information
                 detail += "\n진행 가능성 있음은 확률을 뜻하지 않습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락은 충족으로 간주하지 않으며 실제 이야기 발생을 보장하지 않습니다.";
                 if (details)
                 {
+                    detail += "\n수집한 연결 경로: " + collectedPaths + "개 · 현재 선택 뒤 직접 대사 우선 배치: " + directPaths + "개 (최대 32개)";
                     int shown = 0;
                     if (selection.Paths != null) foreach (MapRoutePath path in selection.Paths)
                     { if (shown++ >= 32) break; detail += "\n연결 경로: " + ChoiceStoryLabels.Path(path.Steps); }
@@ -349,21 +352,29 @@ namespace DiceMaster.Information
                     {
                         if (!string.Equals(step.Script, script, StringComparison.OrdinalIgnoreCase)) continue;
                         Binding binding = Bind(step);
-                        if (!binding.Paths.Contains(path)) AddStoryPath(binding, path, story);
+                        if (!binding.Paths.Contains(path)) AddStoryPath(binding, path, story, step);
                     }
                 }
                 indexed[story] = at;
             }
             return pending;
         }
-        private static void AddStoryPath(Binding binding, MapRoutePath path, MapStoryEntry story)
+        private static void AddStoryPath(Binding binding, MapRoutePath path, MapStoryEntry story, MapChoiceStep step)
         {
             // Definition-only intersection, prepared under Index's existing
             // budget. A shared false prerequisite rejects even a large set
             // without raising the 32-path current-read limit.
             binding.CurrentPrerequisite = binding.Paths.Count == 0 ? path.CurrentPrerequisite :
                 MapRoutePath.CommonPrerequisite(binding.CurrentPrerequisite, path.CurrentPrerequisite);
-            binding.Paths.Add(path); binding.PathStories.Add(path, story);
+            // Definition indexing only. Long descendants can be discovered
+            // before a root introduction. Reserve the bounded query prefix for
+            // witnesses requiring no further choice from this native option.
+            // Keep discovery order within each group and retain ALL paths in
+            // the common negative prerequisite; no current values rank paths.
+            if (ReferenceEquals(path.TopicStep, step) && binding.DirectPaths < 32)
+                binding.Paths.Insert(binding.DirectPaths++, path);
+            else binding.Paths.Add(path);
+            binding.PathStories.Add(path, story);
             if (story != null && !binding.Stories.Contains(story)) binding.Stories.Add(story);
         }
         private static Binding Bind(MapChoiceStep step)
