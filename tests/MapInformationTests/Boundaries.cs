@@ -17,7 +17,7 @@ namespace Mortal.Core
     public enum StatKind { 行動次數 = 19 }
     public class FlagData : UnityEngine.Object { private int state; public int StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
     public class StatValueReference
-    { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup, _gameTime; }
+    { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup, _gameTime, _condition; }
     public class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
     public class StatCompareItem { public int _compareOp; public StatGroupVariable _value1, _value2; }
     public class ConditionResultItem
@@ -199,7 +199,11 @@ namespace DiceMaster.LiveLog
 {
     public enum PreviewConditionState { Unknown, Met, NotMet }
     public class PreviewCondition { }
-    public static class PreviewConditions { public static readonly PreviewCondition Unknown = new PreviewCondition(); }
+    public static class PreviewConditions
+    {
+        public static readonly PreviewCondition Unknown = new PreviewCondition();
+        public static string DescribeCurrent(PreviewCondition condition) => "fixture current diagnostic";
+    }
 }
 namespace DiceMaster.Information
 {

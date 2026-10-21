@@ -265,6 +265,17 @@ namespace DiceMaster.LiveLog
         }
         public static Reader CreateReader() { return new Reader(); }
 
+        // Explicit log detail only. The sample is bounded and discarded after
+        // formatting; no current values enter cached syntax or automatic logs.
+        public static string DescribeCurrent(PreviewCondition condition)
+        {
+            var sample = new Snapshot(true); bool? result = null;
+            try { result = Snapshot.Truth(sample.Value(condition, 0)); }
+            catch (Exception) { sample.Trace("읽기 제한/미지원 자료 · 판정 미확정"); }
+            return "현재 조건 진단: " + (!result.HasValue ? "미확정" : result.Value ? "충족" : "미충족") +
+                "\n" + sample.Diagnostics;
+        }
+
         private sealed class Identity : IEqualityComparer<object>
         {
             public new bool Equals(object left, object right) { return ReferenceEquals(left, right); }
@@ -283,6 +294,18 @@ namespace DiceMaster.LiveLog
 
         private sealed class Snapshot
         {
+            private readonly List<string> diagnostics;
+            private bool diagnosticsLimited;
+            internal Snapshot(bool explain = false) { if (explain) diagnostics = new List<string>(); }
+            internal void Trace(string text)
+            {
+                if (diagnostics == null) return;
+                if (diagnostics.Count >= 64) { diagnosticsLimited = true; return; }
+                text = text ?? "";
+                if (text.Length > 160) text = text.Substring(0, 160) + "…";
+                diagnostics.Add(text.Replace('\r', ' ').Replace('\n', ' '));
+            }
+            internal string Diagnostics { get { return string.Join("\n", diagnostics ?? new List<string>()) + (diagnosticsLimited ? "\n진단 표시 상한 · 일부 생략" : ""); } }
             // Known truth does not imply a known operand value: Lua's and/or
             // return operands. Keep these distinct for surrounding comparisons.
             private static readonly object truthy = new object(), falsey = new object();
@@ -510,6 +533,7 @@ namespace DiceMaster.LiveLog
                 if (manager == null) return null;
                 if (operation == "Condition")
                 {
+                    if (diagnostics != null) Trace("Condition " + key);
                     object condition = Find(Field(manager, "_condition"), "Mortal.Story.ConditionResultConfig", "Mortal.Core.ConditionResultData", key);
                     if (condition == null) return null;
                     return ReadConditionData(condition, 0);
@@ -521,6 +545,12 @@ namespace DiceMaster.LiveLog
                     Step();
                     object data = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", key);
                     if (data == null) continue;
+                    if (diagnostics != null)
+                    {
+                        string count;
+                        try { count = Convert.ToString(Field(data, "_count"), CultureInfo.InvariantCulture); } catch (Exception) { count = "?"; }
+                        Trace("Switch " + key + " · useCount=" + Convert.ToString(Field(data, "_useCount"), CultureInfo.InvariantCulture) + " · count=" + count);
+                    }
                     if (!(Field(data, "_useCount") is bool) || (bool)Field(data, "_useCount")) return null;
                     IList items = List(data, "_items", 256);
                     var possible = new List<int>(); bool stopped = false;
@@ -559,6 +589,7 @@ namespace DiceMaster.LiveLog
                     Enter(value, depth); entered = true; Exact(value, "Mortal.Core.ConditionResultItem");
                     int logic = Convert.ToInt32(Field(value, "_logicOp"));
                     if (logic != 0 && logic != 1) return null;
+                    if (diagnostics != null) Trace("조건 " + (logic == 0 ? "AND" : "OR"));
                     IList items = List(value, "_items", 256);
                     if (items.Count == 0) return false;
                     bool unknown = false;
@@ -578,13 +609,87 @@ namespace DiceMaster.LiveLog
                 try
                 {
                     Step(); if (depth > 32) return null; Exact(value, "Mortal.Core.StatCompareItem");
-                    ValidateGroup(Field(value, "_value1"), depth + 1);
-                    ValidateGroup(Field(value, "_value2"), depth + 1);
-                    return SafeDisplayEvaluation.CheckComparison(value);
+                    int? left = ReadNumberGroup(Field(value, "_value1"), depth + 1);
+                    int? right = ReadNumberGroup(Field(value, "_value2"), depth + 1);
+                    int op = Convert.ToInt32(Field(value, "_compareOp"));
+                    if (diagnostics != null) Trace("비교 " + (left.HasValue ? left.Value.ToString(CultureInfo.InvariantCulture) : "?") + " " +
+                        (op >= 0 && op < 6 ? new[] { "=", "!=", "<", "<=", ">", ">=" }[op] : "미지원") + " " +
+                        (right.HasValue ? right.Value.ToString(CultureInfo.InvariantCulture) : "?"));
+                    if (!left.HasValue || !right.HasValue) return null;
+                    switch (op)
+                    {
+                        case 0: return left.Value == right.Value;
+                        case 1: return left.Value != right.Value;
+                        case 2: return left.Value < right.Value;
+                        case 3: return left.Value <= right.Value;
+                        case 4: return left.Value > right.Value;
+                        case 5: return left.Value >= right.Value;
+                        default: return null;
+                    }
                 }
                 // A random, affected or malformed comparison is one unknown
                 // operand. It must not hide a separate false AND / true OR.
                 catch (Exception) { return null; }
+            }
+            private int? ReadNumberGroup(object value, int depth)
+            {
+                bool entered = false;
+                try
+                {
+                    Enter(value, depth); entered = true; Exact(value, "Mortal.Core.StatGroupVariable");
+                    int type = Convert.ToInt32(Field(value, "_groupType"));
+                    if (type < 1 || type > 4) return null;
+                    IList items = List(value, "_value", 256);
+                    if ((type == 2 || type == 3) && items.Count == 0) return null;
+                    int total = type == 4 ? 1 : 0; bool unknown = false; int at = 0;
+                    foreach (object item in items)
+                    {
+                        int? number = ReadNumberReference(item, depth + 1);
+                        if (!number.HasValue) { unknown = true; continue; }
+                        switch (type)
+                        {
+                            case 1: total = checked(total + number.Value); break;
+                            case 2: total = at == 0 ? number.Value : Math.Max(total, number.Value); break;
+                            case 3: total = at == 0 ? number.Value : Math.Min(total, number.Value); break;
+                            case 4: total = unchecked(total * number.Value); break;
+                        }
+                        at++;
+                    }
+                    return unknown ? (int?)null : total;
+                }
+                catch (Exception) { return null; }
+                finally { if (entered) active.Remove(value); }
+            }
+            private int? ReadNumberReference(object value, int depth)
+            {
+                bool entered = false;
+                try
+                {
+                    Enter(value, depth); entered = true; Exact(value, "Mortal.Core.StatValueReference");
+                    int kind = Convert.ToInt32(Field(value, "_checkType"));
+                    if (kind == 7) { Trace("난수 · 추첨하지 않음"); return null; }
+                    if (kind == 8) return ReadNumberGroup(Field(value, "_statGroup"), depth + 1);
+                    if (kind == 16)
+                    {
+                        // Preserve partial truth at every nested condition, not
+                        // just at the outer checkpoint. Native GetValue would
+                        // Execute() this condition and mutate its counter.
+                        bool? truth = ReadConditionData(Field(value, "_condition"), depth + 1);
+                        if (diagnostics != null) Trace("중첩 조건 = " + (!truth.HasValue ? "?" : truth.Value ? "1" : "0"));
+                        return truth.HasValue ? (int?)(truth.Value ? 1 : 0) : null;
+                    }
+                    ValidateReference(value, depth);
+                    int number = SafeDisplayEvaluation.ReadReference(value);
+                    if (diagnostics != null && kind == 3)
+                    {
+                        string id; try { id = Name(Field(value, "_flag")); } catch (Exception) { id = "?"; }
+                        Trace("플래그 " + id + " = " + number.ToString(CultureInfo.InvariantCulture) + " (비교 부호 반영)");
+                    }
+                    return number;
+                }
+                catch (AffectedInput) { Trace("선행 쓰기/대화 초기화 영향 · 이전 값으로 확정하지 않음"); return null; }
+                catch (Exception) { Trace("미지원/읽기 제한 값 · 미확정"); return null; }
+                finally { if (entered) active.Remove(value); }
             }
             private void Enter(object value, int depth)
             {
@@ -630,38 +735,42 @@ namespace DiceMaster.LiveLog
                     if (groupType < 1 || groupType > 4) throw new InvalidOperationException("Unsupported preview value group.");
                     foreach (object reference in List(value, "_value", 256))
                     {
-                        Step(); Exact(reference, "Mortal.Core.StatValueReference");
-                        int kind = Convert.ToInt32(Field(reference, "_checkType"));
-                        if (kind < 0 || kind > 16 || kind == 7) throw new InvalidOperationException("Unsupported current preview condition value.");
-                        // Only the same concrete reference targets whose getters
-                        // were audited by SafeDisplayEvaluation are admissible.
-                        // An unexpected subclass cannot supply a new getter.
-                        switch (kind)
-                        {
-                            case 1: ValidateStat(Field(reference, "_stat"), depth + 1); break;
-                            case 2: Exact(Field(reference, "_relationship"), "Mortal.Core.RelationshipStat"); break;
-                            case 3: ValidateFlag(Field(reference, "_flag")); break;
-                            case 4: case 11: Exact(Field(reference, "_book"), "Mortal.Core.Book"); break;
-                            case 5: Exact(Field(reference, "_misc"), "Mortal.Core.Misc"); break;
-                            case 6: Exact(Field(reference, "_specialItem"), "Mortal.Core.SpecialItem"); break;
-                            case 9:
-                                object time = Field(reference, "_gameTime");
-                                Exact(time, "Mortal.Core.GameTimeData"); Exact(Field(time, "GameTime"), "Mortal.Core.GameTime");
-                                break;
-                            case 10: Exact(Field(reference, "_talentData"), "Mortal.Core.PlayerTalentData"); break;
-                            case 12: case 13: Exact(Field(reference, "_upgradeItemData"), "Mortal.Core.UpgradeItemData"); break;
-                            case 14:
-                                object books = Field(reference, "_bookCollection");
-                                Exact(books, "Mortal.Core.BookDataCollection");
-                                foreach (object book in List(books, "_list", 256)) { Step(); Exact(book, "Mortal.Core.Book"); }
-                                break;
-                            case 15: Exact(Field(reference, "_libraryAchieve"), "Mortal.Core.LibraryItemData"); break;
-                        }
-                        if (kind == 8) ValidateGroup(Field(reference, "_statGroup"), depth + 1);
-                        if (kind == 16) ValidateConditionData(Field(reference, "_condition"), depth + 1);
+                        Step(); ValidateReference(reference, depth);
                     }
                 }
                 finally { active.Remove(value); }
+            }
+            private void ValidateReference(object reference, int depth)
+            {
+                Exact(reference, "Mortal.Core.StatValueReference");
+                int kind = Convert.ToInt32(Field(reference, "_checkType"));
+                if (kind < 0 || kind > 16 || kind == 7) throw new InvalidOperationException("Unsupported current preview condition value.");
+                // Only the same concrete reference targets whose getters
+                // were audited by SafeDisplayEvaluation are admissible.
+                // An unexpected subclass cannot supply a new getter.
+                switch (kind)
+                {
+                    case 1: ValidateStat(Field(reference, "_stat"), depth + 1); break;
+                    case 2: Exact(Field(reference, "_relationship"), "Mortal.Core.RelationshipStat"); break;
+                    case 3: ValidateFlag(Field(reference, "_flag")); break;
+                    case 4: case 11: Exact(Field(reference, "_book"), "Mortal.Core.Book"); break;
+                    case 5: Exact(Field(reference, "_misc"), "Mortal.Core.Misc"); break;
+                    case 6: Exact(Field(reference, "_specialItem"), "Mortal.Core.SpecialItem"); break;
+                    case 9:
+                        object time = Field(reference, "_gameTime");
+                        Exact(time, "Mortal.Core.GameTimeData"); Exact(Field(time, "GameTime"), "Mortal.Core.GameTime");
+                        break;
+                    case 10: Exact(Field(reference, "_talentData"), "Mortal.Core.PlayerTalentData"); break;
+                    case 12: case 13: Exact(Field(reference, "_upgradeItemData"), "Mortal.Core.UpgradeItemData"); break;
+                    case 14:
+                        object books = Field(reference, "_bookCollection");
+                        Exact(books, "Mortal.Core.BookDataCollection");
+                        foreach (object book in List(books, "_list", 256)) { Step(); Exact(book, "Mortal.Core.Book"); }
+                        break;
+                    case 15: Exact(Field(reference, "_libraryAchieve"), "Mortal.Core.LibraryItemData"); break;
+                }
+                if (kind == 8) ValidateGroup(Field(reference, "_statGroup"), depth + 1);
+                if (kind == 16) ValidateConditionData(Field(reference, "_condition"), depth + 1);
             }
             private void ValidateStat(object value, int depth)
             {

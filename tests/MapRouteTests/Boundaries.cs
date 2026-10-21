@@ -17,6 +17,13 @@ namespace DiceMaster.LiveLog
     public static class SafeDisplayEvaluation
     {
         public static int ConditionReads;
+        public static int ReadReference(object value)
+        {
+            ConditionReads++;
+            var reference = (Mortal.Core.StatValueReference)value;
+            int current = reference._checkType == 0 ? reference._constant : reference._checkType == 3 ? reference._flag.State : throw new Exception("Unsupported primitive fixture");
+            return reference._negative ? unchecked(-current) : current;
+        }
         public static bool CheckConditionData(object value) { ConditionReads++; return ((Mortal.Core.ConditionResultData)value).Current; }
         public static bool CheckCondition(object value) { return ((Mortal.Core.ConditionResultItem)value).Current; }
         public static bool CheckComparison(object value)
@@ -52,7 +59,11 @@ namespace Mortal.Core
 {
     public sealed class FlagData : UnityEngine.Object { public int State; }
     public sealed class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
-    public sealed class StatValueReference { public int _checkType, _constant; public bool _negative; public FlagData _flag; }
+    public sealed class StatValueReference
+    {
+        public int _checkType, _constant; public bool _negative; public FlagData _flag;
+        public StatGroupVariable _statGroup; public ConditionResultData _condition;
+    }
     public sealed class StatCompareItem { public int _compareOp; public StatGroupVariable _value1 = new StatGroupVariable(), _value2 = new StatGroupVariable(); }
     public sealed class ConditionResultData : UnityEngine.Object
     {

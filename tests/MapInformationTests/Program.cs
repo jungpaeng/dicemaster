@@ -89,8 +89,8 @@ static class Program
         Check(MapGuidePresentation.Summary(null, true, false) == "", "A settled absent notice list also hides the passive panel");
         Check(MapGuidePresentation.Summary(new List<string>(), false, true) == "", "One-shot-only mode does not create an empty or unknown noise panel");
     }
-    private static MapGuideSnapshot Snapshot(bool guide = true, bool once = true)
-    { var queries = MapGuideSource.Discover(guide, once, true); Check(queries.Count == 1, "One observed session has one scheduled query"); return (MapGuideSnapshot)queries[0].Read(); }
+    private static MapGuideSnapshot Snapshot(bool guide = true, bool once = true, bool details = true)
+    { var queries = MapGuideSource.Discover(guide, once, details); Check(queries.Count == 1, "One observed session has one scheduled query"); return (MapGuideSnapshot)queries[0].Read(); }
     private static string Details(MapGuideSnapshot value)
     { var text = new System.Text.StringBuilder(); foreach (var row in value.Entries) text.AppendLine(row.Title + " · " + row.Kind + " · " + row.Status + "\n" + row.Detail); return text.ToString(); }
     private static InformationRow Entry(MapGuideSnapshot value, string name)
@@ -340,8 +340,8 @@ static class Program
         Check(row.Status == "지금 진행 불가" && !row.Available && !value.Summary.Available,
             "True first-option fixture guards cannot override two false full NPC-story paths");
         second.StoryState = MapRouteState.Met; value = Snapshot(); row = Entry(value, "수련");
-        Check(row.Status == "진행 가능" && row.Available && value.Summary.Available,
-            "One completely proven full story path makes its group positive without requiring every alternative");
+        Check(row.Status == "진행 가능" && row.Available && !value.Summary.Available && value.Summary.AutoText == "",
+            "A positive research story retains its detailed state without coloring or opening the passive map");
         second.StoryState = MapRouteState.Unknown; value = Snapshot();
         Check(Entry(value, "수련").Status == "진행 가능성 있음" && !Entry(value, "수련").Available,
             "A false path plus an unknown alternative remains possible rather than green or definitively blocked");
@@ -384,14 +384,13 @@ static class Program
         PositionEventCache.Parser.Actions["filtered_result_숨김_1회성"] = Result(Set("hidden-once", 1));
         DataHelper.Scripts["filtered_notices"] = "FilteredPool"; controller._positionData._defaultScript = "filtered_notices";
         var value = Snapshot();
+        for (int i = 0; i < 4 && Details(value).Contains("효과·1회성 준비 중"); i++) value = Snapshot();
         Check(!Entry(value, "숨김_대화_A").Available && !Entry(value, "숨김_임무").Available && !Entry(value, "숨김_1회성").Available && Entry(value, "숨김_1회성").Status.Contains("1회성"),
             "Blocked dialogue, mission and proven one-shot rows retain their individual status and detail publication");
         Check(!value.Summary.AutoText.Contains("숨김_대화_A") && !value.Summary.AutoText.Contains("숨김_대화_B") && !value.Summary.AutoText.Contains("숨김_임무") && !value.Summary.AutoText.Contains("숨김_1회성"),
             "Typed blocked candidates of every supported kind are omitted only from the automatic map notices");
-        Check(value.Summary.AutoText.Contains("열린_대화") && value.Summary.AutoText.Contains("제목에 지금 진행 불가") && value.Summary.AutoText.Contains("불명_대화_B"),
-            "Positive and unknown candidates remain visible, including an unknown title that literally contains the blocked-status words");
-        Check(Array.FindAll(value.Summary.AutoText.Split('\n'), line => line.StartsWith("• ", StringComparison.Ordinal)).Length == 3 && value.Summary.AutoText.Contains("외 2개") && !value.Summary.AutoText.Contains("외 6개"),
-            "The three complete automatic rows and remaining count are calculated after filtering blocked candidates");
+        Check(value.Summary.AutoText == "" && !value.Summary.Available && Entry(value, "열린_대화").Available && Entry(value, "제목에 지금 진행 불가").Status == "진행 가능성 있음",
+            "Positive and unknown research stories remain in detail only; literal status words in their names do not affect the typed policy");
         foreach (var path in paths) path.StoryState = MapRouteState.NotMet;
         value = Snapshot();
         Check(value.Summary.AutoText == "",
@@ -435,8 +434,8 @@ static class Program
         for (int at = 0; at < 100; at++) controller._missionsManager._subMissions._list.Add(Mission("empty-index-" + at,
             new MissionCheckData { name = "empty-stage-" + at, _conditions = new[] { zero } }));
         value = Snapshot();
-        Check(value.Summary.AutoText.StartsWith("이 장소의 안내를 확인하는 중", StringComparison.Ordinal) && Details(value).Contains("임무 정의 준비 중"),
-            "An unfinished mission index contributes real preparation independently of route diagnostics");
+        Check(value.Summary.AutoText == "" && Details(value).Contains("임무 정의 준비 중"),
+            "Unfinished global mission indexing stays in detail without keeping an empty selected-place overlay alive");
         int pending = 0;
         while (Details(value).Contains("임무 정의 준비 중") && pending++ < 20) { Time.unscaledTime += .25f; value = Snapshot(); }
         Check(pending < 20 && value.Summary.AutoText == "" && Entry(value, "empty-index-0").Status.Contains("조건 미충족"),
@@ -447,6 +446,106 @@ static class Program
             "Missing game data is retained as a distinct waiting detail rather than reported as active index preparation or confirmed none");
         Check(Counters.GameCalls == 0, "Empty-overlay preparation and diagnostics never execute game judgments or results");
         MapGuideSource.Clear();
+    }
+
+    private static void IndependentPreparation()
+    {
+        var controller = EmptyPlace(); MapGuideSource.Select(controller);
+        var no = Compare(Constant(0), Constant(1));
+        for (int i = 0; i < 100; i++)
+        {
+            var stages = new MissionCheckData[100];
+            for (int j = 0; j < stages.Length; j++) stages[j] = new MissionCheckData {
+                name = "unrelated-" + i + "-" + j, _position = PositionType.Kitchen, _conditions = new[] { no }, _key = "stage-" + j };
+            var mission = Mission("bulk-" + i, stages[0]); mission._missions = stages;
+            controller._missionsManager._subMissions._list.Add(mission);
+        }
+        var value = Snapshot();
+        Check(value.Summary.AutoText == "" && Details(value).Contains("임무 정의 준비 중"),
+            "Ten thousand unrelated stages cannot hold an empty selected-place overlay open on the first query");
+        var waiting = new MissionCheckData { name = "live-waiting", _startScript = "live_story", _conditions = new[] { Compare(Constant(1), Constant(1)) } };
+        controller._missionsManager.ActiveSubMissions["live-id"] = waiting;
+        value = Snapshot();
+        Check(value.Summary.AutoText.Contains("진행 가능") && Details(value).Contains("임무 정의 준비 중"),
+            "The live waiting mission is published while the independent global definition index is still incomplete");
+        controller._missionsManager.ActiveSubMissions.Clear();
+        bool quiet = true; int ticks = 0;
+        do
+        {
+            // Live MainCheckData is a dispatch value, not an immutable index
+            // revision. Replacing it must not restart all unrelated stages.
+            controller._missionsManager.MainCheckData = new MissionCheckData { name = "live-main-" + ticks };
+            Time.unscaledTime += .25f; value = Snapshot();
+            quiet &= value.Summary.AutoText == "";
+        } while (Details(value).Contains("임무 정의 준비 중") && ++ticks < 180);
+        Check(quiet && ticks < 180, "Global indexing completes across changing live dispatch values without showing an empty-place loader");
+        int definitionReads = 0; foreach (var mission in controller._missionsManager._subMissions._list) definitionReads += mission.DefinitionReads;
+        Snapshot(); Snapshot();
+        int after = 0; foreach (var mission in controller._missionsManager._subMissions._list) after += mission.DefinitionReads;
+        Check(after == definitionReads && definitionReads == 100, "Warm immutable definitions are read once despite live MainCheckData replacements");
+        controller._missionsManager._subMissions._list = null;
+        controller._missionsManager.ActiveSubMissions["live-id"] = waiting;
+        value = Snapshot();
+        Check(value.Summary.AutoText.Contains("진행 가능") && Details(value).Contains("게임 데이터 대기 중"),
+            "A global definition-source failure cannot erase a valid live waiting mission");
+        Check(Counters.GameCalls == 0, "Independent preparation and live waiting reads execute no gameplay judgment");
+        MapGuideSource.Clear();
+    }
+    private static void AutomaticScope()
+    {
+        var controller = EmptyPlace(); MapGuideSource.Select(controller);
+        var yes = Compare(Constant(1), Constant(1));
+        var stage = new MissionCheckData { name = "unregistered-stage", _conditions = new[] { yes } };
+        var mission = Mission("unregistered-definition", stage);
+        controller._missionsManager._subMissions._list.Add(mission);
+        var path = new MapRoutePath { DialogueCharacter = "renamed_npc", StoryState = MapRouteState.Met,
+            Steps = new List<MapChoiceStep> { new MapChoiceStep { Script = "scope_root", RawLabel = "positive-research", Index = 1 } } };
+        MapRouteDefinitions.StoryFixtures.Add(new MapStoryEntry { Paths = new List<MapRoutePath> { path } });
+        var flag = new FlagData { name = "scope-once", State = 0 };
+        var once = Event("proven-once", Compare(Flag(flag), Constant(0)));
+        CheckPointManager.Instance._position._list.Add(new PositionResultData { name = "ScopePool", _scriptPrefix = "scope_result", _list = new List<PositionEventData> { once } });
+        PositionEventCache.Parser.Actions["scope_result_proven-once"] = Result(Set("scope-once", 1));
+        DataHelper.Scripts["scope_root"] = "ScopePool"; controller._positionData._defaultScript = "scope_root";
+        for (int i = 0; i < 4; i++) Snapshot(details: false);
+        Check(mission.DefinitionReads == 0 && mission.CurrentReads == 0 && path.StoryReads == 0,
+            "Passive map neither builds unregistered-stage definitions nor samples downstream NPC story conditions");
+        var value = Snapshot();
+        Check(Entry(value, "unregistered-stage").Available && Entry(value, "positive-research").Available && value.Summary.AutoText.Contains("proven-once") &&
+            !value.Summary.AutoText.Contains("unregistered-stage") && !value.Summary.AutoText.Contains("positive-research"),
+            "Detailed positive research does not become passive advice; a reachable proven one-shot does");
+        value = Snapshot(once: false);
+        Check(value.Summary.AutoText == "" && !value.Summary.Available && Entry(value, "unregistered-stage").Available,
+            "Guide alone cannot publish or color the map from unregistered mission or positive NPC research");
+        MapRouteDefinitions.State = MapRouteState.Unknown; value = Snapshot();
+        Check(Entry(value, "proven-once").Status.Contains("1회성") && !Entry(value, "proven-once").Available && value.Summary.AutoText == "",
+            "A proven one-shot with unknown reachability keeps its independent proof in detail and gets no automatic notice");
+        MapRouteDefinitions.State = MapRouteState.Met;
+        controller._missionsManager.ActiveSubMissions["waiting"] = stage;
+        value = Snapshot();
+        Check(value.Summary.AutoText.Contains("진행 가능") && value.Summary.AutoText.Contains("unregistered-stage") && !value.Summary.AutoText.Contains("proven-once"),
+            "Actual waiting membership permits the first dispatchable mission and blocks its competing activity");
+        controller._gameStatManager._stats._list[0]._value = 0; value = Snapshot();
+        Check(value.Summary.AutoText == "" && !value.Summary.Available && Entry(value, "unregistered-stage").Status.Contains("행동 부족"),
+            "A registered waiting mission still needs sufficient action before becoming automatic advice");
+        controller._missionsManager.ActiveSubMissions.Clear(); controller._gameStatManager._stats._list[0]._value = 3;
+        var pool = CheckPointManager.Instance._position._list[0];
+        for (int i = 0; i < 4; i++)
+        {
+            string id = "extra-once-" + i; var input = new FlagData { name = id, State = 0 };
+            pool._list.Add(Event(id, Compare(Flag(input), Constant(0))));
+            PositionEventCache.Parser.Actions["scope_result_" + id] = Result(Set(id, 1));
+        }
+        controller._positionData._defaultScript = "scope_more"; DataHelper.Scripts["scope_more"] = "ScopePool";
+        for (int i = 0; i < 8; i++) value = Snapshot();
+        Check(Array.FindAll(value.Summary.AutoText.Split('\n'), line => line.StartsWith("• ", StringComparison.Ordinal)).Length == 3 && value.Summary.AutoText.Contains("외 2개"),
+            "Row limit and overflow count include only five reachable proven one-shots, excluding all research candidates");
+        int storyReads = path.StoryReads, definitions = mission.DefinitionReads, keys = mission.CurrentReads;
+        for (int i = 0; i < 30; i++) { Time.unscaledTime += .25f; value = Snapshot(details: false); }
+        Check(path.StoryReads == storyReads && mission.DefinitionReads == definitions && mission.CurrentReads == keys &&
+            !Details(value).Contains("positive-research") && !Details(value).Contains("unregistered-stage"),
+            "Closing research returns to passive-only work without inherited research rows or current-key sampling");
+        Check(Counters.GameCalls == 0 && flag.State == 0, "Automatic scope restriction preserves native counters, RNG, and one-shot flags");
+        MapRouteDefinitions.StoryFixtures.Clear(); MapGuideSource.Clear();
     }
     private static void Options()
     {
@@ -500,5 +599,5 @@ static class Program
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); IndependentPreparation(); AutomaticScope(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

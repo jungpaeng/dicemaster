@@ -105,7 +105,7 @@ namespace DiceMaster.Information
         }
         private sealed class MissionIndex
         {
-            internal object Collection, Entries, Main, MainStage;
+            internal object Collection, Entries, Main;
             internal int Count;
             internal bool Ready;
             internal Exception Failure;
@@ -454,7 +454,9 @@ namespace DiceMaster.Information
                 EventDefinition captured = entry;
                 candidates.Add(TryCandidate(place, "event/" + RuntimeHelpers.GetHashCode(entry.Data) + "/" + entry.Script, () => Event(controller, source, captured, guide, oneShot)));
             }
-            if (guide && source.Routes != null) CollectStories(place, controller, source, candidates);
+            // Future NPC stories are research/detail, not passive predictions.
+            // Only an explicit log query samples their downstream conditions.
+            if (guide && detailed && source.Routes != null) CollectStories(place, controller, source, candidates);
             if (guide && source.Ready && source.Events.Count == 0 && source.Stories.Count == 0 && !string.IsNullOrEmpty(source.Script))
                 candidates.Add(TryCandidate(place, source, () => Story(controller, source.Script,
                     source.Failure != null || source.Routes != null && (source.Routes.IsPartial || source.Routes.HasReadFailure))));
@@ -505,7 +507,7 @@ namespace DiceMaster.Information
                         else group.Omitted = true;
                     }
             }
-            var read = new MapRouteRead(); int budget = 16, gates = 32;
+            var read = new MapRouteRead(); int budget = 16, gates = 32, diagnosticBudget = 4;
             foreach (StoryGroup group in source.Stories)
             {
                 StoryGroup captured = group; bool sample = detailed || budget-- > 0;
@@ -590,6 +592,12 @@ namespace DiceMaster.Information
                             if (!lines.Contains(text)) lines.Add(text);
                         }
                         result.Detail += "\n" + string.Join("\n", lines);
+                        if (diagnosticBudget > 0 && captured.CurrentPrerequisite != null)
+                        {
+                            diagnosticBudget--;
+                            result.Detail += "\n현재 필수 조건 표본 (후속 상태/최종 실행 보증 아님):\n" +
+                                PreviewConditions.DescribeCurrent(captured.CurrentPrerequisite);
+                        }
                         if (captured.Omitted) result.Detail += "\n경로 상한으로 일부 연결은 생략했습니다.";
                     }
                     string conditionStatus = result.Status;
@@ -629,15 +637,18 @@ namespace DiceMaster.Information
                     title, group + " · " + value.Kind, status, value.Detail ?? "", title + " · " + value.Kind + " · " + status, controller, value.Rank == 0));
                 if (value.StatusOnly) { preparing |= value.Preparing; if (!diagnostics.Contains(value.Status)) diagnostics.Add(value.Status); continue; }
                 if (value.Global || value.Other) continue;
-                if (value.Rank == 0 && (value.Waiting || value.Mission || value.OneShot || value.ChoiceStory)) available = true;
                 if (value.Waiting) waiting++;
                 else if (value.Mission && value.Rank == 0) stages++;
                 else if (value.OneShot && value.Rank == 0) oneShots++;
-                // Keep blocked entries in the detail log, but leave them out
-                // before the passive list's row limit and remaining count.
-                if (value.Rank != 1 && (guide && (value.Waiting || value.Mission || value.ChoiceStory) || value.OneShot))
-                    automatic.Add(value.ChoiceStory ? MapGuidePresentation.StoryNotice(title, value.Status) :
-                        MapGuidePresentation.Notice(title, value.Mission ? (value.Main ? "주 임무" : "보조 임무") : "1회성 이야기", value.Rank, value.Waiting, value.Mission, value.Status));
+                // Keep research candidates and independent one-shot proofs in
+                // detail. The passive surface requires current reachability
+                // AND either real waiting membership or a proven one-shot.
+                // Apply the policy before row limits, counts and panel color.
+                if (AutomaticCandidate(value, guide, once))
+                {
+                    available = true;
+                    automatic.Add(MapGuidePresentation.Notice(title, value.Mission ? (value.Main ? "주 임무" : "보조 임무") : "1회성 이야기", value.Rank, value.Waiting, value.Mission, value.Status));
+                }
             }
             if (snapshot.Entries.Count == 0)
                 snapshot.Entries.Add(new InformationRow("map/empty/" + ContextKey, place == null ? "장소 무관 임무 없음" : "현재 연결 항목 없음", "지도", "현재 확인된 항목 없음",
@@ -652,6 +663,11 @@ namespace DiceMaster.Information
                     "대기 상태·현재 조건·선택 우선순위는 서로 다른 정보입니다. 경로·조건·효과와 장소 무관 항목은 지도 로그에서 읽습니다.", text, controller, available);
             }
             return snapshot;
+        }
+        private static bool AutomaticCandidate(Candidate value, bool guide, bool oneShot)
+        {
+            return !value.StatusOnly && !value.Other && !value.Global && !value.ChoiceStory && value.Rank == 0 &&
+                (guide && value.Waiting || oneShot && value.OneShot);
         }
         private static Candidate Event(PositionController controller, Source source, EventDefinition entry, bool guide, bool oneShot)
         {
@@ -739,13 +755,13 @@ namespace DiceMaster.Information
             {
                 object collection = Read(manager, "_subMissions");
                 IList entries = List(collection, "_list");
-                object main = Read(manager, "_main"), mainStage = Read(manager, "MainCheckData");
+                object main = Read(manager, "_main");
                 bool changed = !ReferenceEquals(index.Collection, collection) || !ReferenceEquals(index.Entries, entries) ||
-                    index.Count != entries.Count || !ReferenceEquals(index.Main, main) || !ReferenceEquals(index.MainStage, mainStage);
+                    index.Count != entries.Count || !ReferenceEquals(index.Main, main);
                 if (changed || index.Failure != null)
                 {
                     index.Collection = collection; index.Entries = entries; index.Count = entries.Count;
-                    index.Main = main; index.MainStage = mainStage; index.Places.Clear(); index.LogicalIds.Clear();
+                    index.Main = main; index.Places.Clear(); index.LogicalIds.Clear();
                     index.MissionCursor = index.StageCursor = 0; index.Building = null; index.BuildingStages = null; index.Ready = false;
                 }
                 // Preparation is resumable, including mission/stage indexing.
@@ -765,7 +781,6 @@ namespace DiceMaster.Information
                         index.Building = new MissionLink { Mission = mission, Main = isMain, LogicalId = logical };
                         index.BuildingStages = List(mission, "_missions"); index.StageCursor = 0;
                         if (!index.LogicalIds.ContainsKey(logical)) index.LogicalIds.Add(logical, index.Building);
-                        if (isMain && mainStage != null) IndexStage(index, index.Building, mainStage, false);
                     }
                     if (index.StageCursor < index.BuildingStages.Count)
                     {
@@ -802,10 +817,10 @@ namespace DiceMaster.Information
             Place cache = selected ?? globalPlace;
             object manager = Read(controller, "_missionsManager");
             if (manager == null) { target.Add(Diagnostic("임무 자료", "게임 데이터 대기 중", "현재 지도에서 관찰한 임무 관리자를 기다립니다.")); return; }
-            MissionIndex index = GetMissionIndex(manager, selected == null ? "global" : selected.Key);
-            if (index.Failure != null)
-                target.Add(Diagnostic("임무 정의", index.Failure is DataNotReadyException ? "게임 데이터 대기 중" : "읽기 실패", "임무 정의를 준비하지 못했습니다. 기존 대기 목록은 별도로 읽습니다."));
-            else if (!index.Ready) target.Add(Diagnostic("임무 정의", "임무 정의 준비 중", "단계·장소 색인을 나누어 준비 중입니다. 아직 읽지 않은 임무가 있을 수 있습니다.", true));
+            // The game's small live waiting set does not depend on the full
+            // mission/stage definition index. Read it first, even if that
+            // independent index is missing, failed or still being prepared.
+            MissionIndex cachedIndex; missionIndices.TryGetValue(manager, out cachedIndex);
             int selectedPosition = globalOnly ? -1 : Convert.ToInt32(Read(controller, "_position"));
             var staged = new HashSet<object>();
             object main = Read(manager, "_main"), mainStage = Read(manager, "MainCheckData");
@@ -828,10 +843,22 @@ namespace DiceMaster.Information
                     object stage = entry.Value;
                     if (stage == null || !TryRelated(cache, stage, selectedPosition, target) || !staged.Add(stage)) continue;
                     string id = Convert.ToString(entry.Key, CultureInfo.InvariantCulture);
-                    MissionLink owner; index.LogicalIds.TryGetValue(id, out owner);
+                    MissionLink owner = null;
+                    if (cachedIndex != null) cachedIndex.LogicalIds.TryGetValue(id, out owner);
                     AddMission(cache, controller, manager, owner == null ? null : owner.Mission, stage, id, false, true, target);
                 }
             }
+            // Unregistered mission stages are detail-only research. Passive
+            // refresh neither builds their global index nor reads current keys.
+            if (!detailed) return;
+            MissionIndex index = GetMissionIndex(manager, selected == null ? "global" : selected.Key);
+            if (index.Failure != null)
+                target.Add(Diagnostic("임무 정의", index.Failure is DataNotReadyException ? "게임 데이터 대기 중" : "읽기 실패", "임무 정의를 준비하지 못했습니다. 기존 대기 목록은 별도로 읽습니다."));
+            else if (!index.Ready)
+                // This is unfinished global work, not preparation of the
+                // selected place. Keep it in log detail without keeping an
+                // otherwise empty passive overlay alive.
+                target.Add(Diagnostic("임무 정의", "임무 정의 준비 중", "전체 단계·장소 색인을 나누어 준비 중입니다. 현재 대기 임무와 선택 장소의 준비 상태는 별도이며, 아직 읽지 않은 임무가 있을 수 있습니다."));
             if (index.Failure != null) return;
             var links = new List<MissionLink>();
             var membership = new HashSet<MissionLink>();

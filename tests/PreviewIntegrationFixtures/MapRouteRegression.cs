@@ -133,6 +133,27 @@ namespace DiceMaster
                 scripts["opaque_pool_result"] = Menu + Dialogue;
                 route = Create(); Finish(route);
                 Check(StoryState(route) == "Unknown", "actual DLL unselected pool result cannot promote a later literal-positive menu story");
+                var random = new Mortal.Core.StatCompareItem {
+                    _value1 = new Mortal.Core.StatGroupVariable { _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 7 } } },
+                    _value2 = comparison._value2 };
+                var nestedItem = new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> { random, comparison } };
+                var nested = new Mortal.Core.ConditionResultData { name = "nested_dll_fixture", _count = 17,
+                    _items = new List<Mortal.Core.ConditionResultItem> { nestedItem } };
+                checkpoint._items = new List<Mortal.Core.ConditionResultItem> { new Mortal.Core.ConditionResultItem { _items = new List<Mortal.Core.StatCompareItem> {
+                    new Mortal.Core.StatCompareItem {
+                        _value1 = new Mortal.Core.StatGroupVariable { _value = new List<Mortal.Core.StatValueReference> { new Mortal.Core.StatValueReference { _checkType = 16, _condition = nested } } },
+                        _value2 = comparison._value2 } } } };
+                var conditionType = Type("LiveLog.PreviewConditions");
+                object expression = Invoke(conditionType, null, "Parse", "checkpointmanager.Condition('route_story_fixture')", null);
+                Check(Invoke(conditionType, null, "Current", expression).ToString() == "NotMet", "actual DLL nested RNG AND false resolves to false without executing its getters");
+                string diagnostic = (string)Invoke(conditionType, null, "DescribeCurrent", expression);
+                Check(diagnostic.Contains("미충족") && diagnostic.Contains("난수 · 추첨하지 않음") && diagnostic.Contains("중첩 조건 = 0"),
+                    "actual DLL explicit condition report preserves the nested false evidence and unsampled RNG");
+                comparison._value1._value[0]._constant = 1;
+                Check(Invoke(conditionType, null, "Current", expression).ToString() == "Unknown", "actual DLL fresh true prerequisite cannot resolve its independent RNG");
+                nestedItem._logicOp = (Mortal.Core.LogicOperatorType)1;
+                Check(Invoke(conditionType, null, "Current", expression).ToString() == "Met" && nested._count == 17,
+                    "actual DLL nested RNG OR true preserves a known true without changing the nested execution counter");
                 Check(checkpoint._count == 29 && conditionCalls == Mortal.Core.ConditionResultData.Executions &&
                     groupCalls == Mortal.Core.StatGroupVariable.OriginalReads && compareCalls == Mortal.Core.StatCompareItem.OriginalReads && randomCalls == UnityEngine.Random.Calls,
                     "actual DLL full-story condition reads never call gameplay/RNG or increment checkpoint counters");

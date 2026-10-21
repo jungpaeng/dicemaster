@@ -31,6 +31,8 @@ internal static class Program
         _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 3, _flag = flag } } }, _value2 = Constant(0) } } }; }
     private static InformationRow Find(MapGuideSnapshot value, string title)
     { foreach (var row in value.Entries) if (row.Title == title) return row; return null; }
+    private static bool ResearchStory(MapGuideSnapshot value, string title)
+    { return value.Entries.Exists(row => row.Title.Contains(title, StringComparison.Ordinal) && row.Kind.Contains("인물 대화", StringComparison.Ordinal)) && !value.Summary.AutoText.Contains(title, StringComparison.Ordinal); }
     private static bool HasStatus(MapGuideSnapshot value, string text)
     { foreach (var row in value.Entries) if (row.Status.Contains(text, StringComparison.Ordinal)) return true; return false; }
     private static MapGuideSnapshot Read(bool details = true)
@@ -130,33 +132,42 @@ internal static class Program
         var controller = new PositionController { _positionData = new FreePositionData { name = "Room", _defaultScript = "choice_map_root" } };
         MapGuideSource.Select(controller); MapGuideSnapshot snapshot = null;
         int formatter = LuaParser.Descriptions, parses = LuaParser.Parses;
-        for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
+        for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; snapshot = Read(true); }
         var story = Find(snapshot, "사사형");
         Check(story != null && story.Kind.Contains("인물 대화"), "Literal and inline selected dialogue becomes a map story without fabricating an event pool");
         Check(story.Status == "진행 가능성 있음" && !story.Available, "An opaque predecessor keeps the whole dialogue condition uncertain instead of borrowing the first option's true guard");
-        Check(snapshot.Summary.AutoText.Contains("사사형") && snapshot.Summary.AutoText.Contains("진행 가능성 있음"), "Compact map retains the known conversation as possible without claiming a currently met full path");
+        Check(ResearchStory(snapshot, "사사형"), "Uncertain future conversation is retained for explicit research and omitted from automatic map advice");
         Check(!snapshot.Summary.AutoText.Contains("story_line") && !snapshot.Summary.AutoText.Contains("talk-later"), "Automatic story information excludes dialogue text and condition internals");
         Check(!story.Status.Contains("1회성"), "Choice route discovery never grants a one-shot property");
         Check(LuaParser.Descriptions == formatter && LuaParser.Parses == parses, "Passive choice story map performs zero full effect descriptions or analyzers");
         snapshot = Read(true); story = Find(snapshot, "사사형");
         Check(story.Detail.Contains("사사형 → 대화 항목") && story.Detail.Contains("내부 분기 조건"), "Map detail provides the required choice route and explains its whole-path condition scope");
+        int firstReads = firstFlag.StateReads, laterReads = laterFlag.StateReads;
+        for (int at = 0; at < 40; at++)
+        {
+            Time.unscaledTime += .25f; snapshot = Read(false);
+            Check(Find(snapshot, "사사형") == null && !snapshot.Summary.AutoText.Contains("사사형"),
+                "A prior research publication cannot leak a downstream NPC story into passive map rows or notices");
+        }
+        Check(firstFlag.StateReads == firstReads && laterFlag.StateReads == laterReads,
+            "Closing actual-route research stops downstream NPC current-condition reads on every passive refresh");
         int resourceReads = DataHelper.Reads;
-        for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
+        for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; snapshot = Read(true); }
         Check(DataHelper.Reads == resourceReads && LuaParser.Parses == parses, "Warm story refresh reuses route definitions without resource reads or full Lua analysis");
-        firstFlag.State = 1; snapshot = Read(false); story = Find(snapshot, "사사형");
+        firstFlag.State = 1; snapshot = Read(true); story = Find(snapshot, "사사형");
         Check(story.Status == "진행 가능성 있음" && !story.Available, "A false observed entry condition on an incomplete route does not deny potentially omitted alternative paths");
         Check(laterFlag.State == 1 && firstFlag.State == 1 && Counters.GameCalls == 0, "Neither discovery nor path preview applies the intervening flag write or calls game judgments");
-        firstFlag.State = 0; controller._gameStatManager._stats._list[0]._value = 0; snapshot = Read(false);
+        firstFlag.State = 0; controller._gameStatManager._stats._list[0]._value = 0; snapshot = Read(true);
         Check(!Find(snapshot, "사사형").Available && Find(snapshot, "사사형").Status.Contains("행동 부족"), "Current first guard does not override native map action availability");
         controller._gameStatManager._stats._list[0]._value = 3;
         controller._positionData._defaultScript = "choice_labels";
         DataHelper.Scripts["choice_labels"] = "local opts={}; if checkpointmanager.Condition('talk_entry') then opts[1]='선택 A' else opts[1]='선택 B' end; local r=choose(opts); setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('line'))";
         firstFlag.State = 1;
-        for (int at = 0; at < 8; at++) { Time.unscaledTime += .25f; snapshot = Read(false); }
+        for (int at = 0; at < 8; at++) { Time.unscaledTime += .25f; snapshot = Read(true); }
         Check(Find(snapshot, "선택 A") != null && !Find(snapshot, "선택 A").Available && Find(snapshot, "선택 B").Available, "Same original choose index with alternative raw labels stays in separate groups and cannot mark the wrong title ready");
         Check(Find(snapshot, "선택 A").Status == "지금 진행 불가", "A complete supported false full story path is blocked even when its display-only speaker call was structurally partial");
         snapshot = Read(true);
-        Check(!snapshot.Summary.AutoText.Contains("선택 A", StringComparison.Ordinal) && snapshot.Summary.AutoText.Contains("선택 B", StringComparison.Ordinal) && Find(snapshot, "선택 A").Detail.Contains("선택 경로", StringComparison.Ordinal),
+        Check(!snapshot.Summary.AutoText.Contains("선택 A", StringComparison.Ordinal) && ResearchStory(snapshot, "선택 B") && Find(snapshot, "선택 A").Detail.Contains("선택 경로", StringComparison.Ordinal),
             "The actual choice-route map hides its false dialogue notice while retaining the positive alternative and the false route's detail");
     }
     private static void MeaningfulDialogueMap()
@@ -166,7 +177,7 @@ internal static class Program
         DataHelper.Scripts["activity_filter"] = "local a={'휴식','훈련','사사형'};local r=choose(a);if r==1 then setcharacter(narrative);say(luamanager.GetStoryText('N_rest'));setcharacter(characters.Get('player'));say(luamanager.GetStoryText('D_rest')) elseif r==2 then say(luamanager.GetStoryText('N_train')) elseif r==3 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_brother')) end";
         var controller = new PositionController { _positionData = new FreePositionData { name = "Room", _defaultScript = "activity_filter" } };
         MapGuideSource.Select(controller); MapGuideSnapshot value = null;
-        for (int at = 0; at < 15; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 15; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(Find(value, "사사형")?.Kind.Contains("인물 대화", StringComparison.Ordinal) == true, "Map keeps a selected literal NPC-speaker conversation alongside repeated utility choices");
         Check(Find(value, "휴식") == null && Find(value, "훈련") == null && !value.Summary.AutoText.Contains("휴식", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("훈련", StringComparison.Ordinal), "Basic rest/player D-lines and training narration do not become automatic map story names");
 
@@ -178,13 +189,13 @@ internal static class Program
         Check(rest?.Kind.Contains("인물 대화", StringComparison.Ordinal) == true && rest.Detail.Contains("선택 경로: 휴식", StringComparison.Ordinal), "Rest that reaches a real NPC line remains a conditional conversation path rather than being pruned with repeated rest");
         Check(rest.Status == "진행 가능" && !rest.Status.Contains("1회성", StringComparison.Ordinal), "Static NPC evidence preserves current first-guard semantics and grants no one-shot property");
         int reads = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
-        for (int at = 0; at < 20; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 20; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(DataHelper.Reads == reads && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && Counters.GameCalls == 0,
             "Classification reuses static route definitions without warm Lua reload, full effects or game judgment calls");
 
         DataHelper.Scripts["player_talk_only"] = "local a={'talk+O_thought+0+0'};local r=choose(a);if r==1 then setcharacter(characters.Get('player'));say(luamanager.GetStoryText('D_player_talk')) end";
         controller._positionData._defaultScript = "player_talk_only";
-        for (int at = 0; at < 12; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 12; at++) { Time.unscaledTime += .25f; value = Read(true); }
         bool npcRow = false; foreach (var row in value.Entries) npcRow |= row.Kind.Contains("인물 대화", StringComparison.Ordinal);
         Check(!npcRow && !value.Summary.AutoText.Contains("O_thought", StringComparison.Ordinal), "A talk-tagged player-only menu cannot reenter the map's automatic conversation summary");
     }
@@ -200,7 +211,7 @@ internal static class Program
         controller._missionsManager._subMissions._list.Add(new MissionData { name = "숨김_지도임무", _name = "hidden-map-mission", _currentKey = "start",
             _missions = new[] { new MissionCheckData { name = "hidden-mission-stage", _conditions = new[] { IsZero(gate) } } } });
         MapGuideSource.Select(controller); MapGuideSnapshot value = null;
-        for (int at = 0; at < 16; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 16; at++) { Time.unscaledTime += .25f; value = Read(true); }
         var row = Find(value, "수련");
         Check(row.Status == "지금 진행 불가" && !row.Available && !value.Summary.Available && !value.Summary.AutoText.Contains("조건 충족", StringComparison.Ordinal),
             "An unguarded selected training action stays blocked when its full NPC-conversation condition is false");
@@ -209,20 +220,20 @@ internal static class Program
             !value.Summary.AutoText.Contains("지금 진행 불가", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("외 ", StringComparison.Ordinal),
             "The real parser/provider retains blocked dialogue and mission detail while an all-blocked place publishes no automatic item rows");
         int resources = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
-        gate.State = 0; value = Read(false); row = Find(value, "수련");
-        Check(row.Status == "진행 가능" && row.Available && value.Summary.Available, "A full safely observed NPC condition, rather than only the first option, controls positive map color");
-        Check(value.Summary.AutoText.Contains("수련", StringComparison.Ordinal), "A full positive story is still included after applying the blocked-notice filter");
+        gate.State = 0; value = Read(true); row = Find(value, "수련");
+        Check(row.Status == "진행 가능" && row.Available && !value.Summary.Available, "A safely observed NPC condition colors its detail row, never an otherwise empty passive panel");
+        Check(ResearchStory(value, "수련"), "Even a full positive NPC story stays in explicit research rather than passive map advice");
         Check(DataHelper.Reads == resources && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions,
             "Changing the live full-story condition reads the cached route without loading or fully analyzing Lua");
-        controller._gameStatManager._stats._list[0]._value = 0; value = Read(false); row = Find(value, "수련");
+        controller._gameStatManager._stats._list[0]._value = 0; value = Read(true); row = Find(value, "수련");
         Check(row.Status.StartsWith("지금 진행 불가", StringComparison.Ordinal) && row.Status.Contains("행동 부족", StringComparison.Ordinal) && !row.Available,
             "A positive full-story gate still uses a blocked status after the native action-cost gate fails");
         Check(!value.Summary.AutoText.Contains("수련", StringComparison.Ordinal), "A native action-cost blocker removes even a currently positive dialogue's automatic notice");
-        controller._gameStatManager._stats._list[0]._value = 3; controller._active = false; value = Read(false); row = Find(value, "수련");
+        controller._gameStatManager._stats._list[0]._value = 3; controller._active = false; value = Read(true); row = Find(value, "수련");
         Check(row.Status.StartsWith("지금 진행 불가", StringComparison.Ordinal) && !row.Available, "Disabled places never retain a positive full-story status prefix");
         controller._active = true; controller._missionsManager.MainMissionStart = true; controller._missionsManager.MainMissionPosition = controller._position;
         controller._missionsManager.MainCheckData = new MissionCheckData { name = "priority-main", _position = controller._position };
-        value = Read(false); row = Find(value, "수련");
+        value = Read(true); row = Find(value, "수련");
         Check(row.Status.StartsWith("지금 진행 불가", StringComparison.Ordinal) && row.Status.Contains("주 임무 우선", StringComparison.Ordinal) && !row.Available,
             "A staged same-place main mission replaces the positive story prefix with the actual dispatch blocker");
         controller._missionsManager.MainMissionStart = false; controller._missionsManager.MainCheckData = null;
@@ -230,14 +241,14 @@ internal static class Program
         gate.State = 1;
         DataHelper.Scripts["training_own_write"] = "local a={'수련'};local r=choose(a);if r==1 then statmodifymanager.SetFlag('training-npc-gate',0);if checkpointmanager.Condition('training_npc') then " + npc + " end end";
         controller._positionData._defaultScript = "training_own_write";
-        for (int at = 0; at < 16; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 16; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(Find(value, "수련").Status == "진행 가능성 있음" && !Find(value, "수련").Available && gate.State == 1,
             "A write before the same condition is a possible future story, never a current false or green status");
-        Check(value.Summary.AutoText.Contains("수련", StringComparison.Ordinal), "A conversation with genuinely unknown future conditions remains in the automatic map notices");
+        Check(ResearchStory(value, "수련"), "A conversation with genuinely unknown future conditions remains in explicit research only");
 
         DataHelper.Scripts["training_foreign_write"] = "local a={'수련'};local r=choose(a);if r==1 then statmodifymanager.SetFlag('unrelated-flag',0);if checkpointmanager.Condition('training_npc') then " + npc + " end end";
         controller._positionData._defaultScript = "training_foreign_write";
-        for (int at = 0; at < 16; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 16; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(Find(value, "수련").Status == "지금 진행 불가" && !Find(value, "수련").Available,
             "An exactly known unrelated flag write does not hide a safely false NPC predicate");
         value = Read(true);
@@ -256,16 +267,16 @@ internal static class Program
         DataHelper.Scripts["current_required_root"] = "runwait(flowcharts.LoadView('room'));getvar(flowcharts.view,'ViewName').value='room';runblock(flowcharts.view,'view');mainui.DisplayTitle('P_Room_01');setmenudialog(menudialogs.Room);local a={};a[1]=checkpointmanager.Condition('completed_dialogue') and '완료 대화' or '~x';a[2]=checkpointmanager.Condition('active_dialogue') and '활성 대화' or '~x';a[3]=checkpointmanager.Condition('unknown_dialogue') and '불명 대화' or '~x';local r=choose(a);if r==1 or r==2 or r==3 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_current_dialogue')) end";
         var controller = new PositionController { _positionData = new FreePositionData { name = "Hall", _defaultScript = "current_required_root" } };
         MapGuideSource.Select(controller); MapGuideSnapshot value = null;
-        for (int at = 0; at < 24; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 24; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(Find(value, "완료 대화").Status == "진행 가능성 있음" && !Find(value, "완료 대화").Available,
             "A true first-option guard does not upgrade an opaque complete-story path into a current positive");
         string identity = Find(value, "완료 대화").Id; int resources = DataHelper.Reads;
         completed.State = 1; value = Read(true);
         Check(Find(value, "완료 대화").Id == identity && Find(value, "완료 대화").Status == "지금 진행 불가" && Find(value, "완료 대화").Detail.Contains("미충족", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("완료 대화", StringComparison.Ordinal),
             "A freshly false current required option gate hides a completed conversation despite opaque/global partial state, while detail explains the current negative");
-        Check(value.Summary.AutoText.Contains("활성 대화", StringComparison.Ordinal) && value.Summary.AutoText.Contains("불명 대화", StringComparison.Ordinal) && Find(value, "불명 대화").Status == "진행 가능성 있음",
+        Check(ResearchStory(value, "활성 대화") && ResearchStory(value, "불명 대화") && Find(value, "불명 대화").Status == "진행 가능성 있음",
             "The negative-only filter preserves another currently active conversation and an unsupported/unknown alternative");
-        for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 30; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(DataHelper.Reads == resources && !value.Summary.AutoText.Contains("완료 대화", StringComparison.Ordinal) && completed.State == 1 && active.State == 0 && Counters.GameCalls == 0,
             "Current required-gate refresh reuses the static definition cache without stale reappearance, flag effects, RNG or native judgment calls");
 
@@ -273,7 +284,7 @@ internal static class Program
         manager._condition._list.Add(new ConditionResultData { name = "guard_before_write", _items = new List<ConditionResultItem> { IsZero(beforeWrite) } });
         DataHelper.Scripts["saved_guard_before_write"] = "local allowed=checkpointmanager.Condition('guard_before_write');statmodifymanager.SetFlag('guard-before-write',1);local a={};a[1]=allowed and '쓰기 전 활성 조건' or '~x';local r=choose(a);if r==1 then setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_saved_guard')) end";
         controller._positionData._defaultScript = "saved_guard_before_write";
-        for (int at = 0; at < 20; at++) { Time.unscaledTime += .25f; value = Read(false); }
+        for (int at = 0; at < 20; at++) { Time.unscaledTime += .25f; value = Read(true); }
         Check(Find(value, "쓰기 전 활성 조건").Status == "지금 진행 불가" && !value.Summary.AutoText.Contains("쓰기 전 활성 조건", StringComparison.Ordinal),
             "The map previews a fresh script entry, so a currently false guard read before a later write remains a negative fresh-entry path rather than an already displayed menu's historical value");
     }
@@ -284,9 +295,10 @@ internal static class Program
             foreach (JsonElement item in document.RootElement.EnumerateArray()) paths[item.GetProperty("name").GetString()] = (item.GetProperty("path").GetString(), item.GetProperty("sha256").GetString());
         var failures = new List<string>();
         foreach (var sample in new[] {
-            (Script: "girlroom_001", Raw: "talk+talk+sister1", Guard: "Talk_Sister1_00", Center: false),
-            (Script: "room_001", Raw: "talk+talk+brother4", Guard: "Talk_Brother4", Center: false),
-            (Script: "center_001", Raw: "practice+free+practice", Guard: "Center_001_001", Center: true)
+            (Script: "girlroom_001", Raw: "talk+talk+sister1", Guard: "Talk_Sister1_00", Center: false, Nested: false),
+            (Script: "room_001", Raw: "talk+talk+brother4", Guard: "Talk_Brother4", Center: false, Nested: false),
+            (Script: "center_001", Raw: "practice+free+practice", Guard: "Center_001_001", Center: true, Nested: false),
+            (Script: "center_001", Raw: "practice+free+practice", Guard: "Center_001_001", Center: true, Nested: true)
         })
         {
             MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true;
@@ -298,6 +310,13 @@ internal static class Program
             {
                 var time = new GameTimeData { GameTime = new GameTime { Year = 1, Month = 4, Stage = 1, _roundsPerMonth = 3 } };
                 condition._items.Add(new StatCompareItem { _compareOp = 5, _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 9, _gameTime = time } } }, _value2 = Constant(10) });
+                if (sample.Nested)
+                {
+                    var nested = new ConditionResultData { name = "explicit-nested-fixture", _items = new List<ConditionResultItem> { condition } };
+                    condition = new ConditionResultItem { _items = new List<StatCompareItem> { new StatCompareItem {
+                        _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 16, _condition = nested } } },
+                        _value2 = Constant(1) } } };
+                }
                 manager._switchList = new object[] { new SwitchResultConfig { _list = new List<SwitchResultData> {
                     new SwitchResultData { name = sample.Guard, _items = new List<ConditionResultItem> { condition } }
                 } } };
@@ -327,16 +346,19 @@ internal static class Program
             var controller = new PositionController { _positionData = new FreePositionData { name = "NativeRoom", _defaultScript = sample.Script } };
             controller._gameStatManager._gameTimeData.GameTime.Month = 4; controller._gameStatManager._gameTimeData.GameTime.Stage = 1;
             MapGuideSource.Select(controller); MapGuideSnapshot value = null;
-            for (int at = 0; at < 180; at++) { Time.unscaledTime += .25f; value = Read(false); }
+            for (int at = 0; at < 180; at++) { Time.unscaledTime += .25f; value = Read(true); }
             string title = sample.Center ? "연무장 girl5" : sample.Raw;
             var before = Find(value, title);
-            Check(before != null && before.Status == "진행 가능성 있음" && value.Summary.AutoText.Contains(title, StringComparison.Ordinal), "The actual " + sample.Script + " NPC route remains possible with a true synthetic flag and an unknown random operand");
+            Check(before != null && before.Status == "진행 가능성 있음" && ResearchStory(value, title), "The actual " + sample.Script + " NPC route remains possible with a true synthetic flag and an unknown random operand");
             int resources = DataHelper.Reads, parses = LuaParser.Parses; flag.State = 1;
             value = Read(true); var after = Find(value, title);
             Check(after != null && after.Id == before.Id && after.Status == "지금 진행 불가" && after.Detail.Contains("미충족", StringComparison.Ordinal) && !value.Summary.AutoText.Contains(title, StringComparison.Ordinal),
                 "A false current required guard removes the original " + sample.Script + " NPC conversation from the map while preserving its current-negative detail; actual=" + (after == null ? "missing" : after.Status));
+            if (sample.Nested)
+                Check(after.Detail.Contains("Switch Center_001_001", StringComparison.Ordinal) && after.Detail.Contains("synthetic-Center_001_001 = 1", StringComparison.Ordinal) && after.Detail.Contains("난수 · 추첨하지 않음", StringComparison.Ordinal),
+                    "Explicit map detail samples the exact nested checkpoint and current flag while passive text contains no diagnostics");
             for (int at = 0; at < 40; at++)
-            { Time.unscaledTime += .25f; value = Read(false); Check(!value.Summary.AutoText.Contains(title, StringComparison.Ordinal), "The consumed actual NPC entry stays absent across cached scheduled map refreshes"); }
+            { Time.unscaledTime += .25f; value = Read(true); Check(!value.Summary.AutoText.Contains(title, StringComparison.Ordinal), "The consumed actual NPC entry stays absent across cached scheduled map refreshes"); }
             Check(DataHelper.Reads == resources && LuaParser.Parses == parses && flag.State == 1 && Counters.GameCalls == 0, "The SHA-original map transition performs no definition reload, full analyzer work, game condition/RNG calls or flag execution");
             DataHelper.ExternalReader = null; ChoiceStoryLabels.DialogueNameReader = null;
         }
@@ -369,11 +391,11 @@ internal static class Program
             Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal),
                 "An active outer NPC menu and repeat service cannot preserve an automatic story notice after every individual topic is false; renamed NPC=" + npc + "; actual=" + value.Summary.AutoText + "; detail=" + string.Join(" || ", value.Entries.ConvertAll(item => item.Title + ":" + item.Status + ":" + item.Detail)));
             int resources = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
-            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(false); }
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
             Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal) && DataHelper.Reads == resources && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions,
                 "The completed-topic/service-only state remains absent across warm scheduled refreshes without resource loads or Lua reanalysis");
             topic.State = 0; value = Read(true);
-            Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A currently open individual topic restores the NPC map notice independently of the repeat service");
+            Check(ResearchStory(value, raw), "A currently open individual topic restores the NPC research story independently of the repeat service");
             Check(topic.State == 0 && second.State == 1 && Counters.GameCalls == 0, "Generic classification and topic checks never execute service, combat, native conditions, RNG or flag effects");
 
             var consumed = new FlagData { name = npc + "_consumed_input", State = 0 };
@@ -381,26 +403,26 @@ internal static class Program
             DataHelper.Scripts[npc + "_consumed_root"] = "local a={};a[1]=checkpointmanager.Condition('" + npc + "_consumed_gate') and '조건을 소모하는 이야기' or '~x';local r=choose(a);if r==1 then statmodifymanager.SetFlag('" + npc + "_consumed_input',1);luamanager.SetNextScript('" + activity + "') end";
             controller._positionData._defaultScript = npc + "_consumed_root";
             for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("조건을 소모하는 이야기", StringComparison.Ordinal), "A parent topic that consumes its own eligibility flag remains a story despite an otherwise mechanical paid-activity followup");
+            Check(ResearchStory(value, "조건을 소모하는 이야기"), "A parent topic that consumes its own eligibility flag remains a story despite an otherwise mechanical paid-activity followup");
             Check(consumed.State == 0 && Counters.GameCalls == 0, "Checking the consumed-guard footprint never executes that prospective one-shot flag write");
 
             DataHelper.Scripts[npc + "_opaque_parent"] = "local a={'선행 동작이 불명인 이야기'};local r=choose(a);if r==1 then unknown_callback();luamanager.SetNextScript('" + activity + "') end";
             controller._positionData._defaultScript = npc + "_opaque_parent";
             for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("선행 동작이 불명인 이야기", StringComparison.Ordinal), "An opaque parent callback prevents suppressing the entire selected topic as a repeat response based only on its child's paid-activity shape");
+            Check(ResearchStory(value, "선행 동작이 불명인 이야기"), "An opaque parent callback prevents suppressing the entire selected topic as a repeat response based only on its child's paid-activity shape");
 
             var special = new FlagData { name = npc + "_special_input", State = 0 };
             manager._condition._list.Add(new ConditionResultData { name = npc + "_special_gate", _items = new List<ConditionResultItem> { IsZero(special) } });
             DataHelper.Scripts[npc + "_special_root"] = "local a={'별도 이야기'};local r=choose(a);if r==1 then " + speaker + "D_fixed_intro'));if checkpointmanager.Condition('" + npc + "_special_gate') then " + speaker + "D_special'));statmodifymanager.SetFlag('" + npc + "_special_seen',1) end;luamanager.ChangeScene('Combat','fixture_story_combat','Story') end";
             controller._positionData._defaultScript = npc + "_special_root";
             for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("별도 이야기", StringComparison.Ordinal), "A separately conditioned story inside a combat activity is retained instead of blanket filtering combat");
+            Check(ResearchStory(value, "별도 이야기"), "A separately conditioned story inside a combat activity is retained instead of blanket filtering combat");
             DataHelper.Scripts[npc + "_callback_root"] = "local a={'후속 특별 이야기'};local r=choose(a);if r==1 then luamanager.SetNextScript('" + npc + "_callback_service') end";
             DataHelper.Scripts[npc + "_callback_service"] = DataHelper.Scripts[activity].Replace(npc + "_after", npc + "_callback_special", StringComparison.Ordinal);
             DataHelper.Scripts[npc + "_callback_special"] = "if checkpointmanager.Condition('" + npc + "_special_gate') then " + speaker + "D_special_result'));statmodifymanager.SetFlag('" + npc + "_callback_seen',1) end";
             controller._positionData._defaultScript = npc + "_callback_root";
             for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("후속 특별 이야기", StringComparison.Ordinal), "An activity parent's fixed response classification cannot hide a distinct conditional story in its combat callback");
+            Check(ResearchStory(value, "후속 특별 이야기"), "An activity parent's fixed response classification cannot hide a distinct conditional story in its combat callback");
             var receipt = new FlagData { name = npc + "_receipt_input", State = 0 };
             manager._condition._list.Add(new ConditionResultData { name = npc + "_receipt_gate", _items = new List<ConditionResultItem> { IsZero(receipt) } });
             DataHelper.Scripts[npc + "_receipt_root"] = "local a={};a[1]=checkpointmanager.Condition('" + npc + "_receipt_gate') and '결과 대사 뒤 조건을 소모하는 이야기' or '~x';local r=choose(a);if r==1 then luamanager.SetNextScript('" + npc + "_receipt_service') end";
@@ -408,21 +430,21 @@ internal static class Program
             DataHelper.Scripts[npc + "_receipt_result"] = "local s=checkpointmanager.Switch('" + npc + "_outcome');if s==1 then statmodifymanager.Player('martial-point',2,'',1);" + speaker + "D_result_loss')) elseif s==2 then statmodifymanager.Player('martial-point',4,'',1);" + speaker + "D_result_win'));statmodifymanager.SetFlag('" + npc + "_receipt_input',1) end;luamanager.ChangeScene('Free','','')";
             controller._positionData._defaultScript = npc + "_receipt_root";
             for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("결과 대사 뒤 조건을 소모하는 이야기", StringComparison.Ordinal), "A mechanical-looking activity receipt that consumes the selected topic's own guard after its NPC line remains a distinct story");
+            Check(ResearchStory(value, "결과 대사 뒤 조건을 소모하는 이야기"), "A mechanical-looking activity receipt that consumes the selected topic's own guard after its NPC line remains a distinct story");
             Check(receipt.State == 0 && Counters.GameCalls == 0, "The future receipt write is classified structurally and never applied during the read-only preview");
             DataHelper.Scripts[npc + "_missing_root"] = "local a={'후속 자료 대기 이야기'};local r=choose(a);if r==1 then luamanager.SetNextScript('" + npc + "_missing_service') end";
             DataHelper.Scripts[npc + "_missing_service"] = DataHelper.Scripts[activity].Replace(npc + "_after", npc + "_missing_result", StringComparison.Ordinal);
             controller._positionData._defaultScript = npc + "_missing_root";
             for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("후속 자료 대기 이야기", StringComparison.Ordinal) && HasStatus(value, "읽기 실패"), "A proven fixed response cannot hide a selected topic while its registered callback is missing");
+            Check(ResearchStory(value, "후속 자료 대기 이야기") && HasStatus(value, "읽기 실패"), "A proven fixed response cannot hide a selected topic while its registered callback is missing");
             DataHelper.Scripts[npc + "_missing_result"] = "if checkpointmanager.Condition('" + npc + "_special_gate') then " + speaker + "D_recovered_special'));statmodifymanager.SetFlag('" + npc + "_recovered_seen',1) end";
             Time.unscaledTime += 5;
             for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("후속 자료 대기 이야기", StringComparison.Ordinal) && !HasStatus(value, "읽기 실패"), "The missing callback recovers on the existing retry schedule and its separate special story remains visible");
+            Check(ResearchStory(value, "후속 자료 대기 이야기") && !HasStatus(value, "읽기 실패"), "The missing callback recovers on the existing retry schedule and its separate special story remains visible");
             DataHelper.Scripts[npc + "_opaque_root"] = "local a={'불명 이야기'};local r=choose(a);if r==1 then unknown_callback();" + speaker + "D_unknown'));luamanager.ChangeScene('Combat','fixture_unknown','Story') end";
             controller._positionData._defaultScript = npc + "_opaque_root";
             for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
-            Check(value.Summary.AutoText.Contains("불명 이야기", StringComparison.Ordinal), "An arbitrary callback prevents service-only proof and retains the unclassified NPC story candidate");
+            Check(ResearchStory(value, "불명 이야기"), "An arbitrary callback prevents service-only proof and retains the unclassified NPC story candidate");
         }
     }
     private static void NativeCompletedTopicsMap(string indexPath)
@@ -485,21 +507,21 @@ internal static class Program
             "The original room/talk/sparring scripts are analyzed with explicit active access and repeat challenge fixtures");
         Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "SHA-original brother4 fixed sparring dialogue does not keep a map notice after every individual story topic is completed; actual=" + value.Summary.AutoText + "; rows=" + string.Join(" || ", value.Entries.ConvertAll(item => item.Title + ":" + item.Status + ":" + item.Detail)));
         int resources = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
-        for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(false); Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "Completed original brother4 topics remain absent with repeat sparring still active"); }
+        for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "Completed original brother4 topics remain absent with repeat sparring still active"); }
         Check(DataHelper.Reads == resources && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions, "Original-topic warm reads retain definition caches and never fully reparse Lua");
         var introConfig = switches._list.Find(item => item.name == "Talk_Brother4_00");
         var introFlag = (FlagData)introConfig._items[0]._items[0]._value1._value[0]._flag;
         resetFlags._list.Add(introFlag); value = Read(true);
-        Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "An apparently same-value SetFlag cannot prove an activity repeatable when the preceding ResetTalkFlag owns that input and may change it before the assignment");
+        Check(ResearchStory(value, raw), "An apparently same-value SetFlag cannot prove an activity repeatable when the preceding ResetTalkFlag owns that input and may change it before the assignment");
         Check(introFlag.State == 1 && Counters.GameCalls == 0, "The no-op/reset-footprint interaction is read-only and never performs either the reset or the later SetFlag");
         resetFlags._list.Clear(); value = Read(true);
         Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "Removing the reset-owned input restores the exact current-value no-op proof without rebuilding Lua definitions");
         resetFlags._list.Add(flags["Talk_Brother4_00_01"]); value = Read(true);
-        Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A topic flag actually owned by ResetTalkFlag remains uncertain instead of being incorrectly hidden from its current false value");
+        Check(ResearchStory(value, raw), "A topic flag actually owned by ResetTalkFlag remains uncertain instead of being incorrectly hidden from its current false value");
         resetFlags._list.Clear(); value = Read(true);
         Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A newly observed disjoint reset footprint safely restores completed-topic suppression without reloading definitions");
         flags["Talk_Brother4_00_01"].State = 0; value = Read(true);
-        Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A remaining ordinary brother4 topic remains visible even though the repeat sparring response is excluded");
+        Check(ResearchStory(value, raw), "A remaining ordinary brother4 topic remains visible even though the repeat sparring response is excluded");
         Check(Counters.GameCalls == 0 && flags["Talk_Brother4_02_04"].State == 0, "Original-topic preview calls no native game conditions/RNG, combat dispatch or effects");
         DataHelper.ExternalReader = null;
     }
@@ -595,7 +617,7 @@ internal static class Program
         int sharedBefore = shared.StateReads, overflowBefore = overflow.StateReads;
         parses = LuaParser.Parses; descriptions = LuaParser.Descriptions; conditionText = PopupConditionText.ConditionDescriptions;
         value = Read(false);
-        Check(shared.StateReads - sharedBefore == 1 && overflow.StateReads == overflowBefore, "Shared mission condition is read once and seventeenth candidate is deferred within the same passive snapshot");
+        Check(shared.StateReads == sharedBefore && overflow.StateReads == overflowBefore && !HasStatus(value, "임무 정의 준비 중"), "Unregistered mission conditions are never sampled by passive map refresh");
         Check(LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && PopupConditionText.ConditionDescriptions == conditionText,
             "Mission passive status never analyzes start scripts or formats full conditions");
         Check(Counters.GameCalls == 0 && flag.State == 0 && shared.State == 0, "Passive optimization does not execute conditions/RNG or mutate flags");

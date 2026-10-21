@@ -1,8 +1,12 @@
 # PRD #6 — 지도·1회성·실제 분기·상점 정보 구현 기록
 
-<!-- alpha11-current-status -->
-2026-10-21 14:48:43 KST에 소스·주석 태그 [`f3ee0af`](https://github.com/jungpaeng/dicemaster/commit/f3ee0afa0b68c2c9d10c9c8774e80db2d694490d)의 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11)을 게시했다. 반복 활동의 고정 반응과 개별 이야기를 구조로 구분하고 준비가 끝난 빈 지도 오버레이를 숨긴다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 52개 Release·53개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
-<!-- /alpha11-current-status -->
+## alpha.12 — 자동 안내 범위·장소 준비·중첩 조건
+
+자동 지도는 현재 실행 가능한 기존 대기 임무와 1회성 증명·현재 조건·경로가 확인된 항목만 발행한다. 미등록 임무 단계와 일반 후속 대화는 상세 조회에 남기며 자동 갱신에서는 그 조건을 읽지 않는다. 전체 임무 색인 상태를 선택 장소의 준비와 분리하고 실시간 대기 목록을 먼저 읽는다. 중첩 조건에도 AND/OR 부분 판정을 적용하며 원본 조건·현재 값의 표본은 명시적인 지도 로그 상세에만 제공한다. 인물/플래그 예외를 추가하지 않고 기존 입력·설정·읽기 전용·갱신 계약을 유지한다. [구현·독립 검증·설치 후보·남은 Windows 확인](ISSUE-6-INDEPENDENT-PREPARATION.md). 아래 공개 alpha.11과 새 로컬 수정의 검증 근거를 혼용하지 않는다.
+
+<!-- alpha12-current-status -->
+alpha.12 게시 준비 중. 지도 자동 안내는 실행 가능한 기존 대기 임무와 현재 도달 가능성을 확인한 증명된 1회성으로 제한한다. 미등록 단계·후속 대화는 명시적 상세 조회로 분리한다. [변경·검사·파일·새 Windows 확인](ISSUE-6-ALPHA12-RELEASE.md). 실제 Windows와 #6 전체 완료는 대기다.
+<!-- /alpha12-current-status -->
 
 ## alpha.11 — 남은 이야기와 반복 활동 반응
 

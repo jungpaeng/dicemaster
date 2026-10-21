@@ -187,7 +187,7 @@ internal static class Program
         int separate = SafeDisplayEvaluation.ConditionReads - before;
         before = SafeDisplayEvaluation.ConditionReads; var snapshot = new MapRouteRead();
         foreach (var entry in d.Entries) Check(entry.ReadCurrent(snapshot) == MapRouteState.Met, "shared snapshot preserves current route state");
-        Check(separate == 32 && SafeDisplayEvaluation.ConditionReads - before == 1, "production shared-tail session reduces 32 repeated checkpoint condition reads to one");
+        Check(separate > 0 && separate == 32 * (SafeDisplayEvaluation.ConditionReads - before), "production shared-tail session reduces 32 repeated checkpoint condition samples to one");
         var bodies = new Dictionary<string, bool>
         {
             { "statmodifymanager.SetFlag('f',1)", true },

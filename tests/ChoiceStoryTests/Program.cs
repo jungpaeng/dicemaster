@@ -116,6 +116,14 @@ internal static class Program
         Check(!row.AutoText.Contains("긴", StringComparison.Ordinal) && !row.AutoText.Contains("D_topic", StringComparison.Ordinal), "Native title is clean and dialogue content is not invented as a title");
         Check(row.Detail.Contains("talk+talk+brother4", StringComparison.Ordinal) && row.Detail.Contains("연결 경로", StringComparison.Ordinal), "Explicit detail retains exact source identity and full supported paths");
         Check(!value.Entries.Any(item => item.Title == "휴식"), "A menu-only utility is not presented as a discovered story");
+        brother.isActiveAndEnabled = false; value = Read(true);
+        Check(!value.Entries.Any(item => item.Title == "사사형") && !value.Hints.Any(item => item.Title == "사사형"),
+            "A source-defined future choice cannot produce a story row or hint while its actual menu control is disabled");
+        brother.isActiveAndEnabled = true; brother.gameObject.activeInHierarchy = false; value = Read(true);
+        Check(!value.Entries.Any(item => item.Title == "사사형"), "A hidden actual option is also excluded while another live option keeps the menu visible");
+        brother.gameObject.activeInHierarchy = true; value = Read(true); row = Linked(value, "사사형");
+        Check(row.Detail.Contains("실제 이야기 발생을 보장하지 않습니다", StringComparison.Ordinal),
+            "The current actual option anchors the route guide without promising downstream story execution");
         EventSystem.current.currentSelectedGameObject = brother.gameObject;
         Check(ReferenceEquals(row, ChoiceStorySource.CurrentRow(value)), "Pad selection reads the existing selected GameObject without hover");
         int reads = DataHelper.Reads, sourceReads = brother._source.Reads, textReads = brother._titleText[0].Reads, labels = DisplayNames.LabelReads.Count;

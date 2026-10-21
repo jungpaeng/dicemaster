@@ -1,8 +1,12 @@
 # 소스 기반 Release와 게시 이력
 
-<!-- alpha11-current-status -->
-2026-10-21 14:48:43 KST에 소스·주석 태그 [`f3ee0af`](https://github.com/jungpaeng/dicemaster/commit/f3ee0afa0b68c2c9d10c9c8774e80db2d694490d)의 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11)을 게시했다. 반복 활동의 고정 반응과 개별 이야기를 구조로 구분하고 준비가 끝난 빈 지도 오버레이를 숨긴다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 52개 Release·53개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
-<!-- /alpha11-current-status -->
+<!-- alpha12-current-status -->
+alpha.12 게시 준비 중. 지도 자동 안내는 실행 가능한 기존 대기 임무와 현재 도달 가능성을 확인한 증명된 1회성으로 제한한다. 미등록 단계·후속 대화는 명시적 상세 조회로 분리한다. [변경·검사·파일·새 Windows 확인](ISSUE-6-ALPHA12-RELEASE.md). 실제 Windows와 #6 전체 완료는 대기다.
+<!-- /alpha12-current-status -->
+
+## alpha.12 — 지도 자동 안내 범위 제한
+
+원래 main에서 합의한 표시 정책과 준비·중첩 조건 보완을 함께 구현한다. 새 후보 전체 검사 후 소스 커밋을 고정해 재빌드하고, 검토 DLL/cfg/ZIP·성공 기록을 대조한다. main·새 주석 태그만 atomic push하고 새 prerelease를 게시한다. 이전 Release·태그·자산·Latest 정식 v1.0.6과 #6 open은 보존한다. 공개 ZIP은 익명 다운로드로 재검증한다. [게시 기록과 Windows 확인표](ISSUE-6-ALPHA12-RELEASE.md).
 
 ## alpha.11 — 반복 활동과 이야기 안내 구분
 
