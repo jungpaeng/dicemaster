@@ -34,8 +34,8 @@ internal static class CurrentBlockerCases
         d = Dispatch(Prelude + PlainMenu + "if r==1 then do " + RegisterPool + "luamanager.Init();end end;");
         check(OmissionsBlocked(d), "fresh terminal dispatch may finish verified empty current and outer frames without inventing an unwind cut");
         d = Dispatch(Prelude + PlainMenu + "luamanager.SetNextScript('child');luamanager.Init()", Npc);
-        check(!OmissionsBlocked(d) && d.StoryEntries.Count == 1 && Path(d).ReadStoryConditions(new MapRouteRead()) == MapRouteState.Unknown,
-            "literal target traversal retains opaque child execution and its independent missing-path protection");
+        check(OmissionsBlocked(d) && d.StoryEntries.Count == 1 && Path(d).ReadStoryConditions(new MapRouteRead()) == MapRouteState.Unknown,
+            "complete literal target traversal preserves full execution uncertainty without inventing an omitted current-topic alternative");
         foreach (string suffix in new[] {
             RegisterPool + "local intervening=1;luamanager.Init()",
             RegisterPool + "unknown_callback();luamanager.Init()",

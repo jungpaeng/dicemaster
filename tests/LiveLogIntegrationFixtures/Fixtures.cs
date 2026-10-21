@@ -115,6 +115,7 @@ namespace Mortal.Core
         public int _constant, _randomMin, _randomMax;
         public StatGroupVariable _statGroup;
         public object _condition;
+        public object _flag;
         public GameStat _stat = new GameStat();
     }
     public class GameStat

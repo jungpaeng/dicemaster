@@ -85,7 +85,8 @@ static class Program
         Check(text.Contains("문파 방문 · 1회성 이야기 · 지금 진행 불가") && !text.Contains("나머지 이야기") && text.Contains("외 1개"), "Automatic notice bounds complete entries rather than cutting statuses midway");
         Check(text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && !text.Contains("단계 후보") && !text.Contains("확인 불가"), "Compact notice keeps the detail path and omits analysis jargon");
         Check(MapGuidePresentation.Summary(new List<string>(), true, true).StartsWith("이 장소의 안내를 확인하는 중"), "Preparing is distinct from confirmed empty");
-        Check(MapGuidePresentation.Summary(new List<string>(), true, false).StartsWith("현재 표시할 인물 대화·임무·1회성 없음"), "Empty notice describes visible items without claiming that hidden blocked content does not exist");
+        Check(MapGuidePresentation.Summary(new List<string>(), true, false) == "", "Settled empty notices leave no passive panel or detail-link-only noise");
+        Check(MapGuidePresentation.Summary(null, true, false) == "", "A settled absent notice list also hides the passive panel");
         Check(MapGuidePresentation.Summary(new List<string>(), false, true) == "", "One-shot-only mode does not create an empty or unknown noise panel");
     }
     private static MapGuideSnapshot Snapshot(bool guide = true, bool once = true)
@@ -123,6 +124,7 @@ static class Program
         Check(!row.AutoText.Contains("allowed", StringComparison.Ordinal) && !row.AutoText.Contains("fixture effects", StringComparison.Ordinal), "Automatic summary omits ordinary names and detailed effects");
         Check(Entry(snapshot, "allowed").Kind.Contains("기타 연결 정보") && Details(snapshot).Contains("fixture effects"), "Ordinary and unknown stories remain readable as individual detail rows");
         Check(Details(snapshot).Contains("읽기 실패") && Counters.GameCalls == 0, "One broken event is isolated without invoking game checks");
+        Check(row.AutoText.StartsWith("이 장소의 안내를 확인하는 중", StringComparison.Ordinal), "Unfinished result analysis contributes real preparation independently of a simultaneous failed candidate");
         int preparing = 0;
         while (Details(snapshot).Contains("효과·1회성 준비 중", StringComparison.Ordinal) && preparing++ < 16)
         {
@@ -131,6 +133,7 @@ static class Program
             Check(LuaParser.Parses - coldBefore <= 1, "A scheduled read starts at most one new result analysis");
         }
         Check(preparing < 16, "Result preparation completes over bounded scheduled reads");
+        Check(snapshot.Summary.AutoText == "" && Details(snapshot).Contains("읽기 실패"), "Once result analysis finishes, a remaining failed candidate cannot retain a checking-only empty panel");
         int parses = LuaParser.Parses, reads = DataHelper.Reads, descriptions = LuaParser.Descriptions;
         Snapshot(); Time.unscaledTime = .25f; Snapshot();
         Check(LuaParser.Parses == parses && DataHelper.Reads == reads && LuaParser.Descriptions == descriptions, "Warm refresh reuses route/source/effect caches");
@@ -391,12 +394,59 @@ static class Program
             "The three complete automatic rows and remaining count are calculated after filtering blocked candidates");
         foreach (var path in paths) path.StoryState = MapRouteState.NotMet;
         value = Snapshot();
-        Check(value.Summary.AutoText.StartsWith("현재 표시할 인물 대화·임무·1회성 없음", StringComparison.Ordinal) && !value.Summary.AutoText.Contains("• ") && !value.Summary.AutoText.Contains("외 "),
-            "An all-blocked map has an honest visible-empty message without hidden names, phantom rows or an overflow count");
+        Check(value.Summary.AutoText == "",
+            "An all-blocked map hides the passive panel without hidden names, phantom rows, an overflow count or an empty message");
         Check(Entry(value, "열린_대화").Status == "지금 진행 불가" && Entry(value, "숨김_임무").Detail.Length > 0 && Entry(value, "숨김_1회성").Detail.Length > 0 && !value.Summary.Available,
             "Filtering all automatic rows leaves their condition/effect details intact and does not invent an available summary");
         Check(Counters.GameCalls == 0 && flag.State == 1, "Automatic filtering executes no game judgment, result, RNG or consumed one-shot flag write");
         MapRouteDefinitions.StoryFixtures.Clear(); MapRouteDefinitions.StoryIncomplete = false; MapGuideSource.Clear();
+    }
+    private static void SettledEmptyOverlay()
+    {
+        var controller = EmptyPlace(); MapGuideSource.Select(controller);
+        var value = Snapshot();
+        Check(value.Summary.AutoText == "" && Details(value).Contains("현재 연결 항목 없음"),
+            "A genuinely empty selected place hides its passive panel and retains explicit empty detail");
+        controller._positionData._defaultScript = "empty_overlay"; DataHelper.Scripts["empty_overlay"] = "";
+        MapRouteDefinitions.FixturePreparing = true;
+        value = Snapshot();
+        Check(value.Summary.AutoText.StartsWith("이 장소의 안내를 확인하는 중", StringComparison.Ordinal) && Details(value).Contains("경로 준비 중"),
+            "Actual unfinished route work exposes a checking notice even when no automatic candidates have been discovered yet");
+        MapRouteDefinitions.FixturePreparing = false; MapRouteDefinitions.FixturePartial = true;
+        value = Snapshot();
+        Check(value.Summary.AutoText == "" && Details(value).Contains("경로 일부 확인 불가") && value.Summary.Status.Contains("경로 일부 확인 불가"),
+            "Settled route-analysis limits keep their distinct diagnostic detail without masquerading as ongoing work");
+        int reads = DataHelper.Reads, parses = LuaParser.Parses;
+        bool stayedHidden = true;
+        for (int at = 0; at < 200; at++) { Time.unscaledTime += .25f; stayedHidden &= Snapshot().Summary.AutoText == ""; }
+        Check(stayedHidden && DataHelper.Reads == reads && LuaParser.Parses == parses,
+            "Two hundred warm settled-empty refreshes stay hidden without reloading or reparsing Lua");
+        MapRouteDefinitions.FixtureReadFailure = true;
+        value = Snapshot();
+        Check(value.Summary.AutoText == "" && Details(value).Contains("경로 읽기 실패") && !Details(value).Contains("경로 준비 중"),
+            "Route read failure remains a failure in the log and cannot keep a checking-only panel alive");
+        MapRouteDefinitions.FixturePartial = false; MapRouteDefinitions.FixtureReadFailure = false;
+        value = Snapshot();
+        Check(value.Summary.AutoText == "" && !Details(value).Contains("경로 읽기 실패"),
+            "Recovery to a settled empty route removes the failure state while leaving the panel hidden");
+
+        controller = EmptyPlace(); MapGuideSource.Select(controller);
+        var zero = Compare(Constant(0), Constant(1));
+        for (int at = 0; at < 100; at++) controller._missionsManager._subMissions._list.Add(Mission("empty-index-" + at,
+            new MissionCheckData { name = "empty-stage-" + at, _conditions = new[] { zero } }));
+        value = Snapshot();
+        Check(value.Summary.AutoText.StartsWith("이 장소의 안내를 확인하는 중", StringComparison.Ordinal) && Details(value).Contains("임무 정의 준비 중"),
+            "An unfinished mission index contributes real preparation independently of route diagnostics");
+        int pending = 0;
+        while (Details(value).Contains("임무 정의 준비 중") && pending++ < 20) { Time.unscaledTime += .25f; value = Snapshot(); }
+        Check(pending < 20 && value.Summary.AutoText == "" && Entry(value, "empty-index-0").Status.Contains("조건 미충족"),
+            "Finishing an all-blocked mission index clears the checking panel without dropping the blocked details");
+        controller._missionsManager._subMissions._list = null;
+        value = Snapshot();
+        Check(value.Summary.AutoText == "" && Details(value).Contains("게임 데이터 대기 중") && !Details(value).Contains("임무 정의 준비 중"),
+            "Missing game data is retained as a distinct waiting detail rather than reported as active index preparation or confirmed none");
+        Check(Counters.GameCalls == 0, "Empty-overlay preparation and diagnostics never execute game judgments or results");
+        MapGuideSource.Clear();
     }
     private static void Options()
     {
@@ -450,5 +500,5 @@ static class Program
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

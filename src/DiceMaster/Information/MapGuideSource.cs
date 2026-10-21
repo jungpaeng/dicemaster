@@ -50,6 +50,13 @@ namespace DiceMaster.Information
             internal PreviewCondition CurrentPrerequisite;
             internal readonly List<StoryLink> Links = new List<StoryLink>();
             internal bool Omitted;
+            internal readonly List<StoryTopic> Topics = new List<StoryTopic>();
+            internal readonly List<MapChoiceStep> ObservedTopics = new List<MapChoiceStep>();
+        }
+        private sealed class StoryTopic
+        {
+            internal string Id;
+            internal readonly List<StoryLink> Links = new List<StoryLink>();
         }
         private sealed class StoryLink
         { internal MapStoryEntry Story; internal MapRoutePath Path; }
@@ -71,7 +78,9 @@ namespace DiceMaster.Information
         {
             internal string Id, Name, Kind, Status, Detail;
             internal int Rank, Priority; // conditions/route met, denied, unknown
-            internal bool OneShot, StatusOnly, Waiting, Mission, Global, Other, Main, ChoiceStory;
+            // Only unfinished scheduled work owns Preparing. Permanent limits,
+            // missing game data and retry failures remain diagnostic detail.
+            internal bool OneShot, StatusOnly, Preparing, Waiting, Mission, Global, Other, Main, ChoiceStory;
             internal object Stage;
         }
         private sealed class CandidateRead
@@ -453,7 +462,7 @@ namespace DiceMaster.Information
             if (source.Failure != null)
                 candidates.Add(Diagnostic("이야기 자료", source.Failure is DataNotReadyException ? "게임 데이터 대기 중" : "읽기 실패", "이 장소의 연결된 이야기 자료를 읽지 못했습니다."));
             else if (source.Routes != null && (source.Routes.IsPreparing || source.Routes.IsPartial || source.Routes.HasReadFailure))
-                candidates.Add(Diagnostic("경로 자료", source.Routes.IsPreparing ? "경로 준비 중" : source.Routes.HasReadFailure ? "경로 읽기 실패" : "경로 일부 확인 불가", source.Routes.Diagnostic));
+                candidates.Add(Diagnostic("경로 자료", source.Routes.IsPreparing ? "경로 준비 중" : source.Routes.HasReadFailure ? "경로 읽기 실패" : "경로 일부 확인 불가", source.Routes.Diagnostic, source.Routes.IsPreparing));
             foreach (string diagnostic in source.PoolDiagnostics.Values)
                 candidates.Add(Diagnostic("풀 자료", "풀 검색 상한 · 일부 확인 불가", diagnostic));
             return Snapshot(place, controller, candidates, guide, oneShot);
@@ -480,9 +489,19 @@ namespace DiceMaster.Information
                                 CurrentPrerequisite = path.CurrentPrerequisite }); source.Stories.Add(group);
                         }
                         else group.CurrentPrerequisite = MapRoutePath.CommonPrerequisite(group.CurrentPrerequisite, path.CurrentPrerequisite);
+                        foreach (MapChoiceStep step in path.Steps)
+                            if (!group.ObservedTopics.Contains(step)) group.ObservedTopics.Add(step);
                         // Include every observed path in the common prefix,
                         // including paths omitted from the bounded detail list.
-                        if (group.Links.Count < 32) group.Links.Add(new StoryLink { Story = story, Path = path });
+                        if (group.Links.Count < 32)
+                        {
+                            var link = new StoryLink { Story = story, Path = path }; group.Links.Add(link);
+                            MapChoiceStep last = path.TopicStep;
+                            string topicId = last.Script + "/" + last.SourceOffset + "/" + last.Index + "/" + last.RawLabel;
+                            StoryTopic topic = group.Topics.Find(value => value.Id == topicId);
+                            if (topic == null) group.Topics.Add(topic = new StoryTopic { Id = topicId });
+                            topic.Links.Add(link);
+                        }
                         else group.Omitted = true;
                     }
             }
@@ -508,26 +527,58 @@ namespace DiceMaster.Information
                     {
                         gates--;
                         if (read.Current(captured.CurrentPrerequisite) == PreviewConditionState.NotMet)
-                            currentBlocked = source.Routes.CurrentOmissionsBlocked(first, read, ref gates);
+                            currentBlocked = source.Routes.CurrentOmissionsBlocked(first, captured.ObservedTopics, read, ref gates);
                     }
-                    bool allPathsBlocked = captured.Links.Count > 0 && !captured.Omitted && !source.Routes.IsPreparing && !source.Routes.HasReadFailure;
-                    if (sample && !currentBlocked) foreach (StoryLink link in captured.Links)
+                    bool activityOnly = sample && !captured.Omitted;
+                    bool allPathsBlocked = captured.Topics.Count > 0 && !captured.Omitted && !source.Routes.IsPreparing && !source.Routes.HasReadFailure;
+                    if (sample && !currentBlocked) foreach (StoryTopic topic in captured.Topics)
                     {
-                        if (gates-- <= 0) { unknown = true; allPathsBlocked = false; break; }
-                        // Each admitted path has at most two bounded projections
-                        // sharing the scheduled read's memoized checkpoint data.
-                        MapRouteState state = link.Path.ReadStoryConditions(read);
-                        met |= state == MapRouteState.Met; unknown |= state == MapRouteState.Unknown;
+                        // Resolve each selected topic before combining NPCs.
+                        // A repeat service's uncertain fixed response must not
+                        // keep an otherwise completed conversation alive.
+                        var storyLinks = new List<StoryLink>();
+                        foreach (StoryLink link in topic.Links)
+                            if (link.Path.ReadStoryKind(read, ref gates) != MapStoryKind.ActivityResponse) storyLinks.Add(link);
+                        if (storyLinks.Count == 0) continue;
+                        activityOnly = false;
+                        bool topicMet = false, topicUnknown = false, pathsBlocked = true;
+                        foreach (StoryLink link in storyLinks)
+                        {
+                            // The captured necessary prefix often excludes a
+                            // completed topic immediately, including an intro
+                            // alternative. Spend no full-story read on it.
+                            if (gates <= 0) { topicUnknown = true; pathsBlocked = false; break; }
+                            gates--;
+                            if (link.Path.ReadCurrentBlocker(read)) continue;
+                            if (gates <= 0) { topicUnknown = true; pathsBlocked = false; break; }
+                            gates--;
+                            if (link.Path.TopicStep != null && link.Path.TopicStep.ReadTopicBlocker(read)) continue;
+                            if (gates <= 0) { topicUnknown = true; pathsBlocked = false; break; }
+                            gates--;
+                            MapRouteState state = link.Path.ReadStoryConditions(read);
+                            topicMet |= state == MapRouteState.Met; topicUnknown |= state == MapRouteState.Unknown;
+                            pathsBlocked &= state == MapRouteState.NotMet;
+                            if (topicMet) break;
+                        }
+                        met |= topicMet;
+                        unknown |= !pathsBlocked && topicUnknown;
+                        allPathsBlocked &= pathsBlocked;
                         if (met) break;
-                        if (allPathsBlocked && !link.Path.ReadCurrentBlocker(read)) allPathsBlocked = false;
                     }
-                    if (sample && !currentBlocked && !met && unknown && allPathsBlocked && first != null)
-                        currentBlocked = source.Routes.CurrentOmissionsBlocked(first, read, ref gates);
+                    if (sample && !currentBlocked && !met && allPathsBlocked && first != null)
+                    {
+                        bool covered = source.Routes.CurrentOmissionsBlocked(first, captured.ObservedTopics, read, ref gates);
+                        if (activityOnly) activityOnly = covered;
+                        else currentBlocked = covered;
+                    }
+                    else if (source.Routes.IsPreparing || source.Routes.HasReadFailure) activityOnly = false;
+                    if (currentBlocked) activityOnly = false;
                     int rank = !sample ? 2 : currentBlocked ? 1 : met ? 0 : unknown ? 2 : 1;
                     var result = new Candidate { Id = "story/" + captured.Id, Name = ChoiceStoryLabels.DialogueName(captured.RawLabel, captured.DialogueCharacter),
-                        Kind = "인물 대화", ChoiceStory = true, Rank = rank,
+                        Kind = activityOnly ? "일반 활동" : "인물 대화", Other = activityOnly, ChoiceStory = !activityOnly, Rank = rank,
                         Status = StoryStatus(rank),
-                        Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백만 있는 경로는 안내 대상에서 제외합니다. 1회성을 뜻하지 않습니다.\n첫 선택뿐 아니라 해당 대화에 이르는 내부 분기 조건을 현재 값으로 읽습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락이 있으면 진행 가능성 있음으로 표시합니다. 이는 확률이나 이야기 발생 보증이 아닙니다." };
+                        Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백과 구조적으로 확인한 활동의 고정 반응은 자동 안내에서 제외합니다. 1회성을 뜻하지 않습니다.\n첫 선택뿐 아니라 해당 대화에 이르는 내부 분기 조건을 현재 값으로 읽습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락이 있으면 진행 가능성 있음으로 표시합니다. 이는 확률이나 이야기 발생 보증이 아닙니다." };
+                    if (activityOnly) result.Detail = "별도의 이야기 분기 없이 비용 확인·활동 실행·결과 응답으로 이어지는 고정 반응입니다. 자동 이야기 안내에서 제외하며 활동의 선택·실행 가능 여부를 뜻하지 않습니다.";
                     if (currentBlocked)
                         result.Detail += "\n현재 필수 진입 조건이 미충족하여 자동 안내에서 제외합니다. 현재 값 기준의 표시 판정이며 진입 뒤 상태 변경이나 미래 실행 불가를 증명하지 않습니다.";
                     if (detailed)
@@ -535,7 +586,7 @@ namespace DiceMaster.Information
                         var lines = new List<string>();
                         foreach (StoryLink link in captured.Links)
                         {
-                            string text = "선택 경로: " + ChoiceStoryLabels.Path(link.Path.Steps);
+                            string text = "선택 경로: " + ChoiceStoryLabels.Path(link.Path.Steps) + (link.Path.ReadStoryKind(read, ref gates) == MapStoryKind.ActivityResponse ? " · 활동 고정 반응 (자동 안내 제외)" : "");
                             if (!lines.Contains(text)) lines.Add(text);
                         }
                         result.Detail += "\n" + string.Join("\n", lines);
@@ -552,12 +603,12 @@ namespace DiceMaster.Information
         }
         private static string StoryStatus(int rank)
         { return rank == 0 ? "진행 가능" : rank == 1 ? "지금 진행 불가" : "진행 가능성 있음"; }
-        private static Candidate Diagnostic(string name, string status, string detail)
-        { return new Candidate { Id = "diagnostic/" + name, Name = name, Kind = "상태", StatusOnly = true, Rank = 2, Status = status, Detail = detail }; }
+        private static Candidate Diagnostic(string name, string status, string detail, bool preparing = false)
+        { return new Candidate { Id = "diagnostic/" + name, Name = name, Kind = "상태", StatusOnly = true, Preparing = preparing, Rank = 2, Status = status, Detail = detail }; }
         private static MapGuideSnapshot Snapshot(Place place, PositionController controller, List<Candidate> candidates, bool guide, bool once)
         {
             var snapshot = new MapGuideSnapshot { HasSelection = place != null, ContextKey = ContextKey };
-            if (effectsPreparing) candidates.Add(Diagnostic("효과·1회성", "효과·1회성 준비 중", "새 결과 스크립트는 한 번의 예정된 조회에 하나씩 준비합니다. 아직 분석하지 않은 결과를 효과 없음이나 반복 가능으로 판단하지 않습니다."));
+            if (effectsPreparing) candidates.Add(Diagnostic("효과·1회성", "효과·1회성 준비 중", "새 결과 스크립트는 한 번의 예정된 조회에 하나씩 준비합니다. 아직 분석하지 않은 결과를 효과 없음이나 반복 가능으로 판단하지 않습니다.", true));
             var ordered = new List<Candidate>();
             // Detail keeps every recognized item; default counts omit ordinary activity.
             for (int group = 0; group < 6; group++)
@@ -567,7 +618,7 @@ namespace DiceMaster.Information
                         int actual = value.StatusOnly ? 5 : value.Other ? 4 : value.Global ? 1 + value.Priority : 0;
                         if (actual == group && value.Rank == rank) ordered.Add(value);
                     }
-            int waiting = 0, stages = 0, oneShots = 0; bool available = false; var automatic = new List<string>(); var diagnostics = new List<string>();
+            int waiting = 0, stages = 0, oneShots = 0; bool available = false, preparing = false; var automatic = new List<string>(); var diagnostics = new List<string>();
             int ordinal = 0;
             foreach (Candidate value in ordered)
             {
@@ -576,7 +627,7 @@ namespace DiceMaster.Information
                 string status = value.Status + (value.OneShot ? " · 1회성" : "");
                 snapshot.Entries.Add(new InformationRow((place == null ? "map/global/" + ContextKey : SelectionKey(place)) + "/" + (value.Id ?? "entry/" + ordinal++),
                     title, group + " · " + value.Kind, status, value.Detail ?? "", title + " · " + value.Kind + " · " + status, controller, value.Rank == 0));
-                if (value.StatusOnly) { if (!diagnostics.Contains(value.Status)) diagnostics.Add(value.Status); continue; }
+                if (value.StatusOnly) { preparing |= value.Preparing; if (!diagnostics.Contains(value.Status)) diagnostics.Add(value.Status); continue; }
                 if (value.Global || value.Other) continue;
                 if (value.Rank == 0 && (value.Waiting || value.Mission || value.OneShot || value.ChoiceStory)) available = true;
                 if (value.Waiting) waiting++;
@@ -596,7 +647,7 @@ namespace DiceMaster.Information
                 string title = LocationTranslations.TranslateLocation((place.Key ?? "").Replace("養成_", ""));
                 string status = "대기 임무 " + waiting + " · 단계 후보 " + stages + " · 확인된 1회성 " + oneShots;
                 if (diagnostics.Count != 0) status += " · " + string.Join(" · ", diagnostics);
-                string text = MapGuidePresentation.Summary(automatic, guide, diagnostics.Count > 0);
+                string text = MapGuidePresentation.Summary(automatic, guide, preparing);
                 snapshot.Summary = new InformationRow(SelectionKey(place), Plain(title), "지도", status,
                     "대기 상태·현재 조건·선택 우선순위는 서로 다른 정보입니다. 경로·조건·효과와 장소 무관 항목은 지도 로그에서 읽습니다.", text, controller, available);
             }
@@ -754,7 +805,7 @@ namespace DiceMaster.Information
             MissionIndex index = GetMissionIndex(manager, selected == null ? "global" : selected.Key);
             if (index.Failure != null)
                 target.Add(Diagnostic("임무 정의", index.Failure is DataNotReadyException ? "게임 데이터 대기 중" : "읽기 실패", "임무 정의를 준비하지 못했습니다. 기존 대기 목록은 별도로 읽습니다."));
-            else if (!index.Ready) target.Add(Diagnostic("임무 정의", "임무 정의 준비 중", "단계·장소 색인을 나누어 준비 중입니다. 아직 읽지 않은 임무가 있을 수 있습니다."));
+            else if (!index.Ready) target.Add(Diagnostic("임무 정의", "임무 정의 준비 중", "단계·장소 색인을 나누어 준비 중입니다. 아직 읽지 않은 임무가 있을 수 있습니다.", true));
             int selectedPosition = globalOnly ? -1 : Convert.ToInt32(Read(controller, "_position"));
             var staged = new HashSet<object>();
             object main = Read(manager, "_main"), mainStage = Read(manager, "MainCheckData");

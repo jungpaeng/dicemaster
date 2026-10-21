@@ -206,11 +206,15 @@ namespace DiceMaster.Information
     // Provider tests isolate the route builder. The real builder/parser and
     // its bounded preparation are covered by MapRouteTests and DLL linkage.
     public enum MapRouteState { Met, NotMet, Unknown }
+    public enum MapStoryKind { Story, ActivityResponse, Unclassified }
     public class MapRouteRead { public PreviewConditionState Current(PreviewCondition condition) => PreviewConditionState.Unknown; }
-    public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; public bool ReadCurrentBlocker(MapRouteRead read) => false; }
+    public class MapChoiceStep { public string Script, RawLabel; public int SourceOffset, Index; public bool ReadCurrentBlocker(MapRouteRead read) => false; public bool ReadTopicBlocker(MapRouteRead read) => false; }
     public class MapRoutePath
     {
         public string DialogueCharacter = ""; public List<MapChoiceStep> Steps = new List<MapChoiceStep>();
+        public MapStoryKind StoryKind = MapStoryKind.Story;
+        public MapStoryKind ReadStoryKind(MapRouteRead read, ref int budget) => StoryKind;
+        public MapChoiceStep TopicStep => Steps.Count == 0 ? null : Steps[Steps.Count - 1];
         public MapRouteState StoryState = MapRouteState.Unknown;
         public int StoryReads;
         public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Met;
@@ -246,6 +250,7 @@ namespace DiceMaster.Information
         public static MapRouteState State = MapRouteState.Met;
         public static bool Choice;
         public static bool StoryIncomplete;
+        public static bool FixturePreparing, FixturePartial, FixtureReadFailure;
         public static readonly List<MapStoryEntry> StoryFixtures = new List<MapStoryEntry>();
         public readonly List<MapRouteEntry> Entries = new List<MapRouteEntry>();
         public readonly List<MapStoryEntry> StoryEntries = new List<MapStoryEntry>();
@@ -257,6 +262,7 @@ namespace DiceMaster.Information
         public bool HasIncompleteStoryPaths => StoryIncomplete;
         public bool CurrentOmissionsBlocked(MapChoiceStep first, MapRouteRead read) => false;
         public bool CurrentOmissionsBlocked(MapChoiceStep first, MapRouteRead read, ref int budget) => false;
+        public bool CurrentOmissionsBlocked(MapChoiceStep first, IList<MapChoiceStep> observedTopics, MapRouteRead read, ref int budget) => false;
         public bool CanBuildBoundedProof(string script) => true;
         public MapRouteDefinitions(string key, Func<string,ScriptReadResult> source, Func<string,IList<MapRouteEvent>> poolReader)
         { root = key; reader = source; pools = poolReader; Builds++; }
@@ -273,6 +279,7 @@ namespace DiceMaster.Information
                 done = true; IsPreparing = false;
             }
             foreach (var value in Entries) { value.Current = State; value.HasChoice = Choice; }
+            IsPreparing = FixturePreparing; IsPartial = FixturePartial; HasReadFailure = FixtureReadFailure;
         }
         public void Clear() { Entries.Clear(); }
     }

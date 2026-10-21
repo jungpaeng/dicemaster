@@ -35,9 +35,9 @@ namespace DiceMaster.Information
         public static string Summary(IList<string> notices, bool guide, bool preparing)
         {
             int count = notices == null ? 0 : notices.Count;
-            if (!guide && count == 0) return "";
+            if (count == 0 && (!guide || !preparing)) return "";
             var text = new StringBuilder();
-            if (count == 0) text.Append(preparing ? "이 장소의 안내를 확인하는 중" : "현재 표시할 인물 대화·임무·1회성 없음");
+            if (count == 0) text.Append("이 장소의 안내를 확인하는 중");
             for (int index = 0; index < Math.Min(3, count); index++)
             {
                 if (text.Length != 0) text.Append('\n');

@@ -34,10 +34,13 @@ namespace DiceMaster.Information
         private static class ScriptLoaded
         {
             [HarmonyFinalizer, HarmonyPriority(Priority.Last)]
-            private static Exception Finalizer(string luaString, string friendlyName, object __result, Exception __exception)
+            private static Exception Finalizer(LuaEnvironment __instance, string luaString, string friendlyName, object __result, Exception __exception)
             {
                 if (__exception == null && __result != null && OptionInfoPatch.DisplayRefreshDepth == 0)
-                    Observe(() => ChoiceStorySource.ObserveScript(luaString, friendlyName));
+                    Observe(() => {
+                        if (InformationRuntime.Enabled(0)) PreviewConditions.ObserveLuaEnvironment(__instance);
+                        ChoiceStorySource.ObserveScript(luaString, friendlyName);
+                    });
                 return __exception;
             }
         }

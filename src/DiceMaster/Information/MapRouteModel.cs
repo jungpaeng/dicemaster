@@ -5,6 +5,7 @@ using DiceMaster.LiveLog;
 namespace DiceMaster.Information
 {
     public enum MapRouteState { Unknown, Met, NotMet }
+    public enum MapStoryKind { Unclassified, Story, ActivityResponse }
 
     // Owned by one scheduled map read. Shared tails/pools often have exactly
     // the same gate, so neither its predicate nor checkpoint graph is read
@@ -14,11 +15,33 @@ namespace DiceMaster.Information
         private PreviewConditions.Reader reader;
         private readonly Dictionary<PreviewCondition, PreviewConditionState> values = new Dictionary<PreviewCondition, PreviewConditionState>();
         private readonly Dictionary<Func<bool>, bool> completeness = new Dictionary<Func<bool>, bool>();
+        private readonly Dictionary<PreviewCondition, Dictionary<string, bool>> activityInputs = new Dictionary<PreviewCondition, Dictionary<string, bool>>();
+        internal bool ActivityInputsDisjoint(PreviewCondition gate, string key, IList<string> flags, IDictionary<string, int> unchangedSets, bool afterTalkReset, ref int budget)
+        {
+            if (flags.Count == 0) return true;
+            if (gate == null) return false;
+            Dictionary<string, bool> effects;
+            if (!activityInputs.TryGetValue(gate, out effects)) activityInputs.Add(gate, effects = new Dictionary<string, bool>(StringComparer.Ordinal));
+            bool value;
+            if (!effects.TryGetValue(key, out value))
+            {
+                if (budget-- <= 0) return false;
+                if (reader == null) reader = PreviewConditions.CreateReader();
+                value = reader.AreFlagWritesDisjoint(gate, flags, unchangedSets, afterTalkReset); effects.Add(key, value);
+            }
+            return value;
+        }
         internal bool Incomplete(Func<bool> check)
         {
             if (check == null) return false;
             bool value; if (!completeness.TryGetValue(check, out value)) { value = check(); completeness.Add(check, value); }
             return value;
+        }
+        internal bool BudgetedCurrent(PreviewCondition gate, ref int budget, out PreviewConditionState state)
+        {
+            if (values.TryGetValue(gate, out state)) return true;
+            if (budget-- <= 0) { state = PreviewConditionState.Unknown; return false; }
+            state = Current(gate); return true;
         }
         internal PreviewConditionState Current(PreviewCondition gate)
         {
@@ -47,13 +70,16 @@ namespace DiceMaster.Information
         public readonly bool Uncertain;
         public readonly PreviewCondition Gate, OptionGate;
         private readonly PreviewCondition snapshotGate;
-        private readonly bool rootEntry;
+        private readonly bool rootEntry, topicEntry;
+        private readonly PreviewCondition topicGate;
         internal MapChoiceStep(string script, int offset, int index, string label,
-            PreviewCondition gate, PreviewCondition optionGate, bool uncertain, PreviewCondition currentSnapshotGate = null, bool completeRootEntry = false)
-        { Script = script; SourceOffset = offset; Index = index; RawLabel = label; Gate = gate; OptionGate = optionGate; Uncertain = uncertain; snapshotGate = currentSnapshotGate; rootEntry = completeRootEntry; }
+            PreviewCondition gate, PreviewCondition optionGate, bool uncertain, PreviewCondition currentSnapshotGate = null, bool completeRootEntry = false, PreviewCondition currentTopicGate = null, bool completeTopicEntry = false)
+        { Script = script; SourceOffset = offset; Index = index; RawLabel = label; Gate = gate; OptionGate = optionGate; Uncertain = uncertain; snapshotGate = currentSnapshotGate; rootEntry = completeRootEntry; topicGate = currentTopicGate; topicEntry = completeTopicEntry; }
         // Negative-only current prerequisite projection. Never grants Met.
         public bool ReadCurrentBlocker(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return rootEntry && snapshotGate != null && read.Current(snapshotGate) == PreviewConditionState.NotMet; }
+        public bool ReadTopicBlocker(MapRouteRead read)
+        { if (read == null) throw new ArgumentNullException("read"); return topicEntry && topicGate != null && read.Current(topicGate) == PreviewConditionState.NotMet; }
         public MapRouteState Current { get { return ReadCurrent(new MapRouteRead()); } }
         public MapRouteState ReadCurrent(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return Uncertain ? MapRouteState.Unknown : MapRoutePath.State(read.Current(Gate)); }
@@ -68,6 +94,8 @@ namespace DiceMaster.Information
         public readonly string Identity, Description, DialogueCharacter;
         public readonly bool HasChoice, Uncertain;
         public readonly bool StoryConditionsMayHaveChanged;
+        public readonly MapStoryKind StoryKind;
+        public MapChoiceStep TopicStep { get { return Steps.Count == 0 ? null : Steps[Steps.Count - 1]; } }
         internal readonly PreviewCondition Gate;
         public readonly PreviewCondition EntryGate;
         public readonly bool EntryUncertain;
@@ -75,10 +103,15 @@ namespace DiceMaster.Information
         private readonly Func<bool> storyIncomplete;
         private readonly PreviewCondition storyGate, snapshotGate;
         private readonly bool opaqueStoryEffects;
+        private readonly PreviewCondition activityGate;
+        private readonly IList<string> activityWrites;
+        private readonly string activityKey;
+        private readonly IDictionary<string, int> unchangedSets;
+        private readonly bool afterTalkReset;
         internal MapRoutePath(string identity, string description, bool choice, bool uncertain, PreviewCondition gate,
             IList<MapChoiceStep> steps = null, PreviewCondition entryGate = null, bool entryUncertain = false, string dialogueCharacter = null,
             Func<bool> incompleteStoryPaths = null, PreviewCondition fullStoryGate = null, bool storyConditionsMayHaveChanged = false,
-            bool hasOpaqueStoryEffects = false, PreviewCondition currentSnapshotGate = null)
+            bool hasOpaqueStoryEffects = false, PreviewCondition currentSnapshotGate = null, MapStoryKind storyKind = MapStoryKind.Story, PreviewCondition activityPrerequisite = null, IEnumerable<string> precedingFlagWrites = null, IDictionary<string, int> sameValueSetCandidates = null, bool precededByTalkReset = false)
         {
             Identity = identity; Description = description; HasChoice = choice; Uncertain = uncertain; Gate = gate;
             Steps = new List<MapChoiceStep>(steps ?? new MapChoiceStep[0]).AsReadOnly();
@@ -87,7 +120,22 @@ namespace DiceMaster.Information
             storyIncomplete = incompleteStoryPaths;
             storyGate = fullStoryGate ?? gate;
             StoryConditionsMayHaveChanged = storyConditionsMayHaveChanged;
-            opaqueStoryEffects = hasOpaqueStoryEffects; snapshotGate = currentSnapshotGate;
+            opaqueStoryEffects = hasOpaqueStoryEffects; snapshotGate = currentSnapshotGate; StoryKind = storyKind;
+            activityGate = activityPrerequisite; afterTalkReset = precededByTalkReset;
+            unchangedSets = new Dictionary<string, int>(sameValueSetCandidates ?? new Dictionary<string, int>(), StringComparer.Ordinal);
+            var writes = new List<string>(precedingFlagWrites ?? new string[0]); writes.Sort(StringComparer.Ordinal); activityWrites = writes.AsReadOnly();
+            var key = new System.Text.StringBuilder(); key.Append(afterTalkReset ? "T" : "F"); foreach (string flag in writes) { key.Append(flag.Length).Append(':').Append(flag); int target; key.Append(unchangedSets.TryGetValue(flag, out target) ? target.ToString(System.Globalization.CultureInfo.InvariantCulture) : "?").Append(';'); } activityKey = key.ToString();
+        }
+        internal bool SameActivityInputs(MapRoutePath other)
+        { return other != null && StoryKind == other.StoryKind && ReferenceEquals(activityGate, other.activityGate) && activityKey == other.activityKey; }
+        // The structural profile is definition metadata. Consumed parent
+        // predicates are checked against the current serialized graph once
+        // per scheduled read, under the same caller-owned gate budget.
+        public MapStoryKind ReadStoryKind(MapRouteRead read, ref int budget)
+        {
+            if (read == null) throw new ArgumentNullException("read");
+            return StoryKind == MapStoryKind.ActivityResponse && !read.ActivityInputsDisjoint(activityGate, activityKey, activityWrites, unchangedSets, afterTalkReset, ref budget)
+                ? MapStoryKind.Unclassified : StoryKind;
         }
         // Intersection of necessary AND-prefixes, computed only while building
         // the bounded definition index. It compresses many known alternatives

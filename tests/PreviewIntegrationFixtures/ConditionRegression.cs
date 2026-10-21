@@ -305,12 +305,228 @@ namespace DiceMaster
             finally { CheckPointManager.Instance = previous; }
         }
 
+        static void TalkResetFootprint()
+        {
+            CheckPointManager previous = CheckPointManager.Instance;
+            int switches = SwitchResultData.Executions, conditions = ConditionResultData.Executions;
+            int groups = StatGroupVariable.OriginalReads, comparisons = StatCompareItem.OriginalReads, rng = UnityEngine.Random.Calls;
+            object Capture(object condition, bool reset, params string[] writes) => T("PreviewConditions").GetMethod(reset ? "CaptureAfterTalkReset" : "CaptureCurrent")
+                .Invoke(null, new object[] { condition, writes, false });
+            void Observe(object environment) => T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new[] { environment });
+            bool Disjoint(object condition, params string[] writes) => (bool)T("PreviewConditions").GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 2).Invoke(null, new object[] { condition, writes });
+            try
+            {
+                var resetFlag = new FlagData { name = "serialized_reset_flag", State = 1, _default = 0 };
+                var persistent = new FlagData { name = "persistent_story_flag", State = 1, _default = 0 };
+                ConditionResultItem FlagCondition(FlagData flag) => new ConditionResultItem { _items = new List<StatCompareItem> {
+                    new StatCompareItem { _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _checkType = 3, _flag = flag } } }, _value2 = Literal(0) } } };
+                var topic = new ConditionResultData { name = "checkpoint_with_unrelated_identifier", _items = new List<ConditionResultItem> { FlagCondition(resetFlag) } };
+                var persistentCondition = new ConditionResultData { name = "serialized_reset_flag", _items = new List<ConditionResultItem> { FlagCondition(persistent) } };
+                var independent = new ConditionResultData { name = "independent_false", _items = new List<ConditionResultItem> { ConstantCondition(0, 1) } };
+                var compound = new ConditionResultData { name = "masked_and_false", _items = new List<ConditionResultItem> { FlagCondition(resetFlag) } };
+                compound._items[0]._items.Add(ConstantCondition(0, 1)._items[0]);
+                CheckPointManager.Instance = new CheckPointManager { _condition = new ConditionResultConfig {
+                    _list = new List<ConditionResultData> { topic, persistentCondition, independent, compound } } };
+                object Topic() => Parse("checkpointmanager.Condition('checkpoint_with_unrelated_identifier')");
+                object Persistent() => Parse("checkpointmanager.Condition('serialized_reset_flag')");
+                int resetReads = resetFlag.StateReads, persistentReads = persistent.StateReads;
+                Check(!Disjoint(Topic(), "serialized_reset_flag") && Disjoint(Topic(), "unrelated_flag"),
+                    "actual DLL parent-topic dependency proof reads the referenced flag definition rather than guessing from its checkpoint key");
+                Check(Disjoint(Persistent(), "serialized_reset_flag") && !Disjoint(Persistent(), "persistent_story_flag"),
+                    "actual DLL a checkpoint name equal to an unrelated written flag cannot create a false dependency");
+                Check(Disjoint(Parse("false"), "serialized_reset_flag") && !Disjoint(Parse("missing"), "serialized_reset_flag") && Disjoint(Parse("missing")),
+                    "actual DLL definition dependency proof is conservative about unknown guards and vacuous for no prior writes");
+                CheckPointManager.Instance._switchList = new[] { new SwitchResultConfig { _list = new List<SwitchResultData> {
+                    new SwitchResultData { name = "all_definition_alternatives", _items = new List<ConditionResultItem> { ConstantCondition(1, 1), FlagCondition(resetFlag) } } } } };
+                Check(!Disjoint(Parse("checkpointmanager.Switch('all_definition_alternatives') == 1"), "serialized_reset_flag"),
+                    "actual DLL definition dependency proof inspects later alternatives even when the first is already true");
+                var randomDefinition = ConstantCondition(1, 1); randomDefinition._items[0]._value1._value[0]._checkType = 7;
+                CheckPointManager.Instance._condition._list.Add(new ConditionResultData { name = "random_definition", _items = new List<ConditionResultItem> { randomDefinition } });
+                Check(!Disjoint(Parse("checkpointmanager.Condition('random_definition')"), "unrelated_flag"),
+                    "actual DLL unsupported random dependency definitions cannot become a disjointness proof");
+                Check(!Disjoint(Topic(), Enumerable.Range(0, 33).Select(at => "write_" + at).ToArray()) &&
+                    !Disjoint(Parse("checkpointmanager.Condition('absent_definition')"), "some_flag"),
+                    "actual DLL dependency definition discovery has bounded write sets and cannot assume missing data is disjoint");
+                Check(resetFlag.StateReads == resetReads && persistent.StateReads == persistentReads,
+                    "actual DLL parent-topic disjointness proof reads no current flag value");
+                var collection = new FlagCollectionData { _list = new List<FlagData> { resetFlag } };
+                var manager = new StatModifyManager { _talkOptionFlag = collection };
+                var script = new MoonSharp.Interpreter.Script();
+                script.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(manager) };
+                var environment = new Fungus.LuaEnvironment(script);
+                Observe(environment);
+                object topicAfter = Capture(Topic(), true), persistentAfter = Capture(Persistent(), true);
+                State("Unknown", topicAfter, "actual DLL talk reset masks a serialized flag dependency even when checkpoint and flag identifiers differ");
+                State("NotMet", persistentAfter, "actual DLL talk reset leaves a disjoint persistent story flag readable even when its checkpoint name equals a reset flag name");
+                Check(resetFlag.StateReads == 0, "actual DLL reset-masked comparisons do not sample a flag value that may be reset");
+                object beforeReset = Capture(Topic(), false);
+                State("NotMet", Capture(beforeReset, true), "actual DLL later talk reset cannot retroactively mask a captured earlier checkpoint read");
+                State("NotMet", Capture(Parse("checkpointmanager.Condition('masked_and_false')"), true), "actual DLL reset-masked input preserves an independent false AND comparison");
+                State("Unknown", Capture(Persistent(), true, "persistent_story_flag"), "actual DLL talk reset composes with existing literal write masks");
+                int rawReads = script.m_GlobalTable.RawReads;
+                object reader = T("PreviewConditions").GetMethod("CreateReader").Invoke(null, null);
+                MethodInfo current = reader.GetType().GetMethod("Current");
+                current.Invoke(reader, new[] { topicAfter }); current.Invoke(reader, new[] { persistentAfter });
+                Check(script.m_GlobalTable.RawReads == rawReads + 1, "actual DLL reader validates the current talk collection once across several captured checkpoint leaves");
+                MethodInfo disjoint = reader.GetType().GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 2);
+                Check(!(bool)disjoint.Invoke(reader, new object[] { Topic(), new[] { "serialized_reset_flag" } }) &&
+                    current.Invoke(reader, new[] { Topic() }).ToString() == "NotMet",
+                    "actual DLL shared reader restores dependency masks before its next current-value read");
+                object boundedReader = T("PreviewConditions").GetMethod("CreateReader").Invoke(null, null);
+                int proofs = 0;
+                while (proofs < 2048 && (bool)disjoint.Invoke(boundedReader, new object[] { Topic(), new[] { "unrelated_write" } })) proofs++;
+                Check(proofs > 0 && proofs < 2048 && current.Invoke(boundedReader, new[] { Parse("true") }).ToString() == "Unknown",
+                    "actual DLL dependency proofs and current evaluation share one bounded reader work budget");
+                manager._talkOptionFlag = new FlagCollectionData { _list = new List<FlagData> { persistent } };
+                State("NotMet", topicAfter, "actual DLL same-environment collection replacement cannot retain an old reset footprint");
+                State("Unknown", persistentAfter, "actual DLL current replacement reset collection masks its new dependency");
+                Observe(null);
+                State("Unknown", topicAfter, "actual DLL missing observed environment conservatively masks flag-dependent comparisons");
+                State("Unknown", persistentAfter, "actual DLL unresolved reset footprint cannot assume a persistent flag is disjoint");
+                State("NotMet", Capture(Parse("checkpointmanager.Condition('independent_false')"), true), "actual DLL missing reset footprint preserves flag-independent false checkpoints");
+                State("NotMet", Capture(Parse("checkpointmanager.Condition('masked_and_false')"), true), "actual DLL unresolved reset footprint does not swallow independent false AND comparisons");
+                State("NotMet", Capture(beforeReset, true), "actual DLL missing reset footprint still preserves a checkpoint captured before the reset");
+                manager._talkOptionFlag._list = null; Observe(environment);
+                State("Unknown", topicAfter, "actual DLL malformed reset collection cannot become an empty known footprint");
+                manager._talkOptionFlag._list = Enumerable.Range(0, 1025).Select(at => new FlagData { name = "bounded_" + at }).ToList();
+                State("Unknown", topicAfter, "actual DLL reset collection traversal has an independent bounded item count");
+                manager._talkOptionFlag = collection; Observe(environment);
+                script.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new object()) };
+                Observe(environment);
+                State("Unknown", persistentAfter, "actual DLL invalid new environment observation clears previous collection evidence");
+                Check(resetFlag.State == 1 && persistent.State == 1 && FlagCollectionData.ResetCalls == 0 && StatModifyManager.ResetCalls == 0 && Fungus.LuaEnvironment.Initializations == 0,
+                    "actual DLL talk footprint discovery changes no flag and invokes no reset or environment initializer");
+                Check(groups == StatGroupVariable.OriginalReads && comparisons == StatCompareItem.OriginalReads && rng == UnityEngine.Random.Calls &&
+                    switches == SwitchResultData.Executions && conditions == ConditionResultData.Executions,
+                    "actual DLL talk footprint reads invoke no original comparison, checkpoint chain or RNG");
+                GC.KeepAlive(environment);
+            }
+            finally { Observe(null); CheckPointManager.Instance = previous; }
+        }
+
+        static void LiteralNoOpWrites()
+        {
+            CheckPointManager previous = CheckPointManager.Instance;
+            int switches = SwitchResultData.Executions, conditions = ConditionResultData.Executions;
+            int groups = StatGroupVariable.OriginalReads, comparisons = StatCompareItem.OriginalReads, rng = UnityEngine.Random.Calls;
+            MethodInfo disjoint = T("PreviewConditions").GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 3);
+            bool CheckWrites(object gate, string[] writes, IDictionary<string, int> sets) => (bool)disjoint.Invoke(null, new object[] { gate, writes, sets });
+            try
+            {
+                var flag = new FlagData { name = "topic_consumed_flag", State = 1 };
+                var item = ConstantCondition(0, 0);
+                item._items[0]._value1._value[0]._checkType = 3; item._items[0]._value1._value[0]._flag = flag;
+                var data = new ConditionResultData { name = "separate_topic_checkpoint", _items = new List<ConditionResultItem> { item } };
+                CheckPointManager.Instance = new CheckPointManager { _condition = new ConditionResultConfig { _list = new List<ConditionResultData> { data } } };
+                object gate = Parse("checkpointmanager.Condition('separate_topic_checkpoint')");
+                var writes = new[] { flag.name };
+                var same = new Dictionary<string, int>(StringComparer.Ordinal) { [flag.name] = 1 };
+                Check(CheckWrites(gate, writes, same), "actual DLL literal SetFlag to its exact current value is a no-op for that topic dependency");
+                Check(flag.StateReads == 1, "actual DLL no-op proof reads only the matching concrete flag's current State");
+                flag.State = 0;
+                Check(!CheckWrites(gate, writes, same), "actual DLL a literal SetFlag that changes the current value cannot be ignored");
+                flag.State = 1;
+                Check(!CheckWrites(gate, writes, new Dictionary<string, int>()), "actual DLL AddFlag or conflicting later SetFlag without a same-value candidate remains affected");
+                Check(!CheckWrites(gate, writes, new Dictionary<string, int> { [flag.name] = 2 }), "actual DLL a later different literal SetFlag cannot use an earlier same-value exemption");
+                Check(CheckWrites(gate, new[] { "unrelated_flag" }, new Dictionary<string, int> { ["unrelated_flag"] = 2 }), "actual DLL no-op metadata does not require unrelated dependency values to be sampled");
+                var replacement = new FlagData { name = flag.name, State = 0 };
+                var changed = ConstantCondition(0, 0); changed._items[0]._value1._value[0]._checkType = 3; changed._items[0]._value1._value[0]._flag = replacement;
+                data._items = new List<ConditionResultItem> { changed };
+                Check(!CheckWrites(gate, writes, same), "actual DLL a fresh scheduled reader follows a replaced native condition graph rather than a previous no-op result");
+                replacement.State = 1;
+                Check(CheckWrites(gate, writes, same), "actual DLL an unchanged descriptor reads the new current flag state without reparsing Lua");
+                object reader = T("PreviewConditions").GetMethod("CreateReader").Invoke(null, null);
+                MethodInfo readerDisjoint = reader.GetType().GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 3);
+                Check((bool)readerDisjoint.Invoke(reader, new object[] { gate, writes, same }) && reader.GetType().GetMethod("Current").Invoke(reader, new[] { gate }).ToString() == "NotMet",
+                    "actual DLL no-op definition masks are restored before current evaluation in the same bounded reader");
+                MethodInfo afterReset = T("PreviewConditions").GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 4);
+                bool ResetWrites(string[] changedWrites = null) => (bool)afterReset.Invoke(null, new object[] { gate, changedWrites ?? writes, same, true });
+                var resetCollection = new FlagCollectionData { _list = new List<FlagData> { replacement } };
+                replacement._default = 0;
+                var resetManager = new StatModifyManager { _talkOptionFlag = resetCollection };
+                var resetScript = new MoonSharp.Interpreter.Script();
+                resetScript.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(resetManager) };
+                var resetEnvironment = new Fungus.LuaEnvironment(resetScript);
+                T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new object[] { resetEnvironment });
+                Check(!ResetWrites(), "actual DLL a prior talk reset prevents a current-value no-op exemption for a member flag before its future SetFlag");
+                resetCollection._list = new List<FlagData> { new FlagData { name = "different_reset_flag", State = 1 } };
+                Check(ResetWrites(), "actual DLL a known disjoint talk-reset footprint permits an otherwise same-value literal SetFlag");
+                resetCollection._list.Add(replacement);
+                Check(!ResetWrites(), "actual DLL a fresh scheduled proof follows membership changes within the same serialized reset collection");
+                resetCollection._list.Remove(replacement);
+                Check(ResetWrites(), "actual DLL removing the dependency from the same reset collection restores the proof on a fresh reader");
+                T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new object[] { null });
+                Check(!ResetWrites(), "actual DLL an unknown talk-reset footprint cannot excuse a matching same-value future assignment");
+                Check(ResetWrites(new[] { "unrelated_flag" }), "actual DLL unknown prior reset metadata does not turn independent disjoint writes into affected topic inputs");
+                Check((bool)afterReset.Invoke(null, new object[] { gate, writes, same, false }), "actual DLL four-argument no-reset mode retains the existing literal no-op behavior");
+                Check(replacement.State == 1 && flag.State == 1 && groups == StatGroupVariable.OriginalReads && comparisons == StatCompareItem.OriginalReads && rng == UnityEngine.Random.Calls &&
+                    switches == SwitchResultData.Executions && conditions == ConditionResultData.Executions && FlagCollectionData.ResetCalls == 0 && StatModifyManager.ResetCalls == 0,
+                    "actual DLL literal no-op proof changes no state and executes no game condition, flag write, reset or RNG");
+                GC.KeepAlive(resetEnvironment);
+            }
+            finally { T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new object[] { null }); CheckPointManager.Instance = previous; }
+        }
+
         public static int Run()
         {
             assertions = 0;
-            Syntax(); CurrentFields(); PartialLogic(); TraceAndDisplay(); FlatAlternativesRemainBounded();
+            Syntax(); CurrentFields(); PartialLogic(); TalkResetFootprint(); LiteralNoOpWrites(); TraceAndDisplay(); FlatAlternativesRemainBounded();
             Console.WriteLine("PREVIEW readonly current condition backend passed");
             return assertions;
         }
+    }
+}
+
+// Explicit engine boundaries for the candidate's reflected, raw observation
+// path. The supplied MoonSharp RawGet(string) implementation is separately
+// checked against the actual Fungus.dll metadata; this fixture never runs Lua.
+namespace Mortal.Core
+{
+    public class FlagData : UnityEngine.Object
+    {
+        private int state;
+        public int _default, StateReads;
+        public int State { get { StateReads++; return state; } set { state = value; } }
+    }
+    public class FlagCollectionData
+    {
+        public List<FlagData> _list = new List<FlagData>();
+        public static int ResetCalls;
+        public void ResetData() { ResetCalls++; throw new InvalidOperationException("Preview reset talk flags"); }
+    }
+}
+namespace Mortal.Story
+{
+    public class StatModifyManager
+    {
+        public Mortal.Core.FlagCollectionData _talkOptionFlag;
+        public static int ResetCalls;
+        public void ResetTalkFlag() { ResetCalls++; throw new InvalidOperationException("Preview reset talk flags"); }
+    }
+}
+namespace MoonSharp.Interpreter
+{
+    public sealed class Script { public Table m_GlobalTable = new Table(); }
+    public sealed class Table
+    {
+        public readonly Dictionary<string, DynValue> Values = new Dictionary<string, DynValue>();
+        public int RawReads;
+        public DynValue RawGet(string key) { RawReads++; DynValue value; return Values.TryGetValue(key, out value) ? value : null; }
+    }
+    public sealed class DynValue { public object m_Object; }
+    public sealed class UserData
+    {
+        public object Object { get; private set; }
+        public UserData(object value) { Object = value; }
+    }
+}
+namespace Fungus
+{
+    public class LuaEnvironment
+    {
+        protected MoonSharp.Interpreter.Script interpreter;
+        public static int Initializations;
+        public LuaEnvironment(MoonSharp.Interpreter.Script script) { interpreter = script; }
+        public void InitEnvironment() { Initializations++; throw new InvalidOperationException("Preview initialized a Lua environment"); }
     }
 }

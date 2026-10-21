@@ -36,6 +36,7 @@ namespace DiceMaster.Information
             internal readonly Dictionary<string, List<MapChoiceStep>> Nodes = new Dictionary<string, List<MapChoiceStep>>(StringComparer.Ordinal);
             internal readonly List<MapStoryEntry> Stories = new List<MapStoryEntry>();
             internal readonly List<MapRoutePath> Paths = new List<MapRoutePath>();
+            internal readonly Dictionary<MapRoutePath, MapStoryEntry> PathStories = new Dictionary<MapRoutePath, MapStoryEntry>();
         }
         private static readonly List<Option> options = new List<Option>();
         private static readonly Dictionary<string, Binding> bindings = new Dictionary<string, Binding>(StringComparer.Ordinal);
@@ -221,12 +222,40 @@ namespace DiceMaster.Information
                 DicePlugin.LogWarning("Information choice-story target=" + script + (routeHadFailure ? " failure · retry=5s" : " recovered"));
             }
             bool indexing = Index();
-            var current = new MapRouteRead();
+            var current = new MapRouteRead(); int classificationBudget = 32;
             foreach (Option option in options)
             {
                 if (option.Raw == null || option.Context != Context || !ReferenceEquals(option.Menu, menu) || !Live(option.Control.Target, menu)) continue;
                 Binding binding;
                 if (!bindings.TryGetValue(option.Raw, out binding) || binding.Stories.Count == 0) continue;
+                // Keep oversized/unresolved bindings conservative. A current
+                // lookup never scans an unbounded collection to prove absence.
+                if (binding.Paths.Count <= 32 && !routes.IsPreparing && !routes.HasReadFailure && !indexing)
+                {
+                    Binding storyBinding = new Binding();
+                    foreach (MapRoutePath path in binding.Paths)
+                        if (path.ReadStoryKind(current, ref classificationBudget) != MapStoryKind.ActivityResponse)
+                        {
+                            storyBinding.Paths.Add(path);
+                            MapStoryEntry story;
+                            if (binding.PathStories.TryGetValue(path, out story) && !storyBinding.Stories.Contains(story)) storyBinding.Stories.Add(story);
+                        }
+                    if (storyBinding.Paths.Count == 0)
+                    {
+                        MapChoiceStep first = binding.Paths.Count == 0 || binding.Paths[0].Steps.Count == 0 ? null : binding.Paths[0].Steps[0];
+                        var observedTopics = new List<MapChoiceStep>();
+                        foreach (MapRoutePath path in binding.Paths)
+                            foreach (MapChoiceStep step in path.Steps) if (!observedTopics.Contains(step)) observedTopics.Add(step);
+                        if (first != null && routes.CurrentOmissionsBlocked(first, observedTopics, current, ref classificationBudget)) continue;
+                        // An unread or unsupported followup can still contain
+                        // a distinct story beyond the observed fixed response.
+                    }
+                    else
+                    {
+                        foreach (var node in binding.Nodes) storyBinding.Nodes.Add(node.Key, node.Value);
+                        binding = storyBinding;
+                    }
+                }
                 bool ambiguous = binding.Nodes.Count != 1;
                 bool incomplete = routes.IsPreparing || routes.HasReadFailure || routes.HasIncompleteStoryPaths || indexing;
                 List<MapChoiceStep> alternatives = null;
@@ -286,7 +315,7 @@ namespace DiceMaster.Information
                         if (!string.Equals(step.Script, script, StringComparison.OrdinalIgnoreCase)) continue;
                         Binding binding = Bind(step);
                         if (!binding.Stories.Contains(story)) binding.Stories.Add(story);
-                        if (!binding.Paths.Contains(path)) binding.Paths.Add(path);
+                        if (!binding.Paths.Contains(path)) { binding.Paths.Add(path); binding.PathStories[path] = story; }
                     }
                 }
                 indexed[story] = at;

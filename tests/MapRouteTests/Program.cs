@@ -172,6 +172,7 @@ internal static class Program
         FullStoryConditionCases.Run(Check);
         PartialConditionCases.Run(Check);
         CurrentBlockerCases.Run(Check);
+        StoryTopicCases.Run(Check);
         Corpus();
         Check(manager.GameplayCalls == 0 && manager.RngCalls == 0 && manager.Counter == 0, "no gameplay condition/Position/RNG/counter changes");
         Console.WriteLine("PASS: MapRouteTests " + checks + " actual-route/syntax/current-reader assertions; resource/stat/game boundaries are explicit fixtures; Lua/Windows/native not executed.");
@@ -242,6 +243,11 @@ internal static class Program
                 Check(d.StoryEntries.All(x => x.Script != "talk_brother4"), "real brother menu itself is not mislabeled as dialogue");
                 Check(d.StoryEntries.All(x => x.Current == MapRouteState.Unknown), "real visual/state-write barriers never become guaranteed current stories");
                 Check(d.StoryEntries.Select(x => x.Identity).Distinct().Count() == d.StoryEntries.Count, "real selected story alternatives have unique canonical identities");
+                Check(d.StoryEntries.Where(x => x.Script == "talk_brother4_option_02_04").SelectMany(x => x.Paths).Any() &&
+                    d.StoryEntries.Where(x => x.Script == "talk_brother4_option_02_04").SelectMany(x => x.Paths).Any(x => x.StoryKind == MapStoryKind.ActivityResponse),
+                    "SHA-pinned sparring script is a paid activity/refusal fixed response, without a person or flag exception");
+                Check(d.StoryEntries.Where(x => x.Script == "talk_brother4_option_00_01").SelectMany(x => x.Paths).All(x => x.StoryKind != MapStoryKind.ActivityResponse),
+                    "SHA-pinned first conversation remains an individual story candidate");
                 Console.WriteLine("Real mapped selected stories " + root + ": " + d.StoryEntries.Count + " groups in [" + string.Join(", ", d.StoryEntries.Select(x => x.Script).Distinct()) + "]; only static text references and selection metadata inspected.");
             }
             if (root == "door_001_01")

@@ -22,6 +22,7 @@ using LuaAction = DiceMaster.LuaParse.Action;
 internal static class Program
 {
     private static int checks;
+    private static object observedTalkEnvironment;
     private static void Check(bool value, string message) { checks++; if (!value) throw new Exception(message); }
     private static StatGroupVariable Constant(int value)
     { return new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = value } } }; }
@@ -110,8 +111,9 @@ internal static class Program
         MeaningfulDialogueMap();
         FullStoryGateMap();
         CurrentRequiredGuardMap();
+        IndividualTopicsAndActivitiesMap();
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
-        if (!string.IsNullOrEmpty(corpus)) NativeCurrentGuardMap(corpus);
+        if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); }
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
     }
     private static void ChoiceStoryMap()
@@ -340,6 +342,167 @@ internal static class Program
         }
         Check(failures.Count == 0, "All root and followup scripts used for original NPC map transitions match their pinned SHA-256");
     }
+    private static void IndividualTopicsAndActivitiesMap()
+    {
+        foreach (string npc in new[] { "fixture_mentor", "renamed_traveller" })
+        {
+            MapGuideSource.Clear(); MapGuideSource.Enabled = () => true;
+            var manager = CheckPointManager.Instance = new CheckPointManager();
+            var topic = new FlagData { name = npc + "_topic_input", State = 1 };
+            var second = new FlagData { name = npc + "_second_input", State = 1 };
+            manager._condition._list.Add(new ConditionResultData { name = npc + "_topic_gate", _items = new List<ConditionResultItem> { IsZero(topic) } });
+            manager._condition._list.Add(new ConditionResultData { name = npc + "_second_gate", _items = new List<ConditionResultItem> { IsZero(second) } });
+            manager._switchList = new object[] { new SwitchResultConfig { _list = new List<SwitchResultData> {
+                new SwitchResultData { name = npc + "_eligibility", _items = new List<ConditionResultItem> { new ConditionResultItem { _items = new List<StatCompareItem> {
+                    new StatCompareItem { _value1 = Constant(1), _value2 = Constant(1) } } } } }
+            } } };
+            string root = npc + "_root", topics = npc + "_topics", activity = npc + "_service";
+            string raw = "talk+talk+" + npc;
+            string speaker = "setcharacter(characters.Get('" + npc + "'));say(luamanager.GetStoryText('";
+            DataHelper.Scripts[root] = "local a={'" + raw + "'};local r=choose(a);if r==1 then luamanager.SetNextScript('" + topics + "') end";
+            DataHelper.Scripts[topics] = "local a={};a[1]=checkpointmanager.Condition('" + npc + "_topic_gate') and 'talk+first_topic+0+0' or '~x';a[2]=checkpointmanager.Condition('" + npc + "_second_gate') and 'talk+second_topic+0+0' or '~x';a[3]='talk+O_43+0+0';a[4]='default+O_87+0+0';local r=choose(a);if r==1 then " + speaker + "D_first')) elseif r==2 then " + speaker + "D_second')) elseif r==3 then luamanager.SetNextScript('" + activity + "') elseif r==4 then unknown_utility_callback() end";
+            DataHelper.Scripts[activity] = speaker + "D_fixed_start'));local s=checkpointmanager.Switch('" + npc + "_eligibility');if s==1 then statmodifymanager.Player('money',-100,'',1);" + speaker + "D_fixed_confirm'));luamanager.SetCurrentStoryScript('" + npc + "_after');luamanager.ChangeScene('Combat','fixture_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end";
+            DataHelper.Scripts[npc + "_after"] = "";
+            var controller = new PositionController { _positionData = new FreePositionData { name = "GenericTopics", _defaultScript = root } };
+            MapGuideSource.Select(controller); MapGuideSnapshot value = null;
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal),
+                "An active outer NPC menu and repeat service cannot preserve an automatic story notice after every individual topic is false; renamed NPC=" + npc + "; actual=" + value.Summary.AutoText + "; detail=" + string.Join(" || ", value.Entries.ConvertAll(item => item.Title + ":" + item.Status + ":" + item.Detail)));
+            int resources = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(false); }
+            Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal) && DataHelper.Reads == resources && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions,
+                "The completed-topic/service-only state remains absent across warm scheduled refreshes without resource loads or Lua reanalysis");
+            topic.State = 0; value = Read(true);
+            Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A currently open individual topic restores the NPC map notice independently of the repeat service");
+            Check(topic.State == 0 && second.State == 1 && Counters.GameCalls == 0, "Generic classification and topic checks never execute service, combat, native conditions, RNG or flag effects");
+
+            var consumed = new FlagData { name = npc + "_consumed_input", State = 0 };
+            manager._condition._list.Add(new ConditionResultData { name = npc + "_consumed_gate", _items = new List<ConditionResultItem> { IsZero(consumed) } });
+            DataHelper.Scripts[npc + "_consumed_root"] = "local a={};a[1]=checkpointmanager.Condition('" + npc + "_consumed_gate') and '조건을 소모하는 이야기' or '~x';local r=choose(a);if r==1 then statmodifymanager.SetFlag('" + npc + "_consumed_input',1);luamanager.SetNextScript('" + activity + "') end";
+            controller._positionData._defaultScript = npc + "_consumed_root";
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("조건을 소모하는 이야기", StringComparison.Ordinal), "A parent topic that consumes its own eligibility flag remains a story despite an otherwise mechanical paid-activity followup");
+            Check(consumed.State == 0 && Counters.GameCalls == 0, "Checking the consumed-guard footprint never executes that prospective one-shot flag write");
+
+            DataHelper.Scripts[npc + "_opaque_parent"] = "local a={'선행 동작이 불명인 이야기'};local r=choose(a);if r==1 then unknown_callback();luamanager.SetNextScript('" + activity + "') end";
+            controller._positionData._defaultScript = npc + "_opaque_parent";
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("선행 동작이 불명인 이야기", StringComparison.Ordinal), "An opaque parent callback prevents suppressing the entire selected topic as a repeat response based only on its child's paid-activity shape");
+
+            var special = new FlagData { name = npc + "_special_input", State = 0 };
+            manager._condition._list.Add(new ConditionResultData { name = npc + "_special_gate", _items = new List<ConditionResultItem> { IsZero(special) } });
+            DataHelper.Scripts[npc + "_special_root"] = "local a={'별도 이야기'};local r=choose(a);if r==1 then " + speaker + "D_fixed_intro'));if checkpointmanager.Condition('" + npc + "_special_gate') then " + speaker + "D_special'));statmodifymanager.SetFlag('" + npc + "_special_seen',1) end;luamanager.ChangeScene('Combat','fixture_story_combat','Story') end";
+            controller._positionData._defaultScript = npc + "_special_root";
+            for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("별도 이야기", StringComparison.Ordinal), "A separately conditioned story inside a combat activity is retained instead of blanket filtering combat");
+            DataHelper.Scripts[npc + "_callback_root"] = "local a={'후속 특별 이야기'};local r=choose(a);if r==1 then luamanager.SetNextScript('" + npc + "_callback_service') end";
+            DataHelper.Scripts[npc + "_callback_service"] = DataHelper.Scripts[activity].Replace(npc + "_after", npc + "_callback_special", StringComparison.Ordinal);
+            DataHelper.Scripts[npc + "_callback_special"] = "if checkpointmanager.Condition('" + npc + "_special_gate') then " + speaker + "D_special_result'));statmodifymanager.SetFlag('" + npc + "_callback_seen',1) end";
+            controller._positionData._defaultScript = npc + "_callback_root";
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("후속 특별 이야기", StringComparison.Ordinal), "An activity parent's fixed response classification cannot hide a distinct conditional story in its combat callback");
+            var receipt = new FlagData { name = npc + "_receipt_input", State = 0 };
+            manager._condition._list.Add(new ConditionResultData { name = npc + "_receipt_gate", _items = new List<ConditionResultItem> { IsZero(receipt) } });
+            DataHelper.Scripts[npc + "_receipt_root"] = "local a={};a[1]=checkpointmanager.Condition('" + npc + "_receipt_gate') and '결과 대사 뒤 조건을 소모하는 이야기' or '~x';local r=choose(a);if r==1 then luamanager.SetNextScript('" + npc + "_receipt_service') end";
+            DataHelper.Scripts[npc + "_receipt_service"] = DataHelper.Scripts[activity].Replace(npc + "_after", npc + "_receipt_result", StringComparison.Ordinal);
+            DataHelper.Scripts[npc + "_receipt_result"] = "local s=checkpointmanager.Switch('" + npc + "_outcome');if s==1 then statmodifymanager.Player('martial-point',2,'',1);" + speaker + "D_result_loss')) elseif s==2 then statmodifymanager.Player('martial-point',4,'',1);" + speaker + "D_result_win'));statmodifymanager.SetFlag('" + npc + "_receipt_input',1) end;luamanager.ChangeScene('Free','','')";
+            controller._positionData._defaultScript = npc + "_receipt_root";
+            for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("결과 대사 뒤 조건을 소모하는 이야기", StringComparison.Ordinal), "A mechanical-looking activity receipt that consumes the selected topic's own guard after its NPC line remains a distinct story");
+            Check(receipt.State == 0 && Counters.GameCalls == 0, "The future receipt write is classified structurally and never applied during the read-only preview");
+            DataHelper.Scripts[npc + "_missing_root"] = "local a={'후속 자료 대기 이야기'};local r=choose(a);if r==1 then luamanager.SetNextScript('" + npc + "_missing_service') end";
+            DataHelper.Scripts[npc + "_missing_service"] = DataHelper.Scripts[activity].Replace(npc + "_after", npc + "_missing_result", StringComparison.Ordinal);
+            controller._positionData._defaultScript = npc + "_missing_root";
+            for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("후속 자료 대기 이야기", StringComparison.Ordinal) && HasStatus(value, "읽기 실패"), "A proven fixed response cannot hide a selected topic while its registered callback is missing");
+            DataHelper.Scripts[npc + "_missing_result"] = "if checkpointmanager.Condition('" + npc + "_special_gate') then " + speaker + "D_recovered_special'));statmodifymanager.SetFlag('" + npc + "_recovered_seen',1) end";
+            Time.unscaledTime += 5;
+            for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("후속 자료 대기 이야기", StringComparison.Ordinal) && !HasStatus(value, "읽기 실패"), "The missing callback recovers on the existing retry schedule and its separate special story remains visible");
+            DataHelper.Scripts[npc + "_opaque_root"] = "local a={'불명 이야기'};local r=choose(a);if r==1 then unknown_callback();" + speaker + "D_unknown'));luamanager.ChangeScene('Combat','fixture_unknown','Story') end";
+            controller._positionData._defaultScript = npc + "_opaque_root";
+            for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = Read(true); }
+            Check(value.Summary.AutoText.Contains("불명 이야기", StringComparison.Ordinal), "An arbitrary callback prevents service-only proof and retains the unclassified NPC story candidate");
+        }
+    }
+    private static void NativeCompletedTopicsMap(string indexPath)
+    {
+        var paths = new Dictionary<string, (string Path, string Sha)>(StringComparer.OrdinalIgnoreCase);
+        using (JsonDocument document = JsonDocument.Parse(File.ReadAllText(indexPath)))
+            foreach (JsonElement item in document.RootElement.EnumerateArray()) paths[item.GetProperty("name").GetString()] = (item.GetProperty("path").GetString(), item.GetProperty("sha256").GetString());
+        MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true;
+        // The existing interpreter is an explicit fixture. Its known empty
+        // reset collection proves ResetTalkFlag cannot touch topic inputs;
+        // this does not initialize or execute a Lua interpreter.
+        var resetFlags = new FlagCollectionData();
+        var interpreter = new MoonSharp.Interpreter.Script();
+        interpreter.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new StatModifyManager { _talkOptionFlag = resetFlags }) };
+        observedTalkEnvironment = new Fungus.LuaEnvironment(interpreter);
+        PreviewConditions.ObserveLuaEnvironment(observedTalkEnvironment);
+        var manager = CheckPointManager.Instance = new CheckPointManager();
+        var switches = new SwitchResultConfig(); manager._switchList = new object[] { switches };
+        var flags = new Dictionary<string, FlagData>(StringComparer.Ordinal);
+        var cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        int checkedSources = 0;
+        ScriptReadResult Exact(string key)
+        {
+            if (cache.TryGetValue(key, out string body)) return new ScriptReadResult { State = ScriptReadState.Success, Text = body };
+            if (!paths.TryGetValue(key, out var record)) return new ScriptReadResult { State = ScriptReadState.Missing };
+            byte[] bytes = File.ReadAllBytes(record.Path);
+            Check(Convert.ToHexString(SHA256.HashData(bytes)).Equals(record.Sha, StringComparison.OrdinalIgnoreCase), "Completed-topic fixture verifies original " + key + " SHA-256");
+            checkedSources++; cache[key] = body = new UTF8Encoding(false, true).GetString(bytes);
+            // These conditions are synthetic, not the user's save/configuration:
+            // access and repeat sparring remain open; every individual topic and
+            // the first introduction are completed. All native pools are empty.
+            // Only the intro Switch input deliberately shares its literal
+            // SetFlag key/current value (1), testing an idempotent write. Other
+            // dependencies are explicit disjoint synthetic objects; checkpoint
+            // keys are not assumed to be native FlagData names.
+            foreach (Match match in Regex.Matches(body, "checkpointmanager\\.Condition\\(\"([^\"]+)\"\\)"))
+            {
+                string name = match.Groups[1].Value;
+                if (flags.ContainsKey(name)) continue;
+                var flag = new FlagData { name = "synthetic-topic-" + name, State = name == "Talk_Brother4" || name == "Talk_Brother4_02_04" ? 0 : 1 };
+                flags.Add(name, flag); manager._condition._list.Add(new ConditionResultData { name = name, _items = new List<ConditionResultItem> { IsZero(flag) } });
+            }
+            foreach (Match match in Regex.Matches(body, "checkpointmanager\\.Switch\\(\"([^\"]+)\"\\)"))
+            {
+                string name = match.Groups[1].Value;
+                if (switches._list.Exists(item => item.name == name)) continue;
+                var flag = new FlagData { name = name == "Talk_Brother4_00" ? name : "synthetic-switch-" + name, State = name == "Talk_Brother4_00" ? 1 : 0 };
+                switches._list.Add(new SwitchResultData { name = name, _items = new List<ConditionResultItem> { IsZero(flag) } });
+            }
+            foreach (Match match in Regex.Matches(body, "checkpointmanager\\.Position\\(\"([^\"]+)\"\\)"))
+            { string name = match.Groups[1].Value; if (!manager._position._list.Exists(item => item.name == name)) manager._position._list.Add(new PositionResultData { name = name }); }
+            return new ScriptReadResult { State = ScriptReadState.Success, Text = body };
+        }
+        DataHelper.ExternalReader = Exact;
+        var controller = new PositionController { _positionData = new FreePositionData { name = "OriginalRoomTopics", _defaultScript = "room_001" } };
+        MapGuideSource.Select(controller); MapGuideSnapshot value = null;
+        for (int at = 0; at < 180; at++) { Time.unscaledTime += .25f; value = Read(true); }
+        const string raw = "talk+talk+brother4";
+        Check(checkedSources > 2 && flags["Talk_Brother4"].State == 0 && flags["Talk_Brother4_02_04"].State == 0,
+            "The original room/talk/sparring scripts are analyzed with explicit active access and repeat challenge fixtures");
+        Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "SHA-original brother4 fixed sparring dialogue does not keep a map notice after every individual story topic is completed; actual=" + value.Summary.AutoText + "; rows=" + string.Join(" || ", value.Entries.ConvertAll(item => item.Title + ":" + item.Status + ":" + item.Detail)));
+        int resources = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
+        for (int at = 0; at < 80; at++) { Time.unscaledTime += .25f; value = Read(false); Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "Completed original brother4 topics remain absent with repeat sparring still active"); }
+        Check(DataHelper.Reads == resources && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions, "Original-topic warm reads retain definition caches and never fully reparse Lua");
+        var introConfig = switches._list.Find(item => item.name == "Talk_Brother4_00");
+        var introFlag = (FlagData)introConfig._items[0]._items[0]._value1._value[0]._flag;
+        resetFlags._list.Add(introFlag); value = Read(true);
+        Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "An apparently same-value SetFlag cannot prove an activity repeatable when the preceding ResetTalkFlag owns that input and may change it before the assignment");
+        Check(introFlag.State == 1 && Counters.GameCalls == 0, "The no-op/reset-footprint interaction is read-only and never performs either the reset or the later SetFlag");
+        resetFlags._list.Clear(); value = Read(true);
+        Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "Removing the reset-owned input restores the exact current-value no-op proof without rebuilding Lua definitions");
+        resetFlags._list.Add(flags["Talk_Brother4_00_01"]); value = Read(true);
+        Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A topic flag actually owned by ResetTalkFlag remains uncertain instead of being incorrectly hidden from its current false value");
+        resetFlags._list.Clear(); value = Read(true);
+        Check(!value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A newly observed disjoint reset footprint safely restores completed-topic suppression without reloading definitions");
+        flags["Talk_Brother4_00_01"].State = 0; value = Read(true);
+        Check(value.Summary.AutoText.Contains(raw, StringComparison.Ordinal), "A remaining ordinary brother4 topic remains visible even though the repeat sparring response is excluded");
+        Check(Counters.GameCalls == 0 && flags["Talk_Brother4_02_04"].State == 0, "Original-topic preview calls no native game conditions/RNG, combat dispatch or effects");
+        DataHelper.ExternalReader = null;
+    }
     private static void Limits()
     {
         MapGuideSource.Clear(); MapGuideSource.Enabled = () => true;
@@ -436,5 +599,30 @@ internal static class Program
         Check(LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && PopupConditionText.ConditionDescriptions == conditionText,
             "Mission passive status never analyzes start scripts or formats full conditions");
         Check(Counters.GameCalls == 0 && flag.State == 0 && shared.State == 0, "Passive optimization does not execute conditions/RNG or mutate flags");
+    }
+}
+
+// Exact type/field boundaries for observing an already existing interpreter.
+// The production reader only uses RawGet; these fixtures provide no Lua run,
+// ResetTalkFlag or environment-initialization implementation.
+namespace Mortal.Core { public sealed class FlagCollectionData { public List<FlagData> _list = new List<FlagData>(); } }
+namespace Mortal.Story { public sealed class StatModifyManager { public Mortal.Core.FlagCollectionData _talkOptionFlag; } }
+namespace MoonSharp.Interpreter
+{
+    public sealed class Script { public Table m_GlobalTable = new Table(); }
+    public sealed class Table
+    {
+        public readonly Dictionary<string, DynValue> Values = new Dictionary<string, DynValue>();
+        public DynValue RawGet(string key) { DynValue value; return Values.TryGetValue(key, out value) ? value : null; }
+    }
+    public sealed class DynValue { public object m_Object; }
+    public sealed class UserData { public object Object { get; private set; } public UserData(object value) { Object = value; } }
+}
+namespace Fungus
+{
+    public class LuaEnvironment
+    {
+        protected MoonSharp.Interpreter.Script interpreter;
+        public LuaEnvironment(MoonSharp.Interpreter.Script value) { interpreter = value; }
     }
 }

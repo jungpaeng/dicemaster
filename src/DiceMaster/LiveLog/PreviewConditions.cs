@@ -41,20 +41,85 @@ namespace DiceMaster.LiveLog
         private sealed class EffectSnapshot
         {
             internal readonly HashSet<string> Flags;
-            internal readonly bool Opaque;
-            internal EffectSnapshot(HashSet<string> flags, bool opaque) { Flags = flags; Opaque = opaque; }
+            internal readonly bool Opaque, TalkReset;
+            internal EffectSnapshot(HashSet<string> flags, bool opaque, bool talkReset)
+            { Flags = flags; Opaque = opaque; TalkReset = talkReset; }
+        }
+
+        private static WeakReference observedEnvironment, observedTalkFlags;
+
+        // Observe only an environment the game already loaded. Read the
+        // interpreter field and MoonSharp's exact raw table lookup, never a Lua
+        // expression, index metamethod, lazy singleton or environment initializer.
+        public static void ObserveLuaEnvironment(object environment)
+        {
+            observedEnvironment = observedTalkFlags = null;
+            try
+            {
+                object collection = TalkCollection(environment);
+                if (collection == null) return;
+                observedEnvironment = new WeakReference(environment);
+                observedTalkFlags = new WeakReference(collection);
+            }
+            catch (Exception) { }
+        }
+        private static object TalkCollection(object environment)
+        {
+            if (environment == null) return null;
+            Type owner = environment.GetType();
+            while (owner != null && owner.FullName != "Fungus.LuaEnvironment") owner = owner.BaseType;
+            if (owner == null) return null;
+            FieldInfo interpreter = owner.GetField("interpreter", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+            if (interpreter == null) return null;
+            object script = interpreter.GetValue(environment);
+            Snapshot.Exact(script, "MoonSharp.Interpreter.Script");
+            object globals = Snapshot.Field(script, "m_GlobalTable");
+            Snapshot.Exact(globals, "MoonSharp.Interpreter.Table");
+            MethodInfo raw = globals.GetType().GetMethod("RawGet", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
+                null, new[] { typeof(string) }, null);
+            if (raw == null || raw.IsVirtual || raw.ReturnType.FullName != "MoonSharp.Interpreter.DynValue") return null;
+            object value = raw.Invoke(globals, new object[] { "statmodifymanager" });
+            Snapshot.Exact(value, "MoonSharp.Interpreter.DynValue");
+            object data = Snapshot.Field(value, "m_Object");
+            Snapshot.Exact(data, "MoonSharp.Interpreter.UserData");
+            object manager = Snapshot.Field(data, "<Object>k__BackingField");
+            Snapshot.Exact(manager, "Mortal.Story.StatModifyManager");
+            object collection = Snapshot.Field(manager, "_talkOptionFlag");
+            Snapshot.Exact(collection, "Mortal.Core.FlagCollectionData");
+            return collection;
         }
 
         // Capture definition-time effects, never sampled game values. A bound
         // checkpoint keeps the effects preceding its own read, so a later flag
         // write cannot retroactively change that already captured Lua value.
         public static PreviewCondition CaptureCurrent(PreviewCondition condition, IEnumerable<string> flagWrites, bool opaque)
+        { return CaptureEffects(condition, flagWrites, opaque, false); }
+        public static PreviewCondition CaptureAfterTalkReset(PreviewCondition condition, IEnumerable<string> flagWrites, bool opaque)
+        { return CaptureEffects(condition, flagWrites, opaque, true); }
+        // Dependency proof: writes must not consume the selected topic's own
+        // gate. The two-argument form reads definitions only. The typed literal
+        // SetFlag overload may read the matching concrete FlagData.State to
+        // prove an assignment leaves it unchanged; no FinalValue/judgment runs.
+        public static bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites)
+        { return CreateReader().AreFlagWritesDisjoint(condition, flagWrites); }
+        public static bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates)
+        { return CreateReader().AreFlagWritesDisjoint(condition, flagWrites, sameValueSetCandidates); }
+        public static bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates, bool afterTalkReset)
+        { return CreateReader().AreFlagWritesDisjoint(condition, flagWrites, sameValueSetCandidates, afterTalkReset); }
+        private static HashSet<string> FlagWriteSet(IEnumerable<string> flagWrites)
+        {
+            var flags = new HashSet<string>(StringComparer.Ordinal);
+            if (flagWrites != null) foreach (string flag in flagWrites)
+            { if (flags.Count >= 32 || flag == null || flag.Length > 256) throw new InvalidOperationException("Preview flag write limit."); flags.Add(flag); }
+            return flags;
+        }
+        private static PreviewCondition CaptureEffects(PreviewCondition condition, IEnumerable<string> flagWrites, bool opaque, bool talkReset)
         {
             var flags = new HashSet<string>(StringComparer.Ordinal);
             if (flagWrites != null) foreach (string flag in flagWrites)
             { if (flags.Count >= 32 || flag == null || flag.Length > 256) { opaque = true; break; } flags.Add(flag); }
             int work = 0;
-            return Capture(condition, new EffectSnapshot(flags, opaque), 0, ref work);
+            return Capture(condition, new EffectSnapshot(flags, opaque, talkReset), 0, ref work);
         }
         private static PreviewCondition Capture(PreviewCondition node, EffectSnapshot effects, int depth, ref int work)
         {
@@ -163,6 +228,30 @@ namespace DiceMaster.LiveLog
         public sealed class Reader
         {
             private readonly Snapshot snapshot = new Snapshot();
+            public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites)
+            { return AreFlagWritesDisjoint(condition, flagWrites, null); }
+            public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates)
+            { return AreFlagWritesDisjoint(condition, flagWrites, sameValueSetCandidates, false); }
+            public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates, bool afterTalkReset)
+            {
+                try
+                {
+                    HashSet<string> flags = FlagWriteSet(flagWrites);
+                    if (flags.Count == 0) return true;
+                    var sets = new Dictionary<string, int>(StringComparer.Ordinal);
+                    if (sameValueSetCandidates != null)
+                    {
+                        int count = 0;
+                        foreach (var pair in sameValueSetCandidates)
+                        {
+                            if (++count > 32 || pair.Key == null || pair.Key.Length > 256) return false;
+                            if (flags.Contains(pair.Key)) sets.Add(pair.Key, pair.Value);
+                        }
+                    }
+                    return snapshot.FlagWritesDisjoint(condition, flags, sets, afterTalkReset);
+                }
+                catch (Exception) { return false; }
+            }
             public PreviewConditionState Current(PreviewCondition condition)
             {
                 try
@@ -204,8 +293,59 @@ namespace DiceMaster.LiveLog
             private readonly HashSet<object> active = new HashSet<object>(new Identity());
             private readonly Dictionary<PreviewCondition, object> captured = new Dictionary<PreviewCondition, object>();
             private HashSet<string> maskedFlags;
+            private IDictionary<string, int> sameValueSets;
+            private bool setsAfterTalkReset;
+            private HashSet<object> maskedTalkFlags, talkFlags;
+            private bool maskAllFlagInputs, talkFootprintRead, talkFootprintKnown;
             private sealed class AffectedInput : Exception { }
             private void Step() { if (++work > 16384) throw new InvalidOperationException("Preview condition read limit."); }
+            internal bool FlagWritesDisjoint(PreviewCondition node, HashSet<string> flags, IDictionary<string, int> sets, bool afterTalkReset)
+            {
+                HashSet<string> previous = maskedFlags;
+                IDictionary<string, int> previousSets = sameValueSets;
+                bool previousReset = setsAfterTalkReset;
+                maskedFlags = flags; sameValueSets = sets; setsAfterTalkReset = afterTalkReset;
+                try { return ValidateDependencies(node, 0); }
+                finally { maskedFlags = previous; sameValueSets = previousSets; setsAfterTalkReset = previousReset; }
+            }
+            private bool ValidateDependencies(PreviewCondition node, int depth)
+            {
+                Step();
+                if (node == null || depth > 64 || node.Operation == "unknown") return false;
+                if (node.Operation == "literal") return node.Literal is bool || node.Literal is int;
+                if (node.Operation == "captured")
+                {
+                    var effects = node.Literal as EffectSnapshot;
+                    return effects != null && !effects.Opaque && ValidateDependencies(node.Left, depth + 1);
+                }
+                if (node.Operation == "Condition" || node.Operation == "Switch")
+                {
+                    if (!managerRead) { manager = ExistingManager(); managerRead = true; }
+                    if (manager == null) return false;
+                    if (node.Operation == "Condition")
+                    {
+                        object item = Find(Field(manager, "_condition"), "Mortal.Story.ConditionResultConfig", "Mortal.Core.ConditionResultData", node.Key);
+                        if (item == null) return false;
+                        ValidateConditionData(item, 0); return true;
+                    }
+                    Array configs = Field(manager, "_switchList") as Array;
+                    if (configs == null || configs.Rank != 1 || configs.Length > 256) return false;
+                    foreach (object config in configs)
+                    {
+                        Step();
+                        object item = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", node.Key);
+                        if (item == null) continue;
+                        if (!(Field(item, "_useCount") is bool) || (bool)Field(item, "_useCount")) return false;
+                        foreach (object condition in List(item, "_items", 256)) ValidateCondition(condition, 0);
+                        return true;
+                    }
+                    return false;
+                }
+                if (node.Operation == "not") return ValidateDependencies(node.Left, depth + 1);
+                if (node.Operation != "and" && node.Operation != "or" && node.Operation != "==" && node.Operation != "~=" &&
+                    node.Operation != "<" && node.Operation != "<=" && node.Operation != ">" && node.Operation != ">=") return false;
+                return ValidateDependencies(node.Left, depth + 1) && ValidateDependencies(node.Right, depth + 1);
+            }
             internal static bool? Truth(object value)
             {
                 if (value == null) return null;
@@ -223,13 +363,19 @@ namespace DiceMaster.LiveLog
                     if (captured.TryGetValue(node, out result)) return result;
                     var effects = node.Literal as EffectSnapshot;
                     if (effects == null || effects.Opaque) result = null;
-                    else if (effects.Flags.Count == 0) result = Value(node.Left, depth + 1);
+                    else if (effects.Flags.Count == 0 && !effects.TalkReset) result = Value(node.Left, depth + 1);
                     else
                     {
-                        var previous = maskedFlags; maskedFlags = effects.Flags;
+                        var previous = maskedFlags; var previousTalk = maskedTalkFlags; bool previousAll = maskAllFlagInputs;
+                        maskedFlags = effects.Flags;
+                        if (effects.TalkReset)
+                        {
+                            ReadTalkFootprint(); maskedTalkFlags = talkFlags; maskAllFlagInputs = !talkFootprintKnown;
+                        }
+                        else { maskedTalkFlags = null; maskAllFlagInputs = false; }
                         try { result = ReadCheckpoint(node.Left.Operation, node.Left.Key); }
                         catch (Exception) { result = null; }
-                        finally { maskedFlags = previous; }
+                        finally { maskedFlags = previous; maskedTalkFlags = previousTalk; maskAllFlagInputs = previousAll; }
                     }
                     captured.Add(node, result); return result;
                 }
@@ -299,7 +445,7 @@ namespace DiceMaster.LiveLog
                 }
             }
 
-            private static object Field(object target, string name)
+            internal static object Field(object target, string name)
             {
                 if (target == null) throw new InvalidOperationException("Missing preview condition data.");
                 Type type = target as Type ?? target.GetType();
@@ -311,7 +457,7 @@ namespace DiceMaster.LiveLog
                 }
                 throw new MissingFieldException(type.FullName, name);
             }
-            private static void Exact(object value, string type)
+            internal static void Exact(object value, string type)
             { if (value == null || value.GetType().FullName != type) throw new InvalidOperationException("Unsupported preview condition type."); }
             private IList List(object value, string name, int limit = 8192)
             {
@@ -461,9 +607,13 @@ namespace DiceMaster.LiveLog
                 try
                 {
                     Exact(value, "Mortal.Core.ConditionResultItem");
+                    int logic = Convert.ToInt32(Field(value, "_logicOp"));
+                    if (logic != 0 && logic != 1) throw new InvalidOperationException("Unsupported preview condition logic.");
                     foreach (object comparison in List(value, "_items", 256))
                     {
                         Step(); Exact(comparison, "Mortal.Core.StatCompareItem");
+                        int operation = Convert.ToInt32(Field(comparison, "_compareOp"));
+                        if (operation < 0 || operation > 5) throw new InvalidOperationException("Unsupported preview comparison.");
                         ValidateGroup(Field(comparison, "_value1"), depth + 1);
                         ValidateGroup(Field(comparison, "_value2"), depth + 1);
                     }
@@ -476,6 +626,8 @@ namespace DiceMaster.LiveLog
                 try
                 {
                     Exact(value, "Mortal.Core.StatGroupVariable");
+                    int groupType = Convert.ToInt32(Field(value, "_groupType"));
+                    if (groupType < 1 || groupType > 4) throw new InvalidOperationException("Unsupported preview value group.");
                     foreach (object reference in List(value, "_value", 256))
                     {
                         Step(); Exact(reference, "Mortal.Core.StatValueReference");
@@ -546,7 +698,60 @@ namespace DiceMaster.LiveLog
             private void ValidateFlag(object value)
             {
                 Exact(value, "Mortal.Core.FlagData");
-                if (maskedFlags != null && maskedFlags.Contains(Name(value))) throw new AffectedInput();
+                if (maskAllFlagInputs || maskedTalkFlags != null && maskedTalkFlags.Contains(value)) throw new AffectedInput();
+                if (maskedFlags == null || maskedFlags.Count == 0) return;
+                string name = Name(value);
+                if (!maskedFlags.Contains(name)) return;
+                int constant;
+                if (sameValueSets != null && sameValueSets.TryGetValue(name, out constant))
+                {
+                    // A reset before this future assignment can change today's
+                    // equal value. Only a known disjoint reset footprint permits
+                    // this no-op exemption; unrelated writes remain disjoint.
+                    if (setsAfterTalkReset)
+                    {
+                        ReadTalkFootprint();
+                        if (!talkFootprintKnown || talkFlags.Contains(value)) throw new AffectedInput();
+                    }
+                    if (FlagState(value) == constant) return;
+                }
+                throw new AffectedInput();
+            }
+            private int FlagState(object value)
+            {
+                Step();
+                // The supplied game's concrete FlagData.State is a public int
+                // field. Managed fixtures may expose the equivalent audited,
+                // nonvirtual int getter; no subclass/custom target is accepted.
+                Type type = value.GetType();
+                FieldInfo field = type.GetField("State", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+                if (field != null && field.FieldType == typeof(int)) return (int)field.GetValue(value);
+                PropertyInfo property = type.GetProperty("State", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+                MethodInfo getter = property == null ? null : property.GetGetMethod();
+                if (getter == null || getter.IsVirtual || getter.ReturnType != typeof(int) || getter.GetParameters().Length != 0)
+                    throw new InvalidOperationException("Unsupported preview flag state.");
+                return (int)getter.Invoke(value, null);
+            }
+            private void ReadTalkFootprint()
+            {
+                if (talkFootprintRead) return;
+                talkFootprintRead = true;
+                try
+                {
+                    object environment = observedEnvironment == null ? null : observedEnvironment.Target;
+                    if (environment == null) { observedEnvironment = observedTalkFlags = null; return; }
+                    // The same live environment can replace its registered
+                    // manager/collection. Validate that current raw binding once
+                    // per reader rather than retaining any flag or State value.
+                    object collection = TalkCollection(environment);
+                    if (collection == null) { observedTalkFlags = null; return; }
+                    if (observedTalkFlags == null || !ReferenceEquals(observedTalkFlags.Target, collection)) observedTalkFlags = new WeakReference(collection);
+                    IList list = List(collection, "_list", 1024);
+                    var flags = new HashSet<object>(new Identity());
+                    foreach (object flag in list) { Step(); Exact(flag, "Mortal.Core.FlagData"); flags.Add(flag); }
+                    talkFlags = flags; talkFootprintKnown = true;
+                }
+                catch (Exception) { observedTalkFlags = null; }
             }
         }
     }

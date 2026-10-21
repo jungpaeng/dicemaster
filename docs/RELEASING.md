@@ -1,5 +1,17 @@
 # 소스 기반 Release와 게시 이력
 
+<!-- alpha11-current-status -->
+v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. 반복 활동의 고정 반응과 개별 이야기를 구분하고, 준비가 끝난 빈 지도 패널을 숨긴다. 최종 소스 커밋·전체/고정 재빌드·prerelease 게시·공개 파일 검증은 아직 확정 전이다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 미실행이며 #6은 open이다.** [후보 범위·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
+<!-- /alpha11-current-status -->
+
+## alpha.11 — 반복 활동과 이야기 안내 구분
+
+원래 main에서 구현·검증하고 별도 branch/worktree를 만들지 않는다. 전체 후보 검사 후 소스 커밋을 고정해 격리 재빌드·실제 DLL 연결·패키지 검증을 수행한다. main과 alpha.11 주석 태그를 atomic push하고 새 prerelease만 게시한다. 기존 Release·태그·자산·Latest 정식 v1.0.6과 #6 open은 보존한다.
+
+게시 본문은 개별 이야기와 구조가 확인된 반복 활동의 고정 반응을 구분하고, 준비 완료 후 빈 지도를 숨기는 사용자 변화를 먼저 설명한다. 모든 반복 활동·이야기 조건을 완전하게 판별한다는 표현은 쓰지 않는다. 게임 종료 후 DLL만 교체해 cfg를 보존하고, 실제 Windows·물리 입력·화면·성능은 미실행으로 구분한다. 고정 소스·빌드·파일·공개 API/ZIP 검증·게시 ID는 [alpha.11 기록](ISSUE-6-ALPHA11-RELEASE.md)에 확정한다. 게시 보충 문서는 별도 main 커밋이며 빌드 입력·태그·자산을 바꾸지 않는다.
+
+다음 alpha.10 이하의 게시 상태는 이전 후보의 기록이다.
+
 <!-- alpha10-current-status -->
 2026-10-21 07:05:30 KST에 소스·주석 태그 [`05c4880`](https://github.com/jungpaeng/dicemaster/commit/05c4880ff11e0e8a79ea545495b04c6c28772bed)의 [alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10)을 게시했다. 랜덤 AND의 확정 false와 현재 필수 선택 조건의 미충족을 보존하여 불가능한 대화의 자동 지도를 정리했다. 전체·고정 커밋 재빌드 21개 프로그램·252개 입력·103개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 51개 Release·52개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA10-RELEASE.md).
 <!-- /alpha10-current-status -->

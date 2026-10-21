@@ -1,5 +1,21 @@
 # 전체 소스 빌드 — 이슈 #3
 
+<!-- alpha11-current-status -->
+v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. 반복 활동의 고정 반응과 개별 이야기를 구분하고, 준비가 끝난 빈 지도 패널을 숨긴다. 최종 소스 커밋·전체/고정 재빌드·prerelease 게시·공개 파일 검증은 아직 확정 전이다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 미실행이며 #6은 open이다.** [후보 범위·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
+<!-- /alpha11-current-status -->
+
+## alpha.11 — 선택 주제·활동 분류와 빈 지도 검증
+
+실제 Lua 원문은 SHA를 확인한 corpus를 사용하고, 조건 그래프·현재 플래그·UI/게임 경계는 명시적인 fixture로 구분한다. 활동 고정 반응/특별 이야기/미지원 구조·완료한 주제/남은 주제·대화 초기화 영향·닫힌 빈 패널/실제 준비/진단을 자동 검사한다. 게임 Condition/Switch/Execute·RNG·ResetTalkFlag는 실행하지 않는다. 실제 DLL에 연결된 검사와 Windows 실행은 별개다.
+
+```sh
+python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/story-topics-candidate/full-final
+```
+
+전체 후보 결과를 확인한 뒤 소스 커밋을 고정하고 `verify-preview-release.py --scope prd6 --version v1.0.7-alpha.11`에 그 커밋·실제 DLL/cfg 해시를 넘긴다. SDK·입력·참조·성공 기록·DLL/cfg/ZIP 바이트를 대조하며 출력 폴더는 없거나 비어 있어야 한다. 최종 값과 공개 ZIP 대조는 [alpha.11 기록](ISSUE-6-ALPHA11-RELEASE.md)에 확정한다. 검사 수·해시·게시 결과는 확정 전까지 이전 후보에서 복사하지 않는다.
+
+다음 alpha.10 이하의 게시 상태는 이전 후보의 기록이다.
+
 <!-- alpha10-current-status -->
 2026-10-21 07:05:30 KST에 소스·주석 태그 [`05c4880`](https://github.com/jungpaeng/dicemaster/commit/05c4880ff11e0e8a79ea545495b04c6c28772bed)의 [alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10)을 게시했다. 랜덤 AND의 확정 false와 현재 필수 선택 조건의 미충족을 보존하여 불가능한 대화의 자동 지도를 정리했다. 전체·고정 커밋 재빌드 21개 프로그램·252개 입력·103개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 51개 Release·52개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA10-RELEASE.md).
 <!-- /alpha10-current-status -->

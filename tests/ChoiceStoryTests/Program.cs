@@ -259,6 +259,86 @@ internal static class Program
         Normal("O_topic", "동일 선택의 대화"); value = Ready(true);
         Check(Linked(value, "동일 선택의 대화").AutoText.Contains("사사형 대화", StringComparison.Ordinal), "An earlier narrative segment does not consume the selected path before its later explicit NPC line");
     }
+    private static void ActivityResponses()
+    {
+        foreach (string npc in new[] { "fixture_teacher", "renamed_guest" })
+        {
+            Reset();
+            string raw = "talk+O_94+0+0";
+            string speaker = "setcharacter(characters.Get('" + npc + "'));say(luamanager.GetStoryText('";
+            CheckPointManager.Instance._switchList = new object[] { new SwitchResultConfig { _list = new List<SwitchResultData> {
+                new SwitchResultData { name = npc + "_service_guard", _items = new List<ConditionResultItem> { new ConditionResultItem { _items = new List<StatCompareItem> {
+                    new StatCompareItem { _value1 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 1 } } },
+                        _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 1 } } } } } } } }
+            } } };
+            DataHelper.Scripts["generic_service_after"] = "";
+            ChoiceStorySource.ObserveScript("local a={'" + raw + "'};local r=choose(a);if r==1 then " + speaker + "D_fixed_start'));local s=checkpointmanager.Switch('" + npc + "_service_guard');if s==1 then statmodifymanager.Player('money',-100,'',1);" + speaker + "D_fixed_reply'));luamanager.SetCurrentStoryScript('generic_service_after');luamanager.ChangeScene('Combat','generic_service_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end end", npc + "_service.LuaScript");
+            var option = Break(raw, "계속 사용할 수 있는 활동");
+            var value = Ready(true);
+            Check(!value.Entries.Any(item => item.Title == "계속 사용할 수 있는 활동" && item.Kind == "인물 대화"),
+                "NPC fixed lines wrapping a proven repeat service do not fabricate an individual story; arbitrary NPC=" + npc);
+            Check(!value.Hints.Any(item => item.AutoText.Contains("계속 사용할 수 있는 활동", StringComparison.Ordinal)), "Excluded service responses cannot return through fallback automatic hints");
+            EventSystem.current.currentSelectedGameObject = option.gameObject;
+            Check(ChoiceStorySource.CurrentRow(value) == null, "Passive pad focus on the remaining native service has no invented story row and takes no input ownership");
+            int reads = DataHelper.Reads, textReads = option._titleText[0].Reads, sourceReads = option._source.Reads;
+            for (int at = 0; at < 1000; at++) ChoiceStorySource.CurrentRow(value);
+            Check(DataHelper.Reads == reads && option._titleText[0].Reads == textReads && option._source.Reads == sourceReads, "Service filtering keeps render-time pad lookup free of script/title/current-condition reads");
+
+            Reset(); var consumed = Condition(npc + "_own_once", 0);
+            DataHelper.Scripts["consumed_topic_wrapper"] = speaker + "D_fixed_start'));local s=checkpointmanager.Switch('consumed_service_guard');if s==1 then statmodifymanager.Player('money',-100,'',1);luamanager.ChangeScene('Combat','consumed_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end";
+            ChoiceStorySource.ObserveScript("local a={};a[1]=checkpointmanager.Condition('" + npc + "_own_once') and 'O_topic' or '~x';local r=choose(a);if r==1 then statmodifymanager.SetFlag('" + npc + "_own_once',1);luamanager.SetNextScript('consumed_topic_wrapper') end", npc + "_consumed_root.LuaScript");
+            option = Break("O_topic", "조건을 소모하는 이야기"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "조건을 소모하는 이야기" && item.Kind == "인물 대화"), "A selected parent that consumes its own guard cannot be hidden merely because the child dialogue wraps a paid service");
+            EventSystem.current.currentSelectedGameObject = option.gameObject;
+            Check(ChoiceStorySource.CurrentRow(value)?.Title == "조건을 소모하는 이야기" && consumed.State == 0 && Counters.GameCalls == 0, "The protected consumed-guard topic retains native pad focus without applying its flag write");
+
+            Reset();
+            DataHelper.Scripts["opaque_parent_wrapper"] = speaker + "D_fixed_start'));local s=checkpointmanager.Switch('opaque_parent_guard');if s==1 then statmodifymanager.Player('money',-100,'',1);luamanager.ChangeScene('Combat','opaque_parent_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end";
+            ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then unknown_callback();luamanager.SetNextScript('opaque_parent_wrapper') end", npc + "_opaque_parent.LuaScript");
+            Break("O_topic", "선행 동작이 불명인 이야기"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "선행 동작이 불명인 이야기" && item.Status == "진행 가능성 있음"), "An opaque parent action keeps a child service-shaped dialogue unclassified instead of hiding a potentially special selected topic");
+
+            Reset(); var special = Condition(npc + "_special", 0);
+            ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then " + speaker + "D_fixed_intro'));if checkpointmanager.Condition('" + npc + "_special') then " + speaker + "D_special'));statmodifymanager.SetFlag('generic_seen',1) end;luamanager.ChangeScene('Combat','special_combat','Story') end", npc + "_combat_story.LuaScript");
+            option = Break("O_topic", "활동 중 특별 이야기"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "활동 중 특별 이야기" && item.Kind == "인물 대화"), "A separately conditioned NPC story remains eligible even when its script also dispatches combat");
+            EventSystem.current.currentSelectedGameObject = option.gameObject;
+            Check(ChoiceStorySource.CurrentRow(value)?.Title == "활동 중 특별 이야기", "The preserved combat story continues to follow native passive pad selection");
+            Check(special.State == 0 && Counters.GameCalls == 0, "Activity/story analysis never applies a story flag, invokes native condition/RNG or starts combat");
+
+            Reset(); special = Condition(npc + "_special_callback", 0);
+            DataHelper.Scripts["parent_service"] = speaker + "D_fixed_start'));local s=checkpointmanager.Switch('callback_service_guard');if s==1 then statmodifymanager.Player('money',-100,'',1);luamanager.SetCurrentStoryScript('separate_callback_story');luamanager.ChangeScene('Combat','callback_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end";
+            DataHelper.Scripts["separate_callback_story"] = "if checkpointmanager.Condition('" + npc + "_special_callback') then " + speaker + "D_callback_special'));statmodifymanager.SetFlag('callback_seen',1) end";
+            ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then luamanager.SetNextScript('parent_service') end", npc + "_callback_root.LuaScript");
+            option = Break("O_topic", "활동 뒤 특별 이야기"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "활동 뒤 특별 이야기" && item.Kind == "인물 대화"), "A fixed activity prelude cannot hide a separate conditional story in the registered combat callback");
+            EventSystem.current.currentSelectedGameObject = option.gameObject;
+            Check(ChoiceStorySource.CurrentRow(value)?.Title == "활동 뒤 특별 이야기" && special.State == 0 && Counters.GameCalls == 0, "The preserved callback story retains native pad focus without executing future flags or combat");
+
+            Reset(); var receipt = Condition(npc + "_receipt_once", 0);
+            DataHelper.Scripts["receipt_parent_service"] = speaker + "D_fixed_start'));local s=checkpointmanager.Switch('receipt_service_guard');if s==1 then statmodifymanager.Player('money',-100,'',1);luamanager.SetCurrentStoryScript('receipt_result');luamanager.ChangeScene('Combat','receipt_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end";
+            DataHelper.Scripts["receipt_result"] = "local s=checkpointmanager.Switch('receipt_outcome');if s==1 then statmodifymanager.Player('martial-point',2,'',1);" + speaker + "D_receipt_loss')) elseif s==2 then statmodifymanager.Player('martial-point',4,'',1);" + speaker + "D_receipt_win'));statmodifymanager.SetFlag('" + npc + "_receipt_once',1) end;luamanager.ChangeScene('Free','','')";
+            ChoiceStorySource.ObserveScript("local a={};a[1]=checkpointmanager.Condition('" + npc + "_receipt_once') and 'O_topic' or '~x';local r=choose(a);if r==1 then luamanager.SetNextScript('receipt_parent_service') end", npc + "_receipt_root.LuaScript");
+            option = Break("O_topic", "결과 대사 뒤 조건 소모"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "결과 대사 뒤 조건 소모" && item.Kind == "인물 대화"), "An activity receipt that consumes the selected topic guard after its NPC response cannot be hidden as a generic mechanical result");
+            EventSystem.current.currentSelectedGameObject = option.gameObject;
+            Check(ChoiceStorySource.CurrentRow(value)?.Title == "결과 대사 뒤 조건 소모" && receipt.State == 0 && Counters.GameCalls == 0, "The protected outcome story remains available to passive pad focus without executing its future flag write");
+
+            Reset(); special = Condition(npc + "_late_callback", 0);
+            DataHelper.Scripts["waiting_parent_service"] = speaker + "D_fixed_start'));local s=checkpointmanager.Switch('waiting_service_guard');if s==1 then statmodifymanager.Player('money',-100,'',1);luamanager.SetCurrentStoryScript('late_callback_story');luamanager.ChangeScene('Combat','waiting_combat','Story') elseif s==2 then luamanager.ChangeScene('Free','','') end";
+            ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then luamanager.SetNextScript('waiting_parent_service') end", npc + "_missing_callback.LuaScript");
+            Break("O_topic", "후속 자료 대기 이야기"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "후속 자료 대기 이야기" && item.Status == "진행 가능성 있음") && value.Entries.Any(item => item.Status.Contains("읽기 대기/실패", StringComparison.Ordinal)), "A fixed activity response cannot hide a topic while its registered callback remains unreadable");
+            DataHelper.Scripts["late_callback_story"] = "if checkpointmanager.Condition('" + npc + "_late_callback') then " + speaker + "D_late_special'));statmodifymanager.SetFlag('late_callback_seen',1) end";
+            Time.unscaledTime += 5; value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "후속 자료 대기 이야기" && item.Kind == "인물 대화") && !value.Entries.Any(item => item.Status.Contains("읽기 대기/실패", StringComparison.Ordinal)), "A callback recovered after the normal five-second retry contributes its distinct special story without losing the selected topic");
+
+            Reset();
+            ChoiceStorySource.ObserveScript("local a={'O_topic'};local r=choose(a);if r==1 then unknown_callback();" + speaker + "D_unknown'));luamanager.ChangeScene('Combat','unknown_combat','Story') end", npc + "_unclassified.LuaScript");
+            Break("O_topic", "구분 근거 부족"); value = Ready(true);
+            Check(value.Entries.Any(item => item.Title == "구분 근거 부족" && item.Status == "진행 가능성 있음"), "An arbitrary predecessor callback prevents a repeat-service proof and preserves the unclassified NPC path");
+        }
+    }
     private static void FullStoryConditions()
     {
         const string npc = "setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_training_npc'))";
@@ -370,7 +450,9 @@ internal static class Program
             (Name: "center_001", Raw: "practice+free+practice", Title: "연무장 수련", Position: true, Expected: true),
             (Name: "room_001", Raw: "sleep+free+sleep", Title: "휴식", Position: true, Expected: false),
             (Name: "ch1_1_break_option", Raw: "talk+O_1_1_Break_002+0+0", Title: "실제 player-only talk 항목", Position: false, Expected: false),
-            (Name: "ch2_4_6_2_break_start_01", Raw: "talk+O_2_4_6_2_Break_01_001+0+0", Title: "실제 D_ 독백 후속 항목", Position: false, Expected: false)
+            (Name: "ch2_4_6_2_break_start_01", Raw: "talk+O_2_4_6_2_Break_01_001+0+0", Title: "실제 D_ 독백 후속 항목", Position: false, Expected: false),
+            (Name: "s0121_01", Raw: "O_S0121_01_001", Title: "실제 전투 연결 이야기 A", Position: false, Expected: true),
+            (Name: "s0604_01", Raw: "O_S0604_01_002", Title: "실제 전투 연결 이야기 B", Position: false, Expected: true)
         };
         foreach (var sample in cases)
         {
@@ -519,7 +601,7 @@ internal static class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership();
         if (args.Length > 0) Metadata(args[0]);
         if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");
