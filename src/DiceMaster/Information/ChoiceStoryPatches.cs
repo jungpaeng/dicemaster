@@ -33,13 +33,26 @@ namespace DiceMaster.Information
         [HarmonyPatch(typeof(LuaEnvironment), nameof(LuaEnvironment.LoadLuaFunction))]
         private static class ScriptLoaded
         {
-            [HarmonyFinalizer, HarmonyPriority(Priority.Last)]
-            private static Exception Finalizer(LuaEnvironment __instance, string luaString, string friendlyName, object __result, Exception __exception)
+            private sealed class OriginalSource
+            { internal string Text, Friendly; }
+
+            // #5 wraps checkpoint calls in a later prefix. Keep this exact
+            // invocation's original definitions, not its execution wrappers.
+            // Per-call state also prevents failed/nested loads from borrowing
+            // another invocation's source through a shared last-source field.
+            [HarmonyPrefix, HarmonyPriority(Priority.First)]
+            private static void Prefix(string luaString, string friendlyName, out OriginalSource __state)
             {
-                if (__exception == null && __result != null && OptionInfoPatch.DisplayRefreshDepth == 0)
+                __state = OptionInfoPatch.DisplayRefreshDepth == 0
+                    ? new OriginalSource { Text = luaString, Friendly = friendlyName } : null;
+            }
+            [HarmonyFinalizer, HarmonyPriority(Priority.Last)]
+            private static Exception Finalizer(LuaEnvironment __instance, OriginalSource __state, object __result, Exception __exception)
+            {
+                if (__exception == null && __result != null && __state != null && OptionInfoPatch.DisplayRefreshDepth == 0)
                     Observe(() => {
                         if (InformationRuntime.Enabled(0) || InformationRuntime.Enabled(1)) PreviewConditions.ObserveLuaEnvironment(__instance);
-                        ChoiceStorySource.ObserveScript(luaString, friendlyName);
+                        ChoiceStorySource.ObserveScript(__state.Text, __state.Friendly);
                     });
                 return __exception;
             }

@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable></PropertyGroup><ItemGroup>
 <Compile Include="../../src/DiceMaster/Information/ChoiceStorySource.cs" Link="ChoiceStorySource.cs" />
+<Compile Include="../../src/DiceMaster/Information/ChoiceStoryPatches.cs" Link="ChoiceStoryPatches.cs" />
+<Compile Include="../../src/DiceMaster/EventSelection/EventLuaGate.cs" Link="EventLuaGate.cs" />
+<Compile Include="../../src/DiceMaster/EventSelection/EventSwitchSite.cs" Link="EventSwitchSite.cs" />
 <Compile Include="../../src/DiceMaster/Information/ChoiceOpportunities.cs" Link="ChoiceOpportunities.cs" />
 <Compile Include="../../src/DiceMaster/Information/OneShotProof.cs" Link="OneShotProof.cs" />
 <Compile Include="../../src/DiceMaster/EventSelection/EventEligibility.cs" Link="EventEligibility.cs" />

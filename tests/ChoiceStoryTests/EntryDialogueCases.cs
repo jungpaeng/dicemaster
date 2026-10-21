@@ -115,7 +115,22 @@ internal static partial class Program
             DataHelper.ExternalReader = Exact;
             DisplayNames.Labels["Story/O_Talk_Brother4_001"] = "떠나다"; DisplayNames.Labels["Story/O_Talk_Brother4_002"] = "물품 구매";
             DisplayNames.Labels["Story/O_Talk_Brother4_012"] = "대련: 사사형에게 도전한다";
-            ChoiceStorySource.ObserveScript(Exact(sample.Root).Text, sample.Root + ".LuaScript");
+            string original = Exact(sample.Root).Text;
+            if (sample.Root == "room_001" && sample.Count == 1 && !sample.Broken)
+            {
+                // Reproduce the actual old load boundary, not another made-up
+                // NPC/flag exception: the compiler receives #5's transformed
+                // source and a late observer used to analyze those wrappers.
+                string compiled = DiceMaster.EventSelection.EventLuaGate.Instrument(original, 71, out bool changed);
+                Check(changed && !ReferenceEquals(original, compiled), "the SHA-original room really is transformed by the existing #5 instrumenter");
+                ChoiceStorySource.ObserveScript(compiled, sample.Root + ".LuaScript"); Position("talk+talk+brother4", "사사형");
+                for (int at = 0; at < 240; at++) Read();
+                var legacy = Linked(Read(true), "사사형");
+                Check(legacy.AutoText.Length > 0 && legacy.Detail.Contains("표시 근거: room_001 · D_Room_001_001", StringComparison.Ordinal) &&
+                    !legacy.Detail.Contains("Switch Talk_Brother4_00", StringComparison.Ordinal),
+                    "feeding compiler wrappers to the old observer reproduces the completed first greeting with an unrecognized checkpoint");
+            }
+            ObserveCompiled(original, sample.Root + ".LuaScript");
             if (sample.Root == "room_001") Position("talk+talk+brother4", "사사형");
             else { Break("exit+O_Talk_Brother4_001+0+0", "떠나다"); Break("shop+O_Talk_Brother4_002+0+0", "물품 구매"); Break("talk+O_Talk_Brother4_012+0+0", "대련: 사사형에게 도전한다"); }
             ChoiceStorySnapshot value = null;

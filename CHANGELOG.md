@@ -1,5 +1,15 @@
 # 변경 이력
 
+## 미배포 — 완료 인사 안내의 원문 복구
+
+<!-- alpha23-publication -->
+전체 소스 빌드의 21개 검사 프로그램·275개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/내부 바이트 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·Unity 화면·물리 입력·FPS 확인과 #6 전체 완료는 대기다.**
+<!-- /alpha23-publication -->
+
+- #5 실행용 Lua 변환 뒤의 문자열을 이야기 정의로 읽어 완료 조건이 미확정으로 남는 문제를 수정합니다. 변환 전 원문을 호출별로 보관하고 컴파일 성공 후 분석합니다.
+- 실제 변환기·원본 room Lua에서 이전 잔존을 재현하고 수정 경계를 검사합니다. 최초 전체 경로 준비의 잔여 지연은 별도로 확인해야 합니다. [설계·검증](docs/ISSUE-6-CHOICE-LOAD-SOURCE.md).
+
+
 ## [v1.0.7-alpha.22](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.22) — 2026-10-22 (prerelease)
 
 <!-- alpha22-publication -->

@@ -108,6 +108,8 @@ namespace DiceMaster.LiveLog
 {
     public static class LogBridge
     {
+        public static readonly FixtureModel Model = new FixtureModel();
+        public sealed class FixtureModel { public long ContextId; }
         public static object ReadFieldStrict(object target, string name)
         {
             if (target == null) throw new DataNotReadyException();
@@ -184,7 +186,7 @@ namespace UnityEngine.UI
 }
 namespace Fungus
 {
-    public class MenuDialog : UnityEngine.Component { public int nextOptionIndex; public static MenuDialog ActiveMenuDialog; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject(); }
+    public class MenuDialog : UnityEngine.Component { public int nextOptionIndex; public static MenuDialog ActiveMenuDialog; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject(); public void Clear() { throw new Exception("Native UI execution forbidden"); } }
 }
 namespace Mortal.Core
 {
@@ -192,6 +194,7 @@ namespace Mortal.Core
     {
         public bool isActiveAndEnabled = true; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject();
         public UnityEngine.UI.Text _source = new UnityEngine.UI.Text(); public UnityEngine.UI.Text[] _text = new[] { new UnityEngine.UI.Text() };
+        public void UpdateContent() { throw new Exception("Native UI execution forbidden"); }
     }
 }
 
@@ -199,9 +202,9 @@ namespace Mortal.Core
 namespace Mortal.Core
 {
     public class PositionOptionButton : UnityEngine.Component
-    { public bool isActiveAndEnabled = true; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject(); public UnityEngine.UI.Text _source = new UnityEngine.UI.Text(); public UnityEngine.UI.Text[] _titleText = new[] { new UnityEngine.UI.Text() }; }
+    { public bool isActiveAndEnabled = true; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject(); public UnityEngine.UI.Text _source = new UnityEngine.UI.Text(); public UnityEngine.UI.Text[] _titleText = new[] { new UnityEngine.UI.Text() }; public void UpdateContent() { throw new Exception("Native UI execution forbidden"); } }
     public class BreakOptionButton : UnityEngine.Component
-    { public bool isActiveAndEnabled = true; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject(); public UnityEngine.UI.Text _source = new UnityEngine.UI.Text(); public UnityEngine.UI.Text[] _titleText = new[] { new UnityEngine.UI.Text() }; }
+    { public bool isActiveAndEnabled = true; public UnityEngine.GameObject gameObject = new UnityEngine.GameObject(); public UnityEngine.UI.Text _source = new UnityEngine.UI.Text(); public UnityEngine.UI.Text[] _titleText = new[] { new UnityEngine.UI.Text() }; public void UpdateContent() { throw new Exception("Native UI execution forbidden"); } }
 }
 namespace UnityEngine.EventSystems
 {

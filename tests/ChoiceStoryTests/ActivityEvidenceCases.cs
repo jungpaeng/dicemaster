@@ -74,4 +74,4 @@ namespace MoonSharp.Interpreter
     public sealed class DynValue { public object m_Object; }
     public sealed class UserData { public object Object { get; private set; } public UserData(object value) { Object = value; } }
 }
-namespace Fungus { public sealed class LuaEnvironment { private MoonSharp.Interpreter.Script interpreter; public LuaEnvironment(MoonSharp.Interpreter.Script value) { interpreter = value; } } }
+namespace Fungus { public sealed class LuaEnvironment { private MoonSharp.Interpreter.Script interpreter; public LuaEnvironment(MoonSharp.Interpreter.Script value) { interpreter = value; } public object LoadLuaFunction(string text, string name) { throw new Exception("Lua execution forbidden"); } } }
