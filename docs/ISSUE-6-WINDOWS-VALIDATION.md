@@ -2,6 +2,10 @@
 
 ## alpha.14 — 장소·선택지 근처 표시 확인 대기
 
+<!-- alpha14-publication -->
+2026-10-21 21:01:57 KST에 소스·주석 태그 [`cfe1cf7`](https://github.com/jungpaeng/dicemaster/commit/cfe1cf7bc6e52a0b075ba057a9b686dbc8f72468)의 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.14)를 게시했다. 전체·고정 커밋 재빌드 21개 검사·259개 입력·106개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 55개 Release·56개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA14-RELEASE.md).
+<!-- /alpha14-publication -->
+
 설치 파일·소스·해시는 [alpha.14 게시 기록](ISSUE-6-ALPHA14-RELEASE.md)을 따른다. 이전 사용자 확인과 자동 검사는 이 DLL의 실제 Windows 통과 근거가 아니다.
 
 - [ ] 미선택 장소 두 곳 이상에 현재 대기 임무가 있으면 각 장소 근처의 붉은 점이 보인다. 행동력 부족·장소 비활성·주 임무 잠금·앞선 보조 임무 우선순위가 반영된다.

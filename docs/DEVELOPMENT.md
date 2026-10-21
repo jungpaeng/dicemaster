@@ -2,6 +2,10 @@
 
 ## alpha.14 — 현재 기회 표식과 native 포커스 배치
 
+<!-- alpha14-publication -->
+2026-10-21 21:01:57 KST에 소스·주석 태그 [`cfe1cf7`](https://github.com/jungpaeng/dicemaster/commit/cfe1cf7bc6e52a0b075ba057a9b686dbc8f72468)의 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.14)를 게시했다. 전체·고정 커밋 재빌드 21개 검사·259개 입력·106개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 55개 Release·56개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA14-RELEASE.md).
+<!-- /alpha14-publication -->
+
 MapGuideMarkers는 실제 대기 목록 한 번/장소별 첫 항목·현재 행동력·임무 우선순위와 준비된 1회성 증명·새 현재 도달성만 발행한다. 미선택 장소의 GetSource·Lua/효과 준비·전체 임무 색인은 열지 않는다. 장소 64·대기 256·증명 후보 64/현재 이벤트 16·약 5 ms 양보와 0.25초/실패 5초/숨김·OFF 중단을 적용한다. 전체 표식의 한도가 전체 기회 없음 판정은 아니다.
 
 InformationAnchors는 등록된 컨트롤과 collider UI/root canvas·현재 카메라의 좌표·native EventSystem 포커스만 읽는다. 전체 객체 검색·raycast·입력 소비·Select/플래그 쓰기가 없다. InformationLayout.Near의 네 위치와 cached PassiveLabel로 포커스 설명 하나를 배치한다. 정지 마우스는 패드 포커스를 빼앗지 않는다. Canvas/RectTransformUtility를 위해 제공된 UnityEngine.UIModule.dll을 추가 참조·해시 고정해 총 16개 참조를 검증하며 ZIP에 외부 DLL을 넣지 않는다. [범위·근거·검사](ISSUE-6-ALPHA14-RELEASE.md).

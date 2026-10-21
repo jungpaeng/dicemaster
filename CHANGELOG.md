@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.14 — 게시 준비
+## [v1.0.7-alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.14) — 2026-10-21 (prerelease)
+
+<!-- alpha14-publication -->
+2026-10-21 21:01:57 KST에 소스·주석 태그 [`cfe1cf7`](https://github.com/jungpaeng/dicemaster/commit/cfe1cf7bc6e52a0b075ba057a9b686dbc8f72468)의 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.14)를 게시했다. 전체·고정 커밋 재빌드 21개 검사·259개 입력·106개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 55개 Release·56개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [게시·검사 기록](docs/ISSUE-6-ALPHA14-RELEASE.md).
+<!-- /alpha14-publication -->
 
 - 현재 실행 기회가 있는 장소·선택지에 붉은 점을 붙이고, 포커스/호버 항목 옆에 설명 하나를 표시합니다. 기존 확정 상태의 초록 문구를 유지합니다.
 - 지도 전체는 실시간 대기 목록을 한 번 나누고 준비된 1회성의 현재 도달성만 읽습니다. 미선택 장소의 Lua 분석을 시작하지 않습니다.

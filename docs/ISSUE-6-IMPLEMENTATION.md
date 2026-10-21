@@ -2,6 +2,10 @@
 
 ## alpha.14 — 장소·선택지 옆 표식과 현재 설명
 
+<!-- alpha14-publication -->
+2026-10-21 21:01:57 KST에 소스·주석 태그 [`cfe1cf7`](https://github.com/jungpaeng/dicemaster/commit/cfe1cf7bc6e52a0b075ba057a9b686dbc8f72468)의 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.14)를 게시했다. 전체·고정 커밋 재빌드 21개 검사·259개 입력·106개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 55개 Release·56개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA14-RELEASE.md).
+<!-- /alpha14-publication -->
+
 고정 좌측 상단 안내를 실제 항목 근처로 옮긴다. 확인된 현재 기회에는 붉은 점을 붙이고 현재 native 포커스/움직인 포인터 옆에 설명 하나만 표시한다. 대기 목록은 배치당 한 번 읽고, 미선택 장소의 1회성은 기존 증명·정의의 현재 도달성만 새로 확인한다. 불확실한 후속 이야기의 자동 예측을 늘리지 않는다. 실제 선택지 입력·패드 소유권·해제/중립과 읽기 전용·캐시·갱신·숨김/OFF 계약을 유지한다. [상세 설계·외부 근거·검사·새 Windows 확인](ISSUE-6-ALPHA14-RELEASE.md).
 
 ## alpha.13 — 자동 지도에서 상세 조회 비용 제거

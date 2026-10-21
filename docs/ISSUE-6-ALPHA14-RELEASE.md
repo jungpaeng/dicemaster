@@ -1,7 +1,7 @@
 # PRD #6 alpha.14 — 장소·선택지 옆 기회 표식
 
 <!-- alpha14-publication -->
-상태: main 구현·전체 자동 검사 21개 프로그램·실제 DLL 연결/읽기 전용 IL 검사 통과. 고정 커밋 재빌드·prerelease 게시는 준비 중이다. 새 DLL의 실제 Windows 확인과 #6 전체 완료는 대기다.
+2026-10-21 21:01:57 KST에 소스·주석 태그 [`cfe1cf7`](https://github.com/jungpaeng/dicemaster/commit/cfe1cf7bc6e52a0b075ba057a9b686dbc8f72468)의 [alpha.14](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.14)를 게시했다. 전체·고정 커밋 재빌드 21개 검사·259개 입력·106개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 55개 Release·56개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.**
 <!-- /alpha14-publication -->
 
 ## 게임에서 달라지는 점
@@ -50,7 +50,9 @@
 
 다중 미선택 장소의 대기 목록 한 번 열거·100회 Lua/임무 카탈로그 읽기 0회, 준비된 1회성의 완료/경로/진입 플래그 현재 변경, 미준비 장소 분석 0회, 다중 기회·화면 경계·카메라·숨김/비활성·이동 중 재측정 없음·패드/정지 포인터 전환·실패 양성 제거·0.25초/5초/숨김/OFF를 검사했다. Unity/Windows·물리 Xbox/XInput·세이브 실제 게임 실행을 자동 검사로 대체하지 않는다.
 
-로컬 검증물: artifacts/issue-6/anchored-guidance/reviewed/build-manifest.json 및 build.log. 아래는 검토 후보 식별값이며 고정 커밋 결과와 게시 영수증을 별도로 대조한다.
+로컬 검증물은 artifacts/issue-6/anchored-guidance/reviewed/build-manifest.json 및 build.log에 보존한다. 고정 커밋 재빌드의 21개 프로그램·모든 성공 기록·빌드 입력·DLL/cfg/ZIP은 검토 후보와 일치한다. 검증 도구 자체 20개 검사와 git diff --check도 통과했다. 게시 후 익명 공개 ZIP의 정확한 두 경로·CRC·바이트·해시를 대조했다. 영수증은 artifacts/releases/v1.0.7-alpha.14/release-verification.json 및 anonymous-verification.json에 보존한다.
+
+설치: [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.14/DiceMaster-v1.0.7-alpha.14.zip)을 풀고 게임 종료 후 DLL만 교체해 기존 cfg를 보존한다. 최초 설치는 config·plugins를 BepInEx 아래에 넣고 문제 시 백업 DLL/cfg로 복구한다. GitHub 자동 Source code 압축은 설치용이 아니다. 아래는 검토·고정 커밋·공개 다운로드에서 동일한 최종 파일 식별값이다.
 
 | 파일 | bytes | SHA-256 |
 | --- | ---: | --- |
