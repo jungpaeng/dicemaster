@@ -2,7 +2,11 @@
 
 ## alpha.19 — 후속 선택지 해금 확인 대기
 
-[후속 해금 확인 변경](ISSUE-6-CHOICE-UNLOCKS.md)은 공개 alpha.18과 다른 작업 후보다. 아래는 자동 검사로 완료 처리하지 않는다.
+<!-- alpha19-publication -->
+2026-10-22 01:06:52 KST에 소스·주석 태그 [`0b984ff`](https://github.com/jungpaeng/dicemaster/commit/0b984ff9345b1feca3831c4e25c4c2fa43f6046e)의 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조와 실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 60개 Release·61개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [설치·파일·검증 기록](ISSUE-6-ALPHA19-RELEASE.md).
+<!-- /alpha19-publication -->
+
+[후속 해금 확인 변경](ISSUE-6-CHOICE-UNLOCKS.md)은 공개 alpha.19의 새 파일을 대상으로 한다. 아래는 자동 검사로 완료 처리하지 않는다.
 
 - [ ] 남제자방에서 `예전에 부탁했던 일`이 없을 때 사사형 툴팁·기본 상세 경로에 그 주제가 나오지 않는다. 다른 해금된 주제가 있으면 그 경로만 보인다.
 - [ ] 모두 잠겼거나 해금 미확정이면 해당 후속 툴팁·마커가 없고, 실제 대화 메뉴가 열리면 그 화면의 실제 활성 선택지에 맞춰 안내가 갱신된다.

@@ -1,6 +1,6 @@
 # 선택지 툴팁 — 현재 필수 조건과 표시 경로 일치
 
-후속 작업본은 [선택지 해금 확인](ISSUE-6-CHOICE-UNLOCKS.md)을 추가한다. 아래는 alpha.18 당시의 구현·게시 기록이며 새 작업본의 공개/Windows 확인 근거로 사용하지 않는다.
+후속 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)는 [선택지 해금 확인](ISSUE-6-CHOICE-UNLOCKS.md)을 추가했다. 아래는 alpha.18 당시의 구현·게시 기록이며 새 작업본의 공개/Windows 확인 근거로 사용하지 않는다.
 
 2026-10-21~22 원래 작업 폴더의 main에서 수정하고 [alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.18)로 게시했다. 기존 배지 크기·게임 창 가림 변경을 보존하고 함께 빌드했다. 공개 alpha.17의 파일·태그·검증 기록을 새 후보의 기록으로 바꾸지 않는다.
 

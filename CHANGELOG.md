@@ -1,6 +1,10 @@
 # 변경 이력
 
-## 미배포 — 후속 선택지 해금 확인
+## [v1.0.7-alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19) — 2026-10-22 (prerelease)
+
+<!-- alpha19-publication -->
+2026-10-22 01:06:52 KST에 소스·주석 태그 [`0b984ff`](https://github.com/jungpaeng/dicemaster/commit/0b984ff9345b1feca3831c4e25c4c2fa43f6046e)의 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조와 실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 60개 Release·61개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [설치·파일·검증 기록](docs/ISSUE-6-ALPHA19-RELEASE.md).
+<!-- /alpha19-publication -->
 
 - 후속 선택지의 해금과 그 뒤 이야기의 발생 조건을 분리합니다. 잠겼거나 해금을 확인하지 못한 경로는 자동 툴팁·기본 상세 경로·추가 개수에서 제외합니다. 해금된 선택지 내부의 난수 등은 기존처럼 `진행 가능성 있음`으로 구분합니다.
 - 선택 메뉴 마커와 지도 1회성 경로에도 같은 해금 확인을 적용합니다. 실제 대기 임무·엄격한 1회성 증명·현재 도달 조건은 유지합니다. 기존 입력·설정·정상 주기와 캐시를 유지하며 게임 상태를 변경하지 않습니다. [설계·검증·Windows 확인](docs/ISSUE-6-CHOICE-UNLOCKS.md).

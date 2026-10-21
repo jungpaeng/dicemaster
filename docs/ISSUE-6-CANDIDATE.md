@@ -1,5 +1,12 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.19 — 후속 선택지 해금 확인
+
+<!-- alpha19-publication -->
+2026-10-22 01:06:52 KST에 소스·주석 태그 [`0b984ff`](https://github.com/jungpaeng/dicemaster/commit/0b984ff9345b1feca3831c4e25c4c2fa43f6046e)의 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조와 실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 60개 Release·61개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [설치·파일·검증 기록](ISSUE-6-ALPHA19-RELEASE.md).
+<!-- /alpha19-publication -->
+
+
 ## alpha.18 — 툴팁 조건·배지 표시 개선
 
 <!-- alpha18-publication -->

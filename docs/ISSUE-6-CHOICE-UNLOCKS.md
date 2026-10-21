@@ -1,6 +1,8 @@
 # 후속 선택지 해금 확인
 
-2026-10-22 원래 작업 폴더의 main에서 구현한 미배포 작업본이다. 공개 alpha.18의 태그·DLL·검증 기록을 변경하지 않는다. 새 작업본의 실제 Windows 확인·PRD #6 전체 완료는 대기다.
+<!-- alpha19-publication -->
+2026-10-22 01:06:52 KST에 소스·주석 태그 [`0b984ff`](https://github.com/jungpaeng/dicemaster/commit/0b984ff9345b1feca3831c4e25c4c2fa43f6046e)의 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조와 실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 60개 Release·61개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [설치·파일·검증 기록](ISSUE-6-ALPHA19-RELEASE.md).
+<!-- /alpha19-publication -->
 
 ## 문제와 범위
 
@@ -37,14 +39,14 @@
 
 선택지 회귀는 잠김/열림 대안, 모두 잠김, 현재 값 왕복, 누락된 조건, 임의 콜백, 대화 플래그 초기화, 관련 선행 쓰기, 잠긴 중간 선택·열린 마지막 선택, 이미 캡처된 활성 현재 버튼, 내부 난수와 독립 부재 조건, 현재 비활성/숨김, 대기 임무/1회성 메뉴 마커를 포함한다. 기존 원본 남제자방 corpus 검사는 실제 조건 정의가 없는 후속 주제를 안내하도록 요구하던 기대를 제거한다. 지도 상세의 선행 변경 경로도 새 제외 기준을 검사한다.
 
-2026-10-22 00:52:24 KST 전체 소스 빌드에서 21개 검사 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조를 확인했다. 실제 게임 참조 DLL 연결, 설치 ZIP의 정확히 두 경로·CRC·DLL/cfg 바이트 대조와 검증 후 전체 빌드 입력 해시 일치를 통과했다. 기존 컴파일 경고 7개·오류 0개다. 고정 커밋 재빌드나 공개 다운로드 검증을 수행한 것으로 간주하지 않는다.
+2026-10-22 00:52:24 KST 전체 소스 빌드에서 21개 검사 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조를 확인했다. 실제 게임 참조 DLL 연결, 설치 ZIP의 정확히 두 경로·CRC·DLL/cfg 바이트 대조와 검증 후 전체 빌드 입력 해시 일치를 통과했다. 기존 컴파일 경고 7개·오류 0개다. 이 절은 검토 후보를 만든 당시 기록이다. 후속 고정 커밋 재빌드·공개 검증은 [alpha.19 게시 기록](ISSUE-6-ALPHA19-RELEASE.md)에 구분한다.
 
 - 선택지: ChoiceStoryTests 3,932개
 - 지도·경로: MapInformationTests 677개, MapRouteTests 6,882개, MapGuideRouteIntegrationTests 3,347개
 - 입력·연결: GamepadTests 262,831개, LogUiKeyboardTests 5,449개, InformationRuntimeTests 4,551개
 - 나머지 상점·실행 분기·이벤트 선택/팝업·로그·수명주기 검사도 통과
 
-후보는 `artifacts/issue-6/choice-unlocks/candidate/`의 DLL·ZIP이다. `build-manifest.json`·`build.log`와 상위 `verification.json`에 입력·참조·검사·파일 증거를 보존했다. `committed:false`, `public_release:false`, `windows_runtime_executed:false`로 구분한다.
+후보는 `artifacts/issue-6/choice-unlocks/candidate/`의 DLL·ZIP이다. `build-manifest.json`·`build.log`와 상위 `verification.json`에 입력·참조·검사·파일 증거를 보존했다. 검토 시점의 `verification.json`은 `committed:false`, `public_release:false`, `windows_runtime_executed:false`로 보존하며 게시 이후의 근거는 버전별 영수증으로 구분한다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -53,6 +55,8 @@
 | 기존 기본 cfg (변경 없음) | 13078 | a7d0d90884e032c69f8177b8193751a5543fe7b5fda7a66ab97dcffc01d6658e |
 
 이 검사는 실제 Windows·Unity 렌더링·물리 입력·실제 프레임 확인을 대체하지 않는다.
+
+고정 커밋 재빌드에서도 21개 프로그램이 모두 통과했고 271개 입력·참조·DLL/cfg/ZIP은 동일하다. 지도 통합 단언 집계는 검토 3,347개/재빌드 3,346개로 준비 반복 조회 한 번 차이가 있다. `Read()`가 준비 슬라이스마다 소유권 단언을 추가하는 구조이며, 별도 임시 계측에서도 8슬라이스/3,348개를 확인했다. 20개 프로그램 성공 기록은 동일하고 이 한 프로그램의 집계 차이는 [게시 기록](ISSUE-6-ALPHA19-RELEASE.md)에 설명한다.
 
 ## 실제 Windows 확인
 

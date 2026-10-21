@@ -1,6 +1,10 @@
 # 개발 안내
 
-## 미배포 — 후속 선택지 해금과 이야기 조건 분리
+## alpha.19 — 후속 선택지 해금과 이야기 조건 분리
+
+<!-- alpha19-publication -->
+2026-10-22 01:06:52 KST에 소스·주석 태그 [`0b984ff`](https://github.com/jungpaeng/dicemaster/commit/0b984ff9345b1feca3831c4e25c4c2fa43f6046e)의 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·271개 입력·112개 소스/리소스·16개 고정 참조와 실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 60개 Release·61개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [설치·파일·검증 기록](ISSUE-6-ALPHA19-RELEASE.md).
+<!-- /alpha19-publication -->
 
 `MapChoiceStep.ReadAvailability`는 닫힌 하위 메뉴 진입과 선행 쓰기·대화 플래그 초기화를 반영한 해금 조건을 읽고, `MapRoutePath.ReadChoiceAvailability`는 모든 남은 선택 단계를 확인한다. 선택 화면은 실제 현재 버튼 다음부터, 지도 이벤트는 첫 단계부터 확인한다. 해금 Unknown/NotMet은 경로 이름을 자동으로 노출하지 않는다. 이야기 내부 Unknown과 해금 Unknown을 합치지 않는다.
 
