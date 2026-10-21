@@ -2,11 +2,13 @@
 
 ## alpha.18 — 툴팁 조건·배지 표시 개선
 
-전체 소스의 자동 검사·실제 DLL 연결·ZIP 검증은 통과했고 커밋 고정 재빌드·새 prerelease 게시를 준비한다. 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다. [후보·파일·검증](ISSUE-6-ALPHA18-RELEASE.md).
+<!-- alpha18-publication -->
+2026-10-22 00:14:28 KST에 소스·주석 태그 [`0d7d03d`](https://github.com/jungpaeng/dicemaster/commit/0d7d03d51b4e4cbcd7aadce2269e8570994ef3b3)의 [alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.18)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·270개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·익명 공개 ZIP 바이트 대조를 통과했다. 기존 59개 Release·60개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [설치·검증·확인표](ISSUE-6-ALPHA18-RELEASE.md).
+<!-- /alpha18-publication -->
 
 ### 선택지 툴팁의 현재 필수 조건
 
-닫힌 현재 루트 메뉴의 불가 확인 전용 필수 조건을 툴팁에 연결하고, 정의 색인에서 공통 AND 조건을 준비해 기존 개별 경로 조회 상한을 유지한다. 같은 조건 상태의 경로에서 표시 인물·경로·상태·개수를 고르며 확정 불가는 상세에만 남긴다. 새 후보의 실제 Windows 확인은 대기다. [설계·검증](ISSUE-6-TOOLTIP-PREREQUISITES.md).
+닫힌 현재 루트 메뉴의 불가 확인 전용 필수 조건을 툴팁에 연결하고, 정의 색인에서 공통 AND 조건을 준비해 기존 개별 경로 조회 상한을 유지한다. 같은 조건 상태의 경로에서 표시 인물·경로·상태·개수를 고르며 진행 불가 판정은 상세에만 남긴다. 새 후보의 실제 Windows 확인은 대기다. [설계·검증](ISSUE-6-TOOLTIP-PREREQUISITES.md).
 
 ### 배지 크기·게임 창 가림
 

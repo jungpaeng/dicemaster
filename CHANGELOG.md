@@ -1,8 +1,12 @@
 # 변경 이력
 
-## v1.0.7-alpha.18 — 툴팁 조건 수정·배지 표시 개선 (게시 준비 중)
+## [v1.0.7-alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.18) — 2026-10-22 (prerelease)
 
-- 확정 불가인 대화가 선행 변경·경로 미완료 때문에 `진행 가능성 있음`으로 되살아나는 문제를 수정합니다. 안전한 현재 필수 조건의 거짓은 자동 툴팁에서 제외하고 상세에 보존합니다.
+<!-- alpha18-publication -->
+2026-10-22 00:14:28 KST에 소스·주석 태그 [`0d7d03d`](https://github.com/jungpaeng/dicemaster/commit/0d7d03d51b4e4cbcd7aadce2269e8570994ef3b3)의 [alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.18)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·270개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·익명 공개 ZIP 바이트 대조를 통과했다. 기존 59개 Release·60개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [게시 기록](docs/ISSUE-6-ALPHA18-RELEASE.md).
+<!-- /alpha18-publication -->
+
+- 진행 불가로 확인된 대화가 선행 변경·경로 미완료 때문에 `진행 가능성 있음`으로 되살아나는 문제를 수정합니다. 안전한 현재 필수 조건의 거짓은 자동 툴팁에서 제외하고 상세에 보존합니다.
 - 표시 인물·경로·상태·추가 개수를 같은 조건 근거에서 고릅니다. 다른 인물의 가능 판정을 불가 인물 이름에 붙이지 않습니다. 원래 게임 선택과 입력·캐시·설정 계약은 유지합니다. [원인·검증·확인표](docs/ISSUE-6-TOOLTIP-PREREQUISITES.md).
 
 ### 지도 배지 크기와 게임 창 가림

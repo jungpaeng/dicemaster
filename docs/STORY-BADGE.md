@@ -8,4 +8,4 @@ alpha.16의 금색 원형 테두리·어두운 바탕·크기·지도 핀/메뉴
 
 원본과 비교한 테두리/외곽 바탕 픽셀 차이는 0이며, 새 PNG와 내장 RGBA의 모든 행이 일치한다. 실제 참조 DLL을 연결한 소스 빌드(기존 경고 7개·오류 0개), 갱신 연결 23개·GUI/리소스 바이트 연결 121개 검사와 git diff --check를 통과했다. 검사 기록은 artifacts/issue-6/lucide-story-icon/에 보존한다. 이어 전체 21개 검사 프로그램·실제 DLL 연결·설치 ZIP 검사를 통과했다. [alpha.17 검증/게시 기록](ISSUE-6-ALPHA17-RELEASE.md)에 전체 결과를 기록한다. 실제 Windows 실행은 별도다. 새 이미지의 실제 Windows 가독성 확인은 대기다. [alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.17)로 게시했다. 설치 파일·소스·해시는 [게시 기록](ISSUE-6-ALPHA17-RELEASE.md)을 따른다.
 
-표시 크기와 원래 게임 창의 가림 처리는 [후속 수정 후보](ISSUE-6-BADGE-VISIBILITY.md)를 따른다. 아이콘 그림은 alpha.17과 같다.
+표시 크기와 원래 게임 창의 가림 처리는 [후속 alpha.18](ISSUE-6-ALPHA18-RELEASE.md)를 따른다. 아이콘 그림은 alpha.17과 같다.

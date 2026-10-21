@@ -1,6 +1,8 @@
 # PRD #6 alpha.18 — 툴팁 조건 수정·배지 표시 개선
 
-게시 준비 중. 원래 main에서 기존 배지 확대·게임 창 가림 수정과 선택지 툴팁 수정을 함께 커밋하고, 아래 검토 파일과 같은지 커밋 고정 재빌드·공개 다운로드로 확인한다. 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- alpha18-publication -->
+2026-10-22 00:14:28 KST에 소스·주석 태그 [`0d7d03d`](https://github.com/jungpaeng/dicemaster/commit/0d7d03d51b4e4cbcd7aadce2269e8570994ef3b3)의 [alpha.18](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.18)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·270개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·익명 공개 ZIP 바이트 대조를 통과했다. 기존 59개 Release·60개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.**
+<!-- /alpha18-publication -->
 
 ## 변경과 사용
 
@@ -19,11 +21,11 @@
 
 원본 연무장 Lua와 SHA를 확인한 후속 자료에 합성 조건을 연결해 거짓 안내를 검사했다. 이는 사용자의 세이브·실제 직렬화된 조건 설정 또는 Windows/Unity 실행을 대신하지 않는다. [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha18--툴팁배지게임-창-확인-대기)의 항목은 모두 대기다. 우소매 부재/존재, 다른 대화의 인물/경로 일치, 패드·포인터·로그 복귀, 배지 크기·게임 창 가림, 최초/반복 프레임을 확인해야 한다. 이슈 #6은 종료하지 않는다.
 
-로컬 검토 기록: artifacts/issue-6/tooltip-prerequisites/validated/build-manifest.json 및 build-run.log·verification.json. 커밋 고정 재빌드·공개 검증 기록은 artifacts/releases/v1.0.7-alpha.18/에 별도로 보존한다.
+로컬 검토 기록: artifacts/issue-6/tooltip-prerequisites/validated/build-manifest.json 및 build-run.log·verification.json. 고정 커밋/공개 증거는 artifacts/releases/v1.0.7-alpha.18/release-verification.json·reviewed-candidate-comparison.json·anonymous-verification.json에 보존한다. 모든 빌드 입력·21개 성공 기록·DLL/cfg/ZIP은 검토 후보와 일치하며 공개 ZIP의 두 경로·CRC·바이트·SHA-256을 익명 다운로드로 대조했다.
 
 ## 설치 파일
 
-검토 후보의 식별값:
+[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.18/DiceMaster-v1.0.7-alpha.18.zip)의 식별값(검토·고정 커밋·공개 다운로드 일치):
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
