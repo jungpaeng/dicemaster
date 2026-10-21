@@ -50,6 +50,8 @@ namespace DiceMaster.Information
         {
             internal string Id, RawLabel, DialogueCharacter;
             internal PreviewCondition CurrentPrerequisite;
+            internal MapChoiceStep First;
+            internal bool SameFirst = true;
             internal readonly List<StoryLink> Links = new List<StoryLink>();
             internal bool Omitted;
             internal readonly List<StoryTopic> Topics = new List<StoryTopic>();
@@ -77,7 +79,7 @@ namespace DiceMaster.Information
         }
         private sealed class Candidate
         {
-            internal string Id, Name, Kind, Status, Detail;
+            internal string Id, Name, Kind, Status, Detail, RoutePreview;
             internal int Rank, Priority; // conditions/route met, denied, unknown
             // Only unfinished scheduled work owns Preparing. Permanent limits,
             // missing game data and retry failures remain diagnostic detail.
@@ -496,8 +498,9 @@ namespace DiceMaster.Information
             var candidates = new List<Candidate>();
             if (guide) CollectMissions(place, controller, candidates, false);
             long missionsEnd = Stopwatch.GetTimestamp();
-            // Waiting-only display never starts Lua discovery or result analysis.
-            if (!detailed && !oneShot)
+            // A waiting mission owns this click; do not prepare a default
+            // activity that dispatch will bypass (one-shot OFF fast path).
+            if (!detailed && !oneShot && candidates.Exists(value => value.Waiting && !value.Global))
             {
                 var waiting = Snapshot(place, controller, candidates, guide, oneShot);
                 long end = Stopwatch.GetTimestamp(); timings[0].Add(Milliseconds(start, end), Milliseconds(start, missionsEnd), 0, 0, Milliseconds(missionsEnd, end), Math.Max(0, Allocated() - allocated));
@@ -516,6 +519,7 @@ namespace DiceMaster.Information
             // Future NPC stories are research/detail, not passive predictions.
             // Only an explicit log query samples their downstream conditions.
             if (guide && detailed && source.Routes != null) CollectStories(place, controller, source, candidates);
+            if (guide && source.Routes != null) CollectSelectedRoute(place, controller, source, candidates);
             if (guide && detailed && source.Ready && source.Events.Count == 0 && source.Stories.Count == 0 && !string.IsNullOrEmpty(source.Script))
                 candidates.Add(TryCandidate(place, source, () => Story(controller, source.Script,
                     source.Failure != null || source.Routes != null && (source.Routes.IsPartial || source.Routes.HasReadFailure))));
@@ -551,10 +555,14 @@ namespace DiceMaster.Information
                         if (!groups.TryGetValue(id, out group))
                         {
                             if (groups.Count >= 256) break;
-                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel, DialogueCharacter = path.DialogueCharacter,
+                            groups.Add(id, group = new StoryGroup { Id = id, RawLabel = first.RawLabel, DialogueCharacter = path.DialogueCharacter, First = first,
                                 CurrentPrerequisite = path.CurrentPrerequisite }); source.Stories.Add(group);
                         }
-                        else group.CurrentPrerequisite = MapRoutePath.CommonPrerequisite(group.CurrentPrerequisite, path.CurrentPrerequisite);
+                        else
+                        {
+                            group.SameFirst &= ReferenceEquals(group.First, first);
+                            group.CurrentPrerequisite = MapRoutePath.CommonPrerequisite(group.CurrentPrerequisite, path.CurrentPrerequisite);
+                        }
                         foreach (MapChoiceStep step in path.Steps)
                             if (!group.ObservedTopics.Contains(step)) group.ObservedTopics.Add(step);
                         // Include every observed path in the common prefix,
@@ -578,11 +586,10 @@ namespace DiceMaster.Information
                 candidates.Add(TryCandidate(place, "story/" + group.Id, () => {
                     bool met = false, unknown = captured.Omitted || source.Routes.IsPreparing || source.Routes.HasIncompleteStoryPaths || source.Routes.HasReadFailure;
                     MapChoiceStep first = captured.Links.Count == 0 || captured.Links[0].Path.Steps.Count == 0 ? null : captured.Links[0].Path.Steps[0];
-                    bool sharedFirst = sample && first != null && !captured.Omitted && !source.Routes.IsPreparing && !source.Routes.HasReadFailure;
-                    if (sharedFirst) foreach (StoryLink link in captured.Links)
-                    {
-                        if (link.Path.Steps.Count == 0 || !ReferenceEquals(first, link.Path.Steps[0])) { sharedFirst = false; break; }
-                    }
+                    // Definition-time identity covers retained AND omitted
+                    // paths. A larger discovered tail cannot revive a false
+                    // shared root guard merely by exceeding the detail cap.
+                    bool sharedFirst = sample && first != null && captured.SameFirst && !source.Routes.IsPreparing && !source.Routes.HasReadFailure;
                     // This complete root-menu prerequisite is a negative-only
                     // current snapshot, never a shortcut to positive eligibility.
                     bool currentBlocked = false;
@@ -716,6 +723,10 @@ namespace DiceMaster.Information
                     automatic.Add(MapGuidePresentation.Notice(title, value.Mission ? (value.Main ? "주 임무" : "보조 임무") : "1회성 이야기", value.Rank, value.Waiting, value.Mission, value.Status));
                 }
             }
+            // A selected-place route is guidance only. It never changes the
+            // opportunity count, Available bit or marker eligibility.
+            if (guide) foreach (Candidate value in ordered)
+                if (!string.IsNullOrEmpty(value.RoutePreview)) { automatic.Add(value.RoutePreview); break; }
             if (snapshot.Entries.Count == 0)
                 snapshot.Entries.Add(new InformationRow("map/empty/" + ContextKey, place == null ? "장소 무관 임무 없음" : detailed ? "현재 연결 항목 없음" : "현재 자동 표시 대상 없음", "지도", "현재 확인된 항목 없음",
                     "현재 관찰한 자료 범위의 결과입니다. 전체 게임의 기회 없음이나 반복 가능을 뜻하지 않습니다."));

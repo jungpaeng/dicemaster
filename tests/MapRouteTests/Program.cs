@@ -57,6 +57,13 @@ internal static class Program
         Check(d.Entries.Count == 1 && d.Entries[0].Pool == "yes", "quoted literals compare by decoded value");
         d = Build("local x=1;if x==01 then " + Use("yes") + " else " + Use("wrong") + " end");
         Check(d.Entries.Count == 1 && d.Entries[0].Pool == "yes", "numeric literals compare by numeric value");
+        d = Build("local a={'A','B'};local r=choose(a);if r==1 then if true then " + Use("first") + " else " + Use("wrong") + " end elseif r==2 then " + Use("second") + " end",
+            limits: new MapRouteLimits { MaxContexts = 7 });
+        Check(d.Entries.Count == 2 && d.Entries.All(entry => entry.Pool != "wrong"),
+            "exact choice dispatch and nested literal continuations reuse their context/copy budget instead of exhausting it on nonexistent alternatives");
+        d = Build("local x=1;if x==1 then local x=2;if x==1 then " + Use("wrong") + " else " + Use("inner") + " end end;if x==1 then " + Use("outer") + " end");
+        Check(d.Entries.Count == 1 && d.Entries[0].Pool == "outer",
+            "in-place literal continuations retain lexical restoration and cannot leak inner shadowed bindings into a later branch");
         d = Build("luamanager.SetNextScript('a');return luamanager.SetNextScript('b')", scripts);
         Check(d.Entries.Count == 0 && d.IsPartial, "unmodeled return call cannot preserve stale registration");
         d = Build("luamanager.SetNextScript('a');return unknown_callback()", scripts);

@@ -19,7 +19,7 @@ using LuaAction = DiceMaster.LuaParse.Action;
 // The production provider, route engine, syntax, current reader and one-shot
 // proof execute together. Resource/Unity/game objects and the effect formatter
 // are the same explicit boundaries used by MapInformationTests; Lua is not run.
-internal static class Program
+internal static partial class Program
 {
     private static int checks;
     private static object observedTalkEnvironment;
@@ -32,7 +32,7 @@ internal static class Program
     private static InformationRow Find(MapGuideSnapshot value, string title)
     { foreach (var row in value.Entries) if (row.Title == title) return row; return null; }
     private static bool ResearchStory(MapGuideSnapshot value, string title)
-    { return value.Entries.Exists(row => row.Title.Contains(title, StringComparison.Ordinal) && row.Kind.Contains("인물 대화", StringComparison.Ordinal)) && !value.Summary.AutoText.Contains(title, StringComparison.Ordinal); }
+    { return value.Entries.Exists(row => row.Title.Contains(title, StringComparison.Ordinal) && row.Kind.Contains("인물 대화", StringComparison.Ordinal)) && !value.Summary.Opportunity; }
     private static bool HasStatus(MapGuideSnapshot value, string text)
     { foreach (var row in value.Entries) if (row.Status.Contains(text, StringComparison.Ordinal)) return true; return false; }
     private static MapGuideSnapshot Read(bool details = true)
@@ -116,6 +116,7 @@ internal static class Program
         FullStoryGateMap();
         CurrentRequiredGuardMap();
         IndividualTopicsAndActivitiesMap();
+        SelectedFollowupProjection();
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
         if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); }
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
@@ -606,7 +607,7 @@ internal static class Program
             {
                 MapGuideSnapshot value = null;
                 for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = (MapGuideSnapshot)MapGuideSource.Discover(true, once, false)[0].Read(); }
-                Check(once || DataHelper.Reads == resources, "one-shot OFF automatic waiting query loads zero Lua assets");
+                Check(DataHelper.Reads > resources, "a selected-place guide may prepare one bounded shared route graph with one-shot either ON or OFF");
                 int warmResources = DataHelper.Reads, warmFlags = flag.StateReads;
                 for (int at = 0; at < 100; at++) { Time.unscaledTime += .25f; value = (MapGuideSnapshot)MapGuideSource.Discover(true, once, false)[0].Read(); }
                 Check(DataHelper.Reads == warmResources && flag.StateReads == warmFlags && flag.StateReads == 0, "ordinary route has zero warm Lua loads and zero hidden guard reads with either setting");

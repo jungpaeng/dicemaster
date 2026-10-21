@@ -16,7 +16,7 @@ namespace Mortal.Core
 {
     public enum PositionType { 無, Hall, Kitchen }
     public enum StatKind { 行動次數 = 19 }
-    public class FlagData : UnityEngine.Object { private int state; public int StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
+    public class FlagData : UnityEngine.Object { private int state; public int _default, StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
     public class StatValueReference
     { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup; }
     public class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }

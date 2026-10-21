@@ -357,6 +357,21 @@ namespace DiceMaster
                 Observe(environment);
                 object topicAfter = Capture(Topic(), true), persistentAfter = Capture(Persistent(), true);
                 State("Unknown", topicAfter, "actual DLL talk reset masks a serialized flag dependency even when checkpoint and flag identifiers differ");
+                string Project(object condition)
+                {
+                    object routeReader = T("PreviewConditions").GetMethod("CreateRouteReader").Invoke(null, null);
+                    return routeReader.GetType().GetMethod("Current").Invoke(routeReader, new[] { condition }).ToString();
+                }
+                Check(Project(topicAfter) == "Met" && resetFlag.StateReads == 0,
+                    "actual DLL route-only reader uses the audited reset default without sampling or mutating State");
+                resetFlag._default = 4;
+                Check(Project(topicAfter) == "NotMet", "actual DLL nonzero reset defaults are fresh per-query values, never assumed zero or cached across refreshes");
+                resetFlag._default = 0;
+                Check(Project(Capture(Topic(), true, "serialized_reset_flag")) == "Unknown" && Project(Capture(Parse("checkpointmanager.Condition('masked_and_false')"), true)) == "NotMet",
+                    "actual DLL reset projection retains explicit write masks and independent false AND branches");
+                string description = (string)T("PreviewConditions").GetMethod("DescribeRouteCurrent").Invoke(null, new[] { topicAfter });
+                Check(description.Contains("가상 조회", StringComparison.Ordinal) && description.Contains("기본값", StringComparison.Ordinal),
+                    "actual DLL explicit route detail identifies virtual reset values rather than reporting them as present game state");
                 State("NotMet", persistentAfter, "actual DLL talk reset leaves a disjoint persistent story flag readable even when its checkpoint name equals a reset flag name");
                 Check(resetFlag.StateReads == 0, "actual DLL reset-masked comparisons do not sample a flag value that may be reset");
                 object beforeReset = Capture(Topic(), false);

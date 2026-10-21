@@ -620,9 +620,10 @@ internal static partial class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks(); EntryDialogues(); ActivityEvidence(); DirectChoiceCases(); ChoiceLoadCases(); LocalPreparationCases();
+        if (args.Length == 1 && args[0] == "--projection-benchmark") { ProjectionBenchmark(); return; }
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks(); EntryDialogues(); ActivityEvidence(); DirectChoiceCases(); ChoiceLoadCases(); LocalPreparationCases(); ResetProjectionCases();
         if (args.Length > 0) Metadata(args[0]);
-        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); NativeEntryServices(args[1]); }
+        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); NativeEntryServices(args[1]); NativeResetProjection(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");
     }
 }

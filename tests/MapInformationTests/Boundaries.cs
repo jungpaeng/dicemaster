@@ -15,7 +15,7 @@ namespace Mortal.Core
 {
     public enum PositionType { 無, Hall, Kitchen }
     public enum StatKind { 行動次數 = 19 }
-    public class FlagData : UnityEngine.Object { private int state; public int StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
+    public class FlagData : UnityEngine.Object { private int state; public int _default, StateReads; public int State { get { StateReads++; return state; } set { state = value; } } }
     public class StatValueReference
     { public int _checkType, _constant; public bool _negative; public object _flag, _statGroup, _gameTime, _condition; }
     public class StatGroupVariable { public int _groupType = 1; public List<StatValueReference> _value = new List<StatValueReference>(); }
@@ -59,8 +59,10 @@ namespace Mortal.Free
     public class PositionConditionFlagItem
     {
         public Mortal.Core.ConditionResultItem _condition;
+        public PositionFlagItem[] _flagItem = Array.Empty<PositionFlagItem>();
         public void Execute() { Mortal.Core.Counters.GameCalls++; throw new Exception("Entry flag execution is forbidden"); }
     }
+    public class PositionFlagItem { public Mortal.Core.FlagData _flagData; public int _trueState, _falseState; }
     public class FreePositionData : UnityEngine.Object
     { public string _defaultScript = "hall"; public PositionConditionFlagItem[] _conditionFlags = Array.Empty<PositionConditionFlagItem>(); }
     public class UnreadableEntryPositionData : FreePositionData
@@ -195,6 +197,14 @@ namespace Mortal.Core
 }
 
 #if !MAP_ROUTE_INTEGRATION
+namespace DiceMaster.Information
+{
+    public static partial class MapGuideSource
+    {
+        // Route integration tests compile the production followup provider.
+        private static void CollectSelectedRoute(Place place, Mortal.Free.PositionController controller, Source source, List<Candidate> candidates) { }
+    }
+}
 namespace DiceMaster.LiveLog
 {
     public enum PreviewConditionState { Unknown, Met, NotMet }
@@ -307,6 +317,7 @@ namespace DiceMaster.Information
     {
         public static Func<string,string,string> DialogueNameReader;
         public static string Resolve(string raw) => raw;
+        public static string DialogueTarget(string character) => character + " 대화";
         public static string DialogueName(string raw, string character) => DialogueNameReader == null ? raw : DialogueNameReader(raw, character);
         public static string Path(System.Collections.Generic.IList<MapChoiceStep> steps)
         { var labels = new System.Collections.Generic.List<string>(); foreach (var step in steps) labels.Add(step.RawLabel); return string.Join(" → ", labels); }

@@ -128,6 +128,8 @@ namespace DiceMaster.Information
         // Map readers retain their existing scheduling by default.
         public bool PrioritizeRootPreparation { get; set; }
         private bool rootCoverageLost;
+        private int pendingRootJobs;
+        public bool RootMenuComplete { get { return !cleared && !rootCoverageLost && pendingRootJobs == 0; } }
         public bool HasPendingWork { get { return jobs.Count != 0 || followupJobs.Count != 0; } }
         public bool RootPreparationComplete { get { return PrioritizeRootPreparation && !cleared && !rootCoverageLost && jobs.Count == 0; } }
         private readonly Dictionary<string, Plan> plans = new Dictionary<string, Plan>(StringComparer.OrdinalIgnoreCase);
@@ -293,7 +295,7 @@ namespace DiceMaster.Information
             else { rootCoverageLost = true; if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가"); }
         }
         public void Clear()
-        { cleared = true; jobs.Clear(); followupJobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
+        { cleared = true; jobs.Clear(); followupJobs.Clear(); pendingRootJobs = 0; plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
         private void Reason(string value, bool incompleteStory = true, bool immediateHandoff = false)
         { incompleteStoryPaths |= incompleteStory; incompleteOpportunityPaths |= incompleteStory && !immediateHandoff; if (reasons.Count < 8 && !reasons.Contains(value)) reasons.Add(value); }
         private static bool ValidScript(string value)
@@ -307,6 +309,11 @@ namespace DiceMaster.Information
             if (admitted >= limits.MaxContexts || job.Depth > limits.MaxDepth)
             { RecordCut(job); limited = true; Reason("경로 깊이/대기열 상한 · 일부 연결 확인 불가"); return; }
             admitted++;
+            Enqueue(job);
+        }
+        private void Enqueue(Job job)
+        {
+            if (job.Depth == 0 && job.Pool == null) pendingRootJobs++;
             if (PrioritizeRootPreparation && (job.Depth != 0 || job.Pool != null)) followupJobs.Enqueue(job);
             else jobs.Enqueue(job);
         }
@@ -328,13 +335,14 @@ namespace DiceMaster.Information
                 if (shouldYield != null && shouldYield()) break;
                 Queue<Job> queue = jobs.Count != 0 ? jobs : followupJobs;
                 Job job = queue.Dequeue(); int used;
+                if (job.Depth == 0 && job.Pool == null) pendingRootJobs--;
                 bool done = job.Pool != null ? ProcessPool(job, now, out used) : Process(job, now, shouldYield == null ? budget : Math.Min(budget, 256), out used);
                 used = Math.Min(budget, Math.Max(0, used)); budget -= used; WorkCount += used;
-                if (!done) queue.Enqueue(job);
+                if (!done) Enqueue(job);
                 if (used == 0) { if (++blocked >= jobs.Count + followupJobs.Count) break; } else blocked = 0;
             }
             if (WorkCount >= limits.MaxWork && HasPendingWork)
-            { foreach (var pending in jobs) RecordCut(pending); foreach (var pending in followupJobs) RecordCut(pending); limited = true; jobs.Clear(); followupJobs.Clear(); Reason("경로 누적 작업 상한 · 일부 연결 확인 불가"); }
+            { foreach (var pending in jobs) RecordCut(pending); foreach (var pending in followupJobs) RecordCut(pending); limited = true; jobs.Clear(); followupJobs.Clear(); pendingRootJobs = 0; Reason("경로 누적 작업 상한 · 일부 연결 확인 불가"); }
         }
         private Plan GetPlan(string script, float now, out bool blocked)
         {
@@ -1057,6 +1065,11 @@ namespace DiceMaster.Information
                 if (count > MapRouteLimits.MaxHeaderTokens) { RecordCut(job); Reason("분기 조건 길이 상한 · 해당 경로 확인 불가"); return; }
                 headers += Math.Max(0, count);
             }
+            // choose has already bound an exact literal index. Dispatching
+            // its if/elseif chain is a continuation, not another alternative:
+            // avoid copying the same environment and consuming a second
+            // cumulative context. No current game predicate is evaluated.
+            if (ContinueLiteralBranch(job, syntax, control)) return;
             if (control.Branches.Count > MapRouteLimits.MaxBranchArms || cells < 0 || (long)cells * control.Branches.Count + headers > MapRouteLimits.MaxForkCells)
             { RecordCut(job); Reason("분기/복사 상한 · 해당 경로 확인 불가"); return; }
             if (job.Steps.Count == 0) job.RootEntry = false;
@@ -1098,6 +1111,31 @@ namespace DiceMaster.Information
             }
             if (!hasElse && !provenTaken)
             { var tail = job.Copy(); if (speakerUnknown) { tail.DialogueCharacter = null; tail.OpaqueEffects = true; } tail.At = control.End + 1; tail.TopicCondition = PreviewConditions.All(job.TopicCondition, remaining); tail.Gate = PreviewConditions.All(job.Gate, remaining); tail.StoryGate = PreviewConditions.All(job.StoryGate, remainingStory); tail.SnapshotGate = PreviewConditions.All(job.SnapshotGate, remainingSnapshot); Admit(tail); }
+        }
+        private bool ContinueLiteralBranch(Job job, MapRouteSyntax syntax, MapRouteSyntax.Control control)
+        {
+            MapRouteSyntax.Branch selected = null;
+            foreach (var branch in control.Branches)
+            {
+                if (branch.HeaderEnd < 0 || branch.End < branch.Start) return false;
+                bool? known = branch.Else ? (bool?)true : LiteralBranch(job, syntax.Tokens, branch.Header, branch.HeaderEnd);
+                if (!known.HasValue) return false;
+                if (known.Value) { selected = branch; break; }
+            }
+            if (EnvironmentCells(job) < 0) return false;
+            if (job.Steps.Count == 0) job.RootEntry = false;
+            if (!job.LocalChoiceSeen) job.LocalEntry = false;
+            if (selected == null) job.At = control.End + 1;
+            else
+            {
+                if (job.TopicStart < 0 && job.ChoiceVariable != null && selected.HeaderEnd - selected.Header == 3 &&
+                    syntax.Tokens[selected.Header].Text == job.ChoiceVariable && syntax.Tokens[selected.Header + 1].Text == "==")
+                { job.TopicStart = selected.Start; job.TopicEnd = selected.End; job.ChoiceVariable = null; job.ActivityOriginSafe = job.ActivityProjection; }
+                job.Frames.Add(new Frame { At = control.End + 1, End = job.End });
+                job.At = selected.Start; job.End = selected.End;
+                job.Identity += "/" + job.Script + ":branch:" + syntax.Tokens[selected.Start < syntax.Tokens.Count ? selected.Start : control.Start].Start;
+            }
+            Enqueue(job); return true;
         }
         private static int EnvironmentCells(Job job)
         {

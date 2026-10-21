@@ -251,7 +251,11 @@ namespace DiceMaster.LiveLog
         // checkpoint read across alternatives and is never stored in a cache.
         public sealed class Reader
         {
-            private readonly Snapshot snapshot = new Snapshot();
+            private readonly Snapshot snapshot;
+            internal Reader(bool projectTalkResets = false) { snapshot = new Snapshot(false, projectTalkResets); }
+            // Selected-place research only. Entry conditions are never run;
+            // every flag they could write is treated as an unknown input.
+            internal bool MaskPositionEntry(object data) { snapshot.MaskPositionEntry(data); return snapshot.EntryBoundaryKnown; }
             internal bool HasUnresolvedEntrySwitch(PreviewCondition condition)
             { try { return snapshot.UnresolvedEntrySwitch(condition, 0); } catch (Exception) { return true; } }
             public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites)
@@ -294,12 +298,17 @@ namespace DiceMaster.LiveLog
             }
         }
         public static Reader CreateReader() { return new Reader(); }
+        public static Reader CreateRouteReader() { return new Reader(true); }
 
         // Explicit log detail only. The sample is bounded and discarded after
         // formatting; no current values enter cached syntax or automatic logs.
         public static string DescribeCurrent(PreviewCondition condition)
+        { return DescribeSample(condition, false); }
+        public static string DescribeRouteCurrent(PreviewCondition condition)
+        { return "후속 경로 가상 조회: 확인된 대화 초기화 기본값만 반영 · 게임 상태 유지\n" + DescribeSample(condition, true); }
+        private static string DescribeSample(PreviewCondition condition, bool projectTalkResets)
         {
-            var sample = new Snapshot(true); bool? result = null;
+            var sample = new Snapshot(true, projectTalkResets); bool? result = null;
             try { result = Snapshot.Truth(sample.Value(condition, 0)); }
             catch (Exception) { sample.Trace("읽기 제한/미지원 자료 · 판정 미확정"); }
             return "현재 조건 진단: " + (!result.HasValue ? "미확정" : result.Value ? "충족" : "미충족") +
@@ -326,7 +335,17 @@ namespace DiceMaster.LiveLog
         {
             private readonly List<string> diagnostics;
             private bool diagnosticsLimited;
-            internal Snapshot(bool explain = false) { if (explain) diagnostics = new List<string>(); }
+            private readonly bool projectTalkResets;
+            internal Snapshot(bool explain = false, bool projectTalkResets = false)
+            {
+                this.projectTalkResets = projectTalkResets; if (explain) diagnostics = new List<string>();
+                if (projectTalkResets)
+                {
+                    routeValues = new Dictionary<PreviewCondition, object>();
+                    resetDefaults = new Dictionary<object, int>(new Identity());
+                    definitions = new Dictionary<object, DefinitionIndex>(new Identity());
+                }
+            }
             internal void Trace(string text)
             {
                 if (diagnostics == null) return;
@@ -345,11 +364,49 @@ namespace DiceMaster.LiveLog
             private readonly Dictionary<string, object> checkpoints = new Dictionary<string, object>(StringComparer.Ordinal);
             private readonly HashSet<object> active = new HashSet<object>(new Identity());
             private readonly Dictionary<PreviewCondition, object> captured = new Dictionary<PreviewCondition, object>();
+            private readonly Dictionary<PreviewCondition, object> routeValues;
             private HashSet<string> maskedFlags;
             private IDictionary<string, int> sameValueSets;
             private bool setsAfterTalkReset;
             private HashSet<object> maskedTalkFlags, talkFlags;
             private bool maskAllFlagInputs, talkFootprintRead, talkFootprintKnown;
+            private HashSet<object> entryWrites;
+            private bool entryUnknown, enteringPlace;
+            internal bool EntryBoundaryKnown { get { return !entryUnknown; } }
+            private readonly Dictionary<object, int> resetDefaults;
+            private sealed class DefinitionIndex
+            {
+                internal int Cursor;
+                internal readonly Dictionary<string, object> Values = new Dictionary<string, object>(StringComparer.Ordinal);
+            }
+            private readonly Dictionary<object, DefinitionIndex> definitions;
+            internal void MaskPositionEntry(object data)
+            {
+                enteringPlace = entryUnknown = true; entryWrites = null;
+                try
+                {
+                    Exact(data, "Mortal.Free.FreePositionData");
+                    Array groups = Field(data, "_conditionFlags") as Array;
+                    if (groups == null || groups.Rank != 1 || groups.Length > 32 ||
+                        groups.GetType().GetElementType().FullName != "Mortal.Free.PositionConditionFlagItem") return;
+                    var flags = new HashSet<object>(new Identity()); int count = 0;
+                    foreach (object group in groups)
+                    {
+                        Step(); Exact(group, "Mortal.Free.PositionConditionFlagItem");
+                        Array items = Field(group, "_flagItem") as Array;
+                        if (items == null || items.Rank != 1 || items.Length > 32 ||
+                            items.GetType().GetElementType().FullName != "Mortal.Free.PositionFlagItem") return;
+                        foreach (object item in items)
+                        {
+                            if (++count > 32) return;
+                            Step(); Exact(item, "Mortal.Free.PositionFlagItem");
+                            object flag = Field(item, "_flagData"); Exact(flag, "Mortal.Core.FlagData"); flags.Add(flag);
+                        }
+                    }
+                    entryWrites = flags; entryUnknown = false;
+                }
+                catch (Exception) { }
+            }
             private sealed class AffectedInput : Exception { }
             private void Step() { if (++work > 16384) throw new InvalidOperationException("Preview condition read limit."); }
             internal bool? FlagWritesDisjoint(PreviewCondition node, HashSet<string> flags, IDictionary<string, int> sets, bool afterTalkReset)
@@ -425,6 +482,14 @@ namespace DiceMaster.LiveLog
             {
                 Step();
                 if (node == null || depth > 64 || node.Operation == "unknown") return null;
+                if (!projectTalkResets) return ReadValue(node, depth);
+                object value;
+                if (!routeValues.TryGetValue(node, out value))
+                { value = ReadValue(node, depth); routeValues.Add(node, value); }
+                return value;
+            }
+            private object ReadValue(PreviewCondition node, int depth)
+            {
                 if (node.Operation == "literal") return node.Literal;
                 if (node.Operation == "captured")
                 {
@@ -566,10 +631,24 @@ namespace DiceMaster.LiveLog
             private object Find(object config, string configType, string itemType, string key)
             {
                 Exact(config, configType);
-                foreach (object item in List(config, "_list"))
+                IList list = List(config, "_list");
+                DefinitionIndex index = null; object found;
+                if (projectTalkResets)
                 {
+                    if (!definitions.TryGetValue(config, out index)) definitions.Add(config, index = new DefinitionIndex());
+                    if (index.Values.TryGetValue(key, out found)) return found;
+                }
+                for (int at = index == null ? 0 : index.Cursor; at < list.Count; at++)
+                {
+                    object item = list[at];
                     Step(); Exact(item, itemType);
-                    if (string.Equals(Name(item), key, StringComparison.Ordinal)) return item;
+                    string name = Name(item);
+                    if (index != null)
+                    {
+                        if (name != null && !index.Values.ContainsKey(name)) index.Values.Add(name, item);
+                        index.Cursor = at + 1;
+                    }
+                    if (string.Equals(name, key, StringComparison.Ordinal)) return item;
                 }
                 return null;
             }
@@ -766,6 +845,26 @@ namespace DiceMaster.LiveLog
                         if (diagnostics != null) Trace("중첩 조건 = " + (!truth.HasValue ? "?" : truth.Value ? "1" : "0"));
                         return truth.HasValue ? (int?)(truth.Value ? 1 : 0) : null;
                     }
+                    if (projectTalkResets && kind == 3)
+                    {
+                        object flag = Field(value, "_flag"); Exact(flag, "Mortal.Core.FlagData");
+                        // Explicit writes retain their conservative mask, even
+                        // if they occur before a later reset. Never guess order.
+                        if (maskedFlags != null && maskedFlags.Contains(Name(flag))) throw new AffectedInput();
+                        if (maskAllFlagInputs) throw new AffectedInput();
+                        if (maskedTalkFlags != null && maskedTalkFlags.Contains(flag))
+                        {
+                            int resetValue;
+                            if (!resetDefaults.TryGetValue(flag, out resetValue))
+                            {
+                                object raw = Field(flag, "_default");
+                                if (!(raw is int)) throw new InvalidOperationException("Missing serialized reset default.");
+                                resetDefaults.Add(flag, resetValue = (int)raw);
+                            }
+                            if (diagnostics != null) Trace("대화 초기화 기본값 " + Name(flag) + " = " + resetValue.ToString(CultureInfo.InvariantCulture) + " · 가상 조회 (게임 상태 유지)");
+                            return unchecked(resetValue * ((bool)Field(value, "_negative") ? -1 : 1));
+                        }
+                    }
                     ValidateReference(value, depth);
                     int number = SafeDisplayEvaluation.ReadReference(value);
                     if (diagnostics != null && kind == 3)
@@ -866,6 +965,10 @@ namespace DiceMaster.LiveLog
                 try
                 {
                     Exact(value, "Mortal.Core.GameStat");
+                    // Native activity entry spends action before loading Lua.
+                    // Projecting arbitrary stat arithmetic/listeners is outside
+                    // this route preview; action-dependent guards stay unknown.
+                    if (enteringPlace && Convert.ToInt32(Field(value, "_type")) == 19) throw new AffectedInput();
                     object raw = Field(value, "_statAdditionData");
                     if (raw == null) return;
                     Array collections = raw as Array;
@@ -895,6 +998,7 @@ namespace DiceMaster.LiveLog
             private void ValidateFlag(object value)
             {
                 Exact(value, "Mortal.Core.FlagData");
+                if (entryUnknown || entryWrites != null && entryWrites.Contains(value)) throw new AffectedInput();
                 if (maskAllFlagInputs || maskedTalkFlags != null && maskedTalkFlags.Contains(value)) throw new AffectedInput();
                 if (maskedFlags == null || maskedFlags.Count == 0) return;
                 string name = Name(value);

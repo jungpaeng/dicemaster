@@ -13,6 +13,16 @@ namespace DiceMaster.Information
     public sealed class MapRouteRead
     {
         private PreviewConditions.Reader reader;
+        private readonly bool projectTalkResets;
+        public MapRouteRead() : this(false) { }
+        public MapRouteRead(bool projectTalkResets) { this.projectTalkResets = projectTalkResets; }
+        internal static MapRouteRead ForSelectedPlace(object data)
+        {
+            var read = new MapRouteRead(true);
+            return read.EnsureReader().MaskPositionEntry(data) ? read : null;
+        }
+        private PreviewConditions.Reader EnsureReader()
+        { return reader ?? (reader = projectTalkResets ? PreviewConditions.CreateRouteReader() : PreviewConditions.CreateReader()); }
         private readonly Dictionary<PreviewCondition, PreviewConditionState> values = new Dictionary<PreviewCondition, PreviewConditionState>();
         private readonly Dictionary<Func<bool>, bool> completeness = new Dictionary<Func<bool>, bool>();
         private readonly Dictionary<PreviewCondition, bool> entrySwitches = new Dictionary<PreviewCondition, bool>();
@@ -26,7 +36,7 @@ namespace DiceMaster.Information
             if (!entrySwitches.TryGetValue(gate, out unknown))
             {
                 if (budget-- <= 0) return true;
-                if (reader == null) reader = PreviewConditions.CreateReader();
+                EnsureReader();
                 entrySwitches.Add(gate, unknown = reader.HasUnresolvedEntrySwitch(gate));
             }
             return unknown;
@@ -42,7 +52,7 @@ namespace DiceMaster.Information
             if (!effects.TryGetValue(key, out value))
             {
                 if (budget-- <= 0) return null;
-                if (reader == null) reader = PreviewConditions.CreateReader();
+                EnsureReader();
                 value = reader.ReadFlagWriteIndependence(gate, flags, unchangedSets, afterTalkReset); effects.Add(key, value);
             }
             return value;
@@ -64,7 +74,7 @@ namespace DiceMaster.Information
             PreviewConditionState state;
             if (!values.TryGetValue(gate, out state))
             {
-                if (reader == null) reader = PreviewConditions.CreateReader();
+                EnsureReader();
                 state = reader.Current(gate); values.Add(gate, state);
             }
             return state;

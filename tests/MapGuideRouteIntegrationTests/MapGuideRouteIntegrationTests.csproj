@@ -4,6 +4,7 @@
     <Compile Include="../MapInformationTests/Boundaries.cs" Link="Boundaries.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideSource.cs" Link="MapGuideSource.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideMarkers.cs" Link="MapGuideMarkers.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapGuideFollowups.cs" Link="MapGuideFollowups.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideSnapshot.cs" Link="MapGuideSnapshot.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapRoute*.cs" Link="%(Filename)%(Extension)" />
     <Compile Include="../../src/DiceMaster/Information/OneShotProof.cs" Link="OneShotProof.cs" />

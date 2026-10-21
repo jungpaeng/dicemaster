@@ -230,7 +230,7 @@ namespace DiceMaster.Information
             bool indexing = Index();
             bool localOnly = routes.HasPendingWork && routes.RootPreparationComplete;
             bool locationReady = !indexing && (!routes.HasPendingWork || routes.RootPreparationComplete);
-            var current = new MapRouteRead(); int classificationBudget = 32, choiceBudget = 32;
+            var current = new MapRouteRead(true); int classificationBudget = 32, choiceBudget = 32;
             foreach (Option option in options)
             {
                 if (!Feature(GuideEnabled)) break;
@@ -282,7 +282,7 @@ namespace DiceMaster.Information
                 MapRouteState state = blocked ? MapRouteState.NotMet : selection.State;
                 if ((state == MapRouteState.NotMet || selection.Path == null) && !details) continue;
                 string status = state == MapRouteState.Met ? "진행 가능" : state == MapRouteState.NotMet ? "지금 진행 불가" : "진행 가능성 있음";
-                string detail = (localOnly && currentRoot ? "현재 메뉴와 이 스크립트의 직접 대화 준비는 끝났습니다. 후속 경로 자료는 별도로 준비/읽기 대기 중입니다." : ambiguous || incomplete ? "현재 메뉴 원문과 일치하는 연결 후보입니다. 현재 메뉴의 스크립트 위치는 아직 확정하지 않았습니다." : "실제 현재 메뉴의 원본 선택지와 정확히 연결한 자료입니다.") +
+                string detail = (localOnly && currentRoot ? HasFollowingChoice(selection.Path, option.Raw) ? "현재 메뉴와 표시한 후속 선택 경로의 해금을 확인했습니다. 다른 후속 자료는 별도로 준비/읽기 대기 중입니다." : "현재 메뉴와 이 스크립트의 직접 대화 준비는 끝났습니다. 후속 경로 자료는 별도로 준비/읽기 대기 중입니다." : ambiguous || incomplete ? "현재 메뉴 원문과 일치하는 연결 후보입니다. 현재 메뉴의 스크립트 위치는 아직 확정하지 않았습니다." : "실제 현재 메뉴의 원본 선택지와 정확히 연결한 자료입니다.") +
                     " 표시만 수행하며 선택·조건 판정·게임 진행을 실행하지 않습니다.\n원본 선택지: " + option.Raw;
                 if (binding.Nodes.Count != 1) detail += "\n같은 스크립트에 동일한 원문 선택지가 여러 번 있어 현재 메뉴의 위치를 안전하게 구분하지 못했습니다.";
                 else if (incomplete && !(localOnly && currentRoot)) detail += "\n경로를 전부 확인하지 못해 같은 이름의 다른 선택 화면이 없는지 아직 확정하지 않았습니다.";
@@ -316,7 +316,8 @@ namespace DiceMaster.Information
                 snapshot.Entries.Add(row);
                 if (row.AutoText.Length != 0 && snapshot.Hints.Count < 3) snapshot.Hints.Add(row);
             }
-            AppendOpportunities(snapshot, current, indexing, details, preparation, ref choiceBudget);
+            // Route-only projections never become new opportunity evidence.
+            AppendOpportunities(snapshot, new MapRouteRead(), indexing, details, preparation, ref choiceBudget);
             if (routes.IsPreparing || indexing || routes.IsPartial || routes.HasReadFailure)
                 snapshot.Entries.Add(Status(routes.HasReadFailure ? "이야기 연결 자료 읽기 대기/실패 · 5초 뒤 재시도" : routes.IsPreparing || indexing ? "이야기 안내 준비 중" : "이야기 연결 일부 확인 필요"));
             snapshot.Selected = CurrentRow(snapshot);
@@ -332,7 +333,7 @@ namespace DiceMaster.Information
             MapStoryEntry story;
             string origin = stories != null && stories.TryGetValue(path, out story) ? story.Script + " · " + story.StoryKey : "연결 원문 미확인";
             return "\n" + title + ": " + origin + "\n구조 분류: " + path.StoryKind +
-                "\n" + PreviewConditions.DescribeCurrent(path.CurrentPrerequisite);
+                "\n" + PreviewConditions.DescribeRouteCurrent(path.CurrentPrerequisite);
         }
         private static bool Index()
         {
@@ -428,9 +429,16 @@ namespace DiceMaster.Information
                 if (localOnly)
                 {
                     MapStoryEntry localStory;
-                    if (pathStories == null || !pathStories.TryGetValue(path, out localStory) || localStory == null ||
-                        !string.Equals(localStory.Script, script, StringComparison.OrdinalIgnoreCase) ||
-                        path.Steps.Count == 0 || CurrentStep(path, raw) != path.Steps.Count - 1) continue;
+                    int selectedStep = CurrentStep(path, raw);
+                    bool direct = pathStories != null && pathStories.TryGetValue(path, out localStory) && localStory != null &&
+                        string.Equals(localStory.Script, script, StringComparison.OrdinalIgnoreCase) && selectedStep == path.Steps.Count - 1;
+                    // A discovered tail can publish independently once its
+                    // exact future menu guards are readable. The checks below
+                    // still reject unknown unlocks, false prefixes and activity
+                    // responses; unrelated pending tails grant no evidence.
+                    bool following = selectedStep >= 0 && selectedStep < path.Steps.Count - 1 &&
+                        !current.UnresolvedEntrySwitch(path.CurrentPrerequisite, ref choiceBudget);
+                    if (!direct && !following) continue;
                 }
                 if (path.ReadStoryKind(current, ref classificationBudget) == MapStoryKind.ActivityResponse)
                 { selection.HiddenActivity = true; Reject(ref selection, path, "반복 활동의 고정 반응"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
@@ -486,7 +494,7 @@ namespace DiceMaster.Information
         }
         private static bool HasFollowingChoice(MapRoutePath path, string raw)
         {
-            if (raw == null) return false;
+            if (path == null || raw == null) return false;
             bool found = false;
             foreach (MapChoiceStep step in path.Steps)
             {
