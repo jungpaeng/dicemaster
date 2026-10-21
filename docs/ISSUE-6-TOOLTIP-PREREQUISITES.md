@@ -1,7 +1,7 @@
 # 선택지 툴팁 — 현재 필수 조건과 표시 경로 일치
 
 <!-- alpha20-publication -->
-main에서 구현한 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조와 실제 후보 DLL 연결·설치 ZIP의 두 경로·CRC·바이트 대조를 통과했다. 고정 커밋 재빌드와 공개 다운로드 결과는 게시 후 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인은 대기이며 #6은 open이다.**
+2026-10-22 01:49:00 KST에 소스·주석 태그 [`07363bc`](https://github.com/jungpaeng/dicemaster/commit/07363bce02119bd9734d1b69c0440c613885fcb8)의 [alpha.20](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.20)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 61개 Release·62개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](ISSUE-6-ALPHA20-RELEASE.md).
 <!-- /alpha20-publication -->
 
 후속 [alpha.19](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)는 [선택지 해금 확인](ISSUE-6-CHOICE-UNLOCKS.md)을 추가했다. 아래는 alpha.18 당시의 구현·게시 기록이며 새 작업본의 공개/Windows 확인 근거로 사용하지 않는다.

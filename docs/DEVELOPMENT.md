@@ -3,7 +3,7 @@
 ## alpha.20 — 완료 진입 대화와 고정 활동 반응
 
 <!-- alpha20-publication -->
-main에서 구현한 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조와 실제 후보 DLL 연결·설치 ZIP의 두 경로·CRC·바이트 대조를 통과했다. 고정 커밋 재빌드와 공개 다운로드 결과는 게시 후 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인은 대기이며 #6은 open이다.**
+2026-10-22 01:49:00 KST에 소스·주석 태그 [`07363bc`](https://github.com/jungpaeng/dicemaster/commit/07363bce02119bd9734d1b69c0440c613885fcb8)의 [alpha.20](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.20)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 61개 Release·62개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](ISSUE-6-ALPHA20-RELEASE.md).
 <!-- /alpha20-publication -->
 
 NextSwitch는 첫 안전한 루트 호출에만 부여하며 일반 횟수형 Switch의 보호를 바꾸지 않는다. 현재 필수 조건의 거짓만 억제에 사용하고 전체 미래 이야기나 마커를 확정으로 올리지 않는다. 최종 경로 선택에서도 반복 활동 분류를 재사용해 fallback의 재유입을 막는다. 같은 갱신 Reader와 기존 조건/분류 예산을 공유한다. [설계·한계·검증](ISSUE-6-ENTRY-DIALOGUES.md).

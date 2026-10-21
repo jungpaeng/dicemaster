@@ -1,7 +1,7 @@
 # v1.0.7-alpha.20 — 완료 진입 대화·반복 활동 안내 정리
 
 <!-- alpha20-publication -->
-main에서 구현한 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조와 실제 후보 DLL 연결·설치 ZIP의 두 경로·CRC·바이트 대조를 통과했다. 고정 커밋 재빌드와 공개 다운로드 결과는 게시 후 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인은 대기이며 #6은 open이다.**
+2026-10-22 01:49:00 KST에 소스·주석 태그 [`07363bc`](https://github.com/jungpaeng/dicemaster/commit/07363bce02119bd9734d1b69c0440c613885fcb8)의 [alpha.20](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.20)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 61개 Release·62개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](ISSUE-6-ALPHA20-RELEASE.md).
 <!-- /alpha20-publication -->
 
 ## 변경과 지원 범위
@@ -16,7 +16,7 @@ main에서 구현한 검토 후보이며 커밋·게시 준비 중이다. 전체
 
 ## 자동 검증과 설치 파일
 
-전체 소스 빌드의 21개 검사 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조와 실제 후보 DLL 연결·설치 ZIP의 두 경로·CRC·바이트 대조를 통과했다. 고정 커밋 재빌드와 공개 다운로드 결과는 게시 후 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인은 대기이며 #6은 open이다.** 선택지 4,900개·경로 6,882개·지도 통합 3,347개·실제 DLL preview 2,253개·정보 런타임 4,566개·기존 패드 262,831개 검사를 포함한다. 원본 Lua와 합성 게임 경계/실제 후보 IL의 자동 검사이며 사용자 세이브나 Windows Unity 화면의 실행 결과가 아니다.
+전체 소스 빌드의 21개 검사 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조와 실제 후보 DLL 연결·설치 ZIP의 두 경로·CRC·바이트 대조를 통과했다. 고정 커밋 재빌드도 21개 프로그램이 모두 통과했고 검토 후보와 전체 입력·DLL/cfg/ZIP 바이트가 일치했다. 공개 설치 ZIP의 두 경로·CRC·내부 바이트·SHA-256도 인증 없이 검증했다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인은 대기이며 #6은 open이다.** 선택지 4,900개·경로 6,882개·지도 통합 3,347개·실제 DLL preview 2,253개·정보 런타임 4,566개·기존 패드 262,831개 검사를 포함한다. 원본 Lua와 합성 게임 경계/실제 후보 IL의 자동 검사이며 사용자 세이브나 Windows Unity 화면의 실행 결과가 아니다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -25,6 +25,12 @@ main에서 구현한 검토 후보이며 커밋·게시 준비 중이다. 전체
 | 기존 cfg (변경 없음) | 13078 | a7d0d90884e032c69f8177b8193751a5543fe7b5fda7a66ab97dcffc01d6658e |
 
 검토 후보는 artifacts/issue-6/entry-dialogues/candidate/의 build-manifest.json·build.log, 단계별 근거는 상위 verification.json에 보존한다. 고정 커밋·태그·익명 다운로드 증거는 artifacts/releases/v1.0.7-alpha.20/에 별도로 보존한다. 지도 통합 단언 개수는 초기 준비 슬라이스별 조회 단언으로 변할 수 있으므로 검토/재빌드의 실제 개수를 비교 기록한다.
+
+Release `419811206`·asset `663170047`, draft=false·prerelease=true·make_latest=false다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.20/DiceMaster-v1.0.7-alpha.20.zip)**.
+
+소스는 [`07363bc`](https://github.com/jungpaeng/dicemaster/commit/07363bce02119bd9734d1b69c0440c613885fcb8)이다. 모든 21개 프로그램의 성공 기록도 정확히 일치한다. reviewed-candidate-comparison.json에 입력·파일·성공 기록 비교를 보존한다.
+
+공개 증거는 artifacts/releases/v1.0.7-alpha.20/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json으로 구분한다. 기존 릴리스·태그·자산·정식 Latest·이슈 상태도 대조했다.
 
 ## 설치와 실제 Windows 확인
 

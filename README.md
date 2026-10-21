@@ -19,7 +19,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-main 작업본은 완료된 초회 진입 대사와 반복 대련 같은 고정 활동 반응이 일반 대화 툴팁에 남는 문제를 보완합니다. 안전하게 확인한 완료 항목을 제외하고 남은 초회 대화·열린 다른 주제는 유지합니다. [설계·범위·검증](docs/ISSUE-6-ENTRY-DIALOGUES.md).
+alpha.20은 완료된 초회 진입 대사와 반복 대련 같은 고정 활동 반응이 일반 대화 툴팁에 남는 문제를 보완합니다. 안전하게 확인한 완료 항목을 제외하고 남은 초회 대화·열린 다른 주제는 유지합니다. [설계·범위·검증](docs/ISSUE-6-ENTRY-DIALOGUES.md).
 
 현재 정보 기능 후보는 확인된 기회를 **작은 금색 두루마리**로 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. 두루마리 문양은 요청한 Lucide scroll-text로 교체합니다. [alpha.17 변경·검증·Windows 확인](docs/ISSUE-6-ALPHA17-RELEASE.md).
 
@@ -27,13 +27,11 @@ main 작업본은 완료된 초회 진입 대사와 반복 대련 같은 고정 
 
 지도 조회 성능 개선 후보는 대기 임무를 먼저 읽고, **1회성 표시 OFF이면 자동 지도에서 Lua 준비를 생략**합니다. 일반 이야기의 숨은 경로 조건과 표시하지 않을 상세 행도 자동 주기에 만들지 않습니다. 로그 → 도구 → 지도 안내의 `지도 조회 성능`에서 최근 64회 시간과 지원되는 런타임의 할당량을 읽습니다. 전체 프레임 시간은 별도 Windows 측정이 필요합니다. [개선 범위·확인표](docs/ISSUE-6-ALPHA13-RELEASE.md).
 
-<!-- alpha19-current-status -->
-**[v1.0.7-alpha.19 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.19)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.19/DiceMaster-v1.0.7-alpha.19.zip)**. 2026-10-22 01:06:52 KST 게시. 잠긴 후속 선택지나 해금 미확정 주제가 툴팁·기본 상세 경로에 남지 않도록 수정하고, 마커에도 해금 확인을 추가합니다. 전체·고정 커밋 재빌드 21개 검사·실제 DLL 연결·익명 공개 ZIP 대조를 통과했습니다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기이며 #6은 open입니다.** 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. [범위·파일·확인표](docs/ISSUE-6-ALPHA19-RELEASE.md).
-<!-- /alpha19-current-status -->
-
 <!-- alpha20-publication -->
-main에서 구현한 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조와 실제 후보 DLL 연결·설치 ZIP의 두 경로·CRC·바이트 대조를 통과했다. 고정 커밋 재빌드와 공개 다운로드 결과는 게시 후 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인은 대기이며 #6은 open이다.**
-<!-- /alpha20-publication --> [후속 후보·설치·Windows 확인](docs/ISSUE-6-ALPHA20-RELEASE.md).
+2026-10-22 01:49:00 KST에 소스·주석 태그 [`07363bc`](https://github.com/jungpaeng/dicemaster/commit/07363bce02119bd9734d1b69c0440c613885fcb8)의 [alpha.20](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.20)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·272개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 61개 Release·62개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](docs/ISSUE-6-ALPHA20-RELEASE.md).
+<!-- /alpha20-publication -->
+
+**[v1.0.7-alpha.20 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.20/DiceMaster-v1.0.7-alpha.20.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요.
 
 지도 자동 안내는 **이번 클릭에 실행 가능한, 이미 등록된 대기 임무**와 **1회성 증명·현재 조건·경로를 각각 확인한 항목**을 최대 세 행으로 표시합니다. 행동력·장소 활성·임무 우선순위를 반영하고, 미등록 임무 단계와 일반 대화의 후속 예측은 **로그 → 도구 → 지도 안내**에서만 제공합니다. 상세 조회의 `진행 가능성 있음`을 지도에 자동으로 띄우지 않습니다. 지도에 표시가 없어도 게임 전체에 기회가 없다는 뜻은 아닙니다.
 
