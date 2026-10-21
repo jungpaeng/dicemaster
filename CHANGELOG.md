@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.25 후보 — 후속 대화 경로 안내
+## [v1.0.7-alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25) — 2026-10-22 (prerelease)
+
+<!-- alpha25-publication -->
+2026-10-22 04:43:58 KST에 소스 [`e81a0c4`](https://github.com/jungpaeng/dicemaster/commit/e81a0c420602c5cbaa472a59d1617131e830e3f9)의 [alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha25-publication -->
 
 - 확인된 대화 초기화 기본값을 읽기 전용으로 반영해 해금된 후속 주제를 상위 선택지와 선택한 지도 장소의 경로 툴팁에 안내한다. 일반 경로에는 마커를 붙이지 않는다.
 - 이미 정해진 선택 분기의 환경 복사/문맥 소비와 조회 안의 중복 조건 탐색을 줄이고, 확인된 경로는 관련 없는 후속 준비 종료 전 공개한다. 해금·완료·반복 활동·진입 쓰기·행동력·우선순위 보호를 유지한다.

@@ -19,9 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-alpha.25 후보는 해금이 확인된 하위 주제를 상위 선택지와 선택한 지도 장소의 툴팁에서도 안내합니다. 경로만으로 두루마리 마커를 붙이지 않으며, 완료·잠김·반복 활동 필터를 유지합니다. 불필요한 분기 복사와 조건 재탐색을 줄였고 확인한 경로는 관련 없는 준비의 종료를 기다리지 않습니다. 정상 0.25초는 간격 비교 후 유지했습니다. [지원 범위·성능·검증](docs/ISSUE-6-ROUTE-PROJECTION.md) · [후보 파일·설치·Windows 확인](docs/ISSUE-6-ALPHA25-RELEASE.md).
+<!-- alpha25-publication -->
+2026-10-22 04:43:58 KST에 소스 [`e81a0c4`](https://github.com/jungpaeng/dicemaster/commit/e81a0c420602c5cbaa472a59d1617131e830e3f9)의 [alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha25-publication -->
 
-**[v1.0.7-alpha.25 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.25/DiceMaster-v1.0.7-alpha.25.zip)** — 게시 준비 중입니다. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 실제 Windows·물리 입력·FPS 확인은 대기입니다. 이전 [alpha.24 게시 기록](docs/ISSUE-6-ALPHA24-RELEASE.md)은 별도 보존합니다.
+alpha.25는 해금이 확인된 하위 주제를 상위 선택지와 선택한 지도 장소의 툴팁에서도 안내합니다. 경로만으로 두루마리 마커를 붙이지 않으며, 완료·잠김·반복 활동 필터를 유지합니다. 불필요한 분기 복사와 조건 재탐색을 줄였고 확인한 경로는 관련 없는 준비의 종료를 기다리지 않습니다. 정상 0.25초는 간격 비교 후 유지했습니다. [지원 범위·성능·검증](docs/ISSUE-6-ROUTE-PROJECTION.md) · [후보 파일·설치·Windows 확인](docs/ISSUE-6-ALPHA25-RELEASE.md).
+
+**[v1.0.7-alpha.25 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.25/DiceMaster-v1.0.7-alpha.25.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 이전 [alpha.24 게시 기록](docs/ISSUE-6-ALPHA24-RELEASE.md)은 별도 보존합니다.
 
 현재 정보 기능 후보는 확인된 기회를 **작은 금색 두루마리**로 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. 두루마리 문양은 요청한 Lucide scroll-text로 교체합니다. [alpha.17 변경·검증·Windows 확인](docs/ISSUE-6-ALPHA17-RELEASE.md).
 

@@ -2,7 +2,11 @@
 
 ## alpha.25 — 상위 선택지의 해금 확인 경로
 
-기존 패드/키보드 포커스 또는 마우스 호버 옆 툴팁에서 확인된 하위 주제 경로를 읽는다. 지도에서도 선택한 장소의 여러 단계 경로를 최대 한 개 추가하며 이것만으로 마커를 붙이지 않는다. A/Enter/클릭/터치 동작·포커스·입력 소유권·해제/중립·창 가림은 그대로다. [로컬 구현·성능·Windows 대기](ISSUE-6-ROUTE-PROJECTION.md).
+<!-- alpha25-publication -->
+2026-10-22 04:43:58 KST에 소스 [`e81a0c4`](https://github.com/jungpaeng/dicemaster/commit/e81a0c420602c5cbaa472a59d1617131e830e3f9)의 [alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha25-publication -->
+
+기존 패드/키보드 포커스 또는 마우스 호버 옆 툴팁에서 확인된 하위 주제 경로를 읽는다. 지도에서도 선택한 장소의 여러 단계 경로를 최대 한 개 추가하며 이것만으로 마커를 붙이지 않는다. A/Enter/클릭/터치 동작·포커스·입력 소유권·해제/중립·창 가림은 그대로다. [구현·성능·Windows 대기](ISSUE-6-ROUTE-PROJECTION.md).
 
 ## alpha.24 — 포커스된 직접 대화 안내 먼저 표시
 

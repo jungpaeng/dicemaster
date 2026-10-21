@@ -2,7 +2,11 @@
 
 ## alpha.25 — 후속 경로 확인 대기
 
-공개 alpha.24 이후 alpha.25 후보이며 자동 검사와 실제 게임 확인을 구분한다. [후보 파일·설계·성능 측정](ISSUE-6-ROUTE-PROJECTION.md).
+<!-- alpha25-publication -->
+2026-10-22 04:43:58 KST에 소스 [`e81a0c4`](https://github.com/jungpaeng/dicemaster/commit/e81a0c420602c5cbaa472a59d1617131e830e3f9)의 [alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha25-publication -->
+
+alpha.25이며 자동 검사와 실제 게임 확인을 구분한다. [후보 파일·설계·성능 측정](ISSUE-6-ROUTE-PROJECTION.md).
 
 - [ ] 해금된 주제가 있는 세이브에서 남제자방 지도 선택 → 사사형 → 해당 주제로 이동하며 상위 선택지의 경로가 실제 선택지와 일치하는지 확인한다. 내부 이야기 발생 보증이나 일반 경로의 두루마리 마커로 해석하지 않는다.
 - [ ] 아직 잠긴 주제·완료한 초회 인사·떠나다/상점/반복 대련만 남은 경우에는 그 항목을 근거로 툴팁이 남지 않는다. 우소매 부재 AND 난수 같은 확정 거짓 조건도 계속 제외한다.

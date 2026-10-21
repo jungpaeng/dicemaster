@@ -1,6 +1,10 @@
 # 후속 대화 경로 가상 조회와 성능 검증
 
-2026-10-22 main에서 구현한 alpha.25 후보의 설계·측정 기록이다. [후보·게시·파일 검증](ISSUE-6-ALPHA25-RELEASE.md)과 실제 Windows 확인을 구분하며 #6 전체 완료는 대기다.
+<!-- alpha25-publication -->
+2026-10-22 04:43:58 KST에 소스 [`e81a0c4`](https://github.com/jungpaeng/dicemaster/commit/e81a0c420602c5cbaa472a59d1617131e830e3f9)의 [alpha.25](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.25)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha25-publication -->
+
+2026-10-22 main에서 구현한 alpha.25의 설계·측정 기록이다. [후보·게시·파일 검증](ISSUE-6-ALPHA25-RELEASE.md)과 실제 Windows 확인을 구분하며 #6 전체 완료는 대기다.
 
 ## 표시 범위
 
