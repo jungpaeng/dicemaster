@@ -2,6 +2,10 @@
 
 ## alpha.26 — 공통 이야기 툴팁·이어 읽기 확인 대기
 
+<!-- alpha26-publication -->
+2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha26-publication -->
+
 [후보·설계·자동 검사·측정](ISSUE-6-MAP-STORY-SCAN.md). 공개 alpha.25와 구분하며 새 DLL의 Windows 확인은 대기다.
 
 - [ ] 지도 남제자방에서도 초회 인사 전 안내가 보이고 인사 완료 후 제거되는지 확인한다. 사사형 선택 화면과 같은 해금·완료·반복 활동 제외 결과인지 비교한다.

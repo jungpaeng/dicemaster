@@ -2,7 +2,11 @@
 
 ## alpha.26 — 지도 초회 인사·후속 경로
 
-지도 장소에 기존 패드/키보드 포커스를 두거나 마우스를 옮기면 해금·완료를 확인한 초회 인사와 후속 주제 경로를 최대 하나 읽는다. 일반 경로에는 마커를 추가하지 않는다. 다음 조회에서 남은 경로를 이어 확인하므로 일부 경로는 여러 갱신 뒤 나타날 수 있다. A/Enter/클릭/터치·소유권/해제/중립·창 가림은 유지한다. [변경·측정·확인 대기](ISSUE-6-MAP-STORY-SCAN.md). alpha.26 후보에 포함하며 새 Windows 확인은 대기다.
+<!-- alpha26-publication -->
+2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha26-publication -->
+
+지도 장소에 기존 패드/키보드 포커스를 두거나 마우스를 옮기면 해금·완료를 확인한 초회 인사와 후속 주제 경로를 최대 하나 읽는다. 일반 경로에는 마커를 추가하지 않는다. 다음 조회에서 남은 경로를 이어 확인하므로 일부 경로는 여러 갱신 뒤 나타날 수 있다. A/Enter/클릭/터치·소유권/해제/중립·창 가림은 유지한다. [변경·측정·확인 대기](ISSUE-6-MAP-STORY-SCAN.md). alpha.26에 포함하며 새 Windows 확인은 대기다.
 
 ## alpha.25 — 상위 선택지의 해금 확인 경로
 

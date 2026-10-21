@@ -1,6 +1,10 @@
 # 지도·선택 화면의 이야기 툴팁과 이어 읽기
 
-2026-10-22 원래 작업 폴더의 main에서 구현한 **alpha.26 후보**다. 사용자의 커밋·prerelease 지시에 따라 고정 커밋 재빌드와 새 게시를 진행한다. 공개 alpha.25 파일은 보존하며 새 Windows 확인과 #6 전체 완료는 대기다.
+<!-- alpha26-publication -->
+2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha26-publication -->
+
+2026-10-22 원래 작업 폴더의 main에서 구현한 **alpha.26**이다. 사용자의 커밋·prerelease 지시에 따라 고정 커밋 재빌드와 새 게시를 완료했다. 공개 alpha.25 파일은 보존하며 새 Windows 확인과 #6 전체 완료는 대기다.
 
 ## 표시 기준
 
@@ -58,7 +62,7 @@ alpha.25의 지도는 매번 StoryEntries의 처음부터 32개 경로만 검사
 - MapRouteTests: 6884개, InformationRuntimeTests: 4716개, 실제 후보 DLL PreviewIntegrationTests: 2266개.
 - 패드·팝업·예약·로그 네 탭·상점·실제 분기 및 나머지 검사도 전체21개에 포함한다. 원본 SHA+합성 직렬화 조건/관리 경계 검사이며 실제 Lua/Windows/물리 입력 실행은 아니다.
 
-후보: artifacts/issue-6/map-story-scan/candidate/의 DiceMaster.dll, DiceMaster-source-candidate.zip, build-manifest.json, build.log. 독립 패키지/설정 비교 영수증은 상위 verification.json, 성능 원자료는 benchmark.json, 이전 실패는 full-build-before-fixture-dependencies.log다. 검토한 main 작업본을 alpha.26 소스로 고정하고 별도 재빌드한다. 공개 alpha.25 파일은 교체하지 않는다.
+후보: artifacts/issue-6/map-story-scan/candidate/의 DiceMaster.dll, DiceMaster-source-candidate.zip, build-manifest.json, build.log. 독립 패키지/설정 비교 영수증은 상위 verification.json, 성능 원자료는 benchmark.json, 이전 실패는 full-build-before-fixture-dependencies.log다. 검토한 main 작업본을 alpha.26 소스로 고정하고 별도 재빌드해 DLL/cfg/ZIP 바이트를 대조했다. 공개 alpha.25 파일은 교체하지 않았다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -67,3 +71,5 @@ alpha.25의 지도는 매번 StoryEntries의 처음부터 32개 경로만 검사
 | 기본 cfg (설명만 변경) | 13205 | 94d29dcdc35ad3b915aa3b77678a218a55be7a2b9d59d3544f6b097550fd06d0 |
 
 기존 설치는 게임을 종료하고 DLL/cfg를 백업한 뒤 ZIP의 plugins/DiceMaster/DiceMaster.dll만 교체한다. 새 Windows·화면 가림·물리 입력·FPS/GC 확인 전 #6 전체 완료나 이슈 종료로 처리하지 않는다.
+
+고정 커밋·게시 파일·익명 다운로드 대조의 최종 결과는 [alpha.26 게시 기록](ISSUE-6-ALPHA26-RELEASE.md)을 따른다. 위 로컬 후보의 해시와 공개 설치 파일은 바이트가 동일하며 ZIP 이름만 버전명으로 바뀐다.

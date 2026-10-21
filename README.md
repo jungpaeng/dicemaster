@@ -19,9 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-alpha.26 후보는 지도에도 초회 인사를 안내하고, 선택 화면과 해금·완료·반복 활동 필터를 공유합니다. 앞의 32개 경로 뒤에 있는 후보도 다음 갱신에서 이어 확인합니다. 직전 유효 경로의 현재 조건을 먼저 재확인해 반복 조회를 줄입니다. 일반 경로만으로 마커를 붙이지 않으며 정상 0.25초 갱신을 유지합니다. [설계·측정·검사](docs/ISSUE-6-MAP-STORY-SCAN.md) · [파일·설치·Windows 확인](docs/ISSUE-6-ALPHA26-RELEASE.md).
+<!-- alpha26-publication -->
+2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha26-publication -->
 
-**[v1.0.7-alpha.26 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.26/DiceMaster-v1.0.7-alpha.26.zip)** — 게시 준비 중입니다. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 새 DLL의 실제 Windows·화면·물리 입력·FPS 확인은 대기입니다. 이전 [alpha.25 게시 기록](docs/ISSUE-6-ALPHA25-RELEASE.md)은 별도 보존합니다.
+alpha.26은 지도에도 초회 인사를 안내하고, 선택 화면과 해금·완료·반복 활동 필터를 공유합니다. 앞의 32개 경로 뒤에 있는 후보도 다음 갱신에서 이어 확인합니다. 직전 유효 경로의 현재 조건을 먼저 재확인해 반복 조회를 줄입니다. 일반 경로만으로 마커를 붙이지 않으며 정상 0.25초 갱신을 유지합니다. [설계·측정·검사](docs/ISSUE-6-MAP-STORY-SCAN.md) · [파일·설치·Windows 확인](docs/ISSUE-6-ALPHA26-RELEASE.md).
+
+**[v1.0.7-alpha.26 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.26/DiceMaster-v1.0.7-alpha.26.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 이전 [alpha.25 게시 기록](docs/ISSUE-6-ALPHA25-RELEASE.md)은 별도 보존합니다.
 
 현재 정보 기능 후보는 확인된 기회를 **작은 금색 두루마리**로 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. 두루마리 문양은 요청한 Lucide scroll-text로 교체합니다. [alpha.17 변경·검증·Windows 확인](docs/ISSUE-6-ALPHA17-RELEASE.md).
 

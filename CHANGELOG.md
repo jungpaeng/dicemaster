@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.26 후보 — 지도 이야기 툴팁·순차 탐색
+## [v1.0.7-alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26) — 2026-10-22 (prerelease)
+
+<!-- alpha26-publication -->
+2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha26-publication -->
 
 - 지도에도 초회 인사를 포함하고 선택 화면과 이야기 해금·완료·반복 활동 필터를 공유한다. 일반 경로의 마커는 추가하지 않는다.
 - 32개 경로 뒤 후보를 다음 조회에서 이어 확인하고, 직전 유효 경로는 현재 조건을 먼저 재검사해 반복 조회를 줄인다. 정적 정의만 재사용하며 현재 조건 결과를 영구 저장하지 않는다.

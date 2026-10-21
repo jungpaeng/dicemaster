@@ -2,6 +2,10 @@
 
 ## alpha.26 — 지도 이야기 필터·조회 연속성
 
+<!-- alpha26-publication -->
+2026-10-22 05:40:32 KST에 소스 [`4dc837c`](https://github.com/jungpaeng/dicemaster/commit/4dc837c25824952078f0cddc0df0ba8e41831eb0)의 [alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha26-publication -->
+
 사용자 지시에 따라 초회 인사도 지도 툴팁에 포함하고 선택 화면과 같은 이야기 필터를 호출한다. 32개 고정 앞부분만 반복하던 조회를 커서로 이어가고 직전 유효 경로를 먼저 현재 상태로 재검사한다. 정의 색인만 재사용하고 현재 조건·완료 결과는 저장하지 않는다. 기회 마커 기준·입력·기존 분석 상한을 유지한다. [설계·성능·검사·실제 확인 대기](ISSUE-6-MAP-STORY-SCAN.md). 아래 alpha.25는 기존 공개 후보 기록이다.
 
 ## alpha.25 — 후속 경로 가상 조회
