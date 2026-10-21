@@ -295,6 +295,11 @@ namespace DiceMaster.Information
                     if (selection.HiddenChoices) detail += "\n잠겼거나 해금 여부를 확인하지 못한 후속 선택 경로는 목록과 자동 툴팁에서 제외했습니다.";
                     if (selection.HiddenEntry) detail += "\n진입 대화의 횟수·완료 판정을 확인하지 못해 자동 안내에서 제외했습니다.";
                     if (selection.HiddenActivity) detail += "\n반복 활동의 고정 반응은 개별 이야기 안내에서 제외했습니다.";
+                    if (selection.HiddenActivityUnknown) detail += "\n반복 활동 형태의 대사에서 개별 이야기 근거를 확인하지 못해 자동 안내를 보류했습니다.";
+                    if (selection.HiddenLocation) detail += "\n현재 메뉴 위치와 경로 색인이 준비되지 않아 임시 이야기 툴팁을 보류했습니다.";
+                    detail += Witness("표시 근거", selection.Path, binding.PathStories);
+                    MapRoutePath rejected = selection.RejectedPath ?? (storyBlocked && binding.Paths.Count > 0 ? binding.Paths[0] : null);
+                    detail += Witness("제외 표본" + (selection.RejectedReason == null ? "" : " · " + selection.RejectedReason), rejected, binding.PathStories);
                     if (binding.Paths.Count > 32) detail += "\n32개 초과 연결 경로는 전체를 조회하거나 목록에 표시하지 않습니다.";
                 }
                 var anchor = option.Control.Target as UnityEngine.Object;
@@ -314,6 +319,16 @@ namespace DiceMaster.Information
         }
         private static InformationRow Status(string text)
         { return new InformationRow("choice/status/" + ContextKey, "선택 화면 안내", "자료 상태", text, text, text); }
+        // Explicit detail only: one selected witness and one excluded sample.
+        // Normal refreshes never build condition traces or inspect more paths.
+        private static string Witness(string title, MapRoutePath path, IDictionary<MapRoutePath, MapStoryEntry> stories)
+        {
+            if (path == null) return "";
+            MapStoryEntry story;
+            string origin = stories != null && stories.TryGetValue(path, out story) ? story.Script + " · " + story.StoryKey : "연결 원문 미확인";
+            return "\n" + title + ": " + origin + "\n구조 분류: " + path.StoryKind +
+                "\n" + PreviewConditions.DescribeCurrent(path.CurrentPrerequisite);
+        }
         private static bool Index()
         {
             int budget = 64; bool pending = false;
@@ -373,18 +388,31 @@ namespace DiceMaster.Information
             internal List<MapRoutePath> Paths;
             internal bool HiddenChoices;
             internal bool HiddenEntry, HiddenActivity;
+            internal bool HiddenActivityUnknown, HiddenLocation;
+            internal MapRoutePath RejectedPath;
+            internal string RejectedReason;
         }
         private static StorySelection SelectStory(IList<MapRoutePath> paths, IDictionary<MapRoutePath, MapStoryEntry> pathStories,
             MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw, ref int choiceBudget, ref int classificationBudget)
         {
             int count = paths == null ? 0 : paths.Count;
             var selection = new StorySelection { State = count == 0 || count > 32 ? MapRouteState.Unknown : MapRouteState.NotMet };
+            // Partial index uniqueness is not a safe current-menu identity.
+            // Never display an old/blocked witness as a temporary possibility.
+            if (raw != null && unresolved)
+            {
+                selection.State = MapRouteState.Unknown; selection.HiddenLocation = true;
+                if (count > 0) { selection.RejectedPath = paths[0]; selection.RejectedReason = "메뉴 위치/색인 준비 대기"; }
+                return selection;
+            }
             MapStoryEntry first = null; HashSet<MapStoryEntry> counted = null; bool followup = false;
             for (int at = 0; at < Math.Min(32, count); at++)
             {
                 MapRoutePath path = paths[at];
                 if (path.ReadStoryKind(current, ref classificationBudget) == MapStoryKind.ActivityResponse)
-                { selection.HiddenActivity = true; if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
+                { selection.HiddenActivity = true; Reject(ref selection, path, "반복 활동의 고정 반응"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
+                if (path.StoryKind == MapStoryKind.ActivityResponse && !path.ReadActivityIndependence(current, ref classificationBudget).HasValue)
+                { selection.HiddenActivityUnknown = true; Reject(ref selection, path, "활동 조건의 독립성 미확인"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
                 if (raw != null)
                 {
                     int step = CurrentStep(path, raw);
@@ -392,11 +420,12 @@ namespace DiceMaster.Information
                     if (choices != MapRouteState.Met)
                     {
                         selection.HiddenChoices = true;
+                        Reject(ref selection, path, "후속 선택지 잠김/해금 미확인");
                         if (choices == MapRouteState.Unknown && selection.Path == null) selection.State = MapRouteState.Unknown;
                         continue;
                     }
                     if (step == path.Steps.Count - 1 && current.UnresolvedEntrySwitch(path.CurrentPrerequisite, ref choiceBudget))
-                    { selection.HiddenEntry = true; if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
+                    { selection.HiddenEntry = true; Reject(ref selection, path, "진입 대화의 완료 근거 미확인"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
                 }
                 // Only a uniquely matched, closed root menu may reuse the
                 // map's negative projection. Inputs affected by future writes
@@ -404,7 +433,7 @@ namespace DiceMaster.Information
                 // menu guards must never be reinterpreted after a write.
                 MapRouteState state = currentRoot && path.ReadCurrentBlocker(current) ? MapRouteState.NotMet :
                     unresolved || path.StoryConditionsMayHaveChanged ? MapRouteState.Unknown : path.ReadStoryConditions(current);
-                if (state == MapRouteState.NotMet) continue;
+                if (state == MapRouteState.NotMet) { Reject(ref selection, path, "현재 필수 조건 미충족"); continue; }
                 if (selection.Paths == null) selection.Paths = new List<MapRoutePath>();
                 selection.Paths.Add(path);
                 if (incomplete) state = MapRouteState.Unknown;
@@ -427,6 +456,10 @@ namespace DiceMaster.Information
                 }
             }
             return selection;
+        }
+        private static void Reject(ref StorySelection selection, MapRoutePath path, string reason)
+        {
+            if (selection.RejectedPath == null) { selection.RejectedPath = path; selection.RejectedReason = reason; }
         }
         private static bool HasFollowingChoice(MapRoutePath path, string raw)
         {

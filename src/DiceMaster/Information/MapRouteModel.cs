@@ -31,19 +31,19 @@ namespace DiceMaster.Information
             }
             return unknown;
         }
-        private readonly Dictionary<PreviewCondition, Dictionary<string, bool>> activityInputs = new Dictionary<PreviewCondition, Dictionary<string, bool>>();
-        internal bool ActivityInputsDisjoint(PreviewCondition gate, string key, IList<string> flags, IDictionary<string, int> unchangedSets, bool afterTalkReset, ref int budget)
+        private readonly Dictionary<PreviewCondition, Dictionary<string, bool?>> activityInputs = new Dictionary<PreviewCondition, Dictionary<string, bool?>>();
+        internal bool? ActivityInputsIndependent(PreviewCondition gate, string key, IList<string> flags, IDictionary<string, int> unchangedSets, bool afterTalkReset, ref int budget)
         {
             if (flags.Count == 0) return true;
-            if (gate == null) return false;
-            Dictionary<string, bool> effects;
-            if (!activityInputs.TryGetValue(gate, out effects)) activityInputs.Add(gate, effects = new Dictionary<string, bool>(StringComparer.Ordinal));
-            bool value;
+            if (gate == null) return null;
+            Dictionary<string, bool?> effects;
+            if (!activityInputs.TryGetValue(gate, out effects)) activityInputs.Add(gate, effects = new Dictionary<string, bool?>(StringComparer.Ordinal));
+            bool? value;
             if (!effects.TryGetValue(key, out value))
             {
-                if (budget-- <= 0) return false;
+                if (budget-- <= 0) return null;
                 if (reader == null) reader = PreviewConditions.CreateReader();
-                value = reader.AreFlagWritesDisjoint(gate, flags, unchangedSets, afterTalkReset); effects.Add(key, value);
+                value = reader.ReadFlagWriteIndependence(gate, flags, unchangedSets, afterTalkReset); effects.Add(key, value);
             }
             return value;
         }
@@ -159,9 +159,11 @@ namespace DiceMaster.Information
         public MapStoryKind ReadStoryKind(MapRouteRead read, ref int budget)
         {
             if (read == null) throw new ArgumentNullException("read");
-            return StoryKind == MapStoryKind.ActivityResponse && !read.ActivityInputsDisjoint(activityGate, activityKey, activityWrites, unchangedSets, afterTalkReset, ref budget)
+            return StoryKind == MapStoryKind.ActivityResponse && ReadActivityIndependence(read, ref budget) != true
                 ? MapStoryKind.Unclassified : StoryKind;
         }
+        internal bool? ReadActivityIndependence(MapRouteRead read, ref int budget)
+        { return read.ActivityInputsIndependent(activityGate, activityKey, activityWrites, unchangedSets, afterTalkReset, ref budget); }
         // Intersection of necessary AND-prefixes, computed only while building
         // the bounded definition index. It compresses many known alternatives
         // without discarding an observed bypass; no sampled values are cached.

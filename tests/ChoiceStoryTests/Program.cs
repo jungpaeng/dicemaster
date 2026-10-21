@@ -185,11 +185,11 @@ internal static partial class Program
         Normal("O_topic", "준비 중 원문 후보"); bool sawCandidate = false;
         for (int at = 0; at < 80; at++)
         {
-            value = Read(); row = value.Entries.FirstOrDefault(item => item.Title == "준비 중 원문 후보");
+            value = Read(true); row = value.Entries.FirstOrDefault(item => item.Title == "준비 중 원문 후보");
             if (row != null && row.AutoText.StartsWith("경로 후보:", StringComparison.Ordinal)) { sawCandidate = true; Check(!row.Available && row.Status.Contains("진행 가능성 있음", StringComparison.Ordinal), "An incomplete unique prefix is a qualified future candidate, never a confirmed currently executable connection"); }
             if (row != null && row.Detail.Contains("여러 번", StringComparison.Ordinal)) break;
         }
-        Check(sawCandidate, "Cold preparation exposes a qualified candidate before the later duplicate is discovered");
+        Check(!sawCandidate, "Cold preparation hides provisional tooltips until later duplicate menus have been indexed");
         Check(row != null && !row.Available && !row.AutoText.Contains("→", StringComparison.Ordinal), "A duplicate discovered after cold preparation replaces provisional connection text with an ambiguity state");
         var yes = PreviewConditions.Constant(true); var no = PreviewConditions.Constant(false);
         var first = new MapChoiceStep("root", 1, 1, "O_topic", no, no, false);
@@ -620,7 +620,7 @@ internal static partial class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks(); EntryDialogues();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks(); EntryDialogues(); ActivityEvidence();
         if (args.Length > 0) Metadata(args[0]);
         if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); NativeEntryServices(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");

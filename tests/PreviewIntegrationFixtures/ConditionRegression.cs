@@ -480,6 +480,20 @@ namespace DiceMaster
                 object raw = Parse("checkpointmanager.Switch('renamed_entry') == 1");
                 object Scoped(object value, bool allowed = true) => scope.Invoke(null, new[] { value, (object)allowed, false });
                 State("Unknown", raw, "actual DLL plain count-switch preview remains protected");
+                MethodInfo independent = T("PreviewConditions").GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 2);
+                Check((bool)independent.Invoke(null, new object[] { raw, new[] { "unrelated_flag" } }),
+                    "actual DLL integer-count predicates are independent of FlagData writes without predicting the plain Switch result");
+                object dependencyReader = T("PreviewConditions").GetMethod("CreateReader").Invoke(null, null);
+                MethodInfo dependency = dependencyReader.GetType().GetMethod("ReadFlagWriteIndependence", BindingFlags.NonPublic | BindingFlags.Instance);
+                Check((bool?)dependency.Invoke(dependencyReader, new object[] { raw, new[] { "unrelated_flag" }, null, false }) == true,
+                    "actual DLL tri-state independence preserves proven count-schema independence");
+                Check(dependency.Invoke(dependencyReader, new object[] { Parse("checkpointmanager.Condition('missing')"), new[] { "unrelated_flag" }, null, false }) == null,
+                    "actual DLL unavailable definitions are unknown evidence instead of affected story conditions");
+                var own = new FlagData { name = "consumed_topic", State = 0 };
+                var ownItem = ConstantCondition(0, 0); ownItem._items[0]._value1._value[0]._checkType = 3; ownItem._items[0]._value1._value[0]._flag = own;
+                CheckPointManager.Instance._condition = new ConditionResultConfig { _list = new List<ConditionResultData> { new ConditionResultData { name = "consumed", _items = new List<ConditionResultItem> { ownItem } } } };
+                Check((bool?)dependency.Invoke(dependencyReader, new object[] { Parse("checkpointmanager.Condition('consumed')"), new[] { own.name }, null, false }) == false,
+                    "actual DLL known consumed eligibility remains distinct from missing or unsupported evidence");
                 object next = Scoped(raw);
                 State("Met", next, "actual DLL a proven next invocation reads the next count without incrementing it");
                 data._count = 1;
@@ -496,6 +510,8 @@ namespace DiceMaster
                 State("Unknown", next, "actual DLL unsupported comparisons remain unknown");
                 data._countItems = null;
                 State("Unknown", next, "actual DLL missing count definitions remain unknown");
+                Check(!(bool)independent.Invoke(null, new object[] { raw, new[] { "unrelated_flag" } }),
+                    "actual DLL missing counter schema cannot prove activity independence");
                 data._countItems = new List<ValueCompareItem>();
                 State("Met", next, "actual DLL an empty count table falls through to result one");
                 foreach (int invalid in new[] { -1, int.MaxValue })

@@ -84,12 +84,14 @@ internal static partial class Program
         var paths = new Dictionary<string, (string Path, string Sha)>(StringComparer.OrdinalIgnoreCase);
         using (var doc = JsonDocument.Parse(File.ReadAllText(indexPath))) foreach (var item in doc.RootElement.EnumerateArray())
             paths[item.GetProperty("name").GetString()] = (item.GetProperty("path").GetString(), item.GetProperty("sha256").GetString());
-        foreach (var sample in new[] { (Root: "room_001", Count: 1), (Root: "room_001", Count: 0), (Root: "talk_brother4", Count: 1) })
+        foreach (var sample in new[] { (Root: "room_001", Count: 1, Broken: false), (Root: "room_001", Count: 0, Broken: false), (Root: "talk_brother4", Count: 1, Broken: false), (Root: "room_001", Count: 1, Broken: true) })
         {
             Reset(); var manager = CheckPointManager.Instance; var switches = new SwitchResultConfig(); manager._switchList = new object[] { switches };
+            object environment = EntryEnvironment();
             var flags = new Dictionary<string, FlagData>(); var cache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             ScriptReadResult Exact(string key)
             {
+                if (sample.Broken && key == "room_001_break_option") return new ScriptReadResult { State = ScriptReadState.Missing };
                 if (cache.TryGetValue(key, out string text)) return ScriptReadResult.Success(text);
                 if (!paths.TryGetValue(key, out var data)) return new ScriptReadResult { State = ScriptReadState.Missing };
                 byte[] bytes = File.ReadAllBytes(data.Path);
@@ -116,15 +118,25 @@ internal static partial class Program
             ChoiceStorySource.ObserveScript(Exact(sample.Root).Text, sample.Root + ".LuaScript");
             if (sample.Root == "room_001") Position("talk+talk+brother4", "사사형");
             else { Break("exit+O_Talk_Brother4_001+0+0", "떠나다"); Break("shop+O_Talk_Brother4_002+0+0", "물품 구매"); Break("talk+O_Talk_Brother4_012+0+0", "대련: 사사형에게 도전한다"); }
-            ChoiceStorySnapshot value = null; for (int at = 0; at < 240; at++) value = Read();
+            ChoiceStorySnapshot value = null;
+            for (int at = 0; at < 240; at++)
+            {
+                value = Read();
+                if (sample.Count == 1)
+                    Check(!value.Entries.Any(x => (x.Title == "사사형" || x.Title.StartsWith("대련", StringComparison.Ordinal)) && x.AutoText.Length != 0),
+                        "every cold/preparing/current refresh excludes completed introduction and repeat-only service: " + sample.Root);
+            }
             if (sample.Root == "room_001" && sample.Count == 0)
                 Check(value.Entries.Any(x => x.Title == "사사형" && x.AutoText.Length != 0), "SHA-original remaining first introduction still has a conversation tooltip");
             else Check(!value.Entries.Any(x => x.Title == "사사형" || x.Title.StartsWith("대련", StringComparison.Ordinal)) && !value.Entries.Any(x => x.Opportunity),
                 "SHA-original completed introduction plus exit/shop/repeat challenge has no invented conversation tooltip or marker: " + sample.Root);
             int reads = DataHelper.Reads;
             for (int at = 0; at < 30; at++) Read();
-            Check(DataHelper.Reads == reads && Counters.GameCalls == 0 && switches._list.All(x => x._count == sample.Count),
+            Check((sample.Broken || DataHelper.Reads == reads) && Counters.GameCalls == 0 && switches._list.All(x => x._count == sample.Count),
                 "native entry/service fixture never executes script, counter increment, comparison or combat and retains warm definitions");
+            if (sample.Broken) Check(value.Entries.Any(x => x.Status.Contains("읽기 대기/실패", StringComparison.Ordinal)), "native unrelated missing resource remains an explicit retry state rather than reviving a completed story");
+            GC.KeepAlive(environment);
         }
+        PreviewConditions.ObserveLuaEnvironment(null);
     }
 }

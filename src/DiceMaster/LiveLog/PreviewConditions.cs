@@ -259,6 +259,10 @@ namespace DiceMaster.LiveLog
             public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates)
             { return AreFlagWritesDisjoint(condition, flagWrites, sameValueSetCandidates, false); }
             public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates, bool afterTalkReset)
+            { return ReadFlagWriteIndependence(condition, flagWrites, sameValueSetCandidates, afterTalkReset) == true; }
+            // true: proven independent; false: a known affected input; null:
+            // missing/unsupported evidence. A failed proof is not a new story.
+            internal bool? ReadFlagWriteIndependence(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates, bool afterTalkReset)
             {
                 try
                 {
@@ -270,13 +274,13 @@ namespace DiceMaster.LiveLog
                         int count = 0;
                         foreach (var pair in sameValueSetCandidates)
                         {
-                            if (++count > 32 || pair.Key == null || pair.Key.Length > 256) return false;
+                            if (++count > 32 || pair.Key == null || pair.Key.Length > 256) return null;
                             if (flags.Contains(pair.Key)) sets.Add(pair.Key, pair.Value);
                         }
                     }
                     return snapshot.FlagWritesDisjoint(condition, flags, sets, afterTalkReset);
                 }
-                catch (Exception) { return false; }
+                catch (Exception) { return null; }
             }
             public PreviewConditionState Current(PreviewCondition condition)
             {
@@ -348,13 +352,14 @@ namespace DiceMaster.LiveLog
             private bool maskAllFlagInputs, talkFootprintRead, talkFootprintKnown;
             private sealed class AffectedInput : Exception { }
             private void Step() { if (++work > 16384) throw new InvalidOperationException("Preview condition read limit."); }
-            internal bool FlagWritesDisjoint(PreviewCondition node, HashSet<string> flags, IDictionary<string, int> sets, bool afterTalkReset)
+            internal bool? FlagWritesDisjoint(PreviewCondition node, HashSet<string> flags, IDictionary<string, int> sets, bool afterTalkReset)
             {
                 HashSet<string> previous = maskedFlags;
                 IDictionary<string, int> previousSets = sameValueSets;
                 bool previousReset = setsAfterTalkReset;
                 maskedFlags = flags; sameValueSets = sets; setsAfterTalkReset = afterTalkReset;
-                try { return ValidateDependencies(node, 0); }
+                try { return ValidateDependencies(node, 0) ? (bool?)true : null; }
+                catch (AffectedInput) { return false; }
                 finally { maskedFlags = previous; sameValueSets = previousSets; setsAfterTalkReset = previousReset; }
             }
             private bool ValidateDependencies(PreviewCondition node, int depth)
@@ -384,7 +389,22 @@ namespace DiceMaster.LiveLog
                         Step();
                         object item = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", node.Key);
                         if (item == null) continue;
-                        if (!(Field(item, "_useCount") is bool) || (bool)Field(item, "_useCount")) return false;
+                        object countMode = Field(item, "_useCount");
+                        if (!(countMode is bool)) return false;
+                        // A serialized integer counter/comparison table has no
+                        // FlagData dependency. This proves independence only;
+                        // it does not evaluate or advance an ordinary Switch.
+                        if ((bool)countMode)
+                        {
+                            if (!(Field(item, "_count") is int)) return false;
+                            foreach (object entry in List(item, "_countItems", 256))
+                            {
+                                Step(); Exact(entry, "Mortal.Core.ValueCompareItem");
+                                int op = Convert.ToInt32(Field(entry, "_compareOp"));
+                                if (!(Field(entry, "_value") is int) || op < 0 || op > 5) return false;
+                            }
+                            return true;
+                        }
                         foreach (object condition in List(item, "_items", 256)) ValidateCondition(condition, 0);
                         return true;
                     }
@@ -888,7 +908,8 @@ namespace DiceMaster.LiveLog
                     if (setsAfterTalkReset)
                     {
                         ReadTalkFootprint();
-                        if (!talkFootprintKnown || talkFlags.Contains(value)) throw new AffectedInput();
+                        if (!talkFootprintKnown) throw new InvalidOperationException("Talk reset dependency is unavailable.");
+                        if (talkFlags.Contains(value)) throw new AffectedInput();
                     }
                     if (FlagState(value) == constant) return;
                 }
