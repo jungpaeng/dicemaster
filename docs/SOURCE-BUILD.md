@@ -2,10 +2,10 @@
 
 ## alpha.12 — 자동 안내 범위·장소 준비·중첩 조건
 
-이번 로컬 후보는 `artifacts/issue-6/automatic-scope/final-candidate/`로 생성한다. 전체 검사와 실제 DLL 연결·ZIP 바이트 확인은 새 manifest를 사용하고, 실제 Windows 확인과 이전 공개 alpha.11 기록은 구분한다. 독립 논리 oracle·대규모 빈 장소·평면/중첩 원본 Lua 경로와 빌드 명령은 [후속 기록](ISSUE-6-INDEPENDENT-PREPARATION.md)에 있다.
+전체 소스 검토 후보는 `artifacts/issue-6/automatic-scope/final-candidate/`로 생성한다. 전체 검사와 실제 DLL 연결·ZIP 바이트 확인은 새 manifest를 사용하고, 실제 Windows 확인과 이전 공개 alpha.11 기록은 구분한다. 독립 논리 oracle·대규모 빈 장소·평면/중첩 원본 Lua 경로와 빌드 명령은 [후속 기록](ISSUE-6-INDEPENDENT-PREPARATION.md)에 있다.
 
 <!-- alpha12-current-status -->
-alpha.12 게시 준비 중. 지도 자동 안내는 실행 가능한 기존 대기 임무와 현재 도달 가능성을 확인한 증명된 1회성으로 제한한다. 미등록 단계·후속 대화는 명시적 상세 조회로 분리한다. [변경·검사·파일·새 Windows 확인](ISSUE-6-ALPHA12-RELEASE.md). 실제 Windows와 #6 전체 완료는 대기다.
+2026-10-21 16:38:52 KST에 소스·주석 태그 [`6242514`](https://github.com/jungpaeng/dicemaster/commit/6242514be6e387bfeb9bf9c47a16cd0d8f950acc)의 [alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.12)를 게시했다. 지도 자동 안내는 현재 실행 가능한 기존 대기 임무와 도달 가능성을 확인한 증명된 1회성으로 제한하고, 후속 대화·미등록 단계는 상세 조회로 분리한다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·DLL/cfg/ZIP 동일성과 익명 공개 ZIP 대조를 통과했다. 기존 53개 Release·54개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA12-RELEASE.md).
 <!-- /alpha12-current-status -->
 
 ## alpha.11 — 선택 주제·활동 분류와 빈 지도 검증

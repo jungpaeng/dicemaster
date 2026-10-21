@@ -20,7 +20,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha12-current-status -->
-**v1.0.7-alpha.12 게시 준비 중.** 지도 자동 안내 범위를 현재 실행 가능한 대기 임무와 도달 가능성을 확인한 1회성 항목으로 제한합니다. 새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open입니다. [변경·파일·확인표](docs/ISSUE-6-ALPHA12-RELEASE.md).
+**[v1.0.7-alpha.12 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.12)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.12/DiceMaster-v1.0.7-alpha.12.zip)**. 2026-10-21 16:38:52 KST 게시. 지도 자동 안내는 실행 가능한 기존 대기 임무와 도달 가능성을 확인한 1회성으로 제한하고, 후속 대화·미등록 단계는 상세로 옮겼습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. 전체·고정 커밋 재빌드 21개 프로그램과 실제 DLL 연결·공개 ZIP 대조를 통과했습니다. **이번 DLL의 실제 Windows·물리 입력·가독성·성능 확인은 대기이며 #6은 open입니다.** [변경·해시·확인표](docs/ISSUE-6-ALPHA12-RELEASE.md).
 <!-- /alpha12-current-status -->
 
 지도 자동 안내는 **이번 클릭에 실행 가능한, 이미 등록된 대기 임무**와 **1회성 증명·현재 조건·경로를 각각 확인한 항목**을 최대 세 행으로 표시합니다. 행동력·장소 활성·임무 우선순위를 반영하고, 미등록 임무 단계와 일반 대화의 후속 예측은 **로그 → 도구 → 지도 안내**에서만 제공합니다. 상세 조회의 `진행 가능성 있음`을 지도에 자동으로 띄우지 않습니다. 지도에 표시가 없어도 게임 전체에 기회가 없다는 뜻은 아닙니다.

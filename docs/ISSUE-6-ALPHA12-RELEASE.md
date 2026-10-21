@@ -1,7 +1,7 @@
 # 지도 자동 안내 범위 제한 — v1.0.7-alpha.12 prerelease
 
 <!-- alpha12-current-status -->
-게시 준비 중. main에서 자동 안내 범위 제한·장소 준비 분리·중첩 조건 판정을 구현했다. 새 소스·파일의 자동 검사와 고정 커밋 재빌드·공개 ZIP 대조는 아래에 확정한다. 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.
+2026-10-21 16:38:52 KST에 소스·주석 태그 [`6242514`](https://github.com/jungpaeng/dicemaster/commit/6242514be6e387bfeb9bf9c47a16cd0d8f950acc)의 [alpha.12](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.12)를 게시했다. 지도 자동 안내는 현재 실행 가능한 기존 대기 임무와 도달 가능성을 확인한 증명된 1회성으로 제한하고, 후속 대화·미등록 단계는 상세 조회로 분리한다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·DLL/cfg/ZIP 동일성과 익명 공개 ZIP 대조를 통과했다. 기존 53개 Release·54개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA12-RELEASE.md).
 <!-- /alpha12-current-status -->
 
 [사용자 안내](../README.md) · [구현·판정 설계](ISSUE-6-INDEPENDENT-PREPARATION.md) · [이전 alpha.11](ISSUE-6-ALPHA11-RELEASE.md)
@@ -20,11 +20,13 @@
 
 ## 설치·업데이트와 복구
 
-활협전용 BepInEx 모드 베이스가 필요하다. 새 설치 ZIP은 게시 확인 뒤 이 문서에 연결한다. 업데이트는 게임 종료 후 현재 DLL/cfg를 백업하고 **DLL만** `BepInEx/plugins/DiceMaster/DiceMaster.dll`에 교체해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다. GitHub 자동 Source code ZIP은 설치용이 아니다. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다.
+활협전용 BepInEx 모드 베이스가 필요하다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.12/DiceMaster-v1.0.7-alpha.12.zip)과 [최신 정식](https://github.com/jungpaeng/dicemaster/releases/latest)을 구분한다. 업데이트는 게임 종료 후 현재 DLL/cfg를 백업하고 **DLL만** `BepInEx/plugins/DiceMaster/DiceMaster.dll`에 교체해 기존 cfg를 보존한다. 최초 설치는 ZIP의 `config`·`plugins`를 기존 BepInEx 아래에 넣는다. GitHub 자동 Source code ZIP은 설치용이 아니다. 문제 시 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다.
 
 ## 자동 검사·소스·파일
 
-기준 main은 `c262e64`다. 기능 변경은 `daffe1b`에 커밋했으며, 설정 설명·기본 cfg 주석과 패드 문서도 새 범위에 맞춘 최종 소스를 게시한다. 이전 준비 분리 로컬 후보에 표시 정책 변경을 추가했으므로 이전 DLL 해시를 이 후보의 근거로 사용하지 않는다. 전체 소스 후보 경로는 `artifacts/issue-6/automatic-scope/final-candidate/`, 고정 커밋 재빌드·게시 검증 경로는 `artifacts/releases/v1.0.7-alpha.12/`다. 전체 소스 빌드는 2026-10-21 16:36:12 KST에 성공했다. 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조, 실제 DLL 연결·ZIP CRC/경로/내부 바이트와 현재 입력 동일성을 확인했다. 배포 검증기 Python 회귀 20개도 통과했다. 고정 커밋 재빌드와 공개 게시 대조는 별도로 기록한다.
+기준 main은 `c262e64`다. 기능 변경은 `daffe1b`에 커밋했으며, 설정 설명·기본 cfg 주석과 패드 문서도 새 범위에 맞춘 최종 소스를 게시한다. 이전 준비 분리 로컬 후보에 표시 정책 변경을 추가했으므로 이전 DLL 해시를 이 후보의 근거로 사용하지 않는다. 전체 소스 후보 경로는 `artifacts/issue-6/automatic-scope/final-candidate/`, 고정 커밋 재빌드·게시 검증 경로는 `artifacts/releases/v1.0.7-alpha.12/`다. 전체 소스 빌드는 2026-10-21 16:36:12 KST에 성공했다. 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조, 실제 DLL 연결·ZIP CRC/경로/내부 바이트와 현재 입력 동일성을 확인했다. 배포 검증기 Python 회귀 20개도 통과했다. 최종 소스 `6242514be6e387bfeb9bf9c47a16cd0d8f950acc`를 관리 모드 DLL 0개인 격리 소스에서 같은 SDK 8.0.426·21개 프로그램으로 재빌드했다. 검토 후보와 254개 입력·104개 소스/리소스·15개 참조·전체 성공 기록·DLL/cfg/ZIP 바이트가 같다. alpha.11 기본 cfg와 모든 설정값이 같고 설명만 달라졌다. 공개 ZIP을 인증 없이 내려받아 정확히 두 파일·CRC·내부 DLL/cfg 바이트와 SHA-256을 재검증했다.
+
+Release `419276955`·asset `661730090`, `draft=false`·`prerelease=true`·`make_latest=false`다. main과 새 주석 태그를 atomic push했다. 기존 53개 Release·54개 태그·자산과 Latest v1.0.6, #5/#6의 상태를 보존했다. 게시 후 문서는 별도 main 커밋으로 갱신하며 빌드 소스·태그·자산을 바꾸지 않는다. `windows_runtime_executed`·`feature_or_issue_completion_claimed`는 모두 false다.
 
 | 검사 | 결과 |
 | --- | --- |
