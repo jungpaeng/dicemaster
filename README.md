@@ -19,19 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-main 후속 작업본은 잠긴 후속 경로가 많아 미완료 직접 인사가 조회 상한 밖으로 밀리는 문제를 보완합니다. 현재 선택에서 바로 이어지는 대사를 먼저 조회하되 기존 완료/해금/활동 필터와 32개 조회 상한을 유지합니다. [설계·범위·검증](docs/ISSUE-6-DIRECT-CHOICE-PRIORITY.md).
+alpha.22는 잠긴 후속 경로가 많아 미완료 직접 인사가 조회 상한 밖으로 밀리는 문제를 보완합니다. 현재 선택에서 바로 이어지는 대사를 먼저 조회하되 기존 완료/해금/활동 필터와 32개 조회 상한을 유지합니다. [설계·범위·검증](docs/ISSUE-6-DIRECT-CHOICE-PRIORITY.md).
 
 <!-- alpha22-publication -->
-main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드·공개 다운로드는 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.**
+2026-10-22 02:45:06 KST에 소스·주석 태그 [`bbf7024`](https://github.com/jungpaeng/dicemaster/commit/bbf7024db49acd271061f2903ae2b12e9a44e77e)의 [alpha.22](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.22)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 63개 Release·64개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](docs/ISSUE-6-ALPHA22-RELEASE.md).
 <!-- /alpha22-publication -->
 
-alpha.21은 준비 중의 임시 이야기 툴팁을 보류하고, 반복 활동의 분류 실패를 새 이야기의 가능성으로 표시하지 않도록 보완합니다. 상세에는 실제 표시/제외 근거의 스크립트·대사 ID·조건 진단을 제공합니다. [범위·한계·검증](docs/ISSUE-6-CHOICE-EVIDENCE.md).
-
-<!-- alpha21-publication -->
-2026-10-22 02:19:17 KST에 소스·주석 태그 [`9163d59`](https://github.com/jungpaeng/dicemaster/commit/9163d5931a9e95bb614f77dcfb48bbb45519b376)의 [alpha.21](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.21)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·273개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 62개 Release·63개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](docs/ISSUE-6-ALPHA21-RELEASE.md).
-<!-- /alpha21-publication -->
-
-**[v1.0.7-alpha.21 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.21/DiceMaster-v1.0.7-alpha.21.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요.
+**[v1.0.7-alpha.22 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.22/DiceMaster-v1.0.7-alpha.22.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요.
 
 현재 정보 기능 후보는 확인된 기회를 **작은 금색 두루마리**로 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. 두루마리 문양은 요청한 Lucide scroll-text로 교체합니다. [alpha.17 변경·검증·Windows 확인](docs/ISSUE-6-ALPHA17-RELEASE.md).
 

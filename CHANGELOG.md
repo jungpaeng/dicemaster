@@ -1,9 +1,9 @@
 # 변경 이력
 
-## 미배포 — 현재 선택의 직접 대화 우선 조회
+## [v1.0.7-alpha.22](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.22) — 2026-10-22 (prerelease)
 
 <!-- alpha22-publication -->
-main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드·공개 다운로드는 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.**
+2026-10-22 02:45:06 KST에 소스·주석 태그 [`bbf7024`](https://github.com/jungpaeng/dicemaster/commit/bbf7024db49acd271061f2903ae2b12e9a44e77e)의 [alpha.22](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.22)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 63개 Release·64개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](docs/ISSUE-6-ALPHA22-RELEASE.md).
 <!-- /alpha22-publication -->
 
 - 잠긴 후속 경로 32개 뒤에 수집된 유효한 초회 인사가 표시되지 않는 누락을 보완합니다. 정의 색인에서 현재 선택 뒤 직접 대사를 먼저 배치하며 기존 조회 상한·완료/활동/해금 필터를 유지합니다.

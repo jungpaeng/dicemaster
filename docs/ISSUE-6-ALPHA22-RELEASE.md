@@ -1,7 +1,7 @@
 # v1.0.7-alpha.22 — 현재 선택의 직접 대화 우선 조회
 
 <!-- alpha22-publication -->
-main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드·공개 다운로드는 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.**
+2026-10-22 02:45:06 KST에 소스·주석 태그 [`bbf7024`](https://github.com/jungpaeng/dicemaster/commit/bbf7024db49acd271061f2903ae2b12e9a44e77e)의 [alpha.22](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.22)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 63개 Release·64개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](ISSUE-6-ALPHA22-RELEASE.md).
 <!-- /alpha22-publication -->
 
 ## 변경과 한계
@@ -14,7 +14,7 @@ main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌�
 
 ## 자동 검사와 파일
 
-전체 소스 빌드의 21개 검사 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드·공개 다운로드는 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.** 선택지 집중 검사와 전체 검사에 실제 공급자의 정의 등록 경계에서 후속 31/32/64개 뒤 직접 대사가 도착하는 경우·완료 전환·자료 누락·패드 포커스·warm 캐시/카운터 무변경을 포함한다. 원본 Lua·실제 후보 IL·합성 게임 경계의 자동 검사이며 사용자 Windows 게임 실행 결과가 아니다.
+전체 소스 빌드의 21개 검사 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드도 21개 프로그램이 모두 통과했고 검토 후보와 전체 입력·DLL/cfg/ZIP 바이트가 일치했다. 공개 설치 ZIP의 두 경로·CRC·내부 바이트·SHA-256도 인증 없이 검증했다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.** 선택지 집중 검사와 전체 검사에 실제 공급자의 정의 등록 경계에서 후속 31/32/64개 뒤 직접 대사가 도착하는 경우·완료 전환·자료 누락·패드 포커스·warm 캐시/카운터 무변경을 포함한다. 원본 Lua·실제 후보 IL·합성 게임 경계의 자동 검사이며 사용자 Windows 게임 실행 결과가 아니다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -23,6 +23,12 @@ main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌�
 | 기존 cfg (변경 없음) | 13078 | a7d0d90884e032c69f8177b8193751a5543fe7b5fda7a66ab97dcffc01d6658e |
 
 검토 후보는 artifacts/issue-6/direct-choice-priority/candidate/의 build-manifest.json·build.log, 고정 커밋·태그·공개 다운로드 증거는 artifacts/releases/v1.0.7-alpha.22/에 보존한다. 준비 루프/도달 원문에 따라 달라질 수 있는 검사 집계는 검토/재빌드 결과를 별도로 비교한다.
+
+Release `419867318`·asset `663312453`, draft=false·prerelease=true·make_latest=false다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.22/DiceMaster-v1.0.7-alpha.22.zip)**.
+
+소스는 [`bbf7024`](https://github.com/jungpaeng/dicemaster/commit/bbf7024db49acd271061f2903ae2b12e9a44e77e)이다. 모든 21개 프로그램의 성공 기록도 정확히 일치한다.
+
+공개 근거는 artifacts/releases/v1.0.7-alpha.22/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json으로 구분한다. 기존 릴리스·태그·자산·정식 Latest·이슈 상태도 대조했다.
 
 ## 설치와 실제 Windows 확인
 
