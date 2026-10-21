@@ -4,10 +4,34 @@ using UnityEngine;
 
 namespace DiceMaster.Information
 {
-    // Bounded fixed-corner placement for at most two passive panels. Never
-    // search the map's obstacle-edge grid or move a map label between places.
+    // At most four adjacent candidates for the focused item. Branch notices
+    // retain fixed corners; neither path searches the map's obstacle grid.
     public static class InformationLayout
     {
+        public static Rect Near(Rect anchor, Rect viewport, float width, float height)
+        {
+            width = Size(width, viewport.width); height = Size(height, viewport.height);
+            if (!Finite(anchor.x) || !Finite(anchor.y) || !Finite(anchor.width) || !Finite(anchor.height) || anchor.width <= 0 || anchor.height <= 0)
+                return Place(new Rect(viewport.x, viewport.y, width, height), viewport, null);
+            const float gap = 8;
+            Rect best = default(Rect); double score = double.MaxValue;
+            for (int at = 0; at < 4; at++)
+            {
+                float x = at == 0 ? anchor.x + anchor.width + gap : at == 1 ? anchor.x - width - gap : anchor.x;
+                float y = at < 2 ? anchor.y : at == 2 ? anchor.y + anchor.height + gap : anchor.y - height - gap;
+                Rect value = Place(new Rect(x, y, width, height), viewport, null);
+                double overlap = Intersection(value, anchor);
+                double clamped = Math.Abs(value.x - x) + Math.Abs(value.y - y);
+                double next = overlap * 1000000 + clamped;
+                if (next < score) { best = value; score = next; }
+                if (next == 0) break;
+            }
+            return best;
+        }
+        public static Rect Badge(Rect anchor, Rect viewport, float size)
+        { return Place(new Rect(anchor.x + anchor.width - size * .25f, anchor.y - size * .75f, size, size), viewport, null); }
+        private static double Intersection(Rect a, Rect b)
+        { return Math.Max(0, Math.Min((double)a.x + a.width, (double)b.x + b.width) - Math.Max(a.x, b.x)) * Math.Max(0, Math.Min((double)a.y + a.height, (double)b.y + b.height) - Math.Max(a.y, b.y)); }
         public static Rect Place(Rect preferred, Rect viewport, IList<Rect> occupied)
         {
             float left = Finite(viewport.x) ? viewport.x : 0, top = Finite(viewport.y) ? viewport.y : 0;
@@ -47,6 +71,25 @@ namespace DiceMaster.Information
                     Math.Max(0, Math.Min((double)value.y + value.height, (double)other.y + other.height) - Math.Max(value.y, other.y));
             }
             return result;
+        }
+    }
+    // A parked mouse must not steal the description from pad/keyboard focus.
+    public sealed class InformationFocus
+    {
+        private object native;
+        private Vector2 pointer;
+        private bool known, preferPointer;
+        public void Clear() { native = null; known = preferPointer = false; }
+        public bool Pointer(object focusedAnchor, Vector2 position, bool valid)
+        {
+            if (!ReferenceEquals(native, focusedAnchor)) { native = focusedAnchor; preferPointer = false; }
+            if (valid)
+            {
+                if (known && (Math.Abs(position.x - pointer.x) >= 2 || Math.Abs(position.y - pointer.y) >= 2)) preferPointer = true;
+                else if (!known && native == null) preferPointer = true;
+                pointer = position; known = true;
+            }
+            return valid && preferPointer;
         }
     }
 }

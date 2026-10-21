@@ -66,8 +66,29 @@ static class Program {
   Check(MapGuideSource.Reads==modeReads+3&&MapGuideSource.DetailReads==detailReads+1,"closing detail returns to lightweight mode and stops detailed work");
   Check(InformationRuntime.OptionTag("O_unknown")==""&&InformationRuntime.EventTag(new object())==""&&InformationRuntime.OptionDetail("O_unknown").Contains("확인 불가"),"automatic badges and cached detail diagnostics use separate APIs");
   ChoiceCadence();
+  MarkerCadence();
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
+ }
+ static void MarkerCadence(){
+  MapGuideSource.ContextKey="marker-cadence";MapGuideSource.Visible=false;MapGuideSource.NoSelectionSession=true;
+  int before=MapGuideSource.MarkerReads,map=MapGuideSource.Reads;
+  InformationRuntime.Tick(null,true,60);
+  Check(MapGuideSource.MarkerReads==before+1&&MapGuideSource.Reads==map,"unselected visible map collects its shallow marker batch without starting selected-place analysis");
+  InformationRuntime.Tick(null,true,60.1f);Check(MapGuideSource.MarkerReads==before+1,"marker healthy refresh is quarter-second bounded");
+  InformationRuntime.Tick(null,true,60.25f);Check(MapGuideSource.MarkerReads==before+2,"marker batch refreshes at normal deadline");
+  MapGuideSource.MarkerFail=true;InformationRuntime.Tick(null,true,60.5f);Check(MapGuideSource.MarkerReads==before+3,"marker failure is observed once");
+  InformationRuntime.Tick(null,true,64);Check(MapGuideSource.MarkerReads==before+3,"marker failure uses five-second backoff");
+  InformationRuntime.Tick(null,false,66);InformationRuntime.Tick(null,true,66,false,false);InformationRuntime.Tick(null,true,66,false,true,true);
+  Check(MapGuideSource.MarkerReads==before+3,"unfocused, hidden, and popup-occluded markers cannot retry");
+  ChoiceStorySource.Visible=true;InformationRuntime.Tick(null,true,66);Check(MapGuideSource.MarkerReads==before+3,"physical choice menu stops underlying map markers");ChoiceStorySource.Visible=false;
+  MapGuideSource.MarkerFail=false;InformationRuntime.Tick(null,true,66.1f);Check(MapGuideSource.MarkerReads==before+4,"visible marker failure recovers at its retry deadline");
+  InformationRuntime.Tick("지도 안내",true,67,false,false);Check(MapGuideSource.MarkerReads==before+4,"explicit log does not start a second global automatic marker refresh");
+  InformationRuntime.Toggle(0);InformationRuntime.Toggle(1);InformationRuntime.Tick(null,true,68);
+  Check(MapGuideSource.MarkerReads==before+4,"both map settings OFF stop marker reads");
+  InformationRuntime.Toggle(0);InformationRuntime.Toggle(1);InformationRuntime.Tick(null,true,68.01f);
+  Check(MapGuideSource.MarkerReads==before+5,"reenabling clears marker backoff and requests a current snapshot");
+  MapGuideSource.NoSelectionSession=false;
  }
  static void ChoiceCadence(){
   ChoiceStorySource.Visible=true;ChoiceStorySource.ContextKey="male-room";
@@ -125,7 +146,8 @@ static class Program {
   }
   var config=m.GetType("DiceMaster.Config.ConfigManager");foreach(string key in new[]{"EnableMapGuide","EnableOneShotHints","EnableBranchNotices","EnableShopEffectInfo"})Check(config.Fields.Any(f=>f.Name==key),"delivered persistent setting "+key);
   var overlay = m.GetType("DiceMaster.Information.InformationRuntime").NestedTypes.Single(x=>x.Name=="PassiveLabel").Methods.Single(x=>x.Name=="Prepare");
-  Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Place"),"delivered passive panels use tested bounded fixed-corner layout");
+  Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Place"),"delivered branch notice retains tested bounded fixed-corner layout");
+  Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Near"),"delivered map/choice panel uses tested adjacent native anchor layout");
   Check(m.GetType("DiceMaster.Information.ShopInformationPatches")!=null&&m.GetType("DiceMaster.Information.MapInformationPatches")!=null&&m.GetType("DiceMaster.Information.BranchObservationPatches")!=null,"delivered actual game observers included");
   var runtime=m.GetType("DiceMaster.Information.InformationRuntime");
   var publish=runtime.Methods.Single(x=>x.Name=="Publish");
@@ -137,11 +159,15 @@ static class Program {
   Check(choice.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&c.Name=="AdvanceBudgeted")),"delivered current-menu source uses the bounded route analyzer");
   Check(choice.Methods.Single(x=>x.Name=="CurrentRow").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.EventSystems.EventSystem"&&c.Name=="get_currentSelectedGameObject"),"delivered pad focus reads the existing native selected object");
   var forbidden=new[]{"Check","Execute","GetResult","GetRate","Position","Switch","Condition","SetStoryScript","SetNextScript","SetCurrentStoryScript","SetCurrentKey","SetConditionFlag","GetRandomResult","UpdateCheckMissions","GetActiveMissions","GetStoryText","UpdateContent","LoadLuaFunction","SetSelectedGameObject","OnSelect","Select","AddOption","Use","Learn","Apply","Buy"};
-  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name.StartsWith("ChoiceStory")))) {
+  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name=="InformationAnchors"||x.Name=="InformationRuntime"||x.Name.StartsWith("ChoiceStory")))) {
    foreach(var method in DeepTypes(type).SelectMany(x=>x.Methods).Where(x=>x.HasBody))
     foreach(var call in method.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>())
      Check(!((call.DeclaringType.Namespace.StartsWith("Mortal.")||call.DeclaringType.Namespace.StartsWith("Fungus")||call.DeclaringType.Namespace.StartsWith("UnityEngine"))&&forbidden.Contains(call.Name)),"delivered map/choice IL does not invoke game or input mutation "+call.FullName);
   }
+  var anchors=m.GetType("DiceMaster.Information.InformationAnchors");
+  Check(anchors.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="Raycast"&&x.Name!="SetValue"),"delivered geometry has no scene-wide scans, raycasts, or reflected field writes");
+  var markerRead=m.GetType("DiceMaster.Information.MapGuideSource").Methods.Single(x=>x.Name=="ReadMarkers");
+  Check(markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="GetSource"&&x.Name!="AdvanceBudgeted"&&x.Name!="GetTextFromResources"),"delivered global marker pass cannot start source loading or route preparation");
  }
  static System.Collections.Generic.IEnumerable<TypeDefinition> DeepTypes(TypeDefinition type) {
   yield return type;

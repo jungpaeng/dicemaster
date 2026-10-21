@@ -4,6 +4,11 @@ using System.Text;
 
 namespace DiceMaster.Information
 {
+    public sealed class MapMarkerSnapshot
+    {
+        public string ContextKey;
+        public readonly List<InformationRow> Entries = new List<InformationRow>();
+    }
     // One scheduled read owns both surfaces; rendering never discovers entries.
     public sealed class MapGuideSnapshot
     {

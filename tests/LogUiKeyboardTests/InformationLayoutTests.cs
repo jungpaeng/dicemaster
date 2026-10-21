@@ -18,6 +18,8 @@ internal static partial class Program
         public int IndexOf(Rect x) => -1; public void Insert(int i,Rect x) => throw new NotSupportedException();
         public bool Remove(Rect x) => false; public void RemoveAt(int i) => throw new NotSupportedException();
     }
+    private static UnityEngine.Behaviour UiAnchor(float x = 600, float y = 300)
+    { var canvas = new Canvas(); var component = new Behaviour(); component.gameObject.transform = new RectTransform { Owner=component.gameObject, Parent=canvas.transform, position=new Vector3(x, Screen.height-y-32, 1) }; return component; }
     private static void InformationLayoutGeometry()
     {
         var viewport = new Rect(0, 0, 200, 100);
@@ -47,7 +49,7 @@ internal static partial class Program
         {
             Screen.width = 1920; Screen.height = 1080;
             InformationRuntime.TestFlags = new[] { true, true, false, true };
-            MapGuideSource.Selected = new object();
+            MapGuideSource.Selected = UiAnchor();
             var initial = new InformationRow("map/one", "선택 장소", "지도", "후보 1", "전체 상세",
                 "• <color=red>사사형</color> · 인물 대화 · 진입 조건 충족 (현재)\n• 다른 인물 · 인물 대화 · 진입 조건 미충족 (현재)\n• 미확인 · 인물 대화 · 선택 화면에서 확인\n자세히: 로그 → 도구 → 지도 안내", MapGuideSource.Selected, true);
             InformationRuntime.TestMap(initial);
@@ -72,18 +74,19 @@ internal static partial class Program
                 !GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능성 있음") &&
                 !GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>지금 진행 불가"),
                 "confirmed availability and met mission conditions are green while possibility and blocked statuses remain neutral");
-            MapGuideSource.Selected = new object(); GUI.PassiveLabels.Clear();
+            MapGuideSource.Selected = UiAnchor(); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1002);
             Check(GUI.PassiveLabels.Count == 0, "selection change hides the previous publication before refresh");
             MapGuideSource.Selected = null; InformationRuntime.Draw(false, false, default, 1003);
             Check(GUI.PassiveLabels.Count == 0, "deselected place has no panel");
-            MapGuideSource.Selected = new object();
+            MapGuideSource.Selected = UiAnchor();
             var notices = new List<string>();
             for (int i = 0; i < 10; i++) notices.Add(MapGuidePresentation.Notice(new string('가', 200) + i, "보조 임무", 0, true, true, "대기 등록"));
             InformationRuntime.TestMap(new InformationRow("map/two", "새 장소", "지도", "", "조건과 효과", MapGuidePresentation.Summary(notices, true, false), MapGuideSource.Selected));
             InformationRuntime.Draw(false, false, default, 1004);
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("외 7개") && GUI.PassiveLabels[0].Text.EndsWith("자세히: 로그 → 도구 → 지도 안내"), "long lists keep complete statuses, remaining count and detail path");
             measures = GUIStyle.Measurements; Screen.width = 800; Screen.height = 600;
+            ((Behaviour)MapGuideSource.Selected).transform.position = new Vector3(600, 268, 1);
             GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1005);
             Check(GUIStyle.Measurements > measures && GUI.PassiveLabels[0].Rect.width <= 800, "resize recomputes bounded whole-row geometry");
             var passiveStyle = new GUIStyle(GUI.skin.box) { fontSize = Math.Min(24, Math.Max(12, DiceMaster.Config.ConfigManager.LogFontSize.Value)), wordWrap = true, richText = GUI.PassiveLabels[0].RichText };
@@ -110,8 +113,8 @@ internal static partial class Program
             Check(GUI.PassiveLabels.Count == 0, "no-selection snapshot with global rows never creates a selected-place panel");
             Screen.width = 1920; Screen.height = 1080;
             var choice = new ChoiceStorySnapshot();
-            var firstChoice = new InformationRow("one", "사사형", "연결 이야기", "조건 충족", "전체 경로", "사사형 → 대화 항목 · 진행 가능");
-            var nextChoice = new InformationRow("two", "다른 항목", "연결 이야기", "후보", "전체 경로", "경로 후보: 다른 항목 → 이야기 · 진행 가능성 있음");
+            var firstChoice = new InformationRow("one", "사사형", "연결 이야기", "조건 충족", "전체 경로", "사사형 → 대화 항목 · 진행 가능", UiAnchor(), true);
+            var nextChoice = new InformationRow("two", "다른 항목", "연결 이야기", "후보", "전체 경로", "경로 후보: 다른 항목 → 이야기 · 진행 가능성 있음", UiAnchor(600, 400));
             choice.Entries.Add(firstChoice); choice.Entries.Add(nextChoice);
             ChoiceStorySource.MenuVisible = true; ChoiceStorySource.Current = choice; ChoiceStorySource.Selected = firstChoice;
             InformationRuntime.TestChoices(choice); GUI.PassiveLabels.Clear();
@@ -128,7 +131,7 @@ internal static partial class Program
             ChoiceStorySource.Current = null; GUI.PassiveLabels.Clear(); InformationRuntime.Draw(false, false, default, 1014);
             Check(GUI.PassiveLabels.Count == 0, "old menu publication is hidden immediately and cannot reveal an underlying map");
             InformationRuntime.TestFlags[0] = false; InformationRuntime.TestFlags[1] = true;
-            MapGuideSource.Selected = new object(); InformationRuntime.TestMap(new InformationRow("back", "뒤 지도", "지도", "가능", "상세", "지도 후보", MapGuideSource.Selected));
+            MapGuideSource.Selected = UiAnchor(); InformationRuntime.TestMap(new InformationRow("back", "뒤 지도", "지도", "가능", "상세", "지도 후보", MapGuideSource.Selected));
             InformationRuntime.Draw(false, false, default, 1015);
             Check(GUI.PassiveLabels.Count == 0, "physical menu occludes the one-shot map panel even while map guide is OFF");
             ChoiceStorySource.MenuVisible = false; InformationRuntime.TestChoices(null); GUI.PassiveLabels.Clear();
@@ -137,6 +140,7 @@ internal static partial class Program
             Check(InformationRuntime.TestErrors.Count == 0, "overlay boundaries complete without swallowed failures");
         }
         finally { Screen.width = width; Screen.height = height; InformationRuntime.TestMap(null); InformationRuntime.TestChoices(null); ChoiceStorySource.MenuVisible = false; MapGuideSource.Selected = null; GUI.PassiveLabels.Clear(); }
+        AnchoredNotices();
     }
 }
 namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
@@ -153,7 +157,7 @@ namespace DiceMaster.Information
     }
     public static class MapGuideSource
     {
-        public static object Selected, CurrentAnchor;
+        public static object Selected, CurrentAnchor; public static object SelectedAnchor => Selected; public static MapMarkerSnapshot CurrentMarkers; public static bool IsCurrent(MapMarkerSnapshot value)=>ReferenceEquals(CurrentMarkers,value);
         public static string CurrentId;
         public static bool IsCurrent(string id) => Selected != null && ReferenceEquals(Selected, CurrentAnchor) && id == CurrentId;
         public static bool IsCurrent(InformationRow row) => Selected != null && ReferenceEquals(row.Anchor, Selected);
@@ -163,7 +167,7 @@ namespace DiceMaster.Information
     {
         private sealed class Row { internal string Id; internal object Value; internal string Status = ""; }
         private sealed class Page { internal bool Visible; internal List<Row> Rows = new List<Row>(); }
-        private static readonly Page map = new Page(), choices = new Page();
+        private static readonly Page map = new Page(), choices = new Page(), markers = new Page();
         public static bool[] TestFlags = new[] { true, true, false, true };
         public static readonly List<string> TestErrors = new List<string>();
         public static bool Enabled(int index) => TestFlags[index];
@@ -171,6 +175,7 @@ namespace DiceMaster.Information
         public static void TestMap(InformationRow row, string status = "") { map.Rows.Clear(); map.Visible = row != null; if (row != null) { MapGuideSource.CurrentAnchor = row.Anchor; MapGuideSource.CurrentId = row.Id; var snapshot = new MapGuideSnapshot { Summary = row, HasSelection = true }; snapshot.Entries.Add(row); snapshot.Entries.Add(new InformationRow("other", "장소 무관", "임무", "대기", "상세")); map.Rows.Add(new Row { Id = row.Id, Value = snapshot, Status = status }); } }
         public static void TestWaiting(string id) { MapGuideSource.CurrentAnchor = MapGuideSource.Selected; MapGuideSource.CurrentId = id; map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = id, Status = "게임 데이터 대기 중" }); }
         public static void TestGlobal() { var snapshot = new MapGuideSnapshot { HasSelection = false }; snapshot.Entries.Add(new InformationRow("global", "장소 무관", "임무", "대기", "상세")); map.Rows.Clear(); map.Visible = true; map.Rows.Add(new Row { Id = MapGuideSource.CurrentId, Value = snapshot }); }
+        public static void TestMarkers(MapMarkerSnapshot value,string status="") { MapGuideSource.CurrentMarkers=value; markers.Visible=value!=null; markers.Rows.Clear();if(value!=null)markers.Rows.Add(new Row { Value=value, Status=status }); }
         public static void TestChoices(ChoiceStorySnapshot value) { choices.Rows.Clear(); choices.Visible = value != null; if (value != null) choices.Rows.Add(new Row { Value = value }); }
     }
 }

@@ -36,6 +36,10 @@
       <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
       <HintPath>$(GameReferences)/Mortal_Data/Managed/UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>

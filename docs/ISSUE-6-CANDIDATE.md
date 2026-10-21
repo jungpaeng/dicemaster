@@ -1,5 +1,9 @@
 # 지도·1회성·분기·상점 정보 — v1.0.7-alpha.1 prerelease
 
+## alpha.14 — 장소·선택지 근처 표시 후보
+
+현재 확인된 기회의 붉은 점과 포커스 옆 설명을 추가한다. 미선택 장소는 얕은 현재 대기 목록과 이미 준비된 1회성만 사용하며 전체 Lua 분석을 시작하지 않는다. 새 설정은 없고 cfg를 보존해 DLL만 업데이트한다. 게시 상태·설치 파일·검사·남은 실제 Windows 확인은 [alpha.14 기록](ISSUE-6-ALPHA14-RELEASE.md)을 따른다. 아래 alpha.13 이하는 당시 기록이다.
+
 ## alpha.13 성능 개선 후보
 
 2026-10-21 18:06:04 KST에 소스·주석 태그 [`53d6f6a`](https://github.com/jungpaeng/dicemaster/commit/53d6f6a2165b3c57f786e1920ff2b114e2144719)의 [alpha.13](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.13)을 게시했다. 전체·고정 커밋 재빌드 21개 검사·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 54개 Release·55개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·파일·비교 기록](ISSUE-6-ALPHA13-RELEASE.md).

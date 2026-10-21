@@ -21,7 +21,7 @@ namespace DiceMaster.Information
     // Only live controllers registered by the game's own lifecycle are used.
     // No Unity object search, hidden-map discovery, mission activation, or
     // gameplay evaluation occurs here. The owner supplies visibility cadence.
-    public static class MapGuideSource
+    public static partial class MapGuideSource
     {
         private sealed class Place
         {
@@ -188,6 +188,7 @@ namespace DiceMaster.Information
         private static bool IsEnabled { get { try { return Enabled == null || Enabled(); } catch (Exception) { return false; } } }
         public static string ContextKey { get { return generation.ToString(CultureInfo.InvariantCulture) + "/" + (Session == null ? "" : Session.GetInstanceID().ToString(CultureInfo.InvariantCulture)) + "/" + selectionId; } }
         public static bool Visible { get { return IsEnabled && Selected != null; } }
+        public static object SelectedAnchor { get { return Selected; } }
         private static PositionController Session
         {
             get
@@ -207,7 +208,7 @@ namespace DiceMaster.Information
             if (controller == null) return;
             if (Session == null) { session = new WeakReference(controller); generation++; }
             foreach (Place place in places) if (ReferenceEquals(place.Controller.Target, controller)) return;
-            places.Add(new Place { Controller = new WeakReference(controller), Id = checked(++sequence) });
+            places.Add(new Place { Controller = new WeakReference(controller), Id = checked(++sequence) }); markerGeneration++;
         }
         public static void Select(PositionController controller)
         {
@@ -224,7 +225,7 @@ namespace DiceMaster.Information
             selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
         }
         public static void Clear()
-        { places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; }
+        { places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
         public static void ClearSnapshots() { ClearSnapshotsCore(true); }
         public static void ClearSnapshotsPreservingSyntax() { ClearSnapshotsCore(false); }
         private static void ClearSnapshotsCore(bool clearSyntax)
@@ -237,6 +238,7 @@ namespace DiceMaster.Information
                 place.Definition = null; place.Reads.Clear(); place.Data = place.PositionConfig = null;
             }
             globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); observedManager = observedPlayer = null; if (changed) generation++;
+            if (changed) markerGeneration++;
             if (clearSyntax) { MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); }
         }
         public static List<DisplayQuery> Discover(bool guide, bool oneShot, bool details = false)
@@ -472,7 +474,7 @@ namespace DiceMaster.Information
             if (ReferenceEquals(manager, observedManager) && ReferenceEquals(player, observedPlayer)) return;
             globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear();
             foreach (Place value in places) { value.Reads.Clear(); value.Definition = null; }
-            OneShotProof.Clear(); observedManager = manager; observedPlayer = player; generation++;
+            OneShotProof.Clear(); observedManager = manager; observedPlayer = player; generation++; markerGeneration++;
         }
         private static MapGuideSnapshot ReadGlobal(PositionController controller, bool guide)
         {

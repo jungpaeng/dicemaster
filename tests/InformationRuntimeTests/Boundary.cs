@@ -35,6 +35,8 @@ namespace DiceMaster.Information {
  public static class BranchObservationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class MapGuideSource {
   public static IList<MapRouteEvent> ReadChoicePool(string key)=>new List<MapRouteEvent>();
+  public static Func<object,bool> MarkerVisible;public static bool MarkerSessionVisible=>SessionVisible;public static string MarkerContextKey=>ContextKey;public static int MarkerReads;public static bool MarkerFail;
+  public static List<DisplayQuery> DiscoverMarkers(bool g,bool o)=>new(){new DisplayQuery("markers",()=>{MarkerReads++;if(MarkerFail)throw new InvalidOperationException();return new MapMarkerSnapshot();})};
   public static Func<bool> Enabled;public static bool Visible,NoSelectionSession;public static bool SessionVisible=>Visible||NoSelectionSession;public static string ContextKey="m";public static int Reads,DetailReads,Discoveries,Clears;public static bool Fail;
   public static List<DisplayQuery> Discover(bool g,bool o,bool details=false){Discoveries++;if(!Visible&&(!NoSelectionSession||!g))return new();return new(){new DisplayQuery("map",()=>{Reads++;if(details)DetailReads++;if(Fail)throw new InvalidOperationException();var snapshot=new MapGuideSnapshot{HasSelection=Visible,ContextKey=ContextKey,Summary=Visible?new InformationRow("map","장소","지도","가능","조건과 효과"):null};snapshot.Entries.Add(new InformationRow("mission/first","첫 임무",NoSelectionSession?"장소 무관":"선택 장소","발생 대기",details?"첫 조건과 효과":"상세에서 확인"));snapshot.Entries.Add(new InformationRow("event/second","둘째 이야기","기타 연결","확인 불가",details?"둘째 조건과 효과":"상세에서 확인"));return snapshot;})};}public static void Clear(){Clears++;}public static void ClearSnapshots(){Clears++;}public static void ClearSnapshotsPreservingSyntax(){Clears++;}
  }
@@ -69,3 +71,5 @@ namespace DiceMaster.Information {
  public static class InformationLifecyclePatches {public static void Install(HarmonyLib.Harmony h){}}
  public static class OptionHintSource {public static Func<bool> Enabled; public static bool Visible;public static string ContextKey="o";public static void Clear(){}public static void RenderHints(){}public static List<DisplayQuery> Discover()=>new();}
 }
+
+namespace DiceMaster.Information { public static class InformationAnchors { public static bool IsVisible(object o)=>true; } }

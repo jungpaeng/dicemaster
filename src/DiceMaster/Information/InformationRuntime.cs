@@ -22,7 +22,7 @@ namespace DiceMaster.Information
             internal List<DisplayRow> Rows = new List<DisplayRow>();
             internal bool Visible;
         }
-        private static readonly Page map = new Page(), shop = new Page(), branch = new Page(), hints = new Page(), choices = new Page();
+        private static readonly Page map = new Page(), shop = new Page(), branch = new Page(), hints = new Page(), choices = new Page(), markers = new Page();
         private static readonly bool[] enabled = new bool[4], ready = new bool[4];
         private static readonly Dictionary<string,string> failures = new Dictionary<string,string>();
                 private static bool parent;
@@ -39,6 +39,7 @@ namespace DiceMaster.Information
             BranchHistory.Cleared = () => { Reset(branch); Publish(branch, "분기 기록"); };
             OptionHintSource.Enabled = () => Enabled(1);
             MapGuideSource.Enabled = () => Enabled(0) || Enabled(1);
+            MapGuideSource.MarkerVisible = InformationAnchors.IsVisible;
             ChoiceStorySource.Enabled = () => Enabled(0);
             ChoiceStorySource.PoolReader = MapGuideSource.ReadChoicePool;
             ShopEffectSource.Enabled = () => Enabled(3);
@@ -88,6 +89,7 @@ namespace DiceMaster.Information
                 catch (Exception error) { Failure("설정 " + names[index], error); }
                 if (enabled[index] && !value)
                 {
+                    if (index < 2) Reset(markers);
                     if (index == 0) { Reset(map); Reset(choices); ChoiceStorySource.ClearSnapshots(); }
                     if (index == 1) { Reset(hints); OptionHintSource.Clear(); OneShotProof.Clear(); }
                     if (index == 2) { BranchHistory.Clear(); Reset(branch); }
@@ -102,7 +104,7 @@ namespace DiceMaster.Information
         { page.Engine.ResetContext(); page.Rows.Clear(); page.Context = null; page.Visible = false; }
         public static void Clear()
         {
-            Reset(map); Reset(shop); Reset(branch); Reset(hints); Reset(choices); OptionHintSource.Clear(); ChoiceStorySource.Clear();
+            Reset(map); Reset(shop); Reset(branch); Reset(hints); Reset(choices); Reset(markers); OptionHintSource.Clear(); ChoiceStorySource.Clear();
             MapGuideSource.Clear(); ShopEffectSource.Clear(); BranchHistory.Clear(); OneShotProof.Clear();
         }
         public static void Tick(string detailPage, bool focused, float now, bool manual = false, bool automaticVisible = true, bool popupVisible = false)
@@ -118,7 +120,7 @@ namespace DiceMaster.Information
                 luaContext = LogBridge.Model.ContextId;
                 OptionHintSource.Clear(); OneShotProof.Clear(); Reset(hints);
                 ChoiceStorySource.ContextChanged(); Reset(choices);
-                MapGuideSource.ClearSnapshotsPreservingSyntax(); Reset(map);
+                MapGuideSource.ClearSnapshotsPreservingSyntax(); Reset(map); Reset(markers);
                 // Scene/load patches clear history separately; ordinary Lua keeps it.
             }
             bool choiceVisible = enabled[0] && ChoiceStorySource.Visible;
@@ -132,6 +134,9 @@ namespace DiceMaster.Information
                 choiceVisible && focused && (automaticVisible || mapDetails), now,
                 () => ChoiceStorySource.Discover(mapDetails), manual,
                 () => ChoiceStorySource.ContextKey + ":" + mapDetails);
+            Run(markers, "지도 표식", MarkerKey(),
+                (enabled[0] || enabled[1]) && focused && automaticVisible && !popupVisible && !menuVisible && MapGuideSource.MarkerSessionVisible, now,
+                () => MapGuideSource.DiscoverMarkers(enabled[0], enabled[1]), manual, MarkerKey);
             Run(shop, "상점 효과", ShopEffectSource.ContextKey,
                 enabled[3] && focused && (automaticVisible && ShopEffectSource.Visible || detailPage == "상점 효과"), now,
                 ShopEffectSource.Discover, manual);
@@ -171,6 +176,7 @@ namespace DiceMaster.Information
             return proof;
         }
         private static string MapKey(bool details) => MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + details + ":" + ChoiceStorySource.MenuVisible + ":" + ChoiceStorySource.ContextKey;
+        private static string MarkerKey() => MapGuideSource.MarkerContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + luaContext;
         private static string ModelTitle(string title) => title == "선택 경로" ? "지도 안내" : title;
         private static void Run(Page page, string title, string key, bool visible, float now,
             Func<List<DisplayQuery>> discover, bool manual, Func<string> currentKey = null)
@@ -186,11 +192,11 @@ namespace DiceMaster.Information
                 page.Rows = rows; Publish(page, title);
             }, message => DicePlugin.LogInfo("Information " + message));
             // The shared log model can receive a new Lua context between healthy ticks.
-            if (!LogBridge.Model.Tab(ModelTitle(title)).HasPublished) Publish(page, title);
+            if (title != "지도 표식" && !LogBridge.Model.Tab(ModelTitle(title)).HasPublished) Publish(page, title);
         }
         private static void Publish(Page page, string title)
         {
-            if (title == "1회성") return;
+            if (title == "1회성" || title == "지도 표식") return;
             // Both contexts use the existing map tool, with only the currently
             // visible owner publishing. A hidden map must not erase menu rows.
             if (title == "지도 안내" && Enabled(0) && ChoiceStorySource.Visible) return;
@@ -252,7 +258,7 @@ namespace DiceMaster.Information
         public static string OptionDetail(string key) => Enabled(1) ? OneShotProof.CachedOptionDetail(key) : "";
         internal static void ResetDisplays()
         {
-            Reset(map); Reset(shop); Reset(hints); Reset(choices);
+            Reset(map); Reset(shop); Reset(hints); Reset(choices); Reset(markers);
             MapGuideSource.ClearSnapshots(); ShopEffectSource.Clear(); OptionHintSource.Clear(); OneShotProof.Clear(); ChoiceStorySource.Clear();
             Publish(map, "지도 안내"); Publish(shop, "상점 효과");
         }

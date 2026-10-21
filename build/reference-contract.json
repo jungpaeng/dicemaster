@@ -25,6 +25,10 @@
       "bytes": 233472,
       "sha256": "9c24bd42864c5de3b3f51fea9c213f392e51082f3f58e319d64fa0bc240771cf"
     },
+    "Mortal_Data/Managed/UnityEngine.UIModule.dll": {
+      "bytes": 34728,
+      "sha256": "02d574fc23022c4eb7e02129738c6f1c3cd8d4d08ea27154c278293c67bfbfd4"
+    },
     "Mortal_Data/Managed/UnityEngine.IMGUIModule.dll": {
       "bytes": 171952,
       "sha256": "e84bcf2d25a2bc56b3f31361009b46509482da06279f6780dca8cec1fb91db12"

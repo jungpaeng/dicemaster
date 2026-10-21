@@ -9,7 +9,7 @@ using Mortal.Free;
 using Mortal.Story;
 using UnityEngine;
 using LuaAction = DiceMaster.LuaParse.Action;
-static class Program
+static partial class Program
 {
     private static int assertions;
     private static void Check(bool condition, string message) { assertions++; if (!condition) throw new Exception(message); }
@@ -599,5 +599,5 @@ static class Program
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); IndependentPreparation(); AutomaticScope(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); IndependentPreparation(); AutomaticScope(); MarkerCases(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

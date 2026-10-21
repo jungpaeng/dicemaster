@@ -107,6 +107,7 @@ internal static class Program
         controller.gameObject.activeInHierarchy = true; MapGuideSource.Enabled = () => false;
         Check(MapGuideSource.Discover(true, true).Count == 0 && DataHelper.Reads == beforeHidden, "OFF stops the integrated route/provider query");
         Check(Counters.GameCalls == 0 && onceFlag.State == 0 && controller._gameStatManager._stats._list[0]._value == 3 && controller._scriptName == "old-click-cache", "Integration never calls game Position/Condition/Check, applies effects, consumes action points or initializes the click cache");
+        CachedMarkerRoutes(controller, gateFlag, onceFlag);
         Limits();
         PassiveCosts();
         PassiveRouteReads();
@@ -118,6 +119,27 @@ internal static class Program
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
         if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); }
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
+    }
+    private static void CachedMarkerRoutes(PositionController controller, FlagData gate, FlagData once)
+    {
+        MapGuideSource.Enabled = () => true;
+        var cold = new PositionController { _positionData = new FreePositionData { name = "Kitchen", _defaultScript = "marker_never_load" }, _position = PositionType.Kitchen,
+            _missionsManager = controller._missionsManager, _gameStatManager = controller._gameStatManager, _freeManager = controller._freeManager };
+        MapGuideSource.Register(cold); MapGuideSource.Deselect(controller);
+        int resources = DataHelper.Reads, parses = LuaParser.Parses, descriptions = LuaParser.Descriptions;
+        MapMarkerSnapshot Markers() { Time.unscaledTime += .25f; return (MapMarkerSnapshot)MapGuideSource.DiscoverMarkers(false, true)[0].Read(); }
+        MapMarkerSnapshot value = null; for (int at = 0; at < 10; at++) value = Markers();
+        Check(value.Entries.Count == 1 && ReferenceEquals(value.Entries[0].Anchor, controller) && value.Entries[0].AutoText.Contains("한 번의 기회"), "unselected prepared one-shot can publish a place marker while an unprepared place remains silent");
+        once.State = 1; Check(Markers().Entries.Count == 0, "completed one-shot disappears from all-place markers using fresh event eligibility");
+        once.State = 0; gate.State = 1; Check(Markers().Entries.Count == 0, "known one-shot property cannot bypass a currently false route condition");
+        gate.State = 0; controller._positionData._conditionFlags = new[] { new PositionConditionFlagItem { _condition = IsZero(gate) } };
+        Check(Markers().Entries.Count == 0, "native entry flag writes prevent a guaranteed one-shot dot before arrival"); controller._positionData._conditionFlags = Array.Empty<PositionConditionFlagItem>();
+        for (int at = 0; at < 100; at++) value = Markers();
+        Check(value.Entries.Count == 1 && DataHelper.Reads == resources && LuaParser.Parses == parses && LuaParser.Descriptions == descriptions, "one hundred all-place marker ticks reuse cached proof and syntax without loading cold place Lua or effect text");
+        controller.gameObject.activeInHierarchy = false;
+        Check(MapGuideSource.MarkerSessionVisible && Markers().Entries.Count == 0, "another live registered place preserves marker session while a hidden prepared place cannot retain dots");
+        controller.gameObject.activeInHierarchy = true;
+        Check(Counters.GameCalls == 0 && once.State == 0 && gate.State == 0, "fresh marker reachability leaves original flags and game judgments unchanged");
     }
     private static void ChoiceStoryMap()
     {

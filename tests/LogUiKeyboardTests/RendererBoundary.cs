@@ -105,7 +105,8 @@ namespace UnityEngine
     public static class GUI
     {
         public static readonly List<(Rect Rect, string Text, bool RichText)> PassiveLabels = new List<(Rect, string, bool)>();
-        public static void Label(Rect rect, GUIContent content, GUIStyle style) { PassiveLabels.Add((rect, content.text, style.richText)); }
+        public static readonly List<(Rect Rect, string Text, bool RichText)> BadgeLabels = new List<(Rect, string, bool)>();
+        public static void Label(Rect rect, GUIContent content, GUIStyle style) { (content.text == "●" ? BadgeLabels : PassiveLabels).Add((rect, content.text, style.richText)); }
         public static GUISkin skin = new GUISkin(); public static bool enabled = true;
         private static string focusedControl;
         public sealed class FocusCall
