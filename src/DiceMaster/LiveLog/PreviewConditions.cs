@@ -37,6 +37,30 @@ namespace DiceMaster.LiveLog
         { return new PreviewCondition("not", left: value ?? Unknown); }
         public static PreviewCondition All(PreviewCondition left, PreviewCondition right)
         { return new PreviewCondition("and", left: left ?? Unknown, right: right ?? Unknown); }
+        // Opt-in for a single next invocation in a closed entry segment. Plain
+        // Switch previews retain their count protection; saved bindings are not
+        // rewritten, and two calls cannot borrow the same current counter.
+        internal static PreviewCondition ScopeNextSwitch(PreviewCondition condition, bool allowed, out bool readsSwitch)
+        {
+            int work = 0, count = SwitchCalls(condition, 0, ref work);
+            readsSwitch = count != 0;
+            return allowed && count == 1 ? ReplaceNextSwitch(condition) : condition;
+        }
+        private static int SwitchCalls(PreviewCondition node, int depth, ref int work)
+        {
+            if (node == null) return 0;
+            if (depth > 64 || ++work > 512) return 2;
+            if (node.Operation == "captured") return 0;
+            if (node.Operation == "Switch") return 1;
+            return Math.Min(2, SwitchCalls(node.Left, depth + 1, ref work) + SwitchCalls(node.Right, depth + 1, ref work));
+        }
+        private static PreviewCondition ReplaceNextSwitch(PreviewCondition node)
+        {
+            if (node == null || node.Operation == "captured") return node;
+            if (node.Operation == "Switch") return new PreviewCondition("NextSwitch", key: node.Key);
+            if (node.Left == null && node.Right == null) return node;
+            return new PreviewCondition(node.Operation, node.Literal, node.Key, ReplaceNextSwitch(node.Left), ReplaceNextSwitch(node.Right));
+        }
 
         private sealed class EffectSnapshot
         {
@@ -125,7 +149,7 @@ namespace DiceMaster.LiveLog
         {
             if (node == null || depth > 64 || ++work > 512) return Unknown;
             if (node.Operation == "captured") return node;
-            if (node.Operation == "Condition" || node.Operation == "Switch") return new PreviewCondition("captured", effects, left: node);
+            if (node.Operation == "Condition" || node.Operation == "Switch" || node.Operation == "NextSwitch") return new PreviewCondition("captured", effects, left: node);
             if (node.Left == null && node.Right == null) return node;
             PreviewCondition left = node.Left == null ? null : Capture(node.Left, effects, depth + 1, ref work);
             PreviewCondition right = node.Right == null ? null : Capture(node.Right, effects, depth + 1, ref work);
@@ -228,6 +252,8 @@ namespace DiceMaster.LiveLog
         public sealed class Reader
         {
             private readonly Snapshot snapshot = new Snapshot();
+            internal bool HasUnresolvedEntrySwitch(PreviewCondition condition)
+            { try { return snapshot.UnresolvedEntrySwitch(condition, 0); } catch (Exception) { return true; } }
             public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites)
             { return AreFlagWritesDisjoint(condition, flagWrites, null); }
             public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites, IDictionary<string, int> sameValueSetCandidates)
@@ -341,7 +367,7 @@ namespace DiceMaster.LiveLog
                     var effects = node.Literal as EffectSnapshot;
                     return effects != null && !effects.Opaque && ValidateDependencies(node.Left, depth + 1);
                 }
-                if (node.Operation == "Condition" || node.Operation == "Switch")
+                if (node.Operation == "Condition" || node.Operation == "Switch" || node.Operation == "NextSwitch")
                 {
                     if (!managerRead) { manager = ExistingManager(); managerRead = true; }
                     if (manager == null) return false;
@@ -402,7 +428,7 @@ namespace DiceMaster.LiveLog
                     }
                     captured.Add(node, result); return result;
                 }
-                if (node.Operation == "Switch" || node.Operation == "Condition")
+                if (node.Operation == "Switch" || node.Operation == "NextSwitch" || node.Operation == "Condition")
                 {
                     string key = node.Operation + ":" + node.Key;
                     object result;
@@ -551,7 +577,8 @@ namespace DiceMaster.LiveLog
                         try { count = Convert.ToString(Field(data, "_count"), CultureInfo.InvariantCulture); } catch (Exception) { count = "?"; }
                         Trace("Switch " + key + " · useCount=" + Convert.ToString(Field(data, "_useCount"), CultureInfo.InvariantCulture) + " · count=" + count);
                     }
-                    if (!(Field(data, "_useCount") is bool) || (bool)Field(data, "_useCount")) return null;
+                    if (!(Field(data, "_useCount") is bool)) return null;
+                    if ((bool)Field(data, "_useCount")) return operation == "NextSwitch" ? ReadNextCount(data) : null;
                     IList items = List(data, "_items", 256);
                     var possible = new List<int>(); bool stopped = false;
                     for (int i = 0; i < items.Count; i++)
@@ -564,6 +591,47 @@ namespace DiceMaster.LiveLog
                     return possible.Count == 1 ? (object)possible[0] : new SwitchChoices(possible);
                 }
                 return null;
+            }
+            private object ReadNextCount(object data)
+            {
+                object raw = Field(data, "_count");
+                if (!(raw is int) || (int)raw < 0 || (int)raw == int.MaxValue) return null;
+                int next = (int)raw + 1;
+                IList items = List(data, "_countItems", 256);
+                for (int at = 0; at < items.Count; at++)
+                {
+                    Step(); Exact(items[at], "Mortal.Core.ValueCompareItem");
+                    object target = Field(items[at], "_value"); int op = Convert.ToInt32(Field(items[at], "_compareOp"));
+                    if (!(target is int) || op < 0 || op > 5) return null;
+                    int value = (int)target;
+                    bool match = op == 0 ? next == value : op == 1 ? next != value : op == 2 ? next < value :
+                        op == 3 ? next <= value : op == 4 ? next > value : next >= value;
+                    if (match) return at + 1;
+                }
+                return items.Count + 1;
+            }
+            internal bool UnresolvedEntrySwitch(PreviewCondition node, int depth)
+            {
+                Step(); if (node == null) return false;
+                if (depth > 64) return true;
+                PreviewCondition leaf = node.Operation == "captured" ? node.Left : node;
+                if (leaf != null && (leaf.Operation == "Switch" || leaf.Operation == "NextSwitch"))
+                {
+                    if (!managerRead) { manager = ExistingManager(); managerRead = true; }
+                    if (manager == null) return leaf.Operation == "NextSwitch";
+                    Array configs = Field(manager, "_switchList") as Array;
+                    if (configs == null || configs.Length > 256) return leaf.Operation == "NextSwitch";
+                    foreach (object config in configs)
+                    {
+                        Step(); object data = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", leaf.Key);
+                        if (data == null) continue;
+                        object mode = Field(data, "_useCount");
+                        if (mode is bool && !(bool)mode) return false; // Known random/ordinary uncertainty is distinct.
+                        return !(mode is bool) || Value(node, depth + 1) == null;
+                    }
+                    return leaf.Operation == "NextSwitch";
+                }
+                return UnresolvedEntrySwitch(node.Left, depth + 1) || UnresolvedEntrySwitch(node.Right, depth + 1);
             }
             private bool? ReadConditionData(object value, int depth)
             {

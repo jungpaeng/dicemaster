@@ -467,10 +467,49 @@ namespace DiceMaster
             finally { T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new object[] { null }); CheckPointManager.Instance = previous; }
         }
 
+        static void NextEntryCount()
+        {
+            CheckPointManager previous = CheckPointManager.Instance;
+            int executions = SwitchResultData.Executions, rng = UnityEngine.Random.Calls;
+            try
+            {
+                var data = new SwitchResultData { name = "renamed_entry", _useCount = true, _count = 0,
+                    _countItems = new List<ValueCompareItem> { new ValueCompareItem { _value = 1, _compareOp = StatCompareType.Equal } } };
+                CheckPointManager.Instance = new CheckPointManager { _switchList = new[] { new SwitchResultConfig { _list = new List<SwitchResultData> { data } } } };
+                MethodInfo scope = T("PreviewConditions").GetMethod("ScopeNextSwitch", BindingFlags.NonPublic | BindingFlags.Static);
+                object raw = Parse("checkpointmanager.Switch('renamed_entry') == 1");
+                object Scoped(object value, bool allowed = true) => scope.Invoke(null, new[] { value, (object)allowed, false });
+                State("Unknown", raw, "actual DLL plain count-switch preview remains protected");
+                object next = Scoped(raw);
+                State("Met", next, "actual DLL a proven next invocation reads the next count without incrementing it");
+                data._count = 1;
+                State("NotMet", next, "actual DLL a completed entry updates from fresh stored count");
+                data._count = 0;
+                State("Unknown", Scoped(raw, false), "actual DLL an unsafe segment cannot opt into a next count");
+                State("Unknown", Scoped(Parse("checkpointmanager.Switch('renamed_entry') == 1 and checkpointmanager.Switch('renamed_entry') == 1")), "actual DLL repeated invocations cannot share one next count");
+                for (int op = 0; op < 6; op++)
+                {
+                    data._countItems[0]._compareOp = (StatCompareType)op;
+                    State(op == 0 || op == 3 || op == 5 ? "Met" : "NotMet", next, "actual DLL native integer comparison " + op);
+                }
+                data._countItems[0]._compareOp = (StatCompareType)99;
+                State("Unknown", next, "actual DLL unsupported comparisons remain unknown");
+                data._countItems = null;
+                State("Unknown", next, "actual DLL missing count definitions remain unknown");
+                data._countItems = new List<ValueCompareItem>();
+                State("Met", next, "actual DLL an empty count table falls through to result one");
+                foreach (int invalid in new[] { -1, int.MaxValue })
+                { data._count = invalid; State("Unknown", next, "actual DLL invalid or overflowing count remains unknown"); }
+                Check(data._count == int.MaxValue && executions == SwitchResultData.Executions && rng == UnityEngine.Random.Calls,
+                    "actual DLL count preview calls no original evaluator or RNG and writes no stored counter");
+            }
+            finally { CheckPointManager.Instance = previous; }
+        }
+
         public static int Run()
         {
             assertions = 0;
-            Syntax(); CurrentFields(); PartialLogic(); TalkResetFootprint(); LiteralNoOpWrites(); TraceAndDisplay(); FlatAlternativesRemainBounded();
+            Syntax(); CurrentFields(); NextEntryCount(); PartialLogic(); TalkResetFootprint(); LiteralNoOpWrites(); TraceAndDisplay(); FlatAlternativesRemainBounded();
             Console.WriteLine("PREVIEW readonly current condition backend passed");
             return assertions;
         }

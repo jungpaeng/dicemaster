@@ -79,7 +79,7 @@ namespace DiceMaster.Information
             internal string Script, Pool, Identity = "", Path = "", DialogueCharacter;
             internal int Depth, At, End, PoolCursor, PendingEnd = -1, TopicStart = -1, TopicEnd = -1;
             internal string ChoiceVariable;
-            internal bool ActivityContext, TalkReset, LocalChoiceSeen, LocalEntry = true, ActivityProjection = true, ActivityOriginSafe = true;
+            internal bool ActivityContext, TalkReset, SwitchRead, LocalChoiceSeen, LocalEntry = true, ActivityProjection = true, ActivityOriginSafe = true;
             internal bool Started, Uncertain, HasChoice, StoryChoice, EntryUncertain, SnapshotOpaque, CutRecorded, RootEntry = true;
             private bool opaqueEffects;
             internal bool OpaqueEffects { get { return opaqueEffects; } set { opaqueEffects = value; if (value) { SnapshotOpaque = true; RootEntry = false; LocalEntry = false; ActivityProjection = false; } } }
@@ -101,7 +101,7 @@ namespace DiceMaster.Information
             internal Job Copy()
             {
                 var n = new Job { Script = Script, Pool = Pool, Identity = Identity, Path = Path, Depth = Depth, At = At, End = End, PendingEnd = PendingEnd,
-                    TopicStart = TopicStart, TopicEnd = TopicEnd, ChoiceVariable = ChoiceVariable, ActivityContext = ActivityContext, TalkReset = TalkReset, LocalChoiceSeen = LocalChoiceSeen, ActivityOriginSafe = ActivityOriginSafe, TopicCondition = TopicCondition,
+                    TopicStart = TopicStart, TopicEnd = TopicEnd, ChoiceVariable = ChoiceVariable, ActivityContext = ActivityContext, TalkReset = TalkReset, SwitchRead = SwitchRead, LocalChoiceSeen = LocalChoiceSeen, ActivityOriginSafe = ActivityOriginSafe, TopicCondition = TopicCondition,
                     Started = Started, Uncertain = Uncertain, HasChoice = HasChoice, StoryChoice = StoryChoice, Gate = Gate, StoryGate = StoryGate, Pending = Pending, DialogueCharacter = DialogueCharacter, OpaqueEffects = OpaqueEffects,
                     SnapshotGate = SnapshotGate, SnapshotOpaque = SnapshotOpaque, CutRecorded = CutRecorded, RootEntry = RootEntry, LocalEntry = LocalEntry, ActivityProjection = ActivityProjection, SnapshotDialog = SnapshotDialog,
                     EntryGate = EntryGate, EntryUncertain = EntryUncertain, Steps = new List<MapChoiceStep>(Steps),
@@ -688,7 +688,7 @@ namespace DiceMaster.Information
         private static bool TrySnapshotPresentation(Job job, MapRouteSyntax syntax, int start, out int end)
         {
             end = start;
-            if (job.Steps.Count == 0 || job.SnapshotOpaque) return false;
+            if (job.SnapshotOpaque || job.Steps.Count == 0 && job.Depth != 0) return false;
             foreach (string name in new[] { "characters", "stage", "sayoptions", "setsaydialog", "saydialogs", "setmenudialog", "menudialogs", "runwait", "wait", "transitionblack", "statmodifymanager", "setcharacter", "flowcharts", "getvar", "runblock" })
                 if (job.Bindings.ContainsKey(name) || job.InvalidManagers.Contains(name)) return false;
             return TryPresentationSyntax(syntax, start, out end);
@@ -894,7 +894,13 @@ namespace DiceMaster.Information
         private static PreviewCondition StoryCondition(Job job, PreviewCondition condition)
         { return PreviewConditions.CaptureCurrent(condition, job.FlagWrites, job.OpaqueEffects); }
         private static PreviewCondition SnapshotCondition(Job job, PreviewCondition condition)
-        { return job.TalkReset ? PreviewConditions.CaptureAfterTalkReset(condition, job.FlagWrites, job.SnapshotOpaque) : PreviewConditions.CaptureCurrent(condition, job.FlagWrites, job.SnapshotOpaque); }
+        {
+            bool readsSwitch;
+            condition = PreviewConditions.ScopeNextSwitch(condition,
+                !job.SwitchRead && job.RootEntry && job.Depth == 0 && job.Steps.Count == 1 && job.FlagWrites.Count == 0 && !job.SnapshotOpaque, out readsSwitch);
+            job.SwitchRead |= readsSwitch;
+            return job.TalkReset ? PreviewConditions.CaptureAfterTalkReset(condition, job.FlagWrites, job.SnapshotOpaque) : PreviewConditions.CaptureCurrent(condition, job.FlagWrites, job.SnapshotOpaque);
+        }
         private MapRoutePath Path(Job job, string dialogueCharacter = null, MapStoryKind kind = MapStoryKind.Story)
         {
             var writes = new HashSet<string>(job.FlagWrites, StringComparer.Ordinal);
@@ -1057,6 +1063,7 @@ namespace DiceMaster.Information
                     var predicate = PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, bindings);
                     var storyPredicate = StoryCondition(job, PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, Conditions(job, true)));
                     var snapshotPredicate = SnapshotCondition(job, PreviewConditions.ParseTokens(syntax.Tokens, branch.Header, branch.HeaderEnd, Conditions(job, false, true)));
+                    arm.SwitchRead = job.SwitchRead;
                     if (!predicate.IsKnownSyntax) { arm.Uncertain = true; arm.OpaqueEffects = true; arm.DialogueCharacter = null; speakerUnknown = true; incompleteStoryPaths = true; }
                     arm.Gate = PreviewConditions.All(job.Gate, PreviewConditions.All(remaining, predicate));
                     arm.TopicCondition = PreviewConditions.All(job.TopicCondition, PreviewConditions.All(remaining, predicate));
@@ -1148,7 +1155,7 @@ namespace DiceMaster.Information
             else if (!string.IsNullOrEmpty(job.Pending.Script))
                 Admit(new Job { Script = job.Pending.Script, Depth = job.Depth + 1, Gate = job.Gate, StoryGate = job.StoryGate, Uncertain = job.Uncertain, OpaqueEffects = job.OpaqueEffects,
                     SnapshotGate = job.SnapshotGate, SnapshotOpaque = job.SnapshotOpaque, CutRecorded = job.CutRecorded, RootEntry = false, LocalEntry = true, SnapshotDialog = job.SnapshotDialog,
-                    ActivityContext = IsActivity(job), TalkReset = job.TalkReset, TopicCondition = job.TopicCondition,
+                    ActivityContext = IsActivity(job), TalkReset = job.TalkReset, SwitchRead = job.SwitchRead, TopicCondition = job.TopicCondition,
                     ActivityOriginSafe = IsActivity(job) || job.ActivityProjection, ActivityProjection = job.ActivityProjection,
                     HasChoice = job.HasChoice, StoryChoice = job.StoryChoice, Steps = new List<MapChoiceStep>(job.Steps),
                     EntryGate = job.EntryGate, EntryUncertain = job.EntryUncertain,

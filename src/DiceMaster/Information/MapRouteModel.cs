@@ -15,6 +15,22 @@ namespace DiceMaster.Information
         private PreviewConditions.Reader reader;
         private readonly Dictionary<PreviewCondition, PreviewConditionState> values = new Dictionary<PreviewCondition, PreviewConditionState>();
         private readonly Dictionary<Func<bool>, bool> completeness = new Dictionary<Func<bool>, bool>();
+        private readonly Dictionary<PreviewCondition, bool> entrySwitches = new Dictionary<PreviewCondition, bool>();
+        internal bool UnresolvedEntrySwitch(PreviewCondition gate, ref int budget)
+        {
+            if (gate == null) return true;
+            PreviewConditionState state;
+            if (!BudgetedCurrent(gate, ref budget, out state)) return true;
+            if (state != PreviewConditionState.Unknown) return false;
+            bool unknown;
+            if (!entrySwitches.TryGetValue(gate, out unknown))
+            {
+                if (budget-- <= 0) return true;
+                if (reader == null) reader = PreviewConditions.CreateReader();
+                entrySwitches.Add(gate, unknown = reader.HasUnresolvedEntrySwitch(gate));
+            }
+            return unknown;
+        }
         private readonly Dictionary<PreviewCondition, Dictionary<string, bool>> activityInputs = new Dictionary<PreviewCondition, Dictionary<string, bool>>();
         internal bool ActivityInputsDisjoint(PreviewCondition gate, string key, IList<string> flags, IDictionary<string, int> unchangedSets, bool afterTalkReset, ref int budget)
         {

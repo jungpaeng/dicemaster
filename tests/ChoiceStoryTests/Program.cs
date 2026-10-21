@@ -514,9 +514,12 @@ internal static partial class Program
                 Check(!value.Entries.Any(item => item.Kind == "인물 대화"), "Excluded actual corpus activity cannot be presented through another automatic entry");
                 continue;
             }
+            if (name == "room_001")
+            {
+                Check(row == null, "original room does not advertise an unconfirmed first-introduction counter when runtime checkpoint definitions are unavailable");
+                continue;
+            }
             Check(row != null, "Actual " + name + " corpus retains its actual anchored NPC dialogue without requiring an unconfirmed future topic");
-            if (name == "room_001") Check(!row.AutoText.Contains("→", StringComparison.Ordinal) && !row.Detail.Contains("O_Talk_Brother4_", StringComparison.Ordinal),
-                "original room does not advertise unobserved topic unlocks when runtime checkpoint definitions are unavailable");
             if (name == "center_001")
                 Check(row.Status == "지금 진행 불가" && row.AutoText.Length == 0 && !value.Hints.Any(item => item.Title == title) && !Read().Entries.Any(item => item.Title == title),
                     "the original training script's proven false NPC prerequisite is detail-only, including visual prelude and disjoint action bookkeeping");
@@ -582,9 +585,9 @@ internal static partial class Program
             Check(before.Status == "진행 가능성 있음" && !before.Available, "A true flag paired with an unknown random input never promotes the first menu guard into full-story readiness");
             int resources = DataHelper.Reads; flag.State = 1;
             value = Read(true); var after = Linked(value, "완료 대상");
-            string expected = sample.Position ? "지금 진행 불가" : "진행 가능성 있음";
-            Check(after.Id == before.Id && after.Status == expected && !after.Available && (!sample.Position || after.Detail.Contains("미충족", StringComparison.Ordinal)),
-                "The fresh actual " + sample.Script + " guard uses only the closed root profile for negative suppression; a nonprofile talk menu remains unknown rather than reinterpreting a previously captured guard; actual=" + after.Status);
+            string expected = "지금 진행 불가";
+            Check(after.Id == before.Id && after.Status == expected && !after.Available && after.Detail.Contains("미충족", StringComparison.Ordinal),
+                "The fresh actual " + sample.Script + " guard preserves safe negative suppression through recognized root presentation without reinterpreting effectful captured guards; actual=" + after.Status);
             for (int at = 0; at < 40; at++) { value = Read(true); Check(Linked(value, "완료 대상").Status == expected, "Warm scheduled refreshes preserve the current profile's safe negative/unknown distinction"); }
             Check(DataHelper.Reads == resources && flag.State == 1 && Counters.GameCalls == 0, "The transition reuses definitions without reload, native judgments, RNG or flag execution");
             if (other != null)
@@ -617,17 +620,22 @@ internal static partial class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks(); EntryDialogues();
         if (args.Length > 0) Metadata(args[0]);
-        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); }
+        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); NativeEntryServices(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");
     }
 }
 namespace Mortal.Story
 {
     // Exact reflection boundaries used by PreviewConditions. Neither native
-    // Switch nor Condition is called, and count-based switches stay unknown.
+    // Switch nor Condition is called; only scoped next-count reads are supported.
     public sealed class SwitchResultConfig { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
     public sealed class SwitchResultData : UnityEngine.Object
-    { public bool _useCount; public int _count; public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
+    { public bool _useCount; public int _count; public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); public List<Mortal.Core.ValueCompareItem> _countItems = new List<Mortal.Core.ValueCompareItem>(); }
+}
+namespace Mortal.Core
+{
+    public sealed class ValueCompareItem
+    { public int _compareOp, _value; public bool Check(int value) { Counters.GameCalls++; throw new Exception("Count preview called a native comparison"); } }
 }

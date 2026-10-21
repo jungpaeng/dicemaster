@@ -274,7 +274,7 @@ namespace DiceMaster.Information
                 bool currentRoot = !ambiguous && !routes.IsPreparing && !indexing && alternatives.Count == 1 && alternatives[0].HasCurrentRootSnapshot;
                 bool storyBlocked = currentRoot && binding.CurrentPrerequisite != null && current.Current(binding.CurrentPrerequisite) == PreviewConditionState.NotMet;
                 StorySelection selection = storyBlocked ? new StorySelection { State = MapRouteState.NotMet } :
-                    SelectStory(binding.Paths, binding.PathStories, current, currentRoot, incomplete, ambiguous || routes.IsPreparing || indexing, option.Raw, ref choiceBudget);
+                    SelectStory(binding.Paths, binding.PathStories, current, currentRoot, incomplete, ambiguous || routes.IsPreparing || indexing, option.Raw, ref choiceBudget, ref classificationBudget);
                 MapRouteState state = blocked ? MapRouteState.NotMet : selection.State;
                 if ((state == MapRouteState.NotMet || selection.Path == null) && !details) continue;
                 string status = state == MapRouteState.Met ? "진행 가능" : state == MapRouteState.NotMet ? "지금 진행 불가" : "진행 가능성 있음";
@@ -293,6 +293,8 @@ namespace DiceMaster.Information
                     { if (shown++ >= 32) break; detail += "\n연결 경로: " + ChoiceStoryLabels.Path(path.Steps); }
                     if (shown == 0) detail += "\n현재 안내할 해금 확인 경로가 없습니다.";
                     if (selection.HiddenChoices) detail += "\n잠겼거나 해금 여부를 확인하지 못한 후속 선택 경로는 목록과 자동 툴팁에서 제외했습니다.";
+                    if (selection.HiddenEntry) detail += "\n진입 대화의 횟수·완료 판정을 확인하지 못해 자동 안내에서 제외했습니다.";
+                    if (selection.HiddenActivity) detail += "\n반복 활동의 고정 반응은 개별 이야기 안내에서 제외했습니다.";
                     if (binding.Paths.Count > 32) detail += "\n32개 초과 연결 경로는 전체를 조회하거나 목록에 표시하지 않습니다.";
                 }
                 var anchor = option.Control.Target as UnityEngine.Object;
@@ -362,7 +364,7 @@ namespace DiceMaster.Information
             return binding;
         }
         internal static MapRouteState CurrentStoryConditions(IList<MapRoutePath> paths, MapRouteRead current)
-        { int budget = 32; return SelectStory(paths, null, current, false, false, false, null, ref budget).State; }
+        { int budget = 32, kinds = 32; return SelectStory(paths, null, current, false, false, false, null, ref budget, ref kinds).State; }
         private struct StorySelection
         {
             internal MapRouteState State;
@@ -370,9 +372,10 @@ namespace DiceMaster.Information
             internal int Count;
             internal List<MapRoutePath> Paths;
             internal bool HiddenChoices;
+            internal bool HiddenEntry, HiddenActivity;
         }
         private static StorySelection SelectStory(IList<MapRoutePath> paths, IDictionary<MapRoutePath, MapStoryEntry> pathStories,
-            MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw, ref int choiceBudget)
+            MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw, ref int choiceBudget, ref int classificationBudget)
         {
             int count = paths == null ? 0 : paths.Count;
             var selection = new StorySelection { State = count == 0 || count > 32 ? MapRouteState.Unknown : MapRouteState.NotMet };
@@ -380,6 +383,8 @@ namespace DiceMaster.Information
             for (int at = 0; at < Math.Min(32, count); at++)
             {
                 MapRoutePath path = paths[at];
+                if (path.ReadStoryKind(current, ref classificationBudget) == MapStoryKind.ActivityResponse)
+                { selection.HiddenActivity = true; if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
                 if (raw != null)
                 {
                     int step = CurrentStep(path, raw);
@@ -390,6 +395,8 @@ namespace DiceMaster.Information
                         if (choices == MapRouteState.Unknown && selection.Path == null) selection.State = MapRouteState.Unknown;
                         continue;
                     }
+                    if (step == path.Steps.Count - 1 && current.UnresolvedEntrySwitch(path.CurrentPrerequisite, ref choiceBudget))
+                    { selection.HiddenEntry = true; if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
                 }
                 // Only a uniquely matched, closed root menu may reuse the
                 // map's negative projection. Inputs affected by future writes
