@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.15 — 게시 준비
+## [v1.0.7-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.15) — 2026-10-21 (prerelease)
+
+<!-- alpha15-publication -->
+2026-10-21 22:03:38 KST에 소스·주석 태그 [`48ac8e7`](https://github.com/jungpaeng/dicemaster/commit/48ac8e732271410242ee2ea2c0d810a9d27c4ae5)의 [alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.15)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·261개 입력·107개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 56개 Release·57개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [게시·검사 기록](docs/ISSUE-6-ALPHA15-RELEASE.md).
+<!-- /alpha15-publication -->
 
 - 당문 지도·유학 행동 메뉴의 붉은 점을 실제 대기 임무의 확정 실행 연결 또는 증명 1회성·현재 조건/경로로 통일합니다. 일반 인물 대화의 초록 상태·경로 설명은 유지합니다.
 - 현재 버튼과 선택별 경로를 대조하고 실제 대기 멤버십·현재 이벤트 조건을 새로 읽습니다. 불확실한 유학 경로는 점 없이 상세에 사유를 남깁니다.

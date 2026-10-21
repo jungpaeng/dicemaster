@@ -2,6 +2,10 @@
 
 ## alpha.15 — 지도·유학 공통 표식 기준 확인 대기
 
+<!-- alpha15-publication -->
+2026-10-21 22:03:38 KST에 소스·주석 태그 [`48ac8e7`](https://github.com/jungpaeng/dicemaster/commit/48ac8e732271410242ee2ea2c0d810a9d27c4ae5)의 [alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.15)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·261개 입력·107개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 56개 Release·57개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·지원 범위·확인표](ISSUE-6-ALPHA15-RELEASE.md).
+<!-- /alpha15-publication -->
+
 설치 파일·소스·해시는 [alpha.15 기록](ISSUE-6-ALPHA15-RELEASE.md)을 따른다. 새 Windows 실행 결과를 이전 후보/자동 검사에서 추정하지 않는다.
 
 - [ ] 당문·유학에서 일반 인물 대화가 진행 가능이어도 점은 없고 포커스 옆 경로·초록 상태 문구를 읽을 수 있다. 해당 선택·실행은 그대로다.

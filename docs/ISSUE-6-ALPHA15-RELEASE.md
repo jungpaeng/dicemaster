@@ -1,7 +1,7 @@
 # PRD #6 alpha.15 — 지도·유학 메뉴 기회 표식 기준 통일
 
 <!-- alpha15-publication -->
-main 구현·전체 자동 검사 21개 프로그램·실제 DLL 연결/읽기 전용 IL 통과. 고정 커밋 재빌드·게시·공개 파일 대조는 준비 중이다. 이번 DLL의 실제 Windows 확인과 #6 전체 완료는 대기다.
+2026-10-21 22:03:38 KST에 소스·주석 태그 [`48ac8e7`](https://github.com/jungpaeng/dicemaster/commit/48ac8e732271410242ee2ea2c0d810a9d27c4ae5)의 [alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.15)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·261개 입력·107개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 56개 Release·57개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.**
 <!-- /alpha15-publication -->
 
 ## 공통 표시 기준
@@ -45,7 +45,7 @@ main 구현·전체 자동 검사 21개 프로그램·실제 DLL 연결/읽기 �
 
 [새 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha15--지도유학-공통-표식-기준-확인-대기). 이전 후보와 v1.0.6 확인은 이번 DLL의 Windows 통과 근거가 아니다. 업데이트는 게임 종료 후 DLL만 교체해 cfg를 보존하며, 최초 설치는 ZIP의 config·plugins를 BepInEx 아래에 넣는다. 문제 시 백업 DLL/cfg로 복구한다.
 
-로컬 검토 증거는 artifacts/issue-6/travel-opportunities/reviewed/build-manifest.json·build.log에 보존한다. 앞선 컴파일러 내부 오류 실행과 새 타입의 DLL 검사 경계 연결 보완 전 실패는 별도 로그에 보존하며 최종 성공 기록과 혼용하지 않는다. 기존 컴파일 경고 7개·오류 0개다. 아래는 검토 후보 파일이며 고정 커밋/공개 다운로드와 대조 후 최종 게시 상태를 기록한다.
+로컬 검토 증거는 artifacts/issue-6/travel-opportunities/reviewed/build-manifest.json·build.log에 보존한다. 앞선 컴파일러 내부 오류 실행과 새 타입의 DLL 검사 경계 연결 보완 전 실패는 별도 로그에 보존하며 최종 성공 기록과 혼용하지 않는다. 기존 컴파일 경고 7개·오류 0개다. 고정 커밋 재빌드의 모든 입력·21개 프로그램 성공 기록·DLL/cfg/ZIP은 검토 후보와 일치한다. 익명 공개 ZIP의 정확한 두 경로·CRC·바이트·해시도 대조했다. 게시 영수증은 artifacts/releases/v1.0.7-alpha.15/release-verification.json 및 anonymous-verification.json에 보존한다. 최종 설치 파일은 [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.15/DiceMaster-v1.0.7-alpha.15.zip)이며 아래는 검토·고정 커밋·공개 다운로드에서 동일한 파일 식별값이다.
 
 | 파일 | bytes | SHA-256 |
 | --- | ---: | --- |

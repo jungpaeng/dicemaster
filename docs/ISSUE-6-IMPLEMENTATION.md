@@ -2,6 +2,10 @@
 
 ## alpha.15 — 지도·유학 메뉴의 붉은 점 기준 통일
 
+<!-- alpha15-publication -->
+2026-10-21 22:03:38 KST에 소스·주석 태그 [`48ac8e7`](https://github.com/jungpaeng/dicemaster/commit/48ac8e732271410242ee2ea2c0d810a9d27c4ae5)의 [alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.15)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·261개 입력·107개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 56개 Release·57개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·지원 범위·확인표](ISSUE-6-ALPHA15-RELEASE.md).
+<!-- /alpha15-publication -->
+
 붉은 점은 실제 대기 임무의 해당 선택 실행 연결 또는 엄격 1회성 증명·현재 조건·경로를 확인한 항목에만 붙인다. 일반 인물 대화의 진행 가능/경로 설명은 유지하되 점의 근거로 쓰지 않는다. 유학 메뉴에 당문의 위치/우선순위를 대입하지 않고 현재 버튼과 Lua 실행 연결을 대조한다. 원본 두 유학 메뉴의 선행 변경·미지원 연결은 확정으로 올리지 않으며 상세에 사유를 남긴다. [구현 범위·자동 검사·남은 Windows 확인](ISSUE-6-ALPHA15-RELEASE.md).
 
 ## alpha.14 — 장소·선택지 옆 표식과 현재 설명
