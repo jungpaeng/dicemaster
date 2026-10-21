@@ -122,6 +122,14 @@ namespace DiceMaster.Information
         private readonly Func<string, IList<MapRouteEvent>> pools;
         private readonly MapRouteLimits limits;
         private readonly Queue<Job> jobs = new Queue<Job>();
+        private readonly Queue<Job> followupJobs = new Queue<Job>();
+        // Choice UI only: close the current script's menu registry before
+        // spending the SAME preparation budget on downstream scripts/pools.
+        // Map readers retain their existing scheduling by default.
+        public bool PrioritizeRootPreparation { get; set; }
+        private bool rootCoverageLost;
+        public bool HasPendingWork { get { return jobs.Count != 0 || followupJobs.Count != 0; } }
+        public bool RootPreparationComplete { get { return PrioritizeRootPreparation && !cleared && !rootCoverageLost && jobs.Count == 0; } }
         private readonly Dictionary<string, Plan> plans = new Dictionary<string, Plan>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, float> poolRetries = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, IList<MapRouteEvent>> poolDefinitions = new Dictionary<string, IList<MapRouteEvent>>(StringComparer.Ordinal);
@@ -145,8 +153,9 @@ namespace DiceMaster.Information
         private bool snapshotCoverageLost;
         // Structural omissions retain only a bounded necessary prefix. A
         // false prefix excludes that omitted alternative; true never proves it.
-        private void RecordCut(Job job)
+        private void RecordCut(Job job, bool losesRootCoverage = true)
         {
+            if (losesRootCoverage && job.Depth == 0 && job.Pool == null) rootCoverageLost = true;
             var first = job.Steps.Count == 0 ? null : job.Steps[0];
             Plan plan; var profile = plans.TryGetValue(job.Script, out plan) && plan.Syntax != null && plan.Syntax.Ready ? StoryProfile(plan, job) : null;
             var kind = ActivityKind(job, profile);
@@ -231,7 +240,7 @@ namespace DiceMaster.Information
         // must also respect preparation/partial state before claiming unique.
         public IList<MapChoiceStep> ChoiceSteps { get { return choiceSteps.AsReadOnly(); } }
         public bool HasReadFailure { get { if (poolRetries.Count > 0) return true; foreach (var p in plans.Values) if (p.Failed) return true; return false; } }
-        public bool IsPreparing { get { return !cleared && jobs.Count > 0 && !HasReadFailure; } }
+        public bool IsPreparing { get { return !cleared && HasPendingWork && !HasReadFailure; } }
         public bool IsPartial { get { return limited || HasReadFailure || reasons.Count > 0; } }
         public bool HasIncompleteStoryPaths { get { return limited || HasReadFailure || incompleteStoryPaths; } }
         public bool HasIncompleteOpportunityPaths { get { return limited || HasReadFailure || incompleteOpportunityPaths; } }
@@ -281,10 +290,10 @@ namespace DiceMaster.Information
         {
             reader = scriptReader; pools = poolReader; limits = policy ?? new MapRouteLimits();
             if (ValidScript(rootScript)) Admit(new Job { Script = rootScript, Path = rootScript, Identity = rootScript });
-            else if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가");
+            else { rootCoverageLost = true; if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가"); }
         }
         public void Clear()
-        { cleared = true; jobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
+        { cleared = true; jobs.Clear(); followupJobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
         private void Reason(string value, bool incompleteStory = true, bool immediateHandoff = false)
         { incompleteStoryPaths |= incompleteStory; incompleteOpportunityPaths |= incompleteStory && !immediateHandoff; if (reasons.Count < 8 && !reasons.Contains(value)) reasons.Add(value); }
         private static bool ValidScript(string value)
@@ -297,7 +306,9 @@ namespace DiceMaster.Information
         {
             if (admitted >= limits.MaxContexts || job.Depth > limits.MaxDepth)
             { RecordCut(job); limited = true; Reason("경로 깊이/대기열 상한 · 일부 연결 확인 불가"); return; }
-            admitted++; jobs.Enqueue(job);
+            admitted++;
+            if (PrioritizeRootPreparation && (job.Depth != 0 || job.Pool != null)) followupJobs.Enqueue(job);
+            else jobs.Enqueue(job);
         }
         public void Advance(float now, int maxWork = 8192)
         { AdvanceBudgeted(now, maxWork, null); }
@@ -308,17 +319,22 @@ namespace DiceMaster.Information
             if (float.IsNaN(now) || float.IsInfinity(now)) now = 0;
             int budget = Math.Min(Math.Max(0, maxWork), Math.Max(0, limits.MaxWork - WorkCount));
             int blocked = 0;
-            while (budget > 0 && jobs.Count > 0)
+            bool rootPhase = PrioritizeRootPreparation && jobs.Count != 0;
+            while (budget > 0 && HasPendingWork)
             {
+                // Publish closed local evidence at this boundary. Do not make
+                // its first paint wait for an unrelated downstream resource.
+                if (rootPhase && jobs.Count == 0) break;
                 if (shouldYield != null && shouldYield()) break;
-                Job job = jobs.Dequeue(); int used;
+                Queue<Job> queue = jobs.Count != 0 ? jobs : followupJobs;
+                Job job = queue.Dequeue(); int used;
                 bool done = job.Pool != null ? ProcessPool(job, now, out used) : Process(job, now, shouldYield == null ? budget : Math.Min(budget, 256), out used);
                 used = Math.Min(budget, Math.Max(0, used)); budget -= used; WorkCount += used;
-                if (!done) jobs.Enqueue(job);
-                if (used == 0) { if (++blocked >= jobs.Count) break; } else blocked = 0;
+                if (!done) queue.Enqueue(job);
+                if (used == 0) { if (++blocked >= jobs.Count + followupJobs.Count) break; } else blocked = 0;
             }
-            if (WorkCount >= limits.MaxWork && jobs.Count > 0)
-            { foreach (var pending in jobs) RecordCut(pending); limited = true; jobs.Clear(); Reason("경로 누적 작업 상한 · 일부 연결 확인 불가"); }
+            if (WorkCount >= limits.MaxWork && HasPendingWork)
+            { foreach (var pending in jobs) RecordCut(pending); foreach (var pending in followupJobs) RecordCut(pending); limited = true; jobs.Clear(); followupJobs.Clear(); Reason("경로 누적 작업 상한 · 일부 연결 확인 불가"); }
         }
         private Plan GetPlan(string script, float now, out bool blocked)
         {
@@ -347,7 +363,9 @@ namespace DiceMaster.Information
         private bool Process(Job job, float now, int budget, out int used)
         {
             used = 0;
-            if (job.SnapshotOpaque && !job.CutRecorded) { RecordCut(job); job.CutRecorded = true; }
+            // A negative prerequisite cut is not a skipped local menu. The
+            // abstract traversal still visits the remaining current script.
+            if (job.SnapshotOpaque && !job.CutRecorded) { RecordCut(job, false); job.CutRecorded = true; }
             if (!job.Started && job.Ancestors.Contains(job.Script)) { RecordCut(job); Reason("경로 순환 · 이후 연결 확인 불가"); used = 1; return true; }
             bool blocked; Plan plan = GetPlan(job.Script, now, out blocked);
             if (plan == null) { RecordCut(job); used = 1; return true; }
@@ -403,6 +421,7 @@ namespace DiceMaster.Information
                 if (control.Kind == "if") { Fork(job, syntax, control); return true; }
                 if (control.Kind == "do")
                 { job.Frames.Add(new Frame { At = control.End + 1, End = job.End }); job.At++; job.End = control.End; return false; }
+                if (job.Depth == 0) rootCoverageLost = true; // Skipped bodies can contain another same-label menu.
                 if (control.Kind != "function") { job.DialogueCharacter = null; job.OpaqueEffects = true; job.Uncertain = true; Reason("반복/미지원 제어 흐름 · 경로 확인 필요"); }
                 else if (at + 1 < t.Count)
                 {
@@ -488,10 +507,10 @@ namespace DiceMaster.Information
                             // Opaque indexed values may expose the manager
                             // through an alias; its object provenance is not
                             // modeled, so later setters cannot prove speech.
-                            else { table.Table.Remove(key); job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; job.OpaqueEffects = true; job.Uncertain = true; Reason("선택지 활성식 확인 불가"); }
+                            else { if (job.Depth == 0) rootCoverageLost = true; table.Table.Remove(key); job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; job.OpaqueEffects = true; job.Uncertain = true; Reason("선택지 활성식 확인 불가"); }
                         }
                     }
-                    else { if (Manager(name)) job.InvalidManagers.Add(name); job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; job.OpaqueEffects = true; job.Uncertain = true; Reason("미지원 인덱스 쓰기 · 현재 경로 확인 필요"); }
+                    else { if (job.Depth == 0) rootCoverageLost = true; if (Manager(name)) job.InvalidManagers.Add(name); job.InvalidManagers.Add("characters"); job.DialogueCharacter = null; job.OpaqueEffects = true; job.Uncertain = true; Reason("미지원 인덱스 쓰기 · 현재 경로 확인 필요"); }
                     job.At = end; return false;
                 }
                 if (local)
@@ -954,7 +973,7 @@ namespace DiceMaster.Information
                     if (decimal.TryParse(key, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal n) && n >= 2 && n == decimal.Truncate(n)) sparse = true;
                 job.RootEntry = false; job.At = close + 1;
                 job.Bindings[variable] = new Value { Literal = "0", Condition = PreviewConditions.Parse("0") };
-                if (sparse) { job.OpaqueEffects = true; job.Uncertain = true; Reason("희소 선택지 배열 길이 미확정 · 반환 0 후 경로 가능"); }
+                if (sparse) { if (job.Depth == 0) rootCoverageLost = true; job.OpaqueEffects = true; job.Uncertain = true; Reason("희소 선택지 배열 길이 미확정 · 반환 0 후 경로 가능"); }
                 Admit(job); return;
             }
             int cells = EnvironmentCells(job);

@@ -133,16 +133,21 @@ internal static partial class Program
             ObserveCompiled(original, sample.Root + ".LuaScript");
             if (sample.Root == "room_001") Position("talk+talk+brother4", "사사형");
             else { Break("exit+O_Talk_Brother4_001+0+0", "떠나다"); Break("shop+O_Talk_Brother4_002+0+0", "물품 구매"); Break("talk+O_Talk_Brother4_012+0+0", "대련: 사사형에게 도전한다"); }
-            ChoiceStorySnapshot value = null;
+            ChoiceStorySnapshot value = null; bool earlyNativeEntry = false;
             for (int at = 0; at < 240; at++)
             {
                 value = Read();
+                if (sample.Root == "room_001" && sample.Count == 0 && ChoiceRoutes().RootPreparationComplete && ChoiceRoutes().HasPendingWork &&
+                    value.Entries.Any(x => x.Title == "사사형" && x.AutoText.Length != 0)) earlyNativeEntry = true;
                 if (sample.Count == 1)
                     Check(!value.Entries.Any(x => (x.Title == "사사형" || x.Title.StartsWith("대련", StringComparison.Ordinal)) && x.AutoText.Length != 0),
                         "every cold/preparing/current refresh excludes completed introduction and repeat-only service: " + sample.Root);
             }
             if (sample.Root == "room_001" && sample.Count == 0)
+            {
                 Check(value.Entries.Any(x => x.Title == "사사형" && x.AutoText.Length != 0), "SHA-original remaining first introduction still has a conversation tooltip");
+                Check(earlyNativeEntry, "SHA-original brother greeting is displayed before downstream preparation ends through the actual original-source load boundary");
+            }
             else Check(!value.Entries.Any(x => x.Title == "사사형" || x.Title.StartsWith("대련", StringComparison.Ordinal)) && !value.Entries.Any(x => x.Opportunity),
                 "SHA-original completed introduction plus exit/shop/repeat challenge has no invented conversation tooltip or marker: " + sample.Root);
             int reads = DataHelper.Reads;

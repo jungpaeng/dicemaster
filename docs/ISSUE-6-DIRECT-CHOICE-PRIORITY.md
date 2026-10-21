@@ -1,5 +1,14 @@
 # 선택지 안내 — 현재 선택의 직접 대화 우선 조회
 
+## alpha.24 후속 — 직접 대화의 첫 표시
+
+<!-- alpha24-publication -->
+전체 소스 빌드의 자동 검사 21개·276개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha24-publication -->
+
+아래 원문/직접 경로 보완은 유지하고, 현재 스크립트의 준비와 후속 준비의 공개 시점을 나눈다. 사용자는 alpha.23 완료 인사 잔존 해결을 부분 확인했고 남은 첫 표시 지연을 보고했다. [후속 설계·검증·교환](ISSUE-6-LOCAL-CHOICE-PREPARATION.md).
+
+
 <!-- alpha22-publication -->
 2026-10-22 02:45:06 KST에 소스·주석 태그 [`bbf7024`](https://github.com/jungpaeng/dicemaster/commit/bbf7024db49acd271061f2903ae2b12e9a44e77e)의 [alpha.22](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.22)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·274개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 63개 Release·64개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](ISSUE-6-ALPHA22-RELEASE.md).
 <!-- /alpha22-publication -->

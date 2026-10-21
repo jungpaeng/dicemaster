@@ -19,13 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-alpha.23은 이벤트 선택용 Lua 변환 때문에 완료한 초회 인사가 계속 `진행 가능성 있음`으로 표시되던 경계를 보완합니다. 이야기 안내는 변환 전 원문을 읽고, 기존 완료·해금·활동 필터와 입력을 유지합니다. 불필요한 분석을 줄이지만 최초 경로 준비 시간은 남을 수 있습니다. [원인·검증·남은 확인](docs/ISSUE-6-CHOICE-LOAD-SOURCE.md).
+main 후속 수정은 현재 선택에서 바로 이어지는 대화 안내를 먼저 표시하고, 후속 선택 경로는 준비가 끝난 뒤 추가합니다. 완료·해금·반복 활동 필터와 기존 분석 예산을 유지합니다. 현재 원문의 메뉴 확인 자체가 늦거나 불확실하면 표시를 기다릴 수 있습니다. [범위·자동 재현·남은 확인](docs/ISSUE-6-LOCAL-CHOICE-PREPARATION.md).
 
-<!-- alpha23-publication -->
-2026-10-22 03:06:00 KST에 소스 [`fc5dc7f`](https://github.com/jungpaeng/dicemaster/commit/fc5dc7fabc0977b01ee6acdb92a3987148e77370)의 [alpha.23](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.23)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha23-publication -->
+<!-- alpha24-publication -->
+전체 소스 빌드의 자동 검사 21개·276개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha24-publication -->
 
-**[v1.0.7-alpha.23 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.23/DiceMaster-v1.0.7-alpha.23.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요.
+현재 공개 후보는 [alpha.23](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.23)입니다. 후속 후보의 게시·설치 링크는 검증 후 갱신합니다.
 
 현재 정보 기능 후보는 확인된 기회를 **작은 금색 두루마리**로 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. 두루마리 문양은 요청한 Lucide scroll-text로 교체합니다. [alpha.17 변경·검증·Windows 확인](docs/ISSUE-6-ALPHA17-RELEASE.md).
 

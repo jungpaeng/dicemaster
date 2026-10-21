@@ -218,7 +218,7 @@ namespace DiceMaster.Information
             {
                 string root = script, body = source;
                 routes = new MapRouteDefinitions(root, name => string.Equals(name, root, StringComparison.OrdinalIgnoreCase) ? ScriptReadResult.Success(body) : DataHelper.ReadPreviewScript(name),
-                    name => PoolReader == null ? null : PoolReader(name)) { UseSharedSyntax = true };
+                    name => PoolReader == null ? null : PoolReader(name)) { UseSharedSyntax = true, PrioritizeRootPreparation = true };
             }
             var preparation = new MapRouteDefinitions.PreparationSlice();
             routes.AdvanceBudgeted(Now, 8192, preparation.ShouldYield);
@@ -228,6 +228,8 @@ namespace DiceMaster.Information
                 DicePlugin.LogWarning("Information choice-story target=" + script + (routeHadFailure ? " failure · retry=5s" : " recovered"));
             }
             bool indexing = Index();
+            bool localOnly = routes.HasPendingWork && routes.RootPreparationComplete;
+            bool locationReady = !indexing && (!routes.HasPendingWork || routes.RootPreparationComplete);
             var current = new MapRouteRead(); int classificationBudget = 32, choiceBudget = 32;
             foreach (Option option in options)
             {
@@ -272,18 +274,18 @@ namespace DiceMaster.Information
                 // Only a current, uniquely matched required option guard can
                 // reject a path across unrelated downstream uncertainty. A
                 // true guard never upgrades the whole story to available.
-                bool blocked = !ambiguous && !routes.IsPreparing && !indexing && CurrentOptionBlocked(alternatives, current);
-                bool currentRoot = !ambiguous && !routes.IsPreparing && !indexing && alternatives.Count == 1 && alternatives[0].HasCurrentRootSnapshot;
+                bool blocked = !ambiguous && locationReady && CurrentOptionBlocked(alternatives, current);
+                bool currentRoot = !ambiguous && locationReady && alternatives.Count == 1 && alternatives[0].HasCurrentRootSnapshot;
                 bool storyBlocked = currentRoot && binding.CurrentPrerequisite != null && current.Current(binding.CurrentPrerequisite) == PreviewConditionState.NotMet;
                 StorySelection selection = storyBlocked ? new StorySelection { State = MapRouteState.NotMet } :
-                    SelectStory(binding.Paths, binding.PathStories, current, currentRoot, incomplete, ambiguous || routes.IsPreparing || indexing, option.Raw, ref choiceBudget, ref classificationBudget);
+                    SelectStory(binding.Paths, binding.PathStories, current, currentRoot, incomplete, ambiguous || !locationReady || localOnly && !currentRoot, option.Raw, ref choiceBudget, ref classificationBudget, localOnly);
                 MapRouteState state = blocked ? MapRouteState.NotMet : selection.State;
                 if ((state == MapRouteState.NotMet || selection.Path == null) && !details) continue;
                 string status = state == MapRouteState.Met ? "진행 가능" : state == MapRouteState.NotMet ? "지금 진행 불가" : "진행 가능성 있음";
-                string detail = (ambiguous || incomplete ? "현재 메뉴 원문과 일치하는 연결 후보입니다. 현재 메뉴의 스크립트 위치는 아직 확정하지 않았습니다." : "실제 현재 메뉴의 원본 선택지와 정확히 연결한 자료입니다.") +
+                string detail = (localOnly && currentRoot ? "현재 메뉴와 이 스크립트의 직접 대화 준비는 끝났습니다. 후속 경로 자료는 별도로 준비/읽기 대기 중입니다." : ambiguous || incomplete ? "현재 메뉴 원문과 일치하는 연결 후보입니다. 현재 메뉴의 스크립트 위치는 아직 확정하지 않았습니다." : "실제 현재 메뉴의 원본 선택지와 정확히 연결한 자료입니다.") +
                     " 표시만 수행하며 선택·조건 판정·게임 진행을 실행하지 않습니다.\n원본 선택지: " + option.Raw;
                 if (binding.Nodes.Count != 1) detail += "\n같은 스크립트에 동일한 원문 선택지가 여러 번 있어 현재 메뉴의 위치를 안전하게 구분하지 못했습니다.";
-                else if (incomplete) detail += "\n경로를 전부 확인하지 못해 같은 이름의 다른 선택 화면이 없는지 아직 확정하지 않았습니다.";
+                else if (incomplete && !(localOnly && currentRoot)) detail += "\n경로를 전부 확인하지 못해 같은 이름의 다른 선택 화면이 없는지 아직 확정하지 않았습니다.";
                 detail += "\n연결 이야기의 내부 분기 조건: " + (state == MapRouteState.Met ? "현재 값으로 충족" : state == MapRouteState.NotMet ? "현재 값으로 미충족" : "안전하게 확정하지 못함");
                 if (blocked) detail += "\n현재 선택지의 필수 조건이 미충족입니다. 이후 경로의 불확실성과 구분한 현재 조건 확인 결과입니다.";
                 if (storyBlocked) detail += "\n관찰한 이야기 경로의 공통 필수 조건이 미충족입니다. 후속 경로의 불확실성과 구분한 현재 조건 확인 결과입니다.";
@@ -404,10 +406,10 @@ namespace DiceMaster.Information
             internal string RejectedReason;
         }
         private static StorySelection SelectStory(IList<MapRoutePath> paths, IDictionary<MapRoutePath, MapStoryEntry> pathStories,
-            MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw, ref int choiceBudget, ref int classificationBudget)
+            MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw, ref int choiceBudget, ref int classificationBudget, bool localOnly = false)
         {
             int count = paths == null ? 0 : paths.Count;
-            var selection = new StorySelection { State = count == 0 || count > 32 ? MapRouteState.Unknown : MapRouteState.NotMet };
+            var selection = new StorySelection { State = localOnly || count == 0 || count > 32 ? MapRouteState.Unknown : MapRouteState.NotMet };
             // Partial index uniqueness is not a safe current-menu identity.
             // Never display an old/blocked witness as a temporary possibility.
             if (raw != null && unresolved)
@@ -420,6 +422,16 @@ namespace DiceMaster.Information
             for (int at = 0; at < Math.Min(32, count); at++)
             {
                 MapRoutePath path = paths[at];
+                // A closed current-script menu is enough for its own direct
+                // dialogue, never for a descendant or another later choice.
+                // Pending jobs cannot add another choice in this root script.
+                if (localOnly)
+                {
+                    MapStoryEntry localStory;
+                    if (pathStories == null || !pathStories.TryGetValue(path, out localStory) || localStory == null ||
+                        !string.Equals(localStory.Script, script, StringComparison.OrdinalIgnoreCase) ||
+                        path.Steps.Count == 0 || CurrentStep(path, raw) != path.Steps.Count - 1) continue;
+                }
                 if (path.ReadStoryKind(current, ref classificationBudget) == MapStoryKind.ActivityResponse)
                 { selection.HiddenActivity = true; Reject(ref selection, path, "반복 활동의 고정 반응"); if (selection.Path == null) selection.State = MapRouteState.Unknown; continue; }
                 if (path.StoryKind == MapStoryKind.ActivityResponse && !path.ReadActivityIndependence(current, ref classificationBudget).HasValue)
