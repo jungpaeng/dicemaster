@@ -40,7 +40,11 @@ namespace DiceMaster.Information
             OptionHintSource.Enabled = () => Enabled(1);
             MapGuideSource.Enabled = () => Enabled(0) || Enabled(1);
             MapGuideSource.MarkerVisible = InformationAnchors.IsVisible;
-            ChoiceStorySource.Enabled = () => Enabled(0);
+            ChoiceStorySource.Enabled = () => Enabled(0) || Enabled(1);
+            ChoiceStorySource.GuideEnabled = () => Enabled(0);
+            ChoiceStorySource.OneShotEnabled = () => Enabled(1);
+            ChoiceStorySource.Interactive = InformationAnchors.IsInteractive;
+            ChoiceStorySource.CanReadEvent = MapGuideSource.SmallEventGraph;
             ChoiceStorySource.PoolReader = MapGuideSource.ReadChoicePool;
             ShopEffectSource.Enabled = () => Enabled(3);
             try { MapInformationPatches.Install(harmony); ready[0] = ready[1] = true; }
@@ -91,7 +95,7 @@ namespace DiceMaster.Information
                 {
                     if (index < 2) Reset(markers);
                     if (index == 0) { Reset(map); Reset(choices); ChoiceStorySource.ClearSnapshots(); }
-                    if (index == 1) { Reset(hints); OptionHintSource.Clear(); OneShotProof.Clear(); }
+                    if (index == 1) { Reset(hints); Reset(choices); ChoiceStorySource.ClearSnapshots(); OptionHintSource.Clear(); OneShotProof.Clear(); }
                     if (index == 2) { BranchHistory.Clear(); Reset(branch); }
                     if (index == 3) { ShopEffectSource.Clear(); Reset(shop); }
                 }
@@ -123,17 +127,17 @@ namespace DiceMaster.Information
                 MapGuideSource.ClearSnapshotsPreservingSyntax(); Reset(map); Reset(markers);
                 // Scene/load patches clear history separately; ordinary Lua keeps it.
             }
-            bool choiceVisible = enabled[0] && ChoiceStorySource.Visible;
+            bool choiceVisible = (enabled[0] || enabled[1]) && ChoiceStorySource.Visible;
             bool menuVisible = ChoiceStorySource.MenuVisible;
             bool mapVisible = focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
             bool mapDetails = detailPage == "지도 안내";
             Run(map, "지도 안내", MapKey(mapDetails),
                 !menuVisible && (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
                 () => MapGuideSource.Discover(enabled[0], enabled[1], mapDetails), manual, () => MapKey(mapDetails));
-            Run(choices, "선택 경로", ChoiceStorySource.ContextKey + ":" + mapDetails,
+            Run(choices, "선택 경로", ChoiceKey(mapDetails),
                 choiceVisible && focused && (automaticVisible || mapDetails), now,
                 () => ChoiceStorySource.Discover(mapDetails), manual,
-                () => ChoiceStorySource.ContextKey + ":" + mapDetails);
+                () => ChoiceKey(mapDetails));
             Run(markers, "지도 표식", MarkerKey(),
                 (enabled[0] || enabled[1]) && focused && automaticVisible && !popupVisible && !menuVisible && MapGuideSource.MarkerSessionVisible, now,
                 () => MapGuideSource.DiscoverMarkers(enabled[0], enabled[1]), manual, MarkerKey);
@@ -177,6 +181,7 @@ namespace DiceMaster.Information
         }
         private static string MapKey(bool details) => MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + details + ":" + ChoiceStorySource.MenuVisible + ":" + ChoiceStorySource.ContextKey;
         private static string MarkerKey() => MapGuideSource.MarkerContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + luaContext;
+        private static string ChoiceKey(bool details) => ChoiceStorySource.ContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + details;
         private static string ModelTitle(string title) => title == "선택 경로" ? "지도 안내" : title;
         private static void Run(Page page, string title, string key, bool visible, float now,
             Func<List<DisplayQuery>> discover, bool manual, Func<string> currentKey = null)
@@ -199,8 +204,8 @@ namespace DiceMaster.Information
             if (title == "1회성" || title == "지도 표식") return;
             // Both contexts use the existing map tool, with only the currently
             // visible owner publishing. A hidden map must not erase menu rows.
-            if (title == "지도 안내" && Enabled(0) && ChoiceStorySource.Visible) return;
-            if (title == "선택 경로" && (!Enabled(0) || !ChoiceStorySource.Visible)) return;
+            if (title == "지도 안내" && (Enabled(0) || Enabled(1)) && ChoiceStorySource.Visible) return;
+            if (title == "선택 경로" && (!(Enabled(0) || Enabled(1)) || !ChoiceStorySource.Visible)) return;
             var rows = new List<LogItem>();
             foreach (DisplayRow source in page.Rows)
             {
@@ -222,7 +227,7 @@ namespace DiceMaster.Information
             }
             if (rows.Count == 0)
             {
-                bool on = title == "선택 경로" ? Enabled(0) : title == "지도 안내" ? Enabled(0) || Enabled(1) : title == "상점 효과" ? Enabled(3) : Enabled(2);
+                bool on = title == "선택 경로" ? Enabled(0) || Enabled(1) : title == "지도 안내" ? Enabled(0) || Enabled(1) : title == "상점 효과" ? Enabled(3) : Enabled(2);
                 bool waiting = on && (title == "선택 경로" ? ChoiceStorySource.Visible : title == "지도 안내" ? MapGuideSource.Visible || Enabled(0) && MapGuideSource.SessionVisible : title == "상점 효과" && ShopEffectSource.Visible);
                 rows.Add(new LogItem { Id = "__empty__", Title = !on ? "기능 OFF" : waiting ? RefreshEngine.WaitingStatus :
                     title == "지도 안내" ? "현재 지도 장소 없음" : title == "상점 효과" ? "현재 선택한 상점 물품 없음" : "실제 분기 기록 없음",

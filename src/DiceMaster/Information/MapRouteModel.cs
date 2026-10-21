@@ -234,6 +234,21 @@ namespace DiceMaster.Information
             return unknown || paths.Count == 0 ? MapRouteState.Unknown : MapRouteState.NotMet;
         }
     }
+    // A literal script registration, not proof that a mission was registered.
+    // Consumers must separately intersect this path with live waiting data.
+    public sealed class MapScriptEntry
+    {
+        public readonly string Script;
+        private readonly List<MapRoutePath> paths = new List<MapRoutePath>();
+        public IList<MapRoutePath> Paths { get { return paths.AsReadOnly(); } }
+        internal MapScriptEntry(string script) { Script = script; }
+        internal bool Add(MapRoutePath path)
+        {
+            foreach (var old in paths) if (old.Identity == path.Identity) return true;
+            if (paths.Count >= 32) return false;
+            paths.Add(path); return true;
+        }
+    }
     public sealed class MapRouteEntry
     {
         public readonly object Event;

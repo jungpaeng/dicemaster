@@ -16,7 +16,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Fungus;
 
-internal static class Program
+internal static partial class Program
 {
     private static int checks;
     private static long context;
@@ -29,6 +29,9 @@ internal static class Program
     {
         ChoiceStorySource.Clear(); liveSceneControls.Clear(); enabled = true; context++;
         ChoiceStorySource.Enabled = () => enabled; ChoiceStorySource.ContextReader = () => context;
+        ChoiceStorySource.GuideEnabled = ChoiceStorySource.OneShotEnabled = () => true;
+        ChoiceStorySource.Interactive = _ => true; ChoiceStorySource.CanReadEvent = _ => true;
+        OneShotProof.Clear(); MissionManagerData._instance = null;
         ChoiceStorySource.PoolReader = key => new List<MapRouteEvent>();
         DataHelper.Scripts.Clear(); DataHelper.ExternalReader = null; DataHelper.Reads = 0; Time.unscaledTime = 0;
         MenuDialog.ActiveMenuDialog = new MenuDialog(); EventSystem.current = new EventSystem();
@@ -609,9 +612,9 @@ internal static class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus();
         if (args.Length > 0) Metadata(args[0]);
-        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); }
+        if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");
     }
 }

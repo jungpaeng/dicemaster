@@ -126,6 +126,7 @@ namespace DiceMaster.Information
         private readonly Dictionary<string, float> poolRetries = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, IList<MapRouteEvent>> poolDefinitions = new Dictionary<string, IList<MapRouteEvent>>(StringComparer.Ordinal);
         private readonly List<MapRouteEntry> entries = new List<MapRouteEntry>();
+        private readonly List<MapScriptEntry> scriptEntries = new List<MapScriptEntry>();
         private readonly List<MapStoryEntry> storyEntries = new List<MapStoryEntry>();
         private readonly Dictionary<string, MapStoryEntry> storyIndex = new Dictionary<string, MapStoryEntry>(StringComparer.Ordinal);
         private readonly List<MapChoiceStep> choiceSteps = new List<MapChoiceStep>();
@@ -216,12 +217,13 @@ namespace DiceMaster.Information
         { return a != null && b != null && a.Script == b.Script && a.SourceOffset == b.SourceOffset && a.Index == b.Index && a.RawLabel == b.RawLabel; }
         private int admitted, choices, characters, tokens;
         private int resourceBudget, poolBudget;
-        private bool limited, cleared, incompleteStoryPaths;
+        private bool limited, cleared, incompleteStoryPaths, incompleteOpportunityPaths;
         public int WorkCount { get; private set; }
         public int ScriptReadCount { get; private set; }
         public int PoolReadCount { get; private set; }
         public int ParseCount { get; private set; }
         public IList<MapRouteEntry> Entries { get { return entries.AsReadOnly(); } }
+        public IList<MapScriptEntry> ScriptEntries { get { return scriptEntries.AsReadOnly(); } }
         public IList<MapStoryEntry> StoryEntries { get { return storyEntries.AsReadOnly(); } }
         // Include utility/menu choices too: absence of a linked story cannot
         // establish that an identical visible label names a unique node.
@@ -232,6 +234,7 @@ namespace DiceMaster.Information
         public bool IsPreparing { get { return !cleared && jobs.Count > 0 && !HasReadFailure; } }
         public bool IsPartial { get { return limited || HasReadFailure || reasons.Count > 0; } }
         public bool HasIncompleteStoryPaths { get { return limited || HasReadFailure || incompleteStoryPaths; } }
+        public bool HasIncompleteOpportunityPaths { get { return limited || HasReadFailure || incompleteOpportunityPaths; } }
         public string Diagnostic
         {
             get
@@ -281,9 +284,9 @@ namespace DiceMaster.Information
             else if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가");
         }
         public void Clear()
-        { cleared = true; jobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
-        private void Reason(string value, bool incompleteStory = true)
-        { incompleteStoryPaths |= incompleteStory; if (reasons.Count < 8 && !reasons.Contains(value)) reasons.Add(value); }
+        { cleared = true; jobs.Clear(); plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
+        private void Reason(string value, bool incompleteStory = true, bool immediateHandoff = false)
+        { incompleteStoryPaths |= incompleteStory; incompleteOpportunityPaths |= incompleteStory && !immediateHandoff; if (reasons.Count < 8 && !reasons.Contains(value)) reasons.Add(value); }
         private static bool ValidScript(string value)
         {
             if (string.IsNullOrEmpty(value) || value.Length > 256) return false;
@@ -564,9 +567,10 @@ namespace DiceMaster.Information
                     // Finish/ProcessPool. Do not invent a second missing target
                     // for this call. Init remains a state-changing boundary;
                     // child scripts/pools retain opaque inputs and their own cuts.
+                    RegisterScript(job);
                     bool snapshotOpaque = job.SnapshotOpaque, localEntry = job.LocalEntry, activityProjection = job.ActivityProjection;
                     job.OpaqueEffects = true; job.SnapshotOpaque = snapshotOpaque; job.LocalEntry = localEntry; job.ActivityProjection = activityProjection; job.Uncertain = true;
-                    Reason("등록한 후속 실행 · 현재 조건 이후 상태 확인 필요");
+                    Reason("등록한 후속 실행 · 현재 조건 이후 상태 확인 필요", true, true);
                     Finish(job); return true;
                 }
                 if (owner == "luamanager" && (method == "SetNextScript" || method == "SetCurrentStoryScript") && !job.InvalidManagers.Contains(owner))
@@ -1119,6 +1123,18 @@ namespace DiceMaster.Information
             foreach (string name in new[] { "runwait", "wait", "statmodifymanager", "luamanager", "checkpointmanager", "characters", "stage", "setcharacter", "say", "setsaydialog", "sayoptions", "transitionblack" })
                 if (job.Bindings.ContainsKey(name)) return MapStoryKind.Unclassified;
             return MapStoryKind.ActivityResponse;
+        }
+        private void RegisterScript(Job job)
+        {
+            if (job.Pending == null || string.IsNullOrEmpty(job.Pending.Script) || job.Steps.Count == 0) return;
+            MapScriptEntry entry = null;
+            foreach (var old in scriptEntries) if (old.Script == job.Pending.Script) { entry = old; break; }
+            if (entry == null)
+            {
+                if (scriptEntries.Count >= limits.MaxEntries) { limited = true; Reason("스크립트 등록 상한 · 일부 연결 확인 불가"); return; }
+                scriptEntries.Add(entry = new MapScriptEntry(job.Pending.Script));
+            }
+            if (!entry.Add(Path(job))) { limited = true; Reason("스크립트 등록 경로 상한 · 일부 연결 확인 불가"); }
         }
         private void Finish(Job job)
         {

@@ -169,7 +169,7 @@ namespace DiceMaster.Information
             if (!preparedNotices.TryGetValue(place, out combined)) preparedNotices.Add(place, combined = new List<string>());
             combined.AddRange(added);
             var row = new InformationRow("map/marker/" + place.Id, result.Name, "지도", "확인된 기회 " + combined.Count,
-                "현재 확인한 대기 임무와 준비된 1회성의 현재 도달성만 표시합니다. 미분석 장소의 전체 기회 없음을 뜻하지 않습니다.", MapGuidePresentation.Summary(combined, false, false), controller, true);
+                "현재 확인한 대기 임무와 준비된 1회성의 현재 도달성만 표시합니다. 미분석 장소의 전체 기회 없음을 뜻하지 않습니다.", MapGuidePresentation.Summary(combined, false, false), controller, true, true);
             for (int at = 0; at < snapshot.Entries.Count; at++)
                 if (ReferenceEquals(snapshot.Entries[at].Anchor, controller)) { snapshot.Entries[at] = row; return; }
             snapshot.Entries.Add(row);

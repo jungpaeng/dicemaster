@@ -22,7 +22,7 @@ namespace DiceMaster.Information
 
     // Observe buttons produced by the game's own menu. The caller schedules
     // this one query; all per-frame APIs below only select already-built rows.
-    public static class ChoiceStorySource
+    public static partial class ChoiceStorySource
     {
         private sealed class Option
         {
@@ -37,6 +37,8 @@ namespace DiceMaster.Information
             internal readonly List<MapStoryEntry> Stories = new List<MapStoryEntry>();
             internal readonly List<MapRoutePath> Paths = new List<MapRoutePath>();
             internal readonly Dictionary<MapRoutePath, MapStoryEntry> PathStories = new Dictionary<MapRoutePath, MapStoryEntry>();
+            internal readonly List<MapRouteEntry> Events = new List<MapRouteEntry>();
+            internal readonly List<MapScriptEntry> Scripts = new List<MapScriptEntry>();
         }
         private static readonly List<Option> options = new List<Option>();
         private static readonly Dictionary<string, Binding> bindings = new Dictionary<string, Binding>(StringComparer.Ordinal);
@@ -52,7 +54,8 @@ namespace DiceMaster.Information
         private static bool hasClock;
         private static float lastClock;
         private static double clock;
-        public static Func<bool> Enabled;
+        public static Func<bool> Enabled, GuideEnabled, OneShotEnabled;
+        public static Func<object, bool> Interactive, CanReadEvent;
         public static Func<long> ContextReader;
         public static Func<string, IList<MapRouteEvent>> PoolReader;
         private static bool IsEnabled { get { try { return Enabled == null || Enabled(); } catch (Exception) { return false; } } }
@@ -166,7 +169,7 @@ namespace DiceMaster.Information
             if (changed) generation++;
         }
         private static void ClearGraph()
-        { if (routes != null) routes.Clear(); routes = null; routeHadFailure = false; indexedChoices = 0; bindings.Clear(); indexed.Clear(); }
+        { if (routes != null) routes.Clear(); routes = null; routeHadFailure = false; indexedChoices = 0; bindings.Clear(); indexed.Clear(); opportunityWork = -1; eventNames.Clear(); }
         public static void ClearSnapshots()
         { ClearGraph(); source = null; foreach (Option option in options) { option.Raw = option.Title = null; option.Menu = null; } generation++; }
         public static void Clear()
@@ -226,6 +229,7 @@ namespace DiceMaster.Information
             var current = new MapRouteRead(); int classificationBudget = 32;
             foreach (Option option in options)
             {
+                if (!Feature(GuideEnabled)) break;
                 if (option.Raw == null || option.Context != Context || !ReferenceEquals(option.Menu, menu) || !Live(option.Control.Target, menu)) continue;
                 Binding binding;
                 if (!bindings.TryGetValue(option.Raw, out binding) || binding.Stories.Count == 0) continue;
@@ -288,6 +292,7 @@ namespace DiceMaster.Information
                 snapshot.Entries.Add(row);
                 if (snapshot.Hints.Count < 3) snapshot.Hints.Add(row);
             }
+            AppendOpportunities(snapshot, current, indexing, details, preparation);
             if (routes.IsPreparing || indexing || routes.IsPartial || routes.HasReadFailure)
                 snapshot.Entries.Add(Status(routes.HasReadFailure ? "이야기 연결 자료 읽기 대기/실패 · 5초 뒤 재시도" : routes.IsPreparing || indexing ? "이야기 안내 준비 중" : "이야기 연결 일부 확인 필요"));
             snapshot.Selected = CurrentRow(snapshot);

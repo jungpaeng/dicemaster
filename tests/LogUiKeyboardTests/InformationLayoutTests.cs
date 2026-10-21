@@ -119,7 +119,7 @@ internal static partial class Program
             ChoiceStorySource.MenuVisible = true; ChoiceStorySource.Current = choice; ChoiceStorySource.Selected = firstChoice;
             InformationRuntime.TestChoices(choice); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1011);
-            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 연결 이야기") && GUI.PassiveLabels[0].Text.Contains("사사형 → 대화 항목") && !GUI.PassiveLabels[0].Text.Contains("다른 항목"), "choice overlay follows only the published current pad selection");
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 안내") && GUI.PassiveLabels[0].Text.Contains("사사형 → 대화 항목") && !GUI.PassiveLabels[0].Text.Contains("다른 항목"), "choice overlay follows only the published current pad selection");
             Check(GUI.PassiveLabels[0].RichText && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능</color>"),
                 "the current choice's positive entry status uses the same green text");
             measures = GUIStyle.Measurements;

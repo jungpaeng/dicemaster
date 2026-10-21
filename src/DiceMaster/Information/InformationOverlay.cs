@@ -68,7 +68,7 @@ namespace DiceMaster.Information
             if (!Application.isFocused || Screen.width <= 0 || Screen.height <= 0) return;
             InformationRow selected = null; string status = "";
             ChoiceStorySnapshot choice = null; string choiceStatus = "";
-            if (!logOpen && !popupOpen && choices.Visible && Enabled(0) && choices.Rows.Count == 1)
+            if (!logOpen && !popupOpen && choices.Visible && (Enabled(0) || Enabled(1)) && choices.Rows.Count == 1)
             {
                 var source = choices.Rows[0];
                 var snapshot = source.Value as ChoiceStorySnapshot;
@@ -119,7 +119,7 @@ namespace DiceMaster.Information
             if (mapNative == null) mapNative = selected;
             InformationRow mapCurrent = Focused(mapFocusRows, mapNative, mapFocus);
             foreach (InformationRow row in mapFocusRows)
-                if (row.Available && (!ReferenceEquals(row, selected) || status.Length == 0)) DrawBadge(row);
+                if (row.Opportunity && (!ReferenceEquals(row, selected) || status.Length == 0)) DrawBadge(row);
             if (mapCurrent != null && !string.IsNullOrEmpty(mapCurrent.AutoText))
             {
                 string currentStatus = ReferenceEquals(mapCurrent, selected) ? status : "";
@@ -139,12 +139,12 @@ namespace DiceMaster.Information
             if (choice != null)
             {
                 InformationRow current = Focused(choice.Entries, ChoiceStorySource.CurrentRow(choice), choiceFocus);
-                if (choiceStatus.Length == 0) foreach (InformationRow row in choice.Entries) if (row.Available) DrawBadge(row);
+                if (choiceStatus.Length == 0) foreach (InformationRow row in choice.Entries) if (row.Opportunity) DrawBadge(row);
                 if (!ReferenceEquals(lastChoice, choice) || !ReferenceEquals(lastChoiceRow, current) || lastChoiceStatus != choiceStatus)
                 {
                     lastChoice = choice; lastChoiceRow = current; lastChoiceStatus = choiceStatus;
                     var lines = new List<string>();
-                    lines.Add("현재 선택의 연결 이야기" + (choiceStatus.Length == 0 ? "" : " · " + choiceStatus));
+                    lines.Add("현재 선택의 안내" + (choiceStatus.Length == 0 ? "" : " · " + choiceStatus));
                     if (current != null) lines.Add("• " + current.AutoText);
                     lines.Add("자세히: 로그 → 도구 → 지도 안내");
                     choiceText = EntryConditionColors(string.Join("\n", lines), choiceStatus.Length == 0);
@@ -164,7 +164,7 @@ namespace DiceMaster.Information
             {
                 Rect anchor;
                 if (row.Anchor == null || !InformationAnchors.TryRect(row.Anchor, out anchor)) continue;
-                if (anchor.Contains(pointer) || row.Available && InformationLayout.Badge(anchor, viewport, informationFont).Contains(pointer)) return row;
+                if (anchor.Contains(pointer) || row.Opportunity && InformationLayout.Badge(anchor, viewport, informationFont).Contains(pointer)) return row;
             }
             return null;
         }

@@ -109,7 +109,7 @@ static class Program {
   ChoiceStorySource.ContextKey="next-menu";ChoiceStorySource.Fail=false;
   InformationRuntime.Tick("지도 안내",true,46.01f);Check(ChoiceStorySource.Reads==4,"new menu clears previous failure backoff and old snapshot");
   InformationRuntime.Toggle(0);int before=ChoiceStorySource.Reads;
-  InformationRuntime.Tick("지도 안내",true,47);Check(ChoiceStorySource.Reads==before,"map-guide OFF stops choice collection independently of one-shot setting");
+  InformationRuntime.Tick("지도 안내",true,47);Check(ChoiceStorySource.Reads==before+1&&!ChoiceStorySource.GuideEnabled()&&ChoiceStorySource.OneShotEnabled(),"map-guide OFF stops general/waiting guidance while one-shot menu collection stays independently enabled");
   int occludedMap=MapGuideSource.Reads; InformationRuntime.Tick(null,true,47.25f);
   Check(MapGuideSource.Reads==occludedMap,"physical menu occludes map one-shot reads while guide OFF and one-shot ON");
   Check(InformationRuntime.Enabled(1),"choice guide OFF preserves one-shot setting");
@@ -156,6 +156,9 @@ static class Program {
   Check(m.GetType("DiceMaster.Information.MapGuideSource").Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference call&&call.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&call.Name=="AdvanceBudgeted")),"delivered map provider prepares actual bounded route engine");
   Check(publish.Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.ChoiceStorySnapshot"&&f.Name=="Entries"),"delivered choice snapshot uses the existing read-only map log publication");
   var choice=m.GetType("DiceMaster.Information.ChoiceStorySource");
+  Check(runtime.Methods.Single(x=>x.Name=="DrawCore").Body.Instructions.Any(i=>i.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.InformationRow"&&f.Name=="Opportunity"),"delivered red dots read the independent opportunity property instead of general dialogue availability");
+  var opportunity=choice.Methods.Single(x=>x.Name=="AppendOpportunities");
+  Check(opportunity.Body.Instructions.Select(i=>i.Operand).OfType<MethodReference>().Any(c=>c.DeclaringType.FullName=="DiceMaster.Information.OneShotProof"&&c.Name=="TryGetEvent")&&opportunity.Body.Instructions.Select(i=>i.Operand).OfType<MethodReference>().Any(c=>c.DeclaringType.FullName=="DiceMaster.EventSelection.EventEligibility"&&c.Name=="EvaluateCurrent"),"delivered current menu uses the actual strict proof and fresh event eligibility reader");
   Check(choice.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&c.Name=="AdvanceBudgeted")),"delivered current-menu source uses the bounded route analyzer");
   Check(choice.Methods.Single(x=>x.Name=="CurrentRow").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.EventSystems.EventSystem"&&c.Name=="get_currentSelectedGameObject"),"delivered pad focus reads the existing native selected object");
   var forbidden=new[]{"Check","Execute","GetResult","GetRate","Position","Switch","Condition","SetStoryScript","SetNextScript","SetCurrentStoryScript","SetCurrentKey","SetConditionFlag","GetRandomResult","UpdateCheckMissions","GetActiveMissions","GetStoryText","UpdateContent","LoadLuaFunction","SetSelectedGameObject","OnSelect","Select","AddOption","Use","Learn","Apply","Buy"};

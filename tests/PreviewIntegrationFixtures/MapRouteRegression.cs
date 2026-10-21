@@ -53,6 +53,16 @@ namespace DiceMaster
             Check(reads == warmReads && poolReads == warmPools && (int)Member(route, "ParseCount") == warmParses,
                 "actual DLL warm refresh does not reload or reparse definitions");
 
+            scripts["root"] = "local a={'A'};local r=choose(a);if r==1 then luamanager.SetNextScript('registered_story');luamanager.Init() end";
+            scripts["registered_story"] = ""; route = Create(); Finish(route);
+            var targets = Items(route, "ScriptEntries").Cast<object>().ToList();
+            Check(targets.Count == 1 && (string)Member(targets[0], "Script") == "registered_story" && Items(targets[0], "Paths").Count == 1,
+                "actual DLL literal adjacent Init records the selected script handoff without executing it");
+            Check((bool)Member(route, "HasIncompleteStoryPaths") && !(bool)Member(route, "HasIncompleteOpportunityPaths"),
+                "actual DLL keeps future story uncertainty separate from the witnessed immediate registration handoff");
+            scripts["root"] = "local a={'A'};local r=choose(a);if r==1 then luamanager.SetNextScript('registered_story') end"; route = Create(); Finish(route);
+            Check(Items(route, "ScriptEntries").Count == 0, "actual DLL script registration without execution handoff cannot masquerade as a waiting mission route");
+
             scripts["root"] = "luamanager.SetNextScript('submenu'); luamanager.SetNextScript('')";
             route = Create(); Finish(route);
             Check(Items(route, "Entries").Count == 0 && !(bool)Member(route, "IsPartial"), "actual DLL empty registration cancels previous target");

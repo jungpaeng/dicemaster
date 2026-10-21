@@ -43,8 +43,8 @@ internal static partial class Program
             MapGuideSource.Selected = null; InformationRuntime.TestMap(null); InformationRuntime.TestChoices(null);
             ChoiceStorySource.MenuVisible = false; InformationRuntime.TestFlags = new[] { true, true, false, true };
             var markers = new MapMarkerSnapshot();
-            markers.Entries.Add(new InformationRow("marker/a", "첫 장소", "지도", "확인된 기회 2", "상세", "• 첫 임무 · 보조 임무 · 진행 가능\n• 첫 이야기 · 1회성 이야기 · 선택 후 진행 가능", first, true));
-            markers.Entries.Add(new InformationRow("marker/b", "둘째 장소", "지도", "확인된 기회 1", "상세", "• 둘째 임무 · 보조 임무 · 진행 가능", second, true));
+            markers.Entries.Add(new InformationRow("marker/a", "첫 장소", "지도", "확인된 기회 2", "상세", "• 첫 임무 · 보조 임무 · 진행 가능\n• 첫 이야기 · 1회성 이야기 · 선택 후 진행 가능", first, true, true));
+            markers.Entries.Add(new InformationRow("marker/b", "둘째 장소", "지도", "확인된 기회 1", "상세", "• 둘째 임무 · 보조 임무 · 진행 가능", second, true, true));
             InformationRuntime.TestMarkers(markers); Event.current = new Event { mousePosition = new Vector2(0, 0), type = EventType.Repaint };
             void Draw() { GUI.PassiveLabels.Clear(); GUI.BadgeLabels.Clear(); InformationRuntime.Draw(false, false, default, 2000); }
             Draw();
@@ -64,9 +64,11 @@ internal static partial class Program
             InformationRuntime.TestMarkers(markers); GUI.BadgeLabels.Clear(); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(true, false, default, 2001); InformationRuntime.Draw(false, true, default, 2001);
             Check(GUI.BadgeLabels.Count == 0 && GUI.PassiveLabels.Count == 0, "logs and modals hide dots and attached descriptions");
-            var choices = new ChoiceStorySnapshot(); choices.Entries.Add(markers.Entries[0]); choices.Entries.Add(new InformationRow("unknown", "불확실", "연결", "진행 가능성 있음", "상세", "경로 후보", second));
+            var choices = new ChoiceStorySnapshot(); choices.Entries.Add(markers.Entries[0]); choices.Entries.Add(new InformationRow("ordinary", "일반 대화", "연결", "진행 가능", "상세", "일반 대화 → 이야기 · 진행 가능", second, true));
             ChoiceStorySource.Current = choices; ChoiceStorySource.Selected = choices.Entries[0]; ChoiceStorySource.MenuVisible = true; InformationRuntime.TestChoices(choices); Draw();
-            Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 연결 이야기"), "choice screen suppresses underlying map and only confirmed choices get dots");
+            Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 안내"), "choice screen suppresses underlying map and only confirmed choices get dots");
+            ChoiceStorySource.Selected = choices.Entries[1]; Draw();
+            Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("일반 대화") && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능</color>"), "ordinary confirmed dialogue remains readable in green without granting another red dot");
             Check(Event.current.type == EventType.Repaint && ReferenceEquals(system.currentSelectedGameObject, first.gameObject), "passive rendering neither consumes native input nor changes selected GameObject");
         }
         finally

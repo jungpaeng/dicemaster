@@ -723,7 +723,7 @@ namespace DiceMaster.Information
                 if (diagnostics.Count != 0) status += " · " + string.Join(" · ", diagnostics);
                 string text = MapGuidePresentation.Summary(automatic, guide, preparing);
                 snapshot.Summary = new InformationRow(SelectionKey(place), Plain(title), "지도", status,
-                    "대기 상태·현재 조건·선택 우선순위는 서로 다른 정보입니다. 경로·조건·효과와 장소 무관 항목은 지도 로그에서 읽습니다.", text, controller, available);
+                    "대기 상태·현재 조건·선택 우선순위는 서로 다른 정보입니다. 경로·조건·효과와 장소 무관 항목은 지도 로그에서 읽습니다.", text, controller, available, available);
             }
             return snapshot;
         }
@@ -1023,7 +1023,7 @@ namespace DiceMaster.Information
             { if (error.Message.StartsWith("Unknown display", StringComparison.Ordinal)) result = null; else throw; }
             currentConditions[condition] = result; return result;
         }
-        private static bool SmallEventGraph(object data)
+        internal static bool SmallEventGraph(object data)
         {
             var roots = new List<object>();
             if ((bool)Read(data, "_toggleCondition")) roots.Add(Read(data, "_activeCondition"));

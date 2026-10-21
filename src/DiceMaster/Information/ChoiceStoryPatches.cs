@@ -38,7 +38,7 @@ namespace DiceMaster.Information
             {
                 if (__exception == null && __result != null && OptionInfoPatch.DisplayRefreshDepth == 0)
                     Observe(() => {
-                        if (InformationRuntime.Enabled(0)) PreviewConditions.ObserveLuaEnvironment(__instance);
+                        if (InformationRuntime.Enabled(0) || InformationRuntime.Enabled(1)) PreviewConditions.ObserveLuaEnvironment(__instance);
                         ChoiceStorySource.ObserveScript(luaString, friendlyName);
                     });
                 return __exception;

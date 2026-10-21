@@ -35,7 +35,7 @@ namespace DiceMaster.Information {
  public static class BranchObservationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class MapGuideSource {
   public static IList<MapRouteEvent> ReadChoicePool(string key)=>new List<MapRouteEvent>();
-  public static Func<object,bool> MarkerVisible;public static bool MarkerSessionVisible=>SessionVisible;public static string MarkerContextKey=>ContextKey;public static int MarkerReads;public static bool MarkerFail;
+  public static bool SmallEventGraph(object o)=>true;public static Func<object,bool> MarkerVisible;public static bool MarkerSessionVisible=>SessionVisible;public static string MarkerContextKey=>ContextKey;public static int MarkerReads;public static bool MarkerFail;
   public static List<DisplayQuery> DiscoverMarkers(bool g,bool o)=>new(){new DisplayQuery("markers",()=>{MarkerReads++;if(MarkerFail)throw new InvalidOperationException();return new MapMarkerSnapshot();})};
   public static Func<bool> Enabled;public static bool Visible,NoSelectionSession;public static bool SessionVisible=>Visible||NoSelectionSession;public static string ContextKey="m";public static int Reads,DetailReads,Discoveries,Clears;public static bool Fail;
   public static List<DisplayQuery> Discover(bool g,bool o,bool details=false){Discoveries++;if(!Visible&&(!NoSelectionSession||!g))return new();return new(){new DisplayQuery("map",()=>{Reads++;if(details)DetailReads++;if(Fail)throw new InvalidOperationException();var snapshot=new MapGuideSnapshot{HasSelection=Visible,ContextKey=ContextKey,Summary=Visible?new InformationRow("map","장소","지도","가능","조건과 효과"):null};snapshot.Entries.Add(new InformationRow("mission/first","첫 임무",NoSelectionSession?"장소 무관":"선택 장소","발생 대기",details?"첫 조건과 효과":"상세에서 확인"));snapshot.Entries.Add(new InformationRow("event/second","둘째 이야기","기타 연결","확인 불가",details?"둘째 조건과 효과":"상세에서 확인"));return snapshot;})};}public static void Clear(){Clears++;}public static void ClearSnapshots(){Clears++;}public static void ClearSnapshotsPreservingSyntax(){Clears++;}
@@ -63,7 +63,7 @@ namespace DiceMaster.Information {
  public class ChoiceStorySnapshot { public string ContextKey; public readonly List<InformationRow> Entries=new(); }
  public static class ChoiceStoryPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class ChoiceStorySource {
-  public static Func<bool> Enabled;public static Func<string,IList<MapRouteEvent>> PoolReader; public static bool Visible,Fail;public static bool MenuVisible=>Visible;public static string ContextKey="choice";public static int Reads,DetailReads,Clears;
+  public static Func<bool> Enabled,GuideEnabled,OneShotEnabled;public static Func<object,bool> Interactive,CanReadEvent;public static Func<string,IList<MapRouteEvent>> PoolReader; public static bool Visible,Fail;public static bool MenuVisible=>Visible;public static string ContextKey="choice";public static int Reads,DetailReads,Clears;
   public static List<DisplayQuery> Discover(bool details=false)=>new(){new DisplayQuery(ContextKey,()=>{Reads++;if(Fail)throw new InvalidOperationException();if(details)DetailReads++;var snapshot=new ChoiceStorySnapshot{ContextKey=ContextKey};snapshot.Entries.Add(new InformationRow("choice/story","사사형","연결 이야기","선택 조건 충족 (현재)",details?"사사형 → 대화 항목":"상세에서 확인"));return snapshot;})};
   public static void ContextChanged(){Clears++;} public static void ClearSnapshots(){Clears++;} public static void Clear(){Visible=false;Clears++;ContextKey+="c";}
  }
@@ -72,4 +72,4 @@ namespace DiceMaster.Information {
  public static class OptionHintSource {public static Func<bool> Enabled; public static bool Visible;public static string ContextKey="o";public static void Clear(){}public static void RenderHints(){}public static List<DisplayQuery> Discover()=>new();}
 }
 
-namespace DiceMaster.Information { public static class InformationAnchors { public static bool IsVisible(object o)=>true; } }
+namespace DiceMaster.Information { public static class InformationAnchors { public static bool IsVisible(object o)=>true; public static bool IsInteractive(object o)=>true; } }

@@ -52,7 +52,7 @@ namespace Mortal.Core
         { Enumerations++; return ((IDictionary)new Dictionary<string, MissionCheckData>(this)).GetEnumerator(); }
     }
     public class MissionManagerData
-    { public MissionData _main = new MissionData(); public SubMissions _subMissions = new SubMissions(); public MissionCheckData MainCheckData; public Dictionary<string,MissionCheckData> ActiveSubMissions = new Dictionary<string,MissionCheckData>(); public bool MainMissionStart; public PositionType MainMissionPosition; }
+    { public static MissionManagerData _instance; public MissionData _main = new MissionData(); public SubMissions _subMissions = new SubMissions(); public MissionCheckData MainCheckData; public Dictionary<string,MissionCheckData> ActiveSubMissions = new Dictionary<string,MissionCheckData>(); public bool MainMissionStart; public PositionType MainMissionPosition; }
     public static class Counters { public static int GameCalls; }
 }
 namespace Mortal.Free
