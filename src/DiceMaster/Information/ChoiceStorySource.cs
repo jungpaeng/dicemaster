@@ -213,9 +213,10 @@ namespace DiceMaster.Information
             {
                 string root = script, body = source;
                 routes = new MapRouteDefinitions(root, name => string.Equals(name, root, StringComparison.OrdinalIgnoreCase) ? ScriptReadResult.Success(body) : DataHelper.ReadPreviewScript(name),
-                    name => PoolReader == null ? null : PoolReader(name));
+                    name => PoolReader == null ? null : PoolReader(name)) { UseSharedSyntax = true };
             }
-            routes.Advance(Now);
+            var preparation = new MapRouteDefinitions.PreparationSlice();
+            routes.AdvanceBudgeted(Now, 8192, preparation.ShouldYield);
             if (routes.HasReadFailure != routeHadFailure)
             {
                 routeHadFailure = routes.HasReadFailure;

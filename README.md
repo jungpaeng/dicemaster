@@ -19,6 +19,8 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
+지도 조회 성능 개선 후보는 대기 임무를 먼저 읽고, **1회성 표시 OFF이면 자동 지도에서 Lua 준비를 생략**합니다. 일반 이야기의 숨은 경로 조건과 표시하지 않을 상세 행도 자동 주기에 만들지 않습니다. 로그 → 도구 → 지도 안내의 `지도 조회 성능`에서 최근 64회 시간과 지원되는 런타임의 할당량을 읽습니다. 전체 프레임 시간은 별도 Windows 측정이 필요합니다. [개선 범위·확인표](docs/ISSUE-6-ALPHA13-RELEASE.md).
+
 <!-- alpha12-current-status -->
 **[v1.0.7-alpha.12 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.12)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.12/DiceMaster-v1.0.7-alpha.12.zip)**. 2026-10-21 16:38:52 KST 게시. 지도 자동 안내는 실행 가능한 기존 대기 임무와 도달 가능성을 확인한 1회성으로 제한하고, 후속 대화·미등록 단계는 상세로 옮겼습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. 전체·고정 커밋 재빌드 21개 프로그램과 실제 DLL 연결·공개 ZIP 대조를 통과했습니다. **이번 DLL의 실제 Windows·물리 입력·가독성·성능 확인은 대기이며 #6은 open입니다.** [변경·해시·확인표](docs/ISSUE-6-ALPHA12-RELEASE.md).
 <!-- /alpha12-current-status -->
@@ -148,7 +150,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 | `EnableEventSelectionPopup` | `true` | 지원하는 이벤트 판정의 선택 팝업 |
 | `EnableSwitchSelectionPopup` | `false` | 지원하는 대화 중 조건 분기의 선택 팝업 |
 | `EnableMapGuide` | `true` | 지도에는 실행 가능한 대기 임무·도달 가능성이 확인된 1회성만 최대 세 항목. 선택 화면 경로·지도 로그 상세·현재 필수 조건 표본도 제어 |
-| `EnableOneShotHints` | `true` | 증명한 항목만 1회성 표식. 미확인·실패 사유는 상세 |
+| `EnableOneShotHints` | `true` | 증명한 항목만 1회성 표식. OFF이면 자동 지도의 Lua 경로 준비도 생략. 미확인·실패 사유는 상세 |
 | `EnableBranchNotices` | `true` | 실제 분기 알림과 메모리 기록 |
 | `EnableShopEffectInfo` | `true` | 상점의 짧은 효과 요약. 학습 조건·소모·학습점은 상세, OFF 때 원래 설명 복원 |
 | `LogMenuToggleKey` | `Tab` | 로그 열기·닫기 키 |

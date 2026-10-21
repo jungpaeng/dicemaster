@@ -118,7 +118,7 @@ namespace DiceMaster.Information
                 luaContext = LogBridge.Model.ContextId;
                 OptionHintSource.Clear(); OneShotProof.Clear(); Reset(hints);
                 ChoiceStorySource.ContextChanged(); Reset(choices);
-                MapGuideSource.ClearSnapshots(); Reset(map);
+                MapGuideSource.ClearSnapshotsPreservingSyntax(); Reset(map);
                 // Scene/load patches clear history separately; ordinary Lua keeps it.
             }
             bool choiceVisible = enabled[0] && ChoiceStorySource.Visible;

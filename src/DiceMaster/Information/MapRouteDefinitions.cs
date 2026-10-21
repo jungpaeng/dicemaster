@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Diagnostics;
 using System.Text;
 using DiceMaster.LiveLog;
 
@@ -10,6 +11,49 @@ namespace DiceMaster.Information
     // evaluated. Call Advance only while the owning map query is visible.
     public sealed class MapRouteDefinitions
     {
+        // Only completed lexical data is shared. Source is re-read and compared
+        // before reuse; jobs, semantic profiles and current values stay private.
+        private sealed class SharedSyntax
+        { internal string Script; internal MapRouteSyntax Syntax; }
+        private static readonly LinkedList<SharedSyntax> syntaxCache = new LinkedList<SharedSyntax>();
+        private static int sharedCharacters, sharedTokens;
+        public bool UseSharedSyntax { get; set; }
+        public int SharedSyntaxHits { get; private set; }
+        public static void ClearSharedSyntaxCache()
+        { syntaxCache.Clear(); sharedCharacters = sharedTokens = 0; }
+        public sealed class PreparationSlice
+        {
+            private readonly long deadline = Stopwatch.GetTimestamp() + Math.Max(1, Stopwatch.Frequency / 200);
+            public bool ShouldYield() { return Stopwatch.GetTimestamp() >= deadline; }
+        }
+        private MapRouteSyntax FindSyntax(string script, string body, int chars, int count)
+        {
+            if (!UseSharedSyntax) return null;
+            for (var node = syntaxCache.First; node != null; node = node.Next)
+                if (string.Equals(node.Value.Script, script, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(node.Value.Syntax.Source, body ?? "", StringComparison.Ordinal))
+                {
+                    var syntax = node.Value.Syntax;
+                    if (syntax.Source.Length > chars || syntax.Tokens.Count >= count) return null;
+                    syntaxCache.Remove(node); syntaxCache.AddFirst(node); SharedSyntaxHits++;
+                    characters += syntax.Characters; tokens += syntax.Tokens.Count;
+                    return syntax;
+                }
+            return null;
+        }
+        private void ShareSyntax(string script, MapRouteSyntax syntax)
+        {
+            if (!UseSharedSyntax || !syntax.Ready || syntax.Limited || syntax.Malformed || syntax.Source.Length > 1310720 || syntax.Tokens.Count > 131072) return;
+            for (var node = syntaxCache.First; node != null; node = node.Next)
+                if (ReferenceEquals(node.Value.Syntax, syntax)) return;
+            syntaxCache.AddFirst(new SharedSyntax { Script = script, Syntax = syntax });
+            sharedCharacters += syntax.Source.Length; sharedTokens += syntax.Tokens.Count;
+            while (syntaxCache.Count > 16 || sharedCharacters > 1310720 || sharedTokens > 131072)
+            {
+                var last = syntaxCache.Last.Value; syntaxCache.RemoveLast();
+                sharedCharacters -= last.Syntax.Source.Length; sharedTokens -= last.Syntax.Tokens.Count;
+            }
+        }
         private sealed class Value
         {
             internal string Script, Pool, Literal;
@@ -253,6 +297,8 @@ namespace DiceMaster.Information
             admitted++; jobs.Enqueue(job);
         }
         public void Advance(float now, int maxWork = 8192)
+        { AdvanceBudgeted(now, maxWork, null); }
+        public void AdvanceBudgeted(float now, int maxWork, Func<bool> shouldYield)
         {
             if (cleared || limited && WorkCount >= limits.MaxWork) return;
             resourceBudget = poolBudget = 1;
@@ -261,8 +307,9 @@ namespace DiceMaster.Information
             int blocked = 0;
             while (budget > 0 && jobs.Count > 0)
             {
+                if (shouldYield != null && shouldYield()) break;
                 Job job = jobs.Dequeue(); int used;
-                bool done = job.Pool != null ? ProcessPool(job, now, out used) : Process(job, now, budget, out used);
+                bool done = job.Pool != null ? ProcessPool(job, now, out used) : Process(job, now, shouldYield == null ? budget : Math.Min(budget, 256), out used);
                 used = Math.Min(budget, Math.Max(0, used)); budget -= used; WorkCount += used;
                 if (!done) jobs.Enqueue(job);
                 if (used == 0) { if (++blocked >= jobs.Count) break; } else blocked = 0;
@@ -290,7 +337,8 @@ namespace DiceMaster.Information
             plan.Failed = false;
             int chars = Math.Min(limits.MaxScriptCharacters, Math.Max(0, limits.MaxCharacters - characters));
             int count = Math.Min(limits.MaxScriptTokens, Math.Max(0, limits.MaxTokens - tokens));
-            plan.Syntax = new MapRouteSyntax(read.Text, chars, count); ParseCount++;
+            plan.Syntax = FindSyntax(script, read.Text, chars, count);
+            if (plan.Syntax == null) { plan.Syntax = new MapRouteSyntax(read.Text, chars, count); ParseCount++; }
             return plan;
         }
         private bool Process(Job job, float now, int budget, out int used)
@@ -308,6 +356,7 @@ namespace DiceMaster.Information
                 used = syntax.Step(budget);
                 tokens += syntax.Tokens.Count - before; characters += syntax.Characters - charsBefore;
                 if (syntax.Ready && (syntax.Limited || syntax.Malformed)) Reason("구문 한계/미완결 · 일부 연결 확인 불가");
+                if (syntax.Ready) ShareSyntax(job.Script, syntax);
                 return false;
             }
             MapStoryProfile storyProfile = StoryProfile(plan, job);

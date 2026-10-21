@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -43,6 +44,7 @@ namespace DiceMaster.Information
             internal readonly Dictionary<MapRouteEntry, EventDefinition> RouteEvents = new Dictionary<MapRouteEntry, EventDefinition>();
             internal readonly List<StoryGroup> Stories = new List<StoryGroup>();
             internal int StoryWork = -1;
+            internal int EventWork = -1;
         }
         private sealed class StoryGroup
         {
@@ -63,9 +65,8 @@ namespace DiceMaster.Information
         private sealed class EventDefinition
         {
             internal PositionEventData Data;
-            internal string Script, Path, Id, Name;
-            internal bool HasChoice;
-            internal MapRouteState RouteState;
+            internal string Script, Id, Name;
+            internal MapRouteEntry Route;
         }
         private sealed class ScriptDefinition
         {
@@ -133,6 +134,40 @@ namespace DiceMaster.Information
         private static readonly Dictionary<object, bool?> currentConditions = new Dictionary<object, bool?>();
         private static DispatchSnapshot dispatch;
         private static string entryBarrier;
+        private static MapRouteRead currentRoutes;
+        private static MapRouteDefinitions.PreparationSlice preparationSlice;
+        private static int routeReads, effectStarts;
+        private sealed class Timing
+        {
+            internal readonly double[] Total = new double[64], Missions = new double[64], Preparation = new double[64], Events = new double[64], Formatting = new double[64];
+            internal readonly long[] Allocations = new long[64];
+            internal int Count, Next;
+            internal void Add(double total, double missions, double preparation, double events, double formatting, long bytes)
+            { int at = Next; Total[at] = total; Missions[at] = missions; Preparation[at] = preparation; Events[at] = events; Formatting[at] = formatting; Allocations[at] = bytes; Next = (at + 1) % 64; Count = Math.Min(64, Count + 1); }
+            internal string Describe(string name)
+            {
+                if (Count == 0) return name + ": 표본 없음";
+                var sorted = new double[Count]; Array.Copy(Total, sorted, Count); Array.Sort(sorted);
+                double missions = 0, preparation = 0, events = 0, formatting = 0; long bytes = 0;
+                for (int at = 0; at < Count; at++) { missions += Missions[at]; preparation += Preparation[at]; events += Events[at]; formatting += Formatting[at]; bytes += Allocations[at]; }
+                return string.Format(CultureInfo.InvariantCulture, "{0}: 최근 {1}회 · p95 {2:F2} ms · 최대 {3:F2} ms\n평균 임무 {4:F2} / 준비 {5:F2} / 후보 {6:F2} / 구성 {7:F2} ms · 할당 {8}", name, Count, sorted[(int)Math.Ceiling(Count * .95) - 1], sorted[Count - 1], missions / Count, preparation / Count, events / Count, formatting / Count, !allocationAvailable ? "런타임 미지원" : (bytes / Count).ToString(CultureInfo.InvariantCulture) + " B/회");
+            }
+        }
+        private static readonly Timing[] timings = { new Timing(), new Timing(), new Timing() };
+        private static readonly Func<long> allocationReader = AllocationReader();
+        private static bool allocationAvailable = allocationReader != null;
+        private static Func<long> AllocationReader()
+        {
+            try
+            {
+                var method = typeof(GC).GetMethod("GetAllocatedBytesForCurrentThread", BindingFlags.Static | BindingFlags.Public, null, Type.EmptyTypes, null);
+                return method == null || method.ReturnType != typeof(long) ? null : (Func<long>)Delegate.CreateDelegate(typeof(Func<long>), method);
+            }
+            catch (Exception) { return null; }
+        }
+        private static long Allocated() { try { return !allocationAvailable ? 0 : allocationReader(); } catch (Exception) { allocationAvailable = false; return 0; } }
+        private static double Milliseconds(long start, long end) { return (end - start) * 1000.0 / Stopwatch.Frequency; }
+        private static void ClearTimings() { foreach (var timing in timings) { timing.Count = timing.Next = 0; } }
         private static WeakReference selection, session;
         private static object observedManager, observedPlayer;
         private static Place selectedPlace;
@@ -189,8 +224,10 @@ namespace DiceMaster.Information
             selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
         }
         public static void Clear()
-        { places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; }
-        public static void ClearSnapshots()
+        { places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; }
+        public static void ClearSnapshots() { ClearSnapshotsCore(true); }
+        public static void ClearSnapshotsPreservingSyntax() { ClearSnapshotsCore(false); }
+        private static void ClearSnapshotsCore(bool clearSyntax)
         {
             // Used for OFF: retain weak lifecycle handles, never parsed data.
             bool changed = scripts.Count != 0 || missionIndices.Count != 0;
@@ -200,6 +237,7 @@ namespace DiceMaster.Information
                 place.Definition = null; place.Reads.Clear(); place.Data = place.PositionConfig = null;
             }
             globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); observedManager = observedPlayer = null; if (changed) generation++;
+            if (clearSyntax) { MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); }
         }
         public static List<DisplayQuery> Discover(bool guide, bool oneShot, bool details = false)
         {
@@ -213,7 +251,8 @@ namespace DiceMaster.Information
             result.Add(new DisplayQuery(Selected == null ? "map/global/" + context : SelectionKey(captured), () => {
                 if (version != selectionVersion || !ReferenceEquals(Selected ?? Session, controller)) throw new DataNotReadyException();
                 detailed = details;
-                return Selected == null ? ReadGlobal(controller, guide) : ReadCurrentPlace(captured, controller, guide, oneShot);
+                try { return Selected == null ? ReadGlobal(controller, guide) : ReadCurrentPlace(captured, controller, guide, oneShot); }
+                finally { currentRoutes = null; preparationSlice = null; currentConditions.Clear(); dispatch = null; entryBarrier = null; }
             }));
             return result;
         }
@@ -341,22 +380,24 @@ namespace DiceMaster.Information
             try
             {
                 if (source.Routes == null && !string.IsNullOrEmpty(source.Script))
-                    source.Routes = new MapRouteDefinitions(source.Script, DataHelper.ReadPreviewScript, key => ReadPool(place, key));
+                    source.Routes = new MapRouteDefinitions(source.Script, DataHelper.ReadPreviewScript, key => ReadPool(place, key)) { UseSharedSyntax = true };
                 if (source.Routes != null)
                 {
-                    source.Routes.Advance(Now);
-                    var current = new MapRouteRead();
-                    foreach (MapRouteEntry route in source.Routes.Entries)
+                    source.Routes.AdvanceBudgeted(Now, 8192, preparationSlice.ShouldYield);
+                    if (source.EventWork != source.Routes.WorkCount)
                     {
+                      source.EventWork = source.Routes.WorkCount;
+                      foreach (MapRouteEntry route in source.Routes.Entries)
+                      {
                         EventDefinition entry;
                         if (!source.RouteEvents.TryGetValue(route, out entry))
                         {
                             var data = route.Event as PositionEventData;
                             if (data == null) throw new InvalidOperationException("Unsupported map route event.");
-                            entry = new EventDefinition { Data = data, Script = route.ResultScript, Id = route.Id, HasChoice = route.HasChoice };
+                            entry = new EventDefinition { Data = data, Script = route.ResultScript, Id = route.Id, Route = route };
                             source.RouteEvents.Add(route, entry); source.Events.Add(entry);
                         }
-                        entry.Path = route.Path; entry.HasChoice = route.HasChoice; entry.RouteState = route.ReadCurrent(current);
+                      }
                     }
                 }
                 source.Ready = source.Routes == null || !source.Routes.IsPreparing;
@@ -378,12 +419,12 @@ namespace DiceMaster.Information
             if (!scripts.TryGetValue(script, out definition)) { definition = new ScriptDefinition(); scripts.Add(script, definition); }
             if (definition.Actions == null)
             {
-                if (coldEffects <= 0)
+                if (coldEffects <= 0 || !detailed && preparationSlice != null && preparationSlice.ShouldYield())
                 {
                     definition.Preparing = true; effectsPreparing = true;
                     definition.Description = "효과·1회성 준비 중"; return definition;
                 }
-                coldEffects--; definition.Actions = PositionEventCache.GetDefinitionParser().ExtractActionsFromLua(script);
+                coldEffects--; effectStarts++; definition.Actions = PositionEventCache.GetDefinitionParser().ExtractActionsFromLua(script);
                 definition.Preparing = false; definition.Description = null;
             }
             if (!describe) return definition;
@@ -447,27 +488,47 @@ namespace DiceMaster.Information
         private static object ReadPlace(Place place, PositionController controller, bool guide, bool oneShot)
         {
             if (!IsEnabled || Live(place) != controller || !ReferenceEquals(Read(controller, "_positionData"), place.Data)) throw new DataNotReadyException();
-            Source source = GetSource(place);
+            long start = Stopwatch.GetTimestamp(), allocated = Allocated();
+            routeReads = effectStarts = 0;
             var candidates = new List<Candidate>();
+            if (guide) CollectMissions(place, controller, candidates, false);
+            long missionsEnd = Stopwatch.GetTimestamp();
+            // Waiting-only display never starts Lua discovery or result analysis.
+            if (!detailed && !oneShot)
+            {
+                var waiting = Snapshot(place, controller, candidates, guide, oneShot);
+                long end = Stopwatch.GetTimestamp(); timings[0].Add(Milliseconds(start, end), Milliseconds(start, missionsEnd), 0, 0, Milliseconds(missionsEnd, end), Math.Max(0, Allocated() - allocated));
+                return waiting;
+            }
+            preparationSlice = new MapRouteDefinitions.PreparationSlice();
+            currentRoutes = new MapRouteRead();
+            Source source = GetSource(place);
+            long prepared = Stopwatch.GetTimestamp();
             foreach (EventDefinition entry in source.Events)
             {
                 EventDefinition captured = entry;
-                candidates.Add(TryCandidate(place, "event/" + RuntimeHelpers.GetHashCode(entry.Data) + "/" + entry.Script, () => Event(controller, source, captured, guide, oneShot)));
+                Candidate candidate = TryCandidate(place, "event/" + RuntimeHelpers.GetHashCode(entry.Data) + "/" + entry.Script, () => Event(controller, source, captured, guide, oneShot));
+                if (candidate != null) candidates.Add(candidate);
             }
             // Future NPC stories are research/detail, not passive predictions.
             // Only an explicit log query samples their downstream conditions.
             if (guide && detailed && source.Routes != null) CollectStories(place, controller, source, candidates);
-            if (guide && source.Ready && source.Events.Count == 0 && source.Stories.Count == 0 && !string.IsNullOrEmpty(source.Script))
+            if (guide && detailed && source.Ready && source.Events.Count == 0 && source.Stories.Count == 0 && !string.IsNullOrEmpty(source.Script))
                 candidates.Add(TryCandidate(place, source, () => Story(controller, source.Script,
                     source.Failure != null || source.Routes != null && (source.Routes.IsPartial || source.Routes.HasReadFailure))));
-            if (guide) CollectMissions(place, controller, candidates, false);
             if (source.Failure != null)
                 candidates.Add(Diagnostic("이야기 자료", source.Failure is DataNotReadyException ? "게임 데이터 대기 중" : "읽기 실패", "이 장소의 연결된 이야기 자료를 읽지 못했습니다."));
             else if (source.Routes != null && (source.Routes.IsPreparing || source.Routes.IsPartial || source.Routes.HasReadFailure))
                 candidates.Add(Diagnostic("경로 자료", source.Routes.IsPreparing ? "경로 준비 중" : source.Routes.HasReadFailure ? "경로 읽기 실패" : "경로 일부 확인 불가", source.Routes.Diagnostic, source.Routes.IsPreparing));
             foreach (string diagnostic in source.PoolDiagnostics.Values)
                 candidates.Add(Diagnostic("풀 자료", "풀 검색 상한 · 일부 확인 불가", diagnostic));
-            return Snapshot(place, controller, candidates, guide, oneShot);
+            long eventsEnd = Stopwatch.GetTimestamp();
+            var snapshot = Snapshot(place, controller, candidates, guide, oneShot);
+            long finished = Stopwatch.GetTimestamp();
+            timings[detailed ? 2 : 1].Add(Milliseconds(start, finished), Milliseconds(start, missionsEnd), Milliseconds(missionsEnd, prepared), Milliseconds(prepared, eventsEnd), Milliseconds(eventsEnd, finished), Math.Max(0, Allocated() - allocated));
+            if (detailed)
+                snapshot.Entries.Add(new InformationRow("map/performance/" + ContextKey, "지도 조회 성능", "자료 상태", "최근 실행 표본", timings[0].Describe("자동 · 대기 임무") + "\n" + timings[1].Describe("자동 · 1회성 포함") + "\n" + timings[2].Describe("명시적 상세") + "\n이번 조회: 경로 현재값 " + routeReads + "회 · 효과 분석 시작 " + effectStarts + "회 · 정적 구문 재사용 " + (source.Routes == null ? 0 : source.Routes.SharedSyntaxHits) + "회(현 경로 누적)\n선택 장소의 자료 제공자 내부만 측정합니다. 메타데이터·이 진단문 구성·UI 렌더링·전체 프레임 시간은 포함하지 않습니다. 준비는 약 5 ms마다 양보하며 동기 리소스 읽기/단일 분석의 완료 시간을 보장하지 않습니다."));
+            return snapshot;
         }
         private static void CollectStories(Place place, PositionController controller, Source source, List<Candidate> candidates)
         {
@@ -651,7 +712,7 @@ namespace DiceMaster.Information
                 }
             }
             if (snapshot.Entries.Count == 0)
-                snapshot.Entries.Add(new InformationRow("map/empty/" + ContextKey, place == null ? "장소 무관 임무 없음" : "현재 연결 항목 없음", "지도", "현재 확인된 항목 없음",
+                snapshot.Entries.Add(new InformationRow("map/empty/" + ContextKey, place == null ? "장소 무관 임무 없음" : detailed ? "현재 연결 항목 없음" : "현재 자동 표시 대상 없음", "지도", "현재 확인된 항목 없음",
                     "현재 관찰한 자료 범위의 결과입니다. 전체 게임의 기회 없음이나 반복 가능을 뜻하지 않습니다."));
             if (place != null)
             {
@@ -688,10 +749,11 @@ namespace DiceMaster.Information
                 }
                 if (proof.Failed) throw new InvalidOperationException("Map one-shot read failed.");
             }
-            // Ordinary/unproved rows are retained for the log, which requests
-            // a fresh detailed snapshot on entry. Passive rendering needs no
-            // recursive condition tree or full formatter for those hidden rows.
-            bool readState = detailed || proof.Proven && entry.RouteState == MapRouteState.Met && automaticEvents-- > 0 && SmallEventGraph(entry.Data);
+            if (!detailed && !proof.Proven) return null;
+            bool sample = detailed || automaticEvents > 0 && SmallEventGraph(entry.Data);
+            MapRouteState routeState = MapRouteState.Unknown;
+            if (sample) { if (!detailed) automaticEvents--; routeReads++; routeState = entry.Route.ReadCurrent(currentRoutes); }
+            bool readState = detailed || sample && routeState == MapRouteState.Met;
             EventEligibilitySnapshot state = readState ? (detailed ? EventEligibility.Evaluate(entry.Data) : EventEligibility.EvaluateCurrent(entry.Data)) : null;
             if (state != null && state.Reason == EventEligibilityReason.ReadFailure) throw new InvalidOperationException("Map event read failed.");
             if (entry.Name == null) entry.Name = Plain(DataHelper.GetEventName(entry.Data));
@@ -699,11 +761,11 @@ namespace DiceMaster.Information
                 Rank = state == null ? 2 : state.IsEligible ? 0 : state.State == EventEligibilityState.Ineligible ? 1 : 2,
                 Status = state == null ? "현재 상태는 상세 조회에서 확인" : state.IsEligible ? "진행 가능" : state.State == EventEligibilityState.Ineligible ? "진행 불가" : "확인 불가",
                 Detail = state == null ? "현재 조건·효과는 지도 로그 상세를 열면 조회합니다." : state.Detail };
-            if (entry.RouteState == MapRouteState.NotMet) { result.Rank = 1; result.Status = "진행 불가 · 경로 조건 미충족"; }
-            else if (entry.RouteState == MapRouteState.Unknown) { result.Rank = 2; result.Status = "경로 확인 필요"; }
-            else if (entry.HasChoice && result.Rank == 0) result.Status = "선택 후 기회";
-            if (detailed) result.Detail = "경로: " + entry.Path + "\n현재 이벤트 판정: " + (state == null ? "상세 조회 대기" : state.IsEligible ? "조건·가중치 충족" : state.State == EventEligibilityState.Ineligible ? "조건·가중치 미충족" : "확인 불가") + "\n" + result.Detail;
-            if (detailed && entry.RouteState == MapRouteState.Unknown)
+            if (routeState == MapRouteState.NotMet) { result.Rank = 1; result.Status = "진행 불가 · 경로 조건 미충족"; }
+            else if (routeState == MapRouteState.Unknown) { result.Rank = 2; result.Status = "경로 확인 필요"; }
+            else if (entry.Route.HasChoice && result.Rank == 0) result.Status = "선택 후 기회";
+            if (detailed) result.Detail = "경로: " + entry.Route.Path + "\n현재 이벤트 판정: " + (state == null ? "상세 조회 대기" : state.IsEligible ? "조건·가중치 충족" : state.State == EventEligibilityState.Ineligible ? "조건·가중치 미충족" : "확인 불가") + "\n" + result.Detail;
+            if (detailed && routeState == MapRouteState.Unknown)
                 result.Detail += "\n선행 호출·상태 변경 뒤의 경로가 확정되지 않아 현재 이벤트 조건만으로 도달 시점의 진행 불가를 단정하지 않습니다.";
             ApplyActivityEntry(controller, result);
             ApplyPlace(controller, result);

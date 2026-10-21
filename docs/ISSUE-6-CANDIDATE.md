@@ -1,5 +1,9 @@
 # 지도·1회성·분기·상점 정보 — v1.0.7-alpha.1 prerelease
 
+## alpha.13 성능 개선 후보
+
+자동 대기 임무 조회를 먼저 처리하고, 1회성 OFF 경로의 Lua 준비와 일반 이야기의 숨은 조건/상세 행 생성을 생략한다. 완성 구문 공유와 준비 양보·성능 표본을 추가한다. [후보·검사·설치·Windows 확인](ISSUE-6-ALPHA13-RELEASE.md). 새 Windows 확인 전에는 #6 완료로 처리하지 않는다.
+
 **현재 공개 후보 v1.0.7-alpha.2:** [선택 장소 지도 안내·상점 사용 효과·공개 파일 검증·새 Windows 확인표](ISSUE-6-SELECTED-MAP-SHOP.md). 아래는 공개 alpha.1의 구현·파일·게시 당시 미실행 확인 기록으로 보존하며 새 수정 파일과 구분한다.
 
 [사용자 안내](../README.md) · [패드 조작](GAMEPAD.md) · [구현·지원 범위](ISSUE-6-IMPLEMENTATION.md) · [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [변경 이력](../CHANGELOG.md)

@@ -299,7 +299,7 @@ static class Program
         Check(MapGuideSource.Visible, "OFF cleanup preserves the observed current selection handle");
         string context = MapGuideSource.ContextKey; MapGuideSource.ClearSnapshots(); Check(MapGuideSource.ContextKey == context, "Already-clean OFF cleanup does not churn context");
         Snapshot(true, false); snapshot = Snapshot(false, true);
-        Check(!Details(snapshot).Contains("임무"), "Guide OFF with one-shot ON cannot retain previous mission rows");
+        Check(!snapshot.Entries.Exists(row => row.Kind.Contains("임무")), "Guide OFF with one-shot ON cannot retain previous mission rows");
         snapshot = Snapshot(true, false);
         Check(!snapshot.Summary.AutoText.Contains("fixture condition") && !snapshot.Summary.AutoText.Contains("fixture effects"), "Mixed settings preserve name/kind/status-only automatic text");
 

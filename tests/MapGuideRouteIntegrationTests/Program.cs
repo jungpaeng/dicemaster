@@ -109,6 +109,7 @@ internal static class Program
         Check(Counters.GameCalls == 0 && onceFlag.State == 0 && controller._gameStatManager._stats._list[0]._value == 3 && controller._scriptName == "old-click-cache", "Integration never calls game Position/Condition/Check, applies effects, consumes action points or initializes the click cache");
         Limits();
         PassiveCosts();
+        PassiveRouteReads();
         ChoiceStoryMap();
         MeaningfulDialogueMap();
         FullStoryGateMap();
@@ -560,6 +561,42 @@ internal static class Program
         Check(rejected && beyond.ResultReads == 0, "Choice pool adapter also rejects lookup beyond 1024 definitions without reading the hidden entry");
         Check(Counters.GameCalls == 0, "Bounded pool materialization never evaluates game entry or event methods");
     }
+    private static void PassiveRouteReads()
+    {
+        foreach (bool once in new[] { false, true })
+        {
+            MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true;
+            var manager = CheckPointManager.Instance = new CheckPointManager();
+            var flag = new FlagData { name = "ordinary-route", State = 0 };
+            manager._condition._list.Add(new ConditionResultData { name = "ordinary_gate", _items = new List<ConditionResultItem> { IsZero(flag) } });
+            manager._position._list.Add(new PositionResultData { name = "OrdinaryPool", _scriptPrefix = "ordinary_result", _list = new List<PositionEventData> { new PositionEventData { name = "ordinary", ResultType = "ordinary", _toggleCondition = false } } });
+            DataHelper.Scripts["ordinary_root"] = "if checkpointmanager.Condition('ordinary_gate') then local p=checkpointmanager.Position('OrdinaryPool');luamanager.SetNextScript(p) end";
+            DataHelper.Scripts["ordinary_result_ordinary"] = "";
+            var waiting = new TrackingMissions();
+            var controller = new PositionController { _positionData = new FreePositionData { name = "Ordinary", _defaultScript = "ordinary_root" } };
+            controller._missionsManager.ActiveSubMissions = waiting;
+            MapGuideSource.Select(controller); int resources = DataHelper.Reads;
+            DataHelper.ExternalReader = key => {
+                Check(waiting.Enumerations > 0, "live waiting membership is read before optional Lua preparation");
+                return DataHelper.Scripts.TryGetValue(key, out string body) ? new ScriptReadResult { State = ScriptReadState.Success, Text = body } : new ScriptReadResult { State = ScriptReadState.Missing };
+            };
+            try
+            {
+                MapGuideSnapshot value = null;
+                for (int at = 0; at < 40; at++) { Time.unscaledTime += .25f; value = (MapGuideSnapshot)MapGuideSource.Discover(true, once, false)[0].Read(); }
+                Check(once || DataHelper.Reads == resources, "one-shot OFF automatic waiting query loads zero Lua assets");
+                int warmResources = DataHelper.Reads, warmFlags = flag.StateReads;
+                for (int at = 0; at < 100; at++) { Time.unscaledTime += .25f; value = (MapGuideSnapshot)MapGuideSource.Discover(true, once, false)[0].Read(); }
+                Check(DataHelper.Reads == warmResources && flag.StateReads == warmFlags && flag.StateReads == 0, "ordinary route has zero warm Lua loads and zero hidden guard reads with either setting");
+                Check(value.Summary.AutoText == "" && Find(value, "ordinary") == null, "ordinary automatic rows and allocations are omitted");
+                value = (MapGuideSnapshot)MapGuideSource.Discover(true, true, true)[0].Read();
+                for (int at = 0; at < 40; at++) value = (MapGuideSnapshot)MapGuideSource.Discover(true, true, true)[0].Read();
+                Check(Find(value, "ordinary") != null && flag.StateReads > 0, "explicit detail still samples ordinary route guards");
+                Check(value.Entries.Exists(row => row.Title == "지도 조회 성능" && row.Detail.Contains("p95", StringComparison.Ordinal)), "performance statistics are available in explicit detail");
+            }
+            finally { DataHelper.ExternalReader = null; }
+        }
+    }
     private static void PassiveCosts()
     {
         MapGuideSource.Clear(); OneShotProof.Clear(); MapGuideSource.Enabled = () => true;
@@ -581,7 +618,7 @@ internal static class Program
             Check(DataHelper.Reads - before <= 1, "Passive preparation admits at most one resource load per scheduled tick");
         }
         int count = 0; foreach (var row in value.Entries) if (row.Title.StartsWith("passive-", StringComparison.Ordinal)) count++;
-        Check(count == 256, "Passive work limits preserve every original event row for explicit detail");
+        Check(count == 0, "Passive refresh builds no ordinary rows; explicit detail owns their allocation");
         Check(LuaParser.Parses == parses && LuaParser.Descriptions == descriptions && PopupConditionText.EventDescriptions == eventText && PopupConditionText.ConditionDescriptions == conditionText,
             "Passive large-result display never enters the synchronous full analyzer, effect formatter or popup condition formatter");
         Check(flag.StateReads == 0, "Ordinary/unproved passive rows never recursively reread 256 event conditions");
@@ -591,6 +628,7 @@ internal static class Program
         PositionEventCache.Parser.Actions["passive_result_shared"] = new List<LuaAction> { new LuaAction { Analysis = new PreviewAnalysis { Effects = new List<PreviewEffect> {
             new PreviewEffect { Name = "SetFlag", Constants = new List<object> { "passive-flag", 1 } } } } } };
         value = Read(true);
+        Check(pool._list.TrueForAll(data => Find(value, data.name) != null), "Explicit detail retains every ordinary event row");
         Check(PopupConditionText.EventDescriptions > eventText && LuaParser.Descriptions > descriptions && flag.StateReads > 0,
             "Opening explicit detail still reads full conditions/effects and builds the unchanged strict proof");
         eventText = PopupConditionText.EventDescriptions; descriptions = LuaParser.Descriptions;
@@ -605,7 +643,7 @@ internal static class Program
             for (int i = 0; i < 200; i++) data._eventRateItem[i] = new RateItem { Condition = data._activeCondition, Rate = 1 };
         }
         priorReads = flag.StateReads; value = Read(false);
-        Check(flag.StateReads == priorReads && !Find(value, "passive-0").Available, "Passive rate graph preflight rejects wide recursive work before any current flag getter runs");
+        Check(flag.StateReads == priorReads && (Find(value, "passive-0") == null || !Find(value, "passive-0").Available), "Passive rate graph preflight rejects wide recursive work before any current flag getter runs");
         var shared = new FlagData { name = "shared-mission", State = 0 }; var condition = IsZero(shared);
         var overflow = new FlagData { name = "overflow-mission", State = 0 };
         for (int i = 0; i < 17; i++)

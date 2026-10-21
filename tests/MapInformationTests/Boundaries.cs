@@ -250,6 +250,10 @@ namespace DiceMaster.Information
     }
     public class MapRouteDefinitions
     {
+        public bool UseSharedSyntax { get; set; }
+        public int SharedSyntaxHits => 0;
+        public static void ClearSharedSyntaxCache() { }
+        public sealed class PreparationSlice { public bool ShouldYield() => false; }
         public static int Builds, Advances;
         public static MapRouteState State = MapRouteState.Met;
         public static bool Choice;
@@ -285,6 +289,7 @@ namespace DiceMaster.Information
             foreach (var value in Entries) { value.Current = State; value.HasChoice = Choice; }
             IsPreparing = FixturePreparing; IsPartial = FixturePartial; HasReadFailure = FixtureReadFailure;
         }
+        public void AdvanceBudgeted(float now, int maxWork, Func<bool> shouldYield) => Advance(now, maxWork);
         public void Clear() { Entries.Clear(); }
     }
 }

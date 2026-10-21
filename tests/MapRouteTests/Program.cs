@@ -168,6 +168,7 @@ internal static class Program
         Check(d.Entries.First(x => x.Pool == "second").Current == MapRouteState.Unknown, "post-event descendants never inherit current state certainty");
         d = Build(Use("clear")); d.Clear(); d.Advance(100); Check(d.Entries.Count == 0 && !d.IsPreparing, "lifecycle clear releases all route state");
         SharedGateAndProofBudget();
+        SharedSyntaxAndYield();
         MapStoryCases.Run(Check);
         FullStoryConditionCases.Run(Check);
         PartialConditionCases.Run(Check);
@@ -176,6 +177,50 @@ internal static class Program
         Corpus();
         Check(manager.GameplayCalls == 0 && manager.RngCalls == 0 && manager.Counter == 0, "no gameplay condition/Position/RNG/counter changes");
         Console.WriteLine("PASS: MapRouteTests " + checks + " actual-route/syntax/current-reader assertions; resource/stat/game boundaries are explicit fixtures; Lua/Windows/native not executed.");
+    }
+    private static void SharedSyntaxAndYield()
+    {
+        MapRouteDefinitions.ClearSharedSyntaxCache();
+        string body = "if checkpointmanager.Condition('gate') then " + Use("cache_pool") + " end";
+        MapRouteDefinitions Make(string text, MapRouteLimits limits = null)
+        { return new MapRouteDefinitions("cache_root", key => text == null ? ScriptReadResult.Missing() : ScriptReadResult.Success(key == "cache_root" ? text : ""), Pool, limits) { UseSharedSyntax = true }; }
+        void Complete(MapRouteDefinitions value)
+        { for (int at = 0; at < 10000 && value.IsPreparing; at++) value.Advance(0, 128); }
+        var first = Make(body); Complete(first);
+        var second = Make(body); Complete(second);
+        Check(first.ParseCount == 2 && second.ParseCount == 0 && second.SharedSyntaxHits == 2 && second.ScriptReadCount == 2, "cross-owner completed syntax reuse still verifies both source assets");
+        var gate = (Mortal.Core.ConditionResultData)Mortal.Story.CheckPointManager.Instance._condition._list[0];
+        gate.Current = false;
+        Check(second.Entries[0].Current == MapRouteState.NotMet && first.Entries[0].Current == MapRouteState.NotMet, "shared syntax never caches current condition values");
+        gate.Current = true;
+        Check(second.Entries[0].Current == MapRouteState.Met, "current values refresh independently of syntax reuse");
+        var changed = Make(Use("changed_pool")); Complete(changed);
+        Check(changed.ParseCount > 0 && changed.Entries[0].Pool == "changed_pool", "same script with changed text cannot reuse stale syntax");
+        var missing = Make(null); missing.Advance(0);
+        Check(missing.HasReadFailure && missing.SharedSyntaxHits == 0 && missing.Entries.Count == 0, "cached syntax cannot mask a missing current asset");
+        var narrow = Make(Use("changed_pool"), new MapRouteLimits { MaxScriptCharacters = 8, MaxCharacters = 8 }); Complete(narrow);
+        Check(narrow.SharedSyntaxHits == 0 && narrow.IsPartial, "reuse cannot bypass a smaller aggregate or per-script character quota");
+        var malformed = Make("if broken then"); Complete(malformed);
+        var malformedAgain = Make("if broken then"); Complete(malformedAgain);
+        Check(malformedAgain.ParseCount > 0 && malformedAgain.SharedSyntaxHits == 0, "incomplete syntax is never shared");
+        var pending = Make(new string(' ', 10000) + Use("yield_pool"));
+        pending.AdvanceBudgeted(0, 8192, () => true);
+        Check(pending.WorkCount == 0 && pending.ScriptReadCount == 0 && pending.IsPreparing, "expired slice yields before resource load without declaring a limit");
+        int calls = 0; pending.AdvanceBudgeted(0, 8192, () => ++calls > 2);
+        Check(pending.WorkCount <= 512 && pending.IsPreparing && !pending.IsPartial, "time callback checked between bounded lexical batches");
+        Complete(pending);
+        Check(pending.Entries.Count == 1 && pending.Entries[0].Pool == "yield_pool" && !pending.IsPartial, "cooperative yield resumes the original route to completion");
+        MapRouteDefinitions.ClearSharedSyntaxCache();
+        for (int at = 0; at < 17; at++)
+        {
+            var item = new MapRouteDefinitions("evict_" + at, key => ScriptReadResult.Success(""), Pool) { UseSharedSyntax = true }; Complete(item);
+        }
+        var evicted = new MapRouteDefinitions("evict_0", key => ScriptReadResult.Success(""), Pool) { UseSharedSyntax = true }; Complete(evicted);
+        Check(evicted.ParseCount == 1 && evicted.SharedSyntaxHits == 0, "shared cache evicts beyond sixteen script entries");
+        MapRouteDefinitions.ClearSharedSyntaxCache();
+        var cleared = Make(body); Complete(cleared);
+        Check(cleared.ParseCount == 2 && cleared.SharedSyntaxHits == 0, "OFF/load cache clear requires fresh syntax preparation");
+        MapRouteDefinitions.ClearSharedSyntaxCache();
     }
     private static void SharedGateAndProofBudget()
     {
