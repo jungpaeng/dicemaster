@@ -1,7 +1,7 @@
 # 반복 활동과 이야기 안내 구분 — v1.0.7-alpha.11 prerelease
 
 <!-- alpha11-current-status -->
-v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. 반복 활동의 고정 반응과 개별 이야기를 구분하고, 준비가 끝난 빈 지도 패널을 숨긴다. 최종 소스 커밋·전체/고정 재빌드·prerelease 게시·공개 파일 검증은 아직 확정 전이다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 미실행이며 #6은 open이다.** [후보 범위·파일·확인표](ISSUE-6-WINDOWS-VALIDATION.md).
+2026-10-21 14:48:43 KST에 소스·주석 태그 [`f3ee0af`](https://github.com/jungpaeng/dicemaster/commit/f3ee0afa0b68c2c9d10c9c8774e80db2d694490d)의 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11)을 게시했다. 반복 활동의 고정 반응과 개별 이야기를 구조로 구분하고 준비가 끝난 빈 지도 오버레이를 숨긴다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 52개 Release·53개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
 <!-- /alpha11-current-status -->
 
 [사용자 안내](../README.md) · [구현 계약](ISSUE-6-IMPLEMENTATION.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md) · [패드](GAMEPAD.md) · [이전 alpha.10](ISSUE-6-ALPHA10-RELEASE.md)
@@ -26,9 +26,9 @@ v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. �
 
 ## 자동 검사·소스·파일
 
-작업 시작 기준 main은 `5cc0b5d99d2349d1af5c76030bda03813dcad4f2`이다. 최종 고정 소스·검사·파일·게시 값은 아래에서 확정한다. 이전 후보의 검사 수·해시·Windows 확인을 이 후보에 승계하지 않는다.
+작업 시작 기준 main은 `5cc0b5d99d2349d1af5c76030bda03813dcad4f2`이다. 최종 고정 소스는 `f3ee0afa0b68c2c9d10c9c8774e80db2d694490d`이며 검사·파일·게시 값은 아래와 같다. 이전 후보의 검사 수·해시·Windows 확인을 이 후보에 승계하지 않는다.
 
-SDK `8.0.426`, `2026-10-21T05:45:55.934895+00:00`의 전체 소스 후보에서 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·제공 게임 API 경계·설치 ZIP 검증을 통과했다. Python 배포 검증기 회귀 20개도 별도로 통과했다. **고정 커밋 재빌드·게시·공개 파일 대조는 대기다.**
+SDK `8.0.426`, `2026-10-21T05:45:55.934895+00:00`의 전체 소스 후보에서 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·실제 DLL 연결·제공 게임 API 경계·설치 ZIP 검증을 통과했다. Python 배포 검증기 회귀 20개도 별도로 통과했다. 소스 `f3ee0afa0b68c2c9d10c9c8774e80db2d694490d`를 기존 관리 모드 DLL 0개인 격리 소스에서 같은 SDK·21개 프로그램·254개 입력·104개 소스/리소스·15개 참조로 재빌드해 전체 성공 기록·DLL/cfg/ZIP 바이트를 대조했다. [익명 공개 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.11/DiceMaster-v1.0.7-alpha.11.zip)도 같다. Release `419201423`·asset `661499876`, `draft=false`·`prerelease=true`·`make_latest=false`다. main·주석 태그를 atomic push했다. 게시 보충 문서는 별도 main 커밋이며 빌드 입력·태그·자산은 바꾸지 않는다.
 
 | 검사 프로그램 | 이번 실행의 성공 기록 |
 | --- | --- |
@@ -58,7 +58,7 @@ SDK `8.0.426`, `2026-10-21T05:45:55.934895+00:00`의 전체 소스 후보에서 
 | --- | ---: | --- |
 | DiceMaster.dll | 824320 | `5cafcb9575310dc745221bb4b19c0968e26462dd5ce2809975641dcbca1f560e` |
 | DiceMaster.cfg | 12912 | `442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a` |
-| DiceMaster-source-candidate.zip | 348841 | `46b46dfe4f063750b71289c27d672ff8971297187c7e5892424bcec3f508b3ef` |
+| DiceMaster-v1.0.7-alpha.11.zip | 348841 | `46b46dfe4f063750b71289c27d672ff8971297187c7e5892424bcec3f508b3ef` |
 
 ZIP은 config·DLL 정확히 두 파일이며 CRC·내부 바이트·해시를 대조했다. 영수증은 `artifacts/issue-6/story-topics-candidate/full-final/build-manifest.json`에 보존한다.
 
@@ -66,6 +66,6 @@ ZIP은 config·DLL 정확히 두 파일이며 CRC·내부 바이트·해시를 �
 
 ## 설치와 실제 Windows 확인
 
-최종 설치 자산은 게시 후 `DiceMaster-v1.0.7-alpha.11.zip`으로 지정한다. 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. BepInEx가 포함된 활협전용 모드 베이스가 필요하다. 업데이트는 게임 종료 후 DLL·cfg를 백업하고 ZIP의 **`plugins/DiceMaster/DiceMaster.dll`만 교체해 cfg를 보존**한다. 최초 설치는 ZIP의 두 파일을 기존 BepInEx 아래에 넣는다. 문제가 있으면 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 저장한 게임 진행을 되돌리지 않는다.
+설치 자산은 [DiceMaster-v1.0.7-alpha.11.zip](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.11/DiceMaster-v1.0.7-alpha.11.zip)이다. 최신 정식은 [v1.0.6](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.6)이다. BepInEx가 포함된 활협전용 모드 베이스가 필요하다. 업데이트는 게임 종료 후 DLL·cfg를 백업하고 ZIP의 **`plugins/DiceMaster/DiceMaster.dll`만 교체해 cfg를 보존**한다. 최초 설치는 ZIP의 두 파일을 기존 BepInEx 아래에 넣는다. 문제가 있으면 게임 종료 후 백업 DLL과 필요한 cfg를 복원한다. DLL 복원은 이미 저장한 게임 진행을 되돌리지 않는다.
 
 실제 Windows·물리 Xbox/XInput·화면/가독성·성능 확인은 모두 미실행이다. [새 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha11-추가-확인--모두-미실행)에서 반복 대련만 남은 사사형·다른 인물의 같은 구조·남은 특별 대화·빈 패널·로그 상세·패드 복귀·지도 지연을 확인한다. 설치한 버전·소스·DLL 해시·환경·확인 일시와 실제 결과를 기록한다. v1.0.6의 #5 착수 조건 확인과 이전 후보에 대한 사용자 보고는 이번 DLL의 통과 근거가 아니다. **#6 전체 완료와 이슈 종료는 처리하지 않는다.**

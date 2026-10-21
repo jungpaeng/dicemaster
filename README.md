@@ -20,7 +20,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha11-current-status -->
-v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. 반복 활동의 고정 반응과 개별 이야기를 구분하고, 준비가 끝난 빈 지도 패널을 숨긴다. 최종 소스 커밋·전체/고정 재빌드·prerelease 게시·공개 파일 검증은 아직 확정 전이다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 미실행이며 #6은 open이다.** [후보 범위·파일·확인표](docs/ISSUE-6-ALPHA11-RELEASE.md).
+**[v1.0.7-alpha.11 prerelease](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11)** · **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.11/DiceMaster-v1.0.7-alpha.11.zip)**. 2026-10-21 14:48:43 KST 게시. 반복 활동만 남은 인물의 이야기 안내와 준비가 끝난 빈 지도 오버레이를 정리했습니다. 업데이트는 게임 종료 후 **DLL만 교체해 cfg를 보존**하세요. 전체·고정 소스 재빌드 21개 자동 검사와 실제 DLL 연결·공개 ZIP 대조를 통과했습니다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 대기이며 #6은 open입니다.** [변경·해시·확인표](docs/ISSUE-6-ALPHA11-RELEASE.md).
 <!-- /alpha11-current-status -->
 
 이전 시험판의 변경·파일·검증 기록은 [alpha.10 기록](docs/ISSUE-6-ALPHA10-RELEASE.md)과 [변경 이력](CHANGELOG.md)에 보존합니다.
@@ -50,7 +50,7 @@ v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. �
 
 기존 네 영구 설정은 기본 ON이며 상위 `EnableOptionInfo`는 시작 시 적용합니다. `EnableMapGuide`가 지도·선택 경로를 함께 제어합니다. 분기 알림·기록은 저장·로드·장면 전환·OFF에서 지우며 메모리에만 보관합니다. 정상 0.25초·실패 5초·숨김/OFF 조회 중단과 정상 주기 Lua 재분석 없음 계약을 유지합니다. [설정](#설정) · [패드](docs/GAMEPAD.md).
 
-이번 후보의 전체·고정 소스 재빌드와 실제 DLL 연결·공개 ZIP 대조 결과는 [alpha.11 기록](docs/ISSUE-6-ALPHA11-RELEASE.md)에 확정합니다. 반복 활동만 남은 지도·개별 대화 조건·빈 패널 숨김·로그 상세·패드 복귀·지도 지연의 실제 Windows 확인은 [확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)에 별도로 남깁니다. 최신 정식은 v1.0.6이며 이전 시험판 기록은 [변경 이력](CHANGELOG.md)에 보존합니다.
+이번 후보의 전체·고정 소스 재빌드와 실제 DLL 연결·공개 ZIP 대조 결과는 [alpha.11 기록](docs/ISSUE-6-ALPHA11-RELEASE.md)에서 확인합니다. 반복 활동만 남은 지도·개별 대화 조건·빈 패널 숨김·로그 상세·패드 복귀·지도 지연의 실제 Windows 확인은 [확인표](docs/ISSUE-6-WINDOWS-VALIDATION.md)에 별도로 남깁니다. 최신 정식은 v1.0.6이며 이전 시험판 기록은 [변경 이력](CHANGELOG.md)에 보존합니다.
 
 ## 설치와 업데이트
 

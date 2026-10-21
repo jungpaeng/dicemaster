@@ -1,15 +1,15 @@
 # 변경 이력
 
-## v1.0.7-alpha.11 — 반복 활동과 이야기 안내 구분 (게시 준비)
+## [v1.0.7-alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11) — 2026-10-21 (prerelease)
 
 <!-- alpha11-current-status -->
-v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. 반복 활동의 고정 반응과 개별 이야기를 구분하고, 준비가 끝난 빈 지도 패널을 숨긴다. 최종 소스 커밋·전체/고정 재빌드·prerelease 게시·공개 파일 검증은 아직 확정 전이다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 미실행이며 #6은 open이다.** [후보 범위·파일·확인표](docs/ISSUE-6-ALPHA11-RELEASE.md).
+2026-10-21 14:48:43 KST에 소스·주석 태그 [`f3ee0af`](https://github.com/jungpaeng/dicemaster/commit/f3ee0afa0b68c2c9d10c9c8774e80db2d694490d)의 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11)을 게시했다. 반복 활동의 고정 반응과 개별 이야기를 구조로 구분하고 준비가 끝난 빈 지도 오버레이를 숨긴다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 52개 Release·53개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](docs/ISSUE-6-ALPHA11-RELEASE.md).
 <!-- /alpha11-current-status -->
 
 - 반복 활동의 고정 대사를 인물 이야기 전체와 합쳐 안내하던 문제를 줄입니다. 개별 이야기의 조건을 먼저 판정하고 남은 이야기만 지도에서 합칩니다.
 - 특정 인물·플래그 제외 목록 없이, 안전하게 구조를 확인한 전투·핀볼형 활동의 고정 반응을 구분합니다. 특별 조건·중첩/동적·미지원 구조는 이야기 후보로 남깁니다.
 - 실제로 준비 중인 동안만 빈 지도의 확인 중 문구를 표시합니다. 준비 완료 후 자동 안내가 없으면 패널을 숨기며 분석 제한·읽기 실패는 로그 상세에 보존합니다.
-- 기존 패드·키보드·마우스·터치, 입력 소유권·해제/중립과 읽기 전용·캐시·0.25초/5초·숨김/OFF 조회 중단 계약을 유지합니다. 자동 검사·새 Windows 확인은 [후보 기록](docs/ISSUE-6-ALPHA11-RELEASE.md)에서 구분합니다.
+- 기존 패드·키보드·마우스·터치, 입력 소유권·해제/중립과 읽기 전용·캐시·0.25초/5초·숨김/OFF 조회 중단 계약을 유지합니다. 자동 검사·새 Windows 확인은 [게시 기록](docs/ISSUE-6-ALPHA11-RELEASE.md)에서 구분합니다.
 
 ## [v1.0.7-alpha.10](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.10) — 2026-10-21 (prerelease)
 

@@ -1,7 +1,7 @@
 # 전체 소스 빌드 — 이슈 #3
 
 <!-- alpha11-current-status -->
-v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. 반복 활동의 고정 반응과 개별 이야기를 구분하고, 준비가 끝난 빈 지도 패널을 숨긴다. 최종 소스 커밋·전체/고정 재빌드·prerelease 게시·공개 파일 검증은 아직 확정 전이다. **새 DLL의 실제 Windows·물리 Xbox/XInput·가독성·성능 확인은 미실행이며 #6은 open이다.** [후보 범위·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
+2026-10-21 14:48:43 KST에 소스·주석 태그 [`f3ee0af`](https://github.com/jungpaeng/dicemaster/commit/f3ee0afa0b68c2c9d10c9c8774e80db2d694490d)의 [alpha.11](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.11)을 게시했다. 반복 활동의 고정 반응과 개별 이야기를 구조로 구분하고 준비가 끝난 빈 지도 오버레이를 숨긴다. 전체·고정 커밋 재빌드 21개 프로그램·254개 입력·104개 소스/리소스·15개 참조·성공 기록·DLL/cfg/ZIP 동일성과 익명 공개 파일 대조를 통과했다. 기존 52개 Release·53개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·성능 확인과 #6 전체 완료는 대기다.** [설치·파일·확인표](ISSUE-6-ALPHA11-RELEASE.md).
 <!-- /alpha11-current-status -->
 
 ## alpha.11 — 선택 주제·활동 분류와 빈 지도 검증
@@ -10,9 +10,10 @@ v1.0.7-alpha.11 후보를 원래 작업 폴더의 main에서 준비 중이다. �
 
 ```sh
 python3 build/build-source.py --references '<읽기 전용 참조 루트>' --output-dir artifacts/issue-6/story-topics-candidate/full-final
+python3 build/verify-preview-release.py --scope prd6 --references '<읽기 전용 참조 루트>' --source-commit f3ee0afa0b68c2c9d10c9c8774e80db2d694490d --version v1.0.7-alpha.11 --expected-dll-sha256 5cafcb9575310dc745221bb4b19c0968e26462dd5ce2809975641dcbca1f560e --expected-config-sha256 442f360da915e365fb96d2daa33c11b6d8b8be3ecde2db85382e09179ebd005a --output-dir artifacts/releases/v1.0.7-alpha.11
 ```
 
-전체 후보 결과를 확인한 뒤 소스 커밋을 고정하고 `verify-preview-release.py --scope prd6 --version v1.0.7-alpha.11`에 그 커밋·실제 DLL/cfg 해시를 넘긴다. SDK·입력·참조·성공 기록·DLL/cfg/ZIP 바이트를 대조하며 출력 폴더는 없거나 비어 있어야 한다. 최종 값과 공개 ZIP 대조는 [alpha.11 기록](ISSUE-6-ALPHA11-RELEASE.md)에 확정한다. 검사 수·해시·게시 결과는 확정 전까지 이전 후보에서 복사하지 않는다.
+전체 후보 결과를 확인한 뒤 소스 커밋을 고정하고 `verify-preview-release.py --scope prd6 --version v1.0.7-alpha.11`에 그 커밋·실제 DLL/cfg 해시를 넘긴다. SDK·입력·참조·성공 기록·DLL/cfg/ZIP 바이트를 대조하며 출력 폴더는 없거나 비어 있어야 한다. 최종 값과 공개 ZIP 대조는 [alpha.11 기록](ISSUE-6-ALPHA11-RELEASE.md)에 기록했다. 검사 수·해시·게시 결과는 확정 전까지 이전 후보에서 복사하지 않는다.
 
 다음 alpha.10 이하의 게시 상태는 이전 후보의 기록이다.
 
