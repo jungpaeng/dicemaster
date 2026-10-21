@@ -119,6 +119,7 @@ internal static partial class Program
         IndividualTopicsAndActivitiesMap();
         SelectedFollowupProjection();
         SelectedStoryScanCases();
+        CurrentTalkContextCases();
         PositionEntryProjectionCases();
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
         if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); NativeSelectedStoryScan(corpus); }
@@ -485,6 +486,7 @@ internal static partial class Program
         // this does not initialize or execute a Lua interpreter.
         var resetFlags = new FlagCollectionData();
         var interpreter = new MoonSharp.Interpreter.Script();
+        interpreter.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
         interpreter.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new StatModifyManager { _talkOptionFlag = resetFlags }) };
         observedTalkEnvironment = new Fungus.LuaEnvironment(interpreter);
         PreviewConditions.ObserveLuaEnvironment(observedTalkEnvironment);

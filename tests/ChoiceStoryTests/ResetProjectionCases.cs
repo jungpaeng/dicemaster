@@ -17,6 +17,7 @@ internal static partial class Program
     {
         var manager = new StatModifyManager { _talkOptionFlag = new FlagCollectionData { _list = flags.ToList() } };
         var lua = new MoonSharp.Interpreter.Script();
+        lua.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
         lua.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(manager) };
         var environment = new Fungus.LuaEnvironment(lua); PreviewConditions.ObserveLuaEnvironment(environment); return environment;
     }
@@ -76,6 +77,31 @@ internal static partial class Program
         early._default = 1;
         Check(!Read().Entries.Any(x => x.Title == "상위 선택"), "a newly locked projected topic disappears even during unrelated pending preparation");
         PreviewConditions.ObserveLuaEnvironment(null); GC.KeepAlive(environment);
+        CurrentOwnerProjection();
+    }
+
+    private static void CurrentOwnerProjection()
+    {
+        Reset(); var topic = Condition("canonical_topic", 8); topic._default = 0;
+        var environment = ResetEnvironment(topic);
+        var script = (MoonSharp.Interpreter.Script)typeof(Fungus.LuaEnvironment).GetField("interpreter", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(environment);
+        script.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
+        LuaManager.Instance = new LuaManager { _luaEnvironment = environment };
+        DataHelper.Scripts["canonical_topics"] = "local a={};a[1]=checkpointmanager.Condition('canonical_topic') and 'O_topic' or '~x';local r=choose(a);if r==1 then " + UnlockNpc + " end";
+        ChoiceStorySource.ObserveScript(UnlockRoot + "statmodifymanager.ResetTalkFlag();luamanager.SetNextScript('canonical_topics');luamanager.Init() end", "canonical_room.LuaScript");
+        Normal("O_entry", "사사형");
+        PreviewConditions.ObserveLuaEnvironment(new Fungus.LuaEnvironment(new MoonSharp.Interpreter.Script()));
+        for (int at = 0; at < 60; at++) Read();
+        Check(Read().Entries.Any(x => x.Title == "사사형" && x.AutoText.Contains("어린 시절 이야기", StringComparison.Ordinal)),
+            "active parent choice and map share current-owner reset acquisition after unrelated Lua observation loss");
+        LuaManager.Instance._luaEnvironment = null;
+        Check(!Read().Entries.Any(x => x.Title == "사사형"), "a missing canonical environment still hides the active parent route");
+        LuaManager.Instance._luaEnvironment = environment;
+        Check(Read().Entries.Any(x => x.Title == "사사형"), "active parent route recovers with late canonical initialization without observing another script");
+        topic._default = 1;
+        Check(!Read().Entries.Any(x => x.Title == "사사형") && topic.State == 8 && topic.StateWrites == 1 && Counters.GameCalls == 0,
+            "canonical acquisition preserves locked-topic filters and read-only game state on active choices");
+        LuaManager.Instance = null; PreviewConditions.ClearTalkContext();
     }
 
     private static void NativeResetProjection(string index)
@@ -87,6 +113,7 @@ internal static partial class Program
         var flags = new Dictionary<string, FlagData>(); var switches = new SwitchResultConfig();
         CheckPointManager.Instance._switchList = new object[] { switches };
         var collection = new FlagCollectionData(); var lua = new MoonSharp.Interpreter.Script();
+        lua.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
         lua.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new StatModifyManager { _talkOptionFlag = collection }) };
         var environment = new Fungus.LuaEnvironment(lua); PreviewConditions.ObserveLuaEnvironment(environment);
         ScriptReadResult Exact(string key)
@@ -129,5 +156,14 @@ internal static partial class Program
         Check(flags["Talk_Brother4_00_01"].State == 1 && switches._list.All(x => x._count == 1) && Counters.GameCalls == 0,
             "original source plus synthetic serialized predicates executes no Lua, game judgment, reset, RNG or count/flag mutation");
         PreviewConditions.ObserveLuaEnvironment(null); GC.KeepAlive(environment);
+    }
+}
+
+namespace Mortal.Story
+{
+    public sealed class LuaManager
+    {
+        public static LuaManager Instance { get; set; }
+        public Fungus.LuaEnvironment _luaEnvironment;
     }
 }

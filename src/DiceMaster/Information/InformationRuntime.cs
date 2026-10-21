@@ -102,7 +102,7 @@ namespace DiceMaster.Information
                 enabled[index] = value;
             }
             BranchHistory.Enabled = enabled[2];
-            if (!enabled[0] && !enabled[1]) MapGuideSource.ClearSnapshots();
+            if (!enabled[0] && !enabled[1]) { MapGuideSource.ClearSnapshots(); PreviewConditions.ClearTalkContext(); }
         }
         private static void Reset(Page page)
         { page.Engine.ResetContext(); page.Rows.Clear(); page.Context = null; page.Visible = false; }
@@ -110,6 +110,7 @@ namespace DiceMaster.Information
         {
             Reset(map); Reset(shop); Reset(branch); Reset(hints); Reset(choices); Reset(markers); OptionHintSource.Clear(); ChoiceStorySource.Clear();
             MapGuideSource.Clear(); ShopEffectSource.Clear(); BranchHistory.Clear(); OneShotProof.Clear();
+            PreviewConditions.ClearTalkContext();
         }
         public static void Tick(string detailPage, bool focused, float now, bool manual = false, bool automaticVisible = true, bool popupVisible = false)
         {
@@ -264,6 +265,7 @@ namespace DiceMaster.Information
         public static string OptionDetail(string key) => Enabled(1) ? OneShotProof.CachedOptionDetail(key) : "";
         internal static void ResetDisplays()
         {
+            PreviewConditions.ClearTalkContext();
             Reset(map); Reset(shop); Reset(hints); Reset(choices); Reset(markers);
             MapGuideSource.ClearSnapshots(); ShopEffectSource.Clear(); OptionHintSource.Clear(); OneShotProof.Clear(); ChoiceStorySource.Clear();
             Publish(map, "지도 안내"); Publish(shop, "상점 효과");

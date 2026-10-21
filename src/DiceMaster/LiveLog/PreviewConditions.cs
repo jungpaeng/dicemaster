@@ -70,24 +70,29 @@ namespace DiceMaster.LiveLog
             { Flags = flags; Opaque = opaque; TalkReset = talkReset; }
         }
 
-        private static WeakReference observedEnvironment, observedTalkFlags;
+        private static WeakReference observedEnvironment, observedCheckpoints;
+
+        public static void ClearTalkContext()
+        { observedEnvironment = observedCheckpoints = null; }
 
         // Observe only an environment the game already loaded. Read the
         // interpreter field and MoonSharp's exact raw table lookup, never a Lua
         // expression, index metamethod, lazy singleton or environment initializer.
         public static void ObserveLuaEnvironment(object environment)
         {
-            observedEnvironment = observedTalkFlags = null;
+            ClearTalkContext();
             try
             {
-                object collection = TalkCollection(environment);
+                object checkpoints = Snapshot.ExistingManager();
+                if (checkpoints == null) return;
+                object collection = TalkCollection(environment, checkpoints);
                 if (collection == null) return;
                 observedEnvironment = new WeakReference(environment);
-                observedTalkFlags = new WeakReference(collection);
+                observedCheckpoints = new WeakReference(checkpoints);
             }
             catch (Exception) { }
         }
-        private static object TalkCollection(object environment)
+        private static object TalkCollection(object environment, object checkpoints = null)
         {
             if (environment == null) return null;
             Type owner = environment.GetType();
@@ -102,15 +107,48 @@ namespace DiceMaster.LiveLog
             MethodInfo raw = globals.GetType().GetMethod("RawGet", BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
                 null, new[] { typeof(string) }, null);
             if (raw == null || raw.IsVirtual || raw.ReturnType.FullName != "MoonSharp.Interpreter.DynValue") return null;
-            object value = raw.Invoke(globals, new object[] { "statmodifymanager" });
-            Snapshot.Exact(value, "MoonSharp.Interpreter.DynValue");
-            object data = Snapshot.Field(value, "m_Object");
-            Snapshot.Exact(data, "MoonSharp.Interpreter.UserData");
-            object manager = Snapshot.Field(data, "<Object>k__BackingField");
+            if (checkpoints != null)
+            {
+                object bound = RawObject(globals, raw, "checkpointmanager");
+                Snapshot.Exact(bound, "Mortal.Story.CheckPointManager");
+                if (!ReferenceEquals(bound, checkpoints)) throw new InvalidOperationException("Different Lua checkpoint context.");
+            }
+            object manager = RawObject(globals, raw, "statmodifymanager");
             Snapshot.Exact(manager, "Mortal.Story.StatModifyManager");
             object collection = Snapshot.Field(manager, "_talkOptionFlag");
             Snapshot.Exact(collection, "Mortal.Core.FlagCollectionData");
             return collection;
+        }
+        private static object RawObject(object globals, MethodInfo raw, string key)
+        {
+            object value = raw.Invoke(globals, new object[] { key });
+            Snapshot.Exact(value, "MoonSharp.Interpreter.DynValue");
+            object data = Snapshot.Field(value, "m_Object");
+            Snapshot.Exact(data, "MoonSharp.Interpreter.UserData");
+            return Snapshot.Field(data, "<Object>k__BackingField");
+        }
+
+        // Prefer the game's CURRENT serialized owner, not whichever Lua file
+        // happened to compile last. No Instance getter, InitEnvironment, Lua
+        // execution or Unity object search is used. A broken current owner is
+        // authoritative: never revive an older observed environment instead.
+        private static object CurrentTalkCollection(object checkpoints, out string source)
+        {
+            source = "현재 게임 Lua 연결";
+            Snapshot.Exact(checkpoints, "Mortal.Story.CheckPointManager");
+            Type type = checkpoints.GetType().Assembly.GetType("Mortal.Story.LuaManager", false);
+            if (type != null)
+            {
+                object owner = Snapshot.Field(type, "<Instance>k__BackingField");
+                if (owner != null)
+                {
+                    Snapshot.Exact(owner, "Mortal.Story.LuaManager");
+                    return TalkCollection(Snapshot.Field(owner, "_luaEnvironment"), checkpoints);
+                }
+            }
+            source = "동일 문맥에서 관찰한 Lua 연결";
+            if (observedCheckpoints == null || !ReferenceEquals(observedCheckpoints.Target, checkpoints)) return null;
+            return TalkCollection(observedEnvironment == null ? null : observedEnvironment.Target, checkpoints);
         }
 
         // Capture definition-time effects, never sampled game values. A bound
@@ -306,6 +344,12 @@ namespace DiceMaster.LiveLog
         { return DescribeSample(condition, false); }
         public static string DescribeRouteCurrent(PreviewCondition condition)
         { return "후속 경로 가상 조회: 확인된 대화 초기화 기본값만 반영 · 게임 상태 유지\n" + DescribeSample(condition, true); }
+        public static string DescribeTalkResetSource()
+        {
+            var sample = new Snapshot(true, true);
+            sample.ReadTalkFootprint();
+            return sample.TalkSourceDiagnostic;
+        }
         public static string DescribePositionEntry(PreviewCondition condition, object data)
         {
             var sample = new Snapshot(true, true); bool? result = null;
@@ -652,7 +696,7 @@ namespace DiceMaster.LiveLog
                 if (list.Count > limit) throw new InvalidOperationException("Preview condition collection limit.");
                 return list;
             }
-            private static object ExistingManager()
+            internal static object ExistingManager()
             {
                 const string name = "Mortal.Story.CheckPointManager";
                 Type type = typeof(PreviewConditions).Assembly.GetType(name, false);
@@ -1105,26 +1149,25 @@ namespace DiceMaster.LiveLog
                     throw new InvalidOperationException("Unsupported preview flag state.");
                 return (int)getter.Invoke(value, null);
             }
-            private void ReadTalkFootprint()
+            internal string TalkSourceDiagnostic { get; private set; } = "대화 초기화 자료: 미확인";
+            internal void ReadTalkFootprint()
             {
                 if (talkFootprintRead) return;
                 talkFootprintRead = true;
                 try
                 {
-                    object environment = observedEnvironment == null ? null : observedEnvironment.Target;
-                    if (environment == null) { observedEnvironment = observedTalkFlags = null; return; }
-                    // The same live environment can replace its registered
-                    // manager/collection. Validate that current raw binding once
-                    // per reader rather than retaining any flag or State value.
-                    object collection = TalkCollection(environment);
-                    if (collection == null) { observedTalkFlags = null; return; }
-                    if (observedTalkFlags == null || !ReferenceEquals(observedTalkFlags.Target, collection)) observedTalkFlags = new WeakReference(collection);
+                    if (!managerRead) { manager = ExistingManager(); managerRead = true; }
+                    string source;
+                    object collection = CurrentTalkCollection(manager, out source);
+                    if (collection == null) return;
                     IList list = List(collection, "_list", 1024);
                     var flags = new HashSet<object>(new Identity());
                     foreach (object flag in list) { Step(); Exact(flag, "Mortal.Core.FlagData"); flags.Add(flag); }
                     talkFlags = flags; talkFootprintKnown = true;
+                    TalkSourceDiagnostic = "대화 초기화 자료: 확인 · " + source + " · " + flags.Count.ToString(CultureInfo.InvariantCulture) + "개";
                 }
-                catch (Exception) { observedTalkFlags = null; }
+                catch (Exception) { }
+                finally { Trace(TalkSourceDiagnostic); }
             }
         }
     }

@@ -215,6 +215,7 @@ namespace DiceMaster.LiveLog
         public static readonly PreviewCondition Unknown = new PreviewCondition();
         public static string DescribeCurrent(PreviewCondition condition) => "fixture current diagnostic";
         public static string DescribePositionEntry(PreviewCondition condition, object data) => "fixture private entry diagnostic";
+        public static string DescribeTalkResetSource() => "fixture talk reset source diagnostic";
     }
 }
 namespace DiceMaster.Information

@@ -1,5 +1,14 @@
 # 변경 이력
 
+## [v1.0.7-alpha.28](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.28) — 2026-10-22 (prerelease)
+
+<!-- alpha28-publication -->
+alpha.28 후보의 구현·자동 검증을 진행했다. 커밋 고정 재빌드·게시 검증은 아래 게시 기록으로 확정한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha28-publication -->
+
+- 마지막 Lua 관찰에 의존하던 대화 초기화 자료를 현재 게임 소유자의 연결에서 다시 읽어 지도 후속 주제 누락 경로를 보완한다. 다른 문맥/손상·미초기화 자료는 보류하고 준비 후 재로드 없이 재평가한다.
+- 상세에 초기화 자료 확인 여부·출처를 추가하고 기존 해금/완료/반복 활동·일반 경로 최대1개·마커·입력·0.25초/5초·cfg를 유지한다. [설계·검사·성능](docs/ISSUE-6-CURRENT-TALK-CONTEXT.md) · [후보·새 Windows 확인 대기](docs/ISSUE-6-ALPHA28-RELEASE.md).
+
 ## [v1.0.7-alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27) — 2026-10-22 (prerelease)
 
 <!-- alpha27-publication -->

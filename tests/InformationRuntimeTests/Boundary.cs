@@ -23,7 +23,10 @@ namespace DiceMaster.Config {
 namespace DiceMaster {
  public static class DicePlugin {public static List<string> Messages=new();public static void LogWarning(object s){Messages.Add(s.ToString());}public static void LogInfo(object s){Messages.Add(s.ToString());}}
 }
-namespace DiceMaster.LiveLog {public static class LogBridge {public static DiceMaster.LogUI.LogModel Model=new();}}
+namespace DiceMaster.LiveLog {
+ public static class LogBridge {public static DiceMaster.LogUI.LogModel Model=new();}
+ public static class PreviewConditions {public static int Clears;public static void ClearTalkContext(){Clears++;}}
+}
 namespace DiceMaster.LuaParse {public class Action {} public class LuaParser {public static LuaParser Instance=new();public Dictionary<string,List<Action>> OptionResult=new();}}
 namespace DiceMaster.EventSelection {
  public class EventCandidate {public string Id,Result;public object Target;}

@@ -20,6 +20,7 @@ internal static partial class Program
         var condition = IsZero(topic); condition._items.Add(IsZero(persistent)._items[0]);
         manager._condition._list.Add(new ConditionResultData { name = "topic_gate", _items = new List<ConditionResultItem> { condition } });
         var lua = new MoonSharp.Interpreter.Script();
+        lua.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(manager) };
         lua.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(
             new StatModifyManager { _talkOptionFlag = new FlagCollectionData { _list = new List<FlagData> { topic } } }) };
         observedTalkEnvironment = new Fungus.LuaEnvironment(lua); PreviewConditions.ObserveLuaEnvironment(observedTalkEnvironment);

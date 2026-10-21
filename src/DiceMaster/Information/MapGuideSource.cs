@@ -588,6 +588,7 @@ namespace DiceMaster.Information
                     }
             }
             var read = new MapRouteRead(); int budget = 16, gates = 32, diagnosticBudget = 4, choiceBudget = 32;
+            string talkSourceDiagnostic = null;
             foreach (StoryGroup group in source.Stories)
             {
                 StoryGroup captured = group; bool sample = detailed || budget-- > 0;
@@ -678,7 +679,8 @@ namespace DiceMaster.Information
                             diagnosticBudget--;
                             result.Detail += "\n현재 필수 조건 표본 (후속 상태/최종 실행 보증 아님):\n" +
                                 PreviewConditions.DescribeCurrent(captured.CurrentPrerequisite) + "\n" +
-                                PreviewConditions.DescribePositionEntry(captured.CurrentPrerequisite, Read(controller, "_positionData"));
+                                PreviewConditions.DescribePositionEntry(captured.CurrentPrerequisite, Read(controller, "_positionData")) + "\n" +
+                                (talkSourceDiagnostic ?? (talkSourceDiagnostic = PreviewConditions.DescribeTalkResetSource()));
                         }
                         if (captured.Omitted) result.Detail += "\n경로 상한으로 일부 연결은 생략했습니다.";
                     }

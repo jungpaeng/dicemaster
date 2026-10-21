@@ -1,5 +1,13 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.28 — 후속 경로·설정 범위
+
+<!-- alpha28-publication -->
+alpha.28 후보의 구현·자동 검증을 진행했다. 커밋 고정 재빌드·게시 검증은 아래 게시 기록으로 확정한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha28-publication -->
+
+EnableMapGuide=true와 기존 상위 EnableOptionInfo 규칙에 속한다. 새 키·기본값·cfg 바이트는 변경하지 않는다. EnableMapGuide와 EnableOneShotHints가 모두 OFF이면 관찰 대체 참조도 정리하고 정보 조회를 중단한다. ON 뒤 현재 소유자가 준비되면 새 조회로 다시 확보한다. 상점·분기 설정과 동작은 유지한다. [현재 후보·파일·검사·Windows 대기](ISSUE-6-ALPHA28-RELEASE.md).
+
 ## alpha.19 — 후속 선택지 해금 확인
 
 <!-- alpha19-publication -->

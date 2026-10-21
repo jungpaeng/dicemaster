@@ -1,5 +1,7 @@
 # 후속 대화 경로 가상 조회와 성능 검증
 
+현재 후속 조회 자료 확보 보완은 [alpha.28 설계·검사](ISSUE-6-CURRENT-TALK-CONTEXT.md)와 [게시·Windows 대기 기록](ISSUE-6-ALPHA28-RELEASE.md)을 따른다. 아래 내용은 해당 후보 당시 기록이며 새 DLL의 실제 Windows 검증과 구분한다.
+
 <!-- alpha27-publication -->
 2026-10-22 06:29:59 KST에 소스 [`2a176ac`](https://github.com/jungpaeng/dicemaster/commit/2a176ac90ebe82bc397955409e54e1e0c5c1ad8c)의 [alpha.27](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.27)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha27-publication -->

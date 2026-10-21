@@ -1,5 +1,13 @@
 # 개발 안내
 
+## alpha.28 — 현재 게임 Lua 연결에서 대화 초기화 자료 조회
+
+<!-- alpha28-publication -->
+alpha.28 후보의 구현·자동 검증을 진행했다. 커밋 고정 재빌드·게시 검증은 아래 게시 기록으로 확정한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha28-publication -->
+
+PreviewConditions는 기존 LuaManager의 Instance backing field와 직렬화 _luaEnvironment를 읽고 raw checkpointmanager가 현재 CheckPointManager와 같은 객체인지 확인한다. raw statmodifymanager의 실제 _talkOptionFlag와 _default만 조회한다. 마지막 컴파일 관찰의 약한 참조가 사라져도 현재 소유자에서 복구하며, 현재 소유자 자료가 손상되면 이전 관찰로 우회하지 않는다. 관찰 대체 경로도 문맥·raw 연결을 재확인하고 로드/장면/종료·두 기능 OFF에서 정리한다. [설계·재현·성능](ISSUE-6-CURRENT-TALK-CONTEXT.md) · [후보·실제 Windows 대기](ISSUE-6-ALPHA28-RELEASE.md).
+
 ## alpha.27 — 읽기 전용 진입 플래그 예측
 
 <!-- alpha27-publication -->

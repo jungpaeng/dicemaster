@@ -13,6 +13,7 @@ internal static partial class Program
     {
         var manager = new StatModifyManager { _talkOptionFlag = new FlagCollectionData() };
         var script = new MoonSharp.Interpreter.Script();
+        script.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
         script.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(manager) };
         var environment = new Fungus.LuaEnvironment(script); PreviewConditions.ObserveLuaEnvironment(environment); return environment;
     }

@@ -352,6 +352,7 @@ namespace DiceMaster
                 var collection = new FlagCollectionData { _list = new List<FlagData> { resetFlag } };
                 var manager = new StatModifyManager { _talkOptionFlag = collection };
                 var script = new MoonSharp.Interpreter.Script();
+                script.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
                 script.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(manager) };
                 var environment = new Fungus.LuaEnvironment(script);
                 Observe(environment);
@@ -382,7 +383,7 @@ namespace DiceMaster
                 object reader = T("PreviewConditions").GetMethod("CreateReader").Invoke(null, null);
                 MethodInfo current = reader.GetType().GetMethod("Current");
                 current.Invoke(reader, new[] { topicAfter }); current.Invoke(reader, new[] { persistentAfter });
-                Check(script.m_GlobalTable.RawReads == rawReads + 1, "actual DLL reader validates the current talk collection once across several captured checkpoint leaves");
+                Check(script.m_GlobalTable.RawReads == rawReads + 2, "actual DLL reader validates both current raw registrations once across several captured checkpoint leaves");
                 MethodInfo disjoint = reader.GetType().GetMethods().Single(method => method.Name == "AreFlagWritesDisjoint" && method.GetParameters().Length == 2);
                 Check(!(bool)disjoint.Invoke(reader, new object[] { Topic(), new[] { "serialized_reset_flag" } }) &&
                     current.Invoke(reader, new[] { Topic() }).ToString() == "NotMet",
@@ -460,6 +461,7 @@ namespace DiceMaster
                 replacement._default = 0;
                 var resetManager = new StatModifyManager { _talkOptionFlag = resetCollection };
                 var resetScript = new MoonSharp.Interpreter.Script();
+                resetScript.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(CheckPointManager.Instance) };
                 resetScript.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(resetManager) };
                 var resetEnvironment = new Fungus.LuaEnvironment(resetScript);
                 T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new object[] { resetEnvironment });
@@ -537,10 +539,60 @@ namespace DiceMaster
             finally { CheckPointManager.Instance = previous; }
         }
 
+        static void CurrentTalkOwner()
+        {
+            var previous = CheckPointManager.Instance; var previousLua = LuaManager.Instance;
+            void Observe(object environment) => T("PreviewConditions").GetMethod("ObserveLuaEnvironment").Invoke(null, new[] { environment });
+            string Project(object condition) {
+                object reader = T("PreviewConditions").GetMethod("CreateRouteReader").Invoke(null, null);
+                return reader.GetType().GetMethod("Current").Invoke(reader, new[] { condition }).ToString();
+            }
+            try
+            {
+                var flag = new FlagData { name = "current_owner_flag", State = 8, _default = 0 };
+                var item = ConstantCondition(0, 0); item._items[0]._value1._value[0] = new StatValueReference { _checkType = 3, _flag = flag };
+                CheckPointManager.Instance = new CheckPointManager { _condition = new ConditionResultConfig { _list = new List<ConditionResultData> {
+                    new ConditionResultData { name = "current_owner_condition", _items = new List<ConditionResultItem> { item } } } } };
+                var collection = new FlagCollectionData { _list = new List<FlagData> { flag } };
+                Fungus.LuaEnvironment Environment(object checkpoints, FlagCollectionData reset) {
+                    var script = new MoonSharp.Interpreter.Script();
+                    script.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(checkpoints) };
+                    script.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new StatModifyManager { _talkOptionFlag = reset }) };
+                    return new Fungus.LuaEnvironment(script);
+                }
+                var environment = Environment(CheckPointManager.Instance, collection);
+                LuaManager.Instance = new LuaManager { _luaEnvironment = environment };
+                Observe(new Fungus.LuaEnvironment(new MoonSharp.Interpreter.Script()));
+                object gate = T("PreviewConditions").GetMethod("CaptureAfterTalkReset").Invoke(null,
+                    new object[] { Parse("checkpointmanager.Condition('current_owner_condition')"), null, false });
+                Check(Project(gate) == "Met", "actual DLL uses current game-owned Lua registration after unrelated observation loss");
+                T("PreviewConditions").GetMethod("ClearTalkContext").Invoke(null, null); GC.Collect(); GC.WaitForPendingFinalizers();
+                Check(Project(gate) == "Met" && flag.StateReads == 0, "actual DLL reacquires canonical ownership after clear/GC without reading or writing today's reset flag");
+                string Detail() => (string)T("PreviewConditions").GetMethod("DescribeTalkResetSource").Invoke(null, null);
+                Check(Detail().Contains("현재 게임 Lua 연결", StringComparison.Ordinal), "actual DLL details expose reset-source readiness independently of common prerequisite diagnostics");
+                flag._default = 2;
+                Check(Project(gate) == "NotMet", "actual DLL canonical reset defaults are fresh on every scheduled query");
+                flag._default = 0; Observe(environment);
+                LuaManager.Instance._luaEnvironment = Environment(new CheckPointManager(), collection);
+                Check(Project(gate) == "Unknown" && Detail().Contains("미확인", StringComparison.Ordinal), "actual DLL rejects a canonical environment with different checkpoints despite a valid older observation");
+                LuaManager.Instance._luaEnvironment = null;
+                Check(Project(gate) == "Unknown", "actual DLL missing canonical environment cannot borrow previous observer evidence");
+                LuaManager.Instance._luaEnvironment = Environment(CheckPointManager.Instance, null);
+                Check(Project(gate) == "Unknown", "actual DLL broken canonical collection cannot reuse an older known collection");
+                LuaManager.Instance._luaEnvironment = environment;
+                Check(Project(gate) == "Met", "actual DLL late initialization recovers immediately without a new Lua compile or game reload");
+                var script = (MoonSharp.Interpreter.Script)typeof(Fungus.LuaEnvironment).GetField("interpreter", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(environment);
+                script.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new object()) };
+                Check(Project(gate) == "Unknown", "actual DLL raw checkpoint binding must have the audited exact game type");
+                Check(flag.State == 8 && flag.StateWrites == 1 && FlagCollectionData.ResetCalls == 0 && StatModifyManager.ResetCalls == 0 && Fungus.LuaEnvironment.Initializations == 0,
+                    "actual DLL canonical source never initializes Lua or temporarily writes/reset flags");
+            }
+            finally { LuaManager.Instance = previousLua; Observe(null); CheckPointManager.Instance = previous; }
+        }
         public static int Run()
         {
             assertions = 0;
-            Syntax(); CurrentFields(); NextEntryCount(); PartialLogic(); TalkResetFootprint(); LiteralNoOpWrites(); TraceAndDisplay(); FlatAlternativesRemainBounded();
+            Syntax(); CurrentFields(); NextEntryCount(); PartialLogic(); TalkResetFootprint(); CurrentTalkOwner(); LiteralNoOpWrites(); TraceAndDisplay(); FlatAlternativesRemainBounded();
             Console.WriteLine("PREVIEW readonly current condition backend passed");
             return assertions;
         }
@@ -567,6 +619,11 @@ namespace Mortal.Core
 }
 namespace Mortal.Story
 {
+    public sealed class LuaManager
+    {
+        public static LuaManager Instance { get; set; }
+        public Fungus.LuaEnvironment _luaEnvironment;
+    }
     public class StatModifyManager
     {
         public Mortal.Core.FlagCollectionData _talkOptionFlag;

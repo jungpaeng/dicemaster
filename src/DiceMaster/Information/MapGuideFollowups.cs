@@ -69,7 +69,7 @@ namespace DiceMaster.Information
             string target = ChoiceStoryLabels.DialogueTarget(link.Path.DialogueCharacter);
             candidates.Add(new Candidate { Id = "selected-route/" + link.Story.Identity, Name = target, Kind = "연결 경로", ChoiceStory = true,
                 Rank = 2, Status = "진행 가능성 있음", RoutePreview = "경로 후보: " + route + " · " + target + " · 진행 가능성 있음",
-                Detail = "선택 경로: " + ChoiceStoryLabels.Path(link.Path.Steps) + "\n선택 화면과 같은 해금·완료·반복 활동 기준으로 확인한 이야기 경로입니다. 초회 인사도 포함하며 확인한 경로 하나를 안내합니다. 확인된 대화 초기화는 기본값으로 가상 조회하고, 장소 진입 시 쓸 수 있는 다른 플래그는 미확정으로 처리합니다. 실제 후속 대화 발생이나 1회성·기회 마커를 보장하지 않습니다." });
+                Detail = "선택 경로: " + ChoiceStoryLabels.Path(link.Path.Steps) + "\n선택 화면과 같은 해금·완료·반복 활동 기준으로 확인한 이야기 경로입니다. 초회 인사도 포함하며 확인한 경로 하나를 안내합니다. 현재 게임 Lua 연결에서 확인한 대화 초기화 기본값과 안전하게 판독한 진입 플래그를 가상 조회합니다. 미확인 자료는 보류하며 실제 후속 대화 발생이나 1회성·기회 마커를 보장하지 않습니다." });
         }
     }
 }

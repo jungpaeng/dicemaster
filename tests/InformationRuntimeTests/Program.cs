@@ -145,6 +145,12 @@ static class Program {
    Check(calls.Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationRuntime"),"delivered plugin "+method+" wired to real runtime");
   }
   if(references!=null) {
+   using(var story=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed","Mortal.Story.dll"))) {
+    var lua=story.MainModule.GetType("Mortal.Story.LuaManager");
+    Check(lua.Fields.Single(x=>x.Name=="<Instance>k__BackingField").IsStatic,"canonical Lua singleton is an existing backing field, not a lazy getter");
+    Check(lua.Fields.Single(x=>x.Name=="_luaEnvironment").FieldType.FullName=="Fungus.LuaEnvironment","canonical current Lua environment is the supplied serialized field");
+    Check(story.MainModule.GetType("Mortal.Story.StatModifyManager").Fields.Single(x=>x.Name=="_talkOptionFlag").FieldType.FullName=="Mortal.Core.FlagCollectionData","canonical reset collection metadata matches the game's actual reset implementation");
+   }
    foreach(var spec in new[]{("Mortal.Free.dll","Mortal.Free.FreeManager",new[]{"_menuOpen","_statOpen","_saveOpen"}), ("Mortal.Story.dll","Mortal.Story.StoryManager",new[]{"_panelOpen","_menuOpen","_statusOpen","_logOpen"})}) {
     using var owners=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed",spec.Item1));
     var owner=owners.MainModule.GetType(spec.Item2);

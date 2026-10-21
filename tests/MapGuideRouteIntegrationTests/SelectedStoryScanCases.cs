@@ -150,6 +150,7 @@ internal static partial class Program
         manager._condition._list.Add(new ConditionResultData { name = entryFlag.name,
             _items = new List<ConditionResultItem> { FlagEquals(entryFlag, 1) } });
         var lua = new MoonSharp.Interpreter.Script();
+        lua.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(manager) };
         lua.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new StatModifyManager { _talkOptionFlag = reset }) };
         observedTalkEnvironment = new Fungus.LuaEnvironment(lua); PreviewConditions.ObserveLuaEnvironment(observedTalkEnvironment);
         DataHelper.ExternalReader = key =>
@@ -194,7 +195,26 @@ internal static partial class Program
         Check(!ScanRead().Summary.AutoText.Contains("O_Talk_Brother4_014", StringComparison.Ordinal), "locking the original descendant removes the preferred tooltip on the next query");
         Check(Counters.GameCalls == 0 && switches._list.Find(item => item.name == "Talk_Brother4_00")._count == 1 && flags["Talk_Brother4_02_06"].State == 1 && entryFlag.State == 0 && entryFlag.StateWrites == 1,
             "original Lua with explicit synthetic predicates executes no Lua/native game and mutates no condition, reset or count");
-        DataHelper.ExternalReader = null; PreviewConditions.ObserveLuaEnvironment(null); observedTalkEnvironment = null;
+        var topic = flags["Talk_Brother4_00_01"]; topic._default = 0; reset._list.Add(topic);
+        LuaManager.Instance = new LuaManager { _luaEnvironment = CurrentTalkEnvironment(reset) };
+        PreviewConditions.ObserveLuaEnvironment(new Fungus.LuaEnvironment(new MoonSharp.Interpreter.Script()));
+        observedTalkEnvironment = null; GC.Collect(); GC.WaitForPendingFinalizers();
+        int resources = DataHelper.Reads, parses = DiceMaster.LuaParse.LuaParser.Parses;
+        bool currentTopic = false;
+        for (int at = 0; at < 100; at++) currentTopic |= ScanRead().Summary.AutoText.Contains("O_Talk_Brother4_003", StringComparison.Ordinal);
+        Check(currentTopic, "SHA-original room -> brother -> unlocked topic remains visible on the map after unrelated Lua observation/GC, using the current game owner");
+        LuaManager.Instance._luaEnvironment = null;
+        Check(!ScanRead().Summary.AutoText.Contains("경로 후보", StringComparison.Ordinal), "uninitialized current game Lua never reuses the previous map route");
+        LuaManager.Instance._luaEnvironment = CurrentTalkEnvironment(reset);
+        currentTopic = false;
+        for (int at = 0; at < 100; at++) currentTopic |= ScanRead().Summary.AutoText.Contains("O_Talk_Brother4_003", StringComparison.Ordinal);
+        Check(currentTopic && DataHelper.Reads == resources && DiceMaster.LuaParse.LuaParser.Parses == parses,
+            "original descendant recovers without a reload, Lua resource reread or warm reparse");
+        topic._default = 1;
+        Check(!ScanRead().Summary.AutoText.Contains("O_Talk_Brother4_003", StringComparison.Ordinal), "a locked original topic still removes the canonical preferred path immediately");
+        Check(Counters.GameCalls == 0 && topic.State == 1 && topic.StateWrites == 1 && entryFlag.State == 0 && entryFlag.StateWrites == 1,
+            "canonical original-room discovery changes neither actual entry/topic flags nor checkpoint counters");
+        LuaManager.Instance = null; DataHelper.ExternalReader = null; PreviewConditions.ObserveLuaEnvironment(null); observedTalkEnvironment = null;
     }
     // Opt-in measurement, never a timing threshold or a Windows/FPS claim.
     private static void SelectedStoryBenchmark()
