@@ -503,7 +503,7 @@ internal static partial class Program
             ChoiceStorySnapshot value = null; InformationRow row = null;
             for (int at = 0; at < 160; at++)
             {
-                value = Read(); row = value.Entries.FirstOrDefault(item => item.Title == title);
+                value = Read(name == "center_001"); row = value.Entries.FirstOrDefault(item => item.Title == title);
                 if (name == "center_001") Check(row == null || !row.Available && !row.Status.Contains("조건 충족", StringComparison.Ordinal),
                     "Actual center_001 plus an explicitly never-met synthetic runtime switch cannot become green while descendants are preparing or capped");
                 if (sample.Expected && name != "center_001" && row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal))) break;
@@ -515,6 +515,9 @@ internal static partial class Program
                 continue;
             }
             Check(row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal)), "Actual " + name + " corpus preserves its known choice labels despite visual/runwait uncertainty");
+            if (name == "center_001")
+                Check(row.Status == "지금 진행 불가" && row.AutoText.Length == 0 && !value.Hints.Any(item => item.Title == title) && !Read().Entries.Any(item => item.Title == title),
+                    "the original training script's proven false NPC prerequisite is detail-only, including visual prelude and disjoint action bookkeeping");
             Check(!row.Available && (row.Status == "진행 가능성 있음" || row.Status == "지금 진행 불가"), "Actual " + name + " incomplete full-story evidence cannot be advertised as currently met");
             Check(row.AutoText.Length <= 220 && !row.AutoText.Contains("1회성 확인 불가", StringComparison.Ordinal), "Actual corpus automatic path is bounded and carries no unknown one-shot spam");
         }
@@ -612,7 +615,7 @@ internal static partial class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions();
         if (args.Length > 0) Metadata(args[0]);
         if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");

@@ -43,6 +43,21 @@ namespace UnityEngine.UI { public class Selectable : UnityEngine.Behaviour { pub
 namespace UnityEngine.EventSystems { public class EventSystem { public static EventSystem current = new EventSystem(); public UnityEngine.GameObject currentSelectedGameObject; } }
 namespace Mortal.Free
 {
-    public class FreeManager { public UnityEngine.Camera _mainCamera; }
+    public class FreeManager : UnityEngine.Behaviour
+    {
+        public static FreeManager Instance { get; set; }
+        public UnityEngine.Camera _mainCamera;
+        public bool EnableHotKey { get; set; } = true;
+        public bool IsProcessing { get; set; }
+        public bool _menuOpen, _statOpen, _saveOpen;
+    }
     public class PositionController : UnityEngine.Behaviour { public UnityEngine.Component[] _colliders; public FreeManager _freeManager = new FreeManager(); }
+}
+namespace Mortal.Story
+{
+    public class StoryManager : UnityEngine.Behaviour
+    {
+        public static StoryManager Instance { get; set; }
+        public bool _panelOpen, _menuOpen, _statusOpen, _logOpen;
+    }
 }

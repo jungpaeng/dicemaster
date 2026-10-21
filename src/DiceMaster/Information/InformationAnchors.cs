@@ -91,11 +91,21 @@ namespace DiceMaster.Information
             }
             catch (Exception) { return false; }
         }
-        public static bool IsVisible(PositionController controller) { Rect rect; return TryRect(controller, out rect); }
+        private static bool MapAvailable(PositionController controller)
+        {
+            try
+            {
+                var owner = free == null ? null : free.GetValue(controller) as FreeManager;
+                return Live(owner) && owner.EnableHotKey && !owner.IsProcessing;
+            }
+            catch { return false; }
+        }
+        public static bool IsVisible(PositionController controller) { Rect rect; return MapAvailable(controller) && TryRect(controller, out rect); }
         public static bool IsInteractive(object anchor)
         {
             var component = anchor as Component;
             if (!Live(component)) return false;
+            if (component is PositionController && !MapAvailable((PositionController)component)) return false;
             var selectable = component.GetComponent<UnityEngine.UI.Selectable>();
             return selectable == null || selectable.isActiveAndEnabled && selectable.IsInteractable();
         }

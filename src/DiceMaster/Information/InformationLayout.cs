@@ -8,6 +8,11 @@ namespace DiceMaster.Information
     // retain fixed corners; neither path searches the map's obstacle grid.
     public static class InformationLayout
     {
+        public static float BadgeSize(int screenWidth, int screenHeight, bool map)
+        {
+            double scale = Math.Min(Math.Max(0, screenWidth) / 1920.0, Math.Max(0, screenHeight) / 1080.0);
+            return (float)Math.Round(Math.Min(map ? 64 : 48, Math.Max(map ? 28 : 24, (map ? 40 : 32) * scale)));
+        }
         public static Rect Near(Rect anchor, Rect viewport, float width, float height)
         {
             width = Size(width, viewport.width); height = Size(height, viewport.height);

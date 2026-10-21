@@ -9,6 +9,10 @@ internal static partial class Program
         var previous = Event.current;
         try
         {
+            Check(InformationLayout.BadgeSize(1920, 1200, true) == 40 && InformationLayout.BadgeSize(1920, 1200, false) == 32, "reported screenshot resolution uses readable map/menu sizes independent of log font");
+            Check(InformationLayout.BadgeSize(1280, 720, true) == 28 && InformationLayout.BadgeSize(1280, 720, false) == 24, "small screens retain separate bounded map/menu sizes");
+            Check(InformationLayout.BadgeSize(3840, 2160, true) == 64 && InformationLayout.BadgeSize(3840, 2160, false) == 48, "high-resolution badges grow within the image resolution and menu footprint");
+            Check(InformationLayout.BadgeSize(3840, 1080, true) == 40, "ultrawide width alone does not double the badge size");
             var viewport = new Rect(0, 0, 1000, 700);
             var anchor = new Rect(100, 200, 120, 32);
             var pin = InformationLayout.Badge(anchor, viewport, 24, true);
@@ -17,7 +21,7 @@ internal static partial class Program
             Check(InformationLayout.Stem(pin, anchor) == new Rect(159.5f, 193, 1, 7), "map pin has a short native-place connector");
             var edge = new Rect(0, 0, 100, 30);
             Check(InformationLayout.Stem(InformationLayout.Badge(edge, viewport, 24, true), edge).height == 0, "clamped top-edge pin never draws an inverted connector across the place");
-            foreach (float size in new[] { 20f, 24f, 28f })
+            foreach (float size in new[] { 24f, 28f, 32f, 40f, 48f, 64f })
             foreach (var rect in new[] { anchor, edge, new Rect(990, 690, 10, 10) })
             foreach (bool map in new[] { false, true })
             {

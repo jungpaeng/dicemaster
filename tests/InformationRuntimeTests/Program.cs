@@ -67,8 +67,28 @@ static class Program {
   Check(InformationRuntime.OptionTag("O_unknown")==""&&InformationRuntime.EventTag(new object())==""&&InformationRuntime.OptionDetail("O_unknown").Contains("확인 불가"),"automatic badges and cached detail diagnostics use separate APIs");
   ChoiceCadence();
   MarkerCadence();
+  NativeWindowCadence();
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
+ }
+ static void NativeWindowCadence(){
+  InformationRuntime.Clear();MapGuideSource.Visible=true;MapGuideSource.NoSelectionSession=true;ChoiceStorySource.Visible=false;
+  int map=MapGuideSource.Reads,marker=MapGuideSource.MarkerReads,choice=ChoiceStorySource.Reads;
+  InformationVisibility.TestBlocked=true;
+  for(int i=0;i<100;i++)InformationRuntime.Tick(null,true,80+i*.01f);
+  Check(MapGuideSource.Reads==map&&MapGuideSource.MarkerReads==marker,"native status window stops selected/global map queries despite active source objects");
+  ChoiceStorySource.Visible=true;InformationRuntime.Tick(null,true,82);
+  Check(ChoiceStorySource.Reads==choice,"native story window stops underlying action-menu preparation");
+  InformationVisibility.TestBlocked=false;InformationRuntime.Tick(null,true,82.01f);
+  Check(ChoiceStorySource.Reads==choice+1,"closing a window resumes the current native menu with a fresh read");
+  ChoiceStorySource.Visible=false;InformationRuntime.Tick(null,true,82.02f);
+  Check(MapGuideSource.Reads==map+1&&MapGuideSource.MarkerReads==marker+1,"returning to the map resumes its current selected/global publications");
+  InformationVisibility.TestBlocked=true;InformationRuntime.Tick("지도 안내",true,83,false,false);
+  Check(MapGuideSource.Reads==map+1,"native window also prevents explicit old-map detail queries");
+  InformationRuntime.Toggle(0);InformationRuntime.Toggle(1);int reads=InformationVisibility.Reads;
+  InformationRuntime.Tick(null,true,84);Check(InformationVisibility.Reads==reads,"both information flags OFF skip native-window reads");
+  InformationRuntime.Toggle(0);InformationRuntime.Toggle(1);InformationVisibility.TestBlocked=false;
+  MapGuideSource.Visible=false;MapGuideSource.NoSelectionSession=false;
  }
  static void MarkerCadence(){
   MapGuideSource.ContextKey="marker-cadence";MapGuideSource.Visible=false;MapGuideSource.NoSelectionSession=true;
@@ -125,6 +145,12 @@ static class Program {
    Check(calls.Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationRuntime"),"delivered plugin "+method+" wired to real runtime");
   }
   if(references!=null) {
+   foreach(var spec in new[]{("Mortal.Free.dll","Mortal.Free.FreeManager",new[]{"_menuOpen","_statOpen","_saveOpen"}), ("Mortal.Story.dll","Mortal.Story.StoryManager",new[]{"_panelOpen","_menuOpen","_statusOpen","_logOpen"})}) {
+    using var owners=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed",spec.Item1));
+    var owner=owners.MainModule.GetType(spec.Item2);
+    Check(owner.Fields.Any(f=>f.IsStatic&&f.Name=="<Instance>k__BackingField"),"native window owner has a directly readable existing singleton backing field");
+    foreach(string name in spec.Item3)Check(owner.Fields.Any(f=>!f.IsStatic&&f.Name==name&&f.FieldType.FullName=="System.Boolean"),"native window flag metadata matches "+spec.Item2+"."+name);
+   }
    using(var free=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed","Mortal.Free.dll"))) {
     Check(free.MainModule.GetType("Mortal.Free.FreePositionData").Fields.Single(x=>x.Name=="_conditionFlags").FieldType.FullName=="Mortal.Free.PositionConditionFlagItem[]","supplied actual activity entry flag array metadata is pinned");
     Check(free.MainModule.GetType("Mortal.Free.PositionFlagItem").Methods.Single(x=>x.Name=="Setup").Body.Instructions.Count(x=>x.OpCode.Code==Mono.Cecil.Cil.Code.Stfld&&x.Operand is FieldReference f&&f.DeclaringType.FullName=="Mortal.Core.FlagData"&&f.Name=="State")==2,"supplied actual entry flag setup mutates both true and false outcomes");
@@ -145,6 +171,9 @@ static class Program {
    }
   }
   var config=m.GetType("DiceMaster.Config.ConfigManager");foreach(string key in new[]{"EnableMapGuide","EnableOneShotHints","EnableBranchNotices","EnableShopEffectInfo"})Check(config.Fields.Any(f=>f.Name==key),"delivered persistent setting "+key);
+  var visibility=m.GetType("DiceMaster.Information.InformationVisibility");
+  Check(visibility!=null&&visibility.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="get_Instance"&&x.Name!="SetValue"&&!x.Name.StartsWith("set_")),"delivered native-window reader has no scene scan, singleton initialization or reflected/property writes");
+  foreach(string name in new[]{"TickCore","DrawCore"})Check(m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name==name).Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==visibility.FullName&&c.Name=="get_Blocked"),"delivered query and paint boundaries both check native windows: "+name);
   var badgeResource=m.Resources.OfType<EmbeddedResource>().SingleOrDefault(x=>x.Name=="DiceMaster.StoryBadge.rgba");
   Check(badgeResource!=null&&badgeResource.GetResourceData().Length==64*64*4,"delivered DLL embeds the complete mod-owned image with no extra installation files");
   var badgeType=m.GetType("DiceMaster.Information.InformationBadge");
@@ -167,7 +196,7 @@ static class Program {
   Check(choice.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&c.Name=="AdvanceBudgeted")),"delivered current-menu source uses the bounded route analyzer");
   Check(choice.Methods.Single(x=>x.Name=="CurrentRow").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.EventSystems.EventSystem"&&c.Name=="get_currentSelectedGameObject"),"delivered pad focus reads the existing native selected object");
   var forbidden=new[]{"Check","Execute","GetResult","GetRate","Position","Switch","Condition","SetStoryScript","SetNextScript","SetCurrentStoryScript","SetCurrentKey","SetConditionFlag","GetRandomResult","UpdateCheckMissions","GetActiveMissions","GetStoryText","UpdateContent","LoadLuaFunction","SetSelectedGameObject","OnSelect","Select","AddOption","Use","Learn","Apply","Buy"};
-  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name=="InformationAnchors"||x.Name=="InformationRuntime"||x.Name.StartsWith("ChoiceStory")))) {
+  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name=="InformationAnchors"||x.Name=="InformationVisibility"||x.Name=="InformationRuntime"||x.Name.StartsWith("ChoiceStory")))) {
    foreach(var method in DeepTypes(type).SelectMany(x=>x.Methods).Where(x=>x.HasBody))
     foreach(var call in method.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>())
      Check(!((call.DeclaringType.Namespace.StartsWith("Mortal.")||call.DeclaringType.Namespace.StartsWith("Fungus")||call.DeclaringType.Namespace.StartsWith("UnityEngine"))&&forbidden.Contains(call.Name)),"delivered map/choice IL does not invoke game or input mutation "+call.FullName);

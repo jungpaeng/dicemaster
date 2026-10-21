@@ -127,19 +127,20 @@ namespace DiceMaster.Information
                 MapGuideSource.ClearSnapshotsPreservingSyntax(); Reset(map); Reset(markers);
                 // Scene/load patches clear history separately; ordinary Lua keeps it.
             }
-            bool choiceVisible = (enabled[0] || enabled[1]) && ChoiceStorySource.Visible;
+            bool nativeWindow = (enabled[0] || enabled[1]) && InformationVisibility.Blocked;
+            bool choiceVisible = !nativeWindow && (enabled[0] || enabled[1]) && ChoiceStorySource.Visible;
             bool menuVisible = ChoiceStorySource.MenuVisible;
-            bool mapVisible = focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
+            bool mapVisible = !nativeWindow && focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
             bool mapDetails = detailPage == "지도 안내";
             Run(map, "지도 안내", MapKey(mapDetails),
-                !menuVisible && (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
+                !nativeWindow && !menuVisible && (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
                 () => MapGuideSource.Discover(enabled[0], enabled[1], mapDetails), manual, () => MapKey(mapDetails));
             Run(choices, "선택 경로", ChoiceKey(mapDetails),
                 choiceVisible && focused && (automaticVisible || mapDetails), now,
                 () => ChoiceStorySource.Discover(mapDetails), manual,
                 () => ChoiceKey(mapDetails));
             Run(markers, "지도 표식", MarkerKey(),
-                (enabled[0] || enabled[1]) && focused && automaticVisible && !popupVisible && !menuVisible && MapGuideSource.MarkerSessionVisible, now,
+                !nativeWindow && (enabled[0] || enabled[1]) && focused && automaticVisible && !popupVisible && !menuVisible && MapGuideSource.MarkerSessionVisible, now,
                 () => MapGuideSource.DiscoverMarkers(enabled[0], enabled[1]), manual, MarkerKey);
             Run(shop, "상점 효과", ShopEffectSource.ContextKey,
                 enabled[3] && focused && (automaticVisible && ShopEffectSource.Visible || detailPage == "상점 효과"), now,
@@ -160,7 +161,7 @@ namespace DiceMaster.Information
             // One-shot proofs are evaluated only for visible option requests and popup rows.
             bool popup = focused && popupVisible && EventSelectionRuntime.Waiting;
             Run(hints, "1회성", luaContext + ":" + EventSelectionRuntime.Token + ":" + OptionHintSource.ContextKey,
-                enabled[1] && focused && (popup || automaticVisible && OptionHintSource.Visible), now, () =>
+                enabled[1] && focused && (popup || !nativeWindow && automaticVisible && OptionHintSource.Visible), now, () =>
                 {
                     var queries = new List<DisplayQuery>();
                     if (popup && !EventSelectionRuntime.IsSwitch)
@@ -169,7 +170,7 @@ namespace DiceMaster.Information
                             var item = candidate;
                             queries.Add(new DisplayQuery("event:" + item.Id, () => ReadProof(OneShotProof.ForEvent(item.Target, item.Result))));
                         }
-                    if (automaticVisible && OptionHintSource.Visible) queries.AddRange(OptionHintSource.Discover());
+                    if (!nativeWindow && automaticVisible && OptionHintSource.Visible) queries.AddRange(OptionHintSource.Discover());
                     return queries;
                 }, manual);
             if (enabled[1] && automaticVisible) OptionHintSource.RenderHints();

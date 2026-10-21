@@ -181,13 +181,14 @@ namespace DiceMaster.Information
                 return value != null && value.isActiveAndEnabled && value.gameObject.activeInHierarchy ? value : null;
             }
         }
-        public static bool IsCurrent(InformationRow row) { return row != null && IsEnabled && Selected != null && selectedPlace != null && ReferenceEquals(row.Anchor, Selected) && row.Id == SelectionKey(selectedPlace); }
+        public static bool IsCurrent(InformationRow row) { return row != null && Visible && selectedPlace != null && ReferenceEquals(row.Anchor, Selected) && row.Id == SelectionKey(selectedPlace); }
         private static string SelectionKey(Place place) { return selectionId; }
-        public static bool IsCurrent(string id) { return IsEnabled && Selected != null && id == selectionId; }
+        public static bool IsCurrent(string id) { return Visible && id == selectionId; }
         public static Func<bool> Enabled;
         private static bool IsEnabled { get { try { return Enabled == null || Enabled(); } catch (Exception) { return false; } } }
         public static string ContextKey { get { return generation.ToString(CultureInfo.InvariantCulture) + "/" + (Session == null ? "" : Session.GetInstanceID().ToString(CultureInfo.InvariantCulture)) + "/" + selectionId; } }
-        public static bool Visible { get { return IsEnabled && Selected != null; } }
+        private static bool OnMap(PositionController controller) { return controller != null && (MarkerVisible == null || MarkerVisible(controller)); }
+        public static bool Visible { get { return IsEnabled && OnMap(Selected); } }
         public static object SelectedAnchor { get { return Selected; } }
         private static PositionController Session
         {
@@ -197,7 +198,7 @@ namespace DiceMaster.Information
                 return value != null && value.isActiveAndEnabled && value.gameObject.activeInHierarchy ? value : null;
             }
         }
-        public static bool SessionVisible { get { return IsEnabled && Session != null; } }
+        public static bool SessionVisible { get { return IsEnabled && OnMap(Session); } }
         private static PositionController Live(Place place)
         {
             var controller = place.Controller.Target as PositionController;

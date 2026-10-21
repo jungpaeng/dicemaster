@@ -76,6 +76,7 @@ namespace DiceMaster.Information
             PreviewCondition gate, PreviewCondition optionGate, bool uncertain, PreviewCondition currentSnapshotGate = null, bool completeRootEntry = false, PreviewCondition currentTopicGate = null, bool completeTopicEntry = false)
         { Script = script; SourceOffset = offset; Index = index; RawLabel = label; Gate = gate; OptionGate = optionGate; Uncertain = uncertain; snapshotGate = currentSnapshotGate; rootEntry = completeRootEntry; topicGate = currentTopicGate; topicEntry = completeTopicEntry; }
         // Negative-only current prerequisite projection. Never grants Met.
+        internal bool HasCurrentRootSnapshot { get { return rootEntry; } }
         public bool ReadCurrentBlocker(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return rootEntry && snapshotGate != null && read.Current(snapshotGate) == PreviewConditionState.NotMet; }
         public bool ReadTopicBlocker(MapRouteRead read)

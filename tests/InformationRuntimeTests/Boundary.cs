@@ -30,6 +30,7 @@ namespace DiceMaster.EventSelection {
  public static class EventSelectionRuntime {public static bool Waiting,IsSwitch;public static long Token;public static List<EventCandidate> Candidates=new();}
 }
 namespace DiceMaster.Information {
+ public static class InformationVisibility { public static bool TestBlocked; public static int Reads; public static bool Blocked { get { Reads++;return TestBlocked; } } }
  public static class MapInformationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class ShopInformationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class BranchObservationPatches {public static void Install(HarmonyLib.Harmony h) {}}

@@ -1,5 +1,9 @@
 # 전체 소스 빌드 — 이슈 #3
 
+## alpha.18 — 툴팁 조건·배지 표시 개선
+
+전체 소스의 자동 검사·실제 DLL 연결·ZIP 검증은 통과했고 커밋 고정 재빌드·새 prerelease 게시를 준비한다. 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다. [후보·파일·검증](ISSUE-6-ALPHA18-RELEASE.md).
+
 ## alpha.12 — 자동 안내 범위·장소 준비·중첩 조건
 
 전체 소스 검토 후보는 `artifacts/issue-6/automatic-scope/final-candidate/`로 생성한다. 전체 검사와 실제 DLL 연결·ZIP 바이트 확인은 새 manifest를 사용하고, 실제 Windows 확인과 이전 공개 alpha.11 기록은 구분한다. 독립 논리 oracle·대규모 빈 장소·평면/중첩 원본 Lua 경로와 빌드 명령은 [후속 기록](ISSUE-6-INDEPENDENT-PREPARATION.md)에 있다.
