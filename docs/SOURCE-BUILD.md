@@ -2,7 +2,7 @@
 
 ## alpha.12 — 자동 안내 범위·장소 준비·중첩 조건
 
-이번 로컬 후보는 `artifacts/issue-6/automatic-scope/full/`로 생성한다. 전체 검사와 실제 DLL 연결·ZIP 바이트 확인은 새 manifest를 사용하고, 실제 Windows 확인과 이전 공개 alpha.11 기록은 구분한다. 독립 논리 oracle·대규모 빈 장소·평면/중첩 원본 Lua 경로와 빌드 명령은 [후속 기록](ISSUE-6-INDEPENDENT-PREPARATION.md)에 있다.
+이번 로컬 후보는 `artifacts/issue-6/automatic-scope/final-candidate/`로 생성한다. 전체 검사와 실제 DLL 연결·ZIP 바이트 확인은 새 manifest를 사용하고, 실제 Windows 확인과 이전 공개 alpha.11 기록은 구분한다. 독립 논리 oracle·대규모 빈 장소·평면/중첩 원본 Lua 경로와 빌드 명령은 [후속 기록](ISSUE-6-INDEPENDENT-PREPARATION.md)에 있다.
 
 <!-- alpha12-current-status -->
 alpha.12 게시 준비 중. 지도 자동 안내는 실행 가능한 기존 대기 임무와 현재 도달 가능성을 확인한 증명된 1회성으로 제한한다. 미등록 단계·후속 대화는 명시적 상세 조회로 분리한다. [변경·검사·파일·새 Windows 확인](ISSUE-6-ALPHA12-RELEASE.md). 실제 Windows와 #6 전체 완료는 대기다.
