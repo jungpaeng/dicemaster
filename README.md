@@ -20,7 +20,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha28-publication -->
-alpha.28 후보의 구현·자동 검증을 진행했다. 커밋 고정 재빌드·게시 검증은 아래 게시 기록으로 확정한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+2026-10-22 06:59:56 KST에 소스 [`96a78a3`](https://github.com/jungpaeng/dicemaster/commit/96a78a30da8ba14eae2e0fc201576c96001f2c48)의 [alpha.28](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.28)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha28-publication -->
 
 alpha.28은 현재 게임의 Lua 연결에서 대화 초기화 자료를 다시 확보해, 지도에서 초회 인사만 보이고 해금된 후속 주제가 빠질 수 있는 경로를 보완합니다. 미확정·잠김/완료·반복 활동 필터와 일반 경로 최대 한 개·기회 마커 기준을 유지합니다. 로그 상세에 대화 초기화 자료의 확인 여부와 출처를 추가합니다. [설계·재현·성능](docs/ISSUE-6-CURRENT-TALK-CONTEXT.md) · [파일·설치·Windows 확인](docs/ISSUE-6-ALPHA28-RELEASE.md).

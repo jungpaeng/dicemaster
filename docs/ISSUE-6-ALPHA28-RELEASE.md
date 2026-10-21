@@ -1,7 +1,7 @@
 # v1.0.7-alpha.28 — 지도 후속 주제 조회 복구
 
 <!-- alpha28-publication -->
-alpha.28 후보의 구현·자동 검증을 진행했다. 커밋 고정 재빌드·게시 검증은 아래 게시 기록으로 확정한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+2026-10-22 06:59:56 KST에 소스 [`96a78a3`](https://github.com/jungpaeng/dicemaster/commit/96a78a30da8ba14eae2e0fc201576c96001f2c48)의 [alpha.28](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.28)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha28-publication -->
 
 지도에서 초회 인사는 보이지만 사사형 하위의 해금된 대화 주제가 빠질 수 있는 조회 경로를 보완한다. 마지막 Lua 관찰 대신 현재 게임 LuaManager의 기존 연결을 다시 읽고, 같은 CheckPointManager에 속한 실제 등록과 대화 초기화 목록을 확인한다. 관찰 손실/GC·늦은 초기화 후에도 재로드 없이 재평가한다. 사용자 Windows 세이브의 실제 원인 전체를 확정한 것은 아니다. [설계·재현·성능·안전 경계](ISSUE-6-CURRENT-TALK-CONTEXT.md).
@@ -10,7 +10,7 @@ alpha.28 후보의 구현·자동 검증을 진행했다. 커밋 고정 재빌�
 
 ## 자동 검사와 성능 경계
 
-검토 후보 전체21개 검사 프로그램·284개 빌드 입력·113개 소스/리소스·16개 고정 참조, 실제 후보 DLL IL/메타데이터 연결·설치 ZIP의 두 경로/CRC/DLL/cfg 바이트와 배포 검증기 회귀20개를 통과했다. 커밋 고정 재빌드·게시·공개 다운로드 검증은 게시 후 기록한다.
+검토 후보 전체21개 검사 프로그램·284개 빌드 입력·113개 소스/리소스·16개 고정 참조, 실제 후보 DLL IL/메타데이터 연결·설치 ZIP의 두 경로/CRC/DLL/cfg 바이트와 배포 검증기 회귀20개를 통과했다. 고정 커밋 재빌드도21개 프로그램·284개 입력·113개 소스/리소스·16개 고정 참조를 통과했다. 검토 후보와 모든 빌드 입력·DLL/cfg/ZIP 바이트가 일치하고 공개 ZIP의 SHA-256·두 경로·CRC·내부 바이트도 익명 다운로드로 대조했다.
 
 - PASS: MapGuideRouteIntegrationTests 3595 production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.
 - PASS: InformationRuntimeTests: 5774 scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.
@@ -35,3 +35,10 @@ alpha.27 고정 소스와 동일한 초기화 의존 2단계 유효 경로를 �
 초회 인사를 이미 본 세이브에서 지도 남제자방과 방 안 사사형을 비교하고 실제로 해금된 ‘안색’·‘색종이’ 주제의 경로를 확인한다. 초회 미완료/완료, 잠김·완료 주제와 반복 대련만 남은 상태·로드/창/재진입·OFF/ON, 행동력/임무 우선·기존 입력과 상점/분기/로그/#5를 구분해 확인한다. 누락 시 ‘대화 초기화 자료’ 확인 여부·출처와 조건/진입 가상 진단을 기록한다. [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha28--현재-게임-lua-연결후속-주제-확인-대기).
 
 새 DLL의 Windows·물리 입력·프레임 검증과 PRD #6 전체 완료는 대기다. 이전 후보의 사용자 부분 확인을 새 DLL 전체 통과로 승계하지 않는다. 기존 Latest v1.0.6, 이전 Release/태그/자산과 #6 open을 보존한다. 검토 후보·측정 원자료는 artifacts/issue-6/current-talk-context/, 고정 커밋·게시·익명 다운로드 영수증은 artifacts/releases/v1.0.7-alpha.28/에 구분한다.
+
+동적 단언 집계 차이 (모든 입력·파일 동일, 전체 검사 통과):
+- ChoiceStoryTests: 검토 7,718개 / 고정 재빌드 7,721개. 준비 주기/도달 원본 SHA 집계 차이며 각각의 실제 성공 기록을 보존한다.
+
+게시 시각 2026-10-22 06:59:56 KST, Release `420097738`·asset `663909232`, draft=false·prerelease=true·make_latest=false다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.28/DiceMaster-v1.0.7-alpha.28.zip)**. 기존 69개 Release·70개 태그·자산·Latest v1.0.6과 #6 open을 보존했다. source/tag는 [`96a78a3`](https://github.com/jungpaeng/dicemaster/commit/96a78a30da8ba14eae2e0fc201576c96001f2c48)이다.
+
+게시 후 보충 문서는 별도 main 커밋이며 소스 태그·빌드 입력·설치 파일을 바꾸지 않는다. 영수증은 artifacts/releases/v1.0.7-alpha.28/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json에 보존한다.
