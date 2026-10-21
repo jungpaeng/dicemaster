@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.17 — 두루마리 아이콘 변경 (게시 준비 중)
+## [v1.0.7-alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.17) — 2026-10-21 (prerelease)
+
+<!-- alpha17-publication -->
+2026-10-21 22:54:40 KST에 소스·주석 태그 [`d55a999`](https://github.com/jungpaeng/dicemaster/commit/d55a9998e65270626b66a76f30cd013c08881257)의 [alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.17)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·267개 입력·111개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 58개 Release·59개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [게시·검증 기록](docs/ISSUE-6-ALPHA17-RELEASE.md).
+<!-- /alpha17-publication -->
 
 - 금색 테두리·바탕과 지도 핀/메뉴 모서리 배치를 유지하고 내부 문양만 요청한 두루마리로 바꿉니다. 원본 SVG의 Lucide ISC 고지를 DLL에 포함합니다.
 - 표시 기준·조작·설정·캐시와 cfg는 유지합니다. [범위·검증·확인표](docs/ISSUE-6-ALPHA17-RELEASE.md).

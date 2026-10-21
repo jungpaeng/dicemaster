@@ -2,6 +2,10 @@
 
 ## alpha.17 — 배지 내부 두루마리 변경
 
+<!-- alpha17-publication -->
+2026-10-21 22:54:40 KST에 소스·주석 태그 [`d55a999`](https://github.com/jungpaeng/dicemaster/commit/d55a9998e65270626b66a76f30cd013c08881257)의 [alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.17)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·267개 입력·111개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 58개 Release·59개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·검증·확인표](ISSUE-6-ALPHA17-RELEASE.md).
+<!-- /alpha17-publication -->
+
 금색 테두리·바탕·크기·지도 핀/선택지 배치를 유지하고 내부 그림만 사용자가 제공한 Lucide scroll-text로 바꾼다. 원본의 ISC 고지까지 DLL에 내장하며 기존 판정·입력·설정·캐시는 유지한다. **새 후보의 실제 Windows 확인은 대기다.** [범위·검증·후보](ISSUE-6-ALPHA17-RELEASE.md).
 
 ## alpha.16 — 금색 이야기 배지와 지도 핀

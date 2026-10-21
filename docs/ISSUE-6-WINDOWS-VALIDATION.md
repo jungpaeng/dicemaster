@@ -2,6 +2,10 @@
 
 ## alpha.17 — 두루마리 아이콘 확인 대기
 
+<!-- alpha17-publication -->
+2026-10-21 22:54:40 KST에 소스·주석 태그 [`d55a999`](https://github.com/jungpaeng/dicemaster/commit/d55a9998e65270626b66a76f30cd013c08881257)의 [alpha.17](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.17)를 게시했다. 전체·고정 커밋 재빌드 21개 프로그램·267개 입력·111개 소스/리소스·16개 참조·실제 DLL 연결·공개 ZIP 바이트 대조를 통과했다. 기존 58개 Release·59개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **이번 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인은 대기다.** [설치·검증·확인표](ISSUE-6-ALPHA17-RELEASE.md).
+<!-- /alpha17-publication -->
+
 설치 대상은 [alpha.17 후보 기록](ISSUE-6-ALPHA17-RELEASE.md)의 소스/DLL/ZIP이다. 아래는 모두 실제 Windows 확인 대기다.
 
 - [ ] 당문 지도 핀·유학 등 실제 메뉴 배지의 내부 문양이 새 두루마리로 보인다. 테두리·바탕·크기·연결선·부착 위치는 alpha.16과 같고, 12–24 글자 크기/해상도에서 축소 가독성·투명 가장자리·장소명/다른 핀 겹침을 확인한다.
