@@ -1,7 +1,7 @@
 # v1.0.7-alpha.24 — 직접 대화 안내 먼저 표시
 
 <!-- alpha24-publication -->
-전체 소스 빌드의 자동 검사 21개·276개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+2026-10-22 03:30:55 KST에 소스 [`4849759`](https://github.com/jungpaeng/dicemaster/commit/484975971727410de78ec0bedc6c4ab089b4d0c1)의 [alpha.24](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.24)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha24-publication -->
 
 현재 선택의 직접 대화가 준비되면 먼저 표시하고, 후속 선택 경로는 준비 뒤 기존 해금 검사를 거쳐 추가한다. 기존 하나의 작업/읽기 예산을 공유하고 완료·미확정 완료·반복 활동·잠긴 후속 경로와 기회 마커 기준을 완화하지 않는다. 루트 중복 메뉴·생략 본문·동적 라벨·상한은 먼저 표시하는 유일성 근거로 사용하지 않는다. [설계·원본 재현·성능 교환](ISSUE-6-LOCAL-CHOICE-PREPARATION.md).
@@ -10,7 +10,7 @@
 
 ## 자동 검사와 남은 확인
 
-전체 소스 빌드의 21개 검사 프로그램·실제 DLL 연결·설치 ZIP을 확인했다. 생산 공급자/실제 원문 캡처·SHA 원본·합성 조건·IL 검사이며 새 DLL의 실제 Windows·Unity 화면·물리 입력·FPS 결과가 아니다. 고정 커밋 재빌드·게시·익명 다운로드 결과는 검증 후 기록한다. #6은 open이며 최신 정식 v1.0.6을 유지한다.
+전체 소스 빌드의 21개 검사 프로그램·실제 DLL 연결·설치 ZIP을 확인했다. 생산 공급자/실제 원문 캡처·SHA 원본·합성 조건·IL 검사이며 새 DLL의 실제 Windows·Unity 화면·물리 입력·FPS 결과가 아니다. 고정 커밋 재빌드도 21개 프로그램·276개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP 검증을 통과했다. 검토/재빌드의 입력과 DLL/cfg/ZIP 바이트가 모두 같고 공개 ZIP의 SHA-256·두 경로·CRC·내부 바이트도 인증 없이 대조했다. #6은 open이며 최신 정식 v1.0.6을 유지한다.
 
 집중 선택지 검사와 전체 빌드는 준비 주기/도달 원문에 따른 동적 단언 집계가 달라질 수 있다. 검토 후보의 실제 성공 기록은 다음과 같다.
 
@@ -30,3 +30,12 @@
 미완료 직접 인사의 첫 표시·완료 후 제거·반복 대련 제외·후속 주제의 단계적 추가와 첫/전체 준비 시간을 확인한다. 패드/기존 이벤트 선택·마커/창 가림도 함께 확인한다. [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha24--직접-대화-먼저-표시-확인-대기).
 
 검토 후보와 고정 커밋·게시/다운로드 영수증은 artifacts/issue-6/local-choice-preparation/와 artifacts/releases/v1.0.7-alpha.24/에 구분해 보존한다.
+
+성공 기록 중 19개가 정확히 일치한다. 동적 갱신/원본 도달 집계가 달라진 프로그램의 실제 기록은 다음과 같다. 전체 입력과 설치 파일은 동일하며 모든 검사는 통과했다.
+
+- MapGuideRouteIntegrationTests: 검토 3,347개 / 고정 재빌드 3,348개. 준비 주기/원본 SHA 검사 집계 차이며 합계 로그만으로 차이 한 건씩을 사후 특정하지 않았다.
+- ChoiceStoryTests: 검토 7,157개 / 고정 재빌드 7,152개. 준비 주기/원본 SHA 검사 집계 차이며 합계 로그만으로 차이 한 건씩을 사후 특정하지 않았다.
+
+게시 시각 2026-10-22 03:30:55 KST, Release `419911715`·asset `663423998`, draft=false·prerelease=true·make_latest=false다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.24/DiceMaster-v1.0.7-alpha.24.zip)**. 기존 65개 Release·66개 태그·자산·정식 Latest v1.0.6과 #6 open을 보존했다. source/tag는 [`4849759`](https://github.com/jungpaeng/dicemaster/commit/484975971727410de78ec0bedc6c4ab089b4d0c1)이다.
+
+고정 소스·태그·익명 다운로드·문서 검증 영수증은 artifacts/releases/v1.0.7-alpha.24/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json에 보존한다.

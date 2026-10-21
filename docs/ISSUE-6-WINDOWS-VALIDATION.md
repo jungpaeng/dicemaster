@@ -3,7 +3,7 @@
 ## alpha.24 — 직접 대화 먼저 표시 확인 대기
 
 <!-- alpha24-publication -->
-전체 소스 빌드의 자동 검사 21개·276개 입력·112개 소스/리소스·16개 고정 참조·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·게시·공개 다운로드는 후속 기록한다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
+2026-10-22 03:30:55 KST에 소스 [`4849759`](https://github.com/jungpaeng/dicemaster/commit/484975971727410de78ec0bedc6c4ab089b4d0c1)의 [alpha.24](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.24)를 게시했다. 전체·고정 커밋 자동 검사 21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha24-publication -->
 
 2026-10-22 사용자 alpha.23 부분 확인: 완료 인사 잔존은 해결된 것 같으나 남제자방 사사형 툴팁이 지도 마커보다 늦다. 새 후보의 Windows 확인이나 PRD 전체 완료 근거로 확대하지 않는다.
