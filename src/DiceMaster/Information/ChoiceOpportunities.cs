@@ -24,7 +24,7 @@ namespace DiceMaster.Information
         { try { return Interactive == null || Interactive(control); } catch (Exception) { return false; } }
         private static string ChoiceIdentity(MapChoiceStep step)
         { return step.Script + "/" + step.SourceOffset + "/" + step.Index; }
-        private static bool PathMet(IList<MapRoutePath> paths, Option option, Binding binding, MapRouteRead current)
+        private static bool PathMet(IList<MapRoutePath> paths, Option option, Binding binding, MapRouteRead current, ref int choiceBudget)
         {
             if (binding.Nodes.Count != 1 || paths.Count > 32) return false;
             foreach (MapRoutePath path in paths)
@@ -33,7 +33,9 @@ namespace DiceMaster.Information
                 bool belongs = false;
                 foreach (MapChoiceStep step in path.Steps)
                     if (step.Script == script && ChoiceStoryLabels.Raw(step.RawLabel) == option.Raw && binding.Nodes.ContainsKey(ChoiceIdentity(step))) { belongs = true; break; }
-                if (belongs && current.Current(path.Gate) == PreviewConditionState.Met) return true;
+                int selected = CurrentStep(path, option.Raw);
+                if (belongs && selected >= 0 && current.Current(path.Gate) == PreviewConditionState.Met &&
+                    path.ReadChoiceAvailability(current, ref choiceBudget, selected) == MapRouteState.Met) return true;
             }
             return false;
         }
@@ -88,7 +90,7 @@ namespace DiceMaster.Information
             string raw = named == null ? target : named.name;
             result.Add(target, new PendingChoice { Name = DisplayNames.LookupName("Mission/CheckName/" + raw, raw), Kind = kind });
         }
-        private static void AppendOpportunities(ChoiceStorySnapshot snapshot, MapRouteRead current, bool indexing, bool details, MapRouteDefinitions.PreparationSlice slice)
+        private static void AppendOpportunities(ChoiceStorySnapshot snapshot, MapRouteRead current, bool indexing, bool details, MapRouteDefinitions.PreparationSlice slice, ref int choiceBudget)
         {
             if (indexing || !IndexOpportunities())
             {
@@ -110,16 +112,16 @@ namespace DiceMaster.Information
                 {
                     if (candidates-- <= 0) break;
                     PendingChoice pending;
-                    if (!waiting.TryGetValue(target.Script, out pending) || !PathMet(target.Paths, option, binding, current))
+                    if (!waiting.TryGetValue(target.Script, out pending) || !PathMet(target.Paths, option, binding, current, ref choiceBudget))
                     { if (details) proofDetails.Add("대기 임무의 현재 등록·이 선택의 실행 경로를 함께 확정하지 못했습니다: " + target.Script); continue; }
                     notices.Add(ChoiceStoryLabels.ShortName(pending.Name) + " · " + pending.Kind + " · 진행 가능");
-                    if (details) proofDetails.Add("실제 현재 대기 목록의 시작 스크립트와 이 선택의 확정 연결이 일치합니다: " + target.Script + "\n" + Paths(target.Paths));
+                    if (details) proofDetails.Add("실제 현재 대기 목록의 시작 스크립트와 이 선택의 확정 연결이 일치합니다: " + target.Script + "\n" + Paths(target.Paths, option, current, ref choiceBudget));
                 }
                 if (once) foreach (MapRouteEntry entry in binding.Events)
                 {
                     if (candidates-- <= 0 || events <= 0 || slice.ShouldYield()) break;
-                    if (!PathMet(entry.Paths, option, binding, current) || CanReadEvent == null || !CanReadEvent(entry.Event))
-                    { if (details) proofDetails.Add("이 선택의 현재 도달 경로·조회 범위를 확정하지 못했습니다.\n" + Paths(entry.Paths)); continue; }
+                    if (!PathMet(entry.Paths, option, binding, current, ref choiceBudget) || CanReadEvent == null || !CanReadEvent(entry.Event))
+                    { if (details) proofDetails.Add("이 선택의 현재 도달 경로·조회 범위를 확정하지 못했습니다.\n" + Paths(entry.Paths, option, current, ref choiceBudget)); continue; }
                     events--;
                     OneShotResult proof;
                     if (!OneShotProof.TryGetEvent(entry.Event, entry.ResultScript, out proof))
@@ -132,11 +134,11 @@ namespace DiceMaster.Information
                     if (!proof.Proven) { if (details) proofDetails.Add(proof.DetailText); continue; }
                     var eligibility = EventEligibility.EvaluateCurrent(entry.Event);
                     if (eligibility.Reason == EventEligibilityReason.ReadFailure) throw new InvalidOperationException("Choice event state read failed.");
-                    if (!eligibility.IsEligible) { if (details) proofDetails.Add("현재 이벤트 조건·가중치: " + eligibility.Summary + "\n" + Paths(entry.Paths)); continue; }
+                    if (!eligibility.IsEligible) { if (details) proofDetails.Add("현재 이벤트 조건·가중치: " + eligibility.Summary + "\n" + Paths(entry.Paths, option, current, ref choiceBudget)); continue; }
                     string name;
                     if (!eventNames.TryGetValue(entry, out name)) eventNames.Add(entry, name = DataHelper.GetEventName((PositionEventData)entry.Event));
                     notices.Add(ChoiceStoryLabels.ShortName(name) + " · 1회성 이야기 · 선택 후 진행 가능");
-                    if (details) proofDetails.Add(proof.DetailText + "\n현재 조건·경로 충족. 실제 추첨 결과를 예측하거나 바꾸지 않습니다.\n" + Paths(entry.Paths));
+                    if (details) proofDetails.Add(proof.DetailText + "\n현재 조건·경로 충족. 실제 추첨 결과를 예측하거나 바꾸지 않습니다.\n" + Paths(entry.Paths, option, current, ref choiceBudget));
                 }
                 if (notices.Count == 0)
                 {
@@ -156,7 +158,17 @@ namespace DiceMaster.Information
                 if (existing < 0) snapshot.Entries.Add(row); else snapshot.Entries[existing] = row;
             }
         }
-        private static string Paths(IList<MapRoutePath> paths)
-        { var lines = new List<string>(); foreach (var path in paths) lines.Add("연결 경로: " + path.Description); return string.Join("\n", lines); }
+        private static string Paths(IList<MapRoutePath> paths, Option option, MapRouteRead current, ref int choiceBudget)
+        {
+            var lines = new List<string>(); int remaining = 32;
+            foreach (var path in paths)
+            {
+                if (remaining-- <= 0) break;
+                int selected = CurrentStep(path, option.Raw);
+                if (selected >= 0 && path.ReadChoiceAvailability(current, ref choiceBudget, selected) == MapRouteState.Met)
+                    lines.Add("연결 경로: " + ChoiceStoryLabels.Path(path.Steps));
+            }
+            return lines.Count == 0 ? "현재 안내할 해금 확인 경로가 없습니다." : string.Join("\n", lines);
+        }
     }
 }

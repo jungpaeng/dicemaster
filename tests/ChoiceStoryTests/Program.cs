@@ -506,7 +506,7 @@ internal static partial class Program
                 value = Read(name == "center_001"); row = value.Entries.FirstOrDefault(item => item.Title == title);
                 if (name == "center_001") Check(row == null || !row.Available && !row.Status.Contains("조건 충족", StringComparison.Ordinal),
                     "Actual center_001 plus an explicitly never-met synthetic runtime switch cannot become green while descendants are preparing or capped");
-                if (sample.Expected && name != "center_001" && row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal))) break;
+                if (sample.Expected && name != "center_001" && name != "room_001" && row != null) break;
             }
             if (!sample.Expected)
             {
@@ -514,7 +514,9 @@ internal static partial class Program
                 Check(!value.Entries.Any(item => item.Kind == "인물 대화"), "Excluded actual corpus activity cannot be presented through another automatic entry");
                 continue;
             }
-            Check(row != null && (name != "room_001" || row.AutoText.Contains("→", StringComparison.Ordinal)), "Actual " + name + " corpus preserves its known choice labels despite visual/runwait uncertainty");
+            Check(row != null, "Actual " + name + " corpus retains its actual anchored NPC dialogue without requiring an unconfirmed future topic");
+            if (name == "room_001") Check(!row.AutoText.Contains("→", StringComparison.Ordinal) && !row.Detail.Contains("O_Talk_Brother4_", StringComparison.Ordinal),
+                "original room does not advertise unobserved topic unlocks when runtime checkpoint definitions are unavailable");
             if (name == "center_001")
                 Check(row.Status == "지금 진행 불가" && row.AutoText.Length == 0 && !value.Hints.Any(item => item.Title == title) && !Read().Entries.Any(item => item.Title == title),
                     "the original training script's proven false NPC prerequisite is detail-only, including visual prelude and disjoint action bookkeeping");
@@ -615,7 +617,7 @@ internal static partial class Program
     }
     private static void Main(string[] args)
     {
-        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions();
+        Labels(); LiveMenus(); StateAndLifetimes(); RetryCadence(); MeaningfulDialogue(); ActivityResponses(); FullStoryConditions(); CurrentRequiredChoice(); FixtureOwnership(); OpportunityMenus(); TooltipConditions(); ChoiceUnlocks();
         if (args.Length > 0) Metadata(args[0]);
         if (args.Length > 1) { NativeCorpus(args[1]); NativeCurrentGuardChanges(args[1]); NativeTravelOpportunityPolicy(args[1]); }
         Console.WriteLine("PASS: ChoiceStoryTests " + checks + " production UI source/labels/route/syntax/current-reader/refresh assertions; explicit Unity/game/resource fixtures, no Lua/Windows/native UI execution.");

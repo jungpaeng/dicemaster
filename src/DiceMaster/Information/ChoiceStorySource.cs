@@ -128,7 +128,7 @@ namespace DiceMaster.Information
             Text[] labels = Field(control, control is NormalOptionButton ? "_text" : "_titleText") as Text[];
             if (raw == null || labels == null) throw new DataNotReadyException();
             string value = raw.text;
-            if (string.IsNullOrEmpty(value) || value.Length > 2048) return;
+            if (string.IsNullOrEmpty(value) || value.Length > 2048 || value[0] == '~') return;
             string rawValue = ChoiceStoryLabels.Raw(value), title = null;
             foreach (Text label in labels)
                 if (label != null && !string.IsNullOrWhiteSpace(label.text)) { title = ChoiceStoryLabels.Rendered(label.text); break; }
@@ -227,11 +227,11 @@ namespace DiceMaster.Information
                 DicePlugin.LogWarning("Information choice-story target=" + script + (routeHadFailure ? " failure · retry=5s" : " recovered"));
             }
             bool indexing = Index();
-            var current = new MapRouteRead(); int classificationBudget = 32;
+            var current = new MapRouteRead(); int classificationBudget = 32, choiceBudget = 32;
             foreach (Option option in options)
             {
                 if (!Feature(GuideEnabled)) break;
-                if (option.Raw == null || option.Context != Context || !ReferenceEquals(option.Menu, menu) || !Live(option.Control.Target, menu)) continue;
+                if (option.Raw == null || option.Context != Context || !ReferenceEquals(option.Menu, menu) || !Live(option.Control.Target, menu) || !Interactable(option.Control.Target)) continue;
                 Binding binding;
                 if (!bindings.TryGetValue(option.Raw, out binding) || binding.Stories.Count == 0) continue;
                 // Keep oversized/unresolved bindings conservative. A current
@@ -274,9 +274,9 @@ namespace DiceMaster.Information
                 bool currentRoot = !ambiguous && !routes.IsPreparing && !indexing && alternatives.Count == 1 && alternatives[0].HasCurrentRootSnapshot;
                 bool storyBlocked = currentRoot && binding.CurrentPrerequisite != null && current.Current(binding.CurrentPrerequisite) == PreviewConditionState.NotMet;
                 StorySelection selection = storyBlocked ? new StorySelection { State = MapRouteState.NotMet } :
-                    SelectStory(binding.Paths, binding.PathStories, current, currentRoot, incomplete, ambiguous || routes.IsPreparing || indexing, option.Raw);
+                    SelectStory(binding.Paths, binding.PathStories, current, currentRoot, incomplete, ambiguous || routes.IsPreparing || indexing, option.Raw, ref choiceBudget);
                 MapRouteState state = blocked ? MapRouteState.NotMet : selection.State;
-                if (state == MapRouteState.NotMet && !details) continue;
+                if ((state == MapRouteState.NotMet || selection.Path == null) && !details) continue;
                 string status = state == MapRouteState.Met ? "진행 가능" : state == MapRouteState.NotMet ? "지금 진행 불가" : "진행 가능성 있음";
                 string detail = (ambiguous || incomplete ? "현재 메뉴 원문과 일치하는 연결 후보입니다. 현재 메뉴의 스크립트 위치는 아직 확정하지 않았습니다." : "실제 현재 메뉴의 원본 선택지와 정확히 연결한 자료입니다.") +
                     " 표시만 수행하며 선택·조건 판정·게임 진행을 실행하지 않습니다.\n원본 선택지: " + option.Raw;
@@ -289,19 +289,22 @@ namespace DiceMaster.Information
                 if (details)
                 {
                     int shown = 0;
-                    foreach (MapRoutePath path in binding.Paths)
-                    { if (shown++ >= 32) { detail += "\n이후 경로는 일부 확인하지 않았습니다."; break; } detail += "\n연결 경로: " + ChoiceStoryLabels.Path(path.Steps); }
+                    if (selection.Paths != null) foreach (MapRoutePath path in selection.Paths)
+                    { if (shown++ >= 32) break; detail += "\n연결 경로: " + ChoiceStoryLabels.Path(path.Steps); }
+                    if (shown == 0) detail += "\n현재 안내할 해금 확인 경로가 없습니다.";
+                    if (selection.HiddenChoices) detail += "\n잠겼거나 해금 여부를 확인하지 못한 후속 선택 경로는 목록과 자동 툴팁에서 제외했습니다.";
+                    if (binding.Paths.Count > 32) detail += "\n32개 초과 연결 경로는 전체를 조회하거나 목록에 표시하지 않습니다.";
                 }
                 var anchor = option.Control.Target as UnityEngine.Object;
                 string preview = ambiguous || selection.Path == null ? ChoiceStoryLabels.ShortName(option.Title) + " · 이야기 연결 확인 필요" : (incomplete ? "경로 후보: " : "") + PreviewPath(option, selection.Path);
                 var row = new InformationRow("choice/" + key + "/" + (anchor == null ? "" : anchor.GetInstanceID().ToString(CultureInfo.InvariantCulture)),
                     option.Title, "인물 대화", status, detail,
-                    state == MapRouteState.NotMet ? "" : preview + (!ambiguous && !incomplete && binding.Paths.Count <= 32 && selection.Count > 1 ? " · 외 " + (selection.Count - 1) + "개" : "") + " · " + status,
+                    state == MapRouteState.NotMet || selection.Path == null ? "" : preview + (!ambiguous && !incomplete && binding.Paths.Count <= 32 && selection.Count > 1 ? " · 외 " + (selection.Count - 1) + "개" : "") + " · " + status,
                     anchor, !ambiguous && !incomplete && state == MapRouteState.Met);
                 snapshot.Entries.Add(row);
                 if (row.AutoText.Length != 0 && snapshot.Hints.Count < 3) snapshot.Hints.Add(row);
             }
-            AppendOpportunities(snapshot, current, indexing, details, preparation);
+            AppendOpportunities(snapshot, current, indexing, details, preparation, ref choiceBudget);
             if (routes.IsPreparing || indexing || routes.IsPartial || routes.HasReadFailure)
                 snapshot.Entries.Add(Status(routes.HasReadFailure ? "이야기 연결 자료 읽기 대기/실패 · 5초 뒤 재시도" : routes.IsPreparing || indexing ? "이야기 안내 준비 중" : "이야기 연결 일부 확인 필요"));
             snapshot.Selected = CurrentRow(snapshot);
@@ -359,15 +362,17 @@ namespace DiceMaster.Information
             return binding;
         }
         internal static MapRouteState CurrentStoryConditions(IList<MapRoutePath> paths, MapRouteRead current)
-        { return SelectStory(paths, null, current, false, false, false).State; }
+        { int budget = 32; return SelectStory(paths, null, current, false, false, false, null, ref budget).State; }
         private struct StorySelection
         {
             internal MapRouteState State;
             internal MapRoutePath Path;
             internal int Count;
+            internal List<MapRoutePath> Paths;
+            internal bool HiddenChoices;
         }
         private static StorySelection SelectStory(IList<MapRoutePath> paths, IDictionary<MapRoutePath, MapStoryEntry> pathStories,
-            MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw = null)
+            MapRouteRead current, bool currentRoot, bool incomplete, bool unresolved, string raw, ref int choiceBudget)
         {
             int count = paths == null ? 0 : paths.Count;
             var selection = new StorySelection { State = count == 0 || count > 32 ? MapRouteState.Unknown : MapRouteState.NotMet };
@@ -375,6 +380,17 @@ namespace DiceMaster.Information
             for (int at = 0; at < Math.Min(32, count); at++)
             {
                 MapRoutePath path = paths[at];
+                if (raw != null)
+                {
+                    int step = CurrentStep(path, raw);
+                    MapRouteState choices = step < 0 ? MapRouteState.Unknown : path.ReadChoiceAvailability(current, ref choiceBudget, step);
+                    if (choices != MapRouteState.Met)
+                    {
+                        selection.HiddenChoices = true;
+                        if (choices == MapRouteState.Unknown && selection.Path == null) selection.State = MapRouteState.Unknown;
+                        continue;
+                    }
+                }
                 // Only a uniquely matched, closed root menu may reuse the
                 // map's negative projection. Inputs affected by future writes
                 // are already masked in that projection; earlier captured
@@ -382,6 +398,8 @@ namespace DiceMaster.Information
                 MapRouteState state = currentRoot && path.ReadCurrentBlocker(current) ? MapRouteState.NotMet :
                     unresolved || path.StoryConditionsMayHaveChanged ? MapRouteState.Unknown : path.ReadStoryConditions(current);
                 if (state == MapRouteState.NotMet) continue;
+                if (selection.Paths == null) selection.Paths = new List<MapRoutePath>();
+                selection.Paths.Add(path);
                 if (incomplete) state = MapRouteState.Unknown;
                 MapStoryEntry story = null; if (pathStories != null) pathStories.TryGetValue(path, out story);
                 if (selection.Path == null || state == MapRouteState.Met && selection.State != MapRouteState.Met)
@@ -413,6 +431,14 @@ namespace DiceMaster.Information
                 found = string.Equals(step.Script, script, StringComparison.OrdinalIgnoreCase) && ChoiceStoryLabels.Raw(step.RawLabel) == raw;
             }
             return false;
+        }
+        private static int CurrentStep(MapRoutePath path, string raw)
+        {
+            int found = -1;
+            for (int at = 0; at < path.Steps.Count; at++)
+                if (string.Equals(path.Steps[at].Script, script, StringComparison.OrdinalIgnoreCase) && ChoiceStoryLabels.Raw(path.Steps[at].RawLabel) == raw)
+                { if (found >= 0) return -1; found = at; }
+            return found;
         }
         private static bool CurrentOptionBlocked(IList<MapChoiceStep> alternatives, MapRouteRead current)
         {

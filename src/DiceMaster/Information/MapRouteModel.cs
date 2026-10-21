@@ -81,6 +81,14 @@ namespace DiceMaster.Information
         { if (read == null) throw new ArgumentNullException("read"); return rootEntry && snapshotGate != null && read.Current(snapshotGate) == PreviewConditionState.NotMet; }
         public bool ReadTopicBlocker(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return topicEntry && topicGate != null && read.Current(topicGate) == PreviewConditionState.NotMet; }
+        internal MapRouteState ReadAvailability(MapRouteRead read, ref int budget)
+        {
+            // A future menu must have a closed local entry and a readable,
+            // effect-aware guard. Unknown is never evidence of an unlocked option.
+            PreviewConditionState state;
+            return !topicEntry || topicGate == null || !read.BudgetedCurrent(topicGate, ref budget, out state)
+                ? MapRouteState.Unknown : MapRoutePath.State(state);
+        }
         public MapRouteState Current { get { return ReadCurrent(new MapRouteRead()); } }
         public MapRouteState ReadCurrent(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return Uncertain ? MapRouteState.Unknown : MapRoutePath.State(read.Current(Gate)); }
@@ -154,6 +162,19 @@ namespace DiceMaster.Information
         }
         public bool ReadCurrentBlocker(MapRouteRead read)
         { if (read == null) throw new ArgumentNullException("read"); return snapshotGate != null && read.Current(snapshotGate) == PreviewConditionState.NotMet; }
+        public MapRouteState ReadChoiceAvailability(MapRouteRead read, ref int budget, int afterStep = -1)
+        {
+            if (read == null) throw new ArgumentNullException("read");
+            if (afterStep < -1 || afterStep >= Steps.Count || Steps.Count > MapRouteLimits.MaxChoiceSteps) return MapRouteState.Unknown;
+            bool unknown = false;
+            for (int at = afterStep + 1; at < Steps.Count; at++)
+            {
+                MapRouteState state = Steps[at].ReadAvailability(read, ref budget);
+                if (state == MapRouteState.NotMet) return state;
+                unknown |= state == MapRouteState.Unknown;
+            }
+            return unknown ? MapRouteState.Unknown : MapRouteState.Met;
+        }
         internal static MapRouteState State(PreviewConditionState value)
         { return value == PreviewConditionState.Met ? MapRouteState.Met : value == PreviewConditionState.NotMet ? MapRouteState.NotMet : MapRouteState.Unknown; }
         public MapRouteState ReadEntry(MapRouteRead read)
@@ -269,12 +290,17 @@ namespace DiceMaster.Information
         public MapRouteState ReadCurrent(MapRouteRead read)
         {
                 if (read == null) throw new ArgumentNullException("read");
-                bool unknown = omittedPaths || read.Incomplete(incomplete);
+                bool unknown = omittedPaths || read.Incomplete(incomplete); int choiceBudget = 32;
                 foreach (var path in paths)
                 {
                     if (path.Uncertain) { unknown = true; continue; }
                     var state = read.Current(path.Gate);
-                    if (state == PreviewConditionState.Met) return MapRouteState.Met;
+                    if (state == PreviewConditionState.Met)
+                    {
+                        MapRouteState choices = path.ReadChoiceAvailability(read, ref choiceBudget);
+                        if (choices == MapRouteState.Met) return choices;
+                        unknown |= choices == MapRouteState.Unknown;
+                    }
                     unknown |= state == PreviewConditionState.Unknown;
                 }
                 return unknown || paths.Count == 0 ? MapRouteState.Unknown : MapRouteState.NotMet;

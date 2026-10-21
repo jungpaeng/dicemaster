@@ -571,7 +571,7 @@ namespace DiceMaster.Information
                         else group.Omitted = true;
                     }
             }
-            var read = new MapRouteRead(); int budget = 16, gates = 32, diagnosticBudget = 4;
+            var read = new MapRouteRead(); int budget = 16, gates = 32, diagnosticBudget = 4, choiceBudget = 32;
             foreach (StoryGroup group in source.Stories)
             {
                 StoryGroup captured = group; bool sample = detailed || budget-- > 0;
@@ -652,10 +652,12 @@ namespace DiceMaster.Information
                         var lines = new List<string>();
                         foreach (StoryLink link in captured.Links)
                         {
+                            if (link.Path.ReadChoiceAvailability(read, ref choiceBudget) != MapRouteState.Met) continue;
                             string text = "선택 경로: " + ChoiceStoryLabels.Path(link.Path.Steps) + (link.Path.ReadStoryKind(read, ref gates) == MapStoryKind.ActivityResponse ? " · 활동 고정 반응 (자동 안내 제외)" : "");
                             if (!lines.Contains(text)) lines.Add(text);
                         }
                         result.Detail += "\n" + string.Join("\n", lines);
+                        result.Detail += "\n잠겼거나 해금 여부를 확인하지 못한 선택 경로는 목록에서 제외합니다.";
                         if (diagnosticBudget > 0 && captured.CurrentPrerequisite != null)
                         {
                             diagnosticBudget--;
@@ -767,7 +769,18 @@ namespace DiceMaster.Information
             if (routeState == MapRouteState.NotMet) { result.Rank = 1; result.Status = "진행 불가 · 경로 조건 미충족"; }
             else if (routeState == MapRouteState.Unknown) { result.Rank = 2; result.Status = "경로 확인 필요"; }
             else if (entry.Route.HasChoice && result.Rank == 0) result.Status = "선택 후 기회";
-            if (detailed) result.Detail = "경로: " + entry.Route.Path + "\n현재 이벤트 판정: " + (state == null ? "상세 조회 대기" : state.IsEligible ? "조건·가중치 충족" : state.State == EventEligibilityState.Ineligible ? "조건·가중치 미충족" : "확인 불가") + "\n" + result.Detail;
+            if (detailed)
+            {
+                var paths = new List<string>(); int choiceBudget = 32, remaining = 32;
+                foreach (MapRoutePath path in entry.Route.Paths)
+                {
+                    if (remaining-- <= 0) break;
+                    if (path.ReadChoiceAvailability(currentRoutes, ref choiceBudget) == MapRouteState.Met && !paths.Contains(path.Description)) paths.Add(path.Description);
+                }
+                result.Detail = (paths.Count == 0 ? "현재 안내할 해금 확인 경로가 없습니다." : "경로: " + string.Join("\n", paths)) +
+                    "\n잠겼거나 해금 여부를 확인하지 못한 선택 경로는 목록에서 제외합니다.\n현재 이벤트 판정: " +
+                    (state == null ? "상세 조회 대기" : state.IsEligible ? "조건·가중치 충족" : state.State == EventEligibilityState.Ineligible ? "조건·가중치 미충족" : "확인 불가") + "\n" + result.Detail;
+            }
             if (detailed && routeState == MapRouteState.Unknown)
                 result.Detail += "\n선행 호출·상태 변경 뒤의 경로가 확정되지 않아 현재 이벤트 조건만으로 도달 시점의 진행 불가를 단정하지 않습니다.";
             ApplyActivityEntry(controller, result);

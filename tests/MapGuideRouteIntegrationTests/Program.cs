@@ -164,7 +164,7 @@ internal static class Program
         Check(!story.Status.Contains("1회성"), "Choice route discovery never grants a one-shot property");
         Check(LuaParser.Descriptions == formatter && LuaParser.Parses == parses, "Passive choice story map performs zero full effect descriptions or analyzers");
         snapshot = Read(true); story = Find(snapshot, "사사형");
-        Check(story.Detail.Contains("사사형 → 대화 항목") && story.Detail.Contains("내부 분기 조건"), "Map detail provides the required choice route and explains its whole-path condition scope");
+        Check(!story.Detail.Contains("사사형 → 대화 항목") && story.Detail.Contains("해금 여부를 확인하지 못한") && story.Detail.Contains("내부 분기 조건"), "Map detail excludes future topic names affected by a preceding write while retaining its condition scope");
         int firstReads = firstFlag.StateReads, laterReads = laterFlag.StateReads;
         for (int at = 0; at < 40; at++)
         {

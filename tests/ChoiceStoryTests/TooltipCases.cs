@@ -118,13 +118,13 @@ internal static partial class Program
             ChoiceStorySource.ObserveScript(TooltipChoice + "if checkpointmanager.Condition('many_npc') then " + branches +
                 (bypass ? " else setcharacter(characters.Get('brother4'));say(luamanager.GetStoryText('D_bypass'))" : "") + " end end", "many_tooltip_paths.LuaScript");
             Position("practice+free+practice", "많은 대화"); var value = Ready(true); var row = Linked(value, "많은 대화");
-            Check(row.Detail.Contains("이후 경로는 일부 확인", StringComparison.Ordinal), "the large-binding fixture actually observes more than 32 paths within the existing per-branch and context limits");
+            Check(row.Detail.Contains("32개 초과", StringComparison.Ordinal), "the large-binding fixture actually observes more than 32 paths within the existing per-branch and context limits");
             if (!bypass)
                 Check(row.Status == "지금 진행 불가" && row.AutoText == "" && !Read().Entries.Any(x => x.Title == "많은 대화"),
                     "a prepared common false prerequisite suppresses more than 32 observed paths without expanding current-query bounds");
             else
                 Check(row.Status != "지금 진행 불가" && row.AutoText.Length != 0 && Read().Entries.Any(x => x.Title == "많은 대화"),
-                    "a later observed bypass removes the common false prerequisite and cannot be hidden by the first 32 blocked paths");
+                    "an independently observed unlocked bypass prevents the first 32 blocked paths from suppressing its actual witness");
             int reads = DataHelper.Reads;
             for (int at = 0; at < 40; at++) Read();
             Check(DataHelper.Reads == reads && Counters.GameCalls == 0,

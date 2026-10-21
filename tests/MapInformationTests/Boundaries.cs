@@ -224,6 +224,8 @@ namespace DiceMaster.Information
         public MapRouteState ReadEntryConditions(MapRouteRead read) => MapRouteState.Met;
         public MapRouteState ReadStoryConditions(MapRouteRead read) { StoryReads++; return StoryState; }
         public bool ReadCurrentBlocker(MapRouteRead read) => false;
+        public string Description = "fixture path";
+        public MapRouteState ReadChoiceAvailability(MapRouteRead read, ref int budget, int afterStep = -1) => MapRouteState.Met;
         public PreviewCondition CurrentPrerequisite => PreviewConditions.Unknown;
         public static PreviewCondition CommonPrerequisite(PreviewCondition left, PreviewCondition right) => PreviewConditions.Unknown;
     }
@@ -245,6 +247,7 @@ namespace DiceMaster.Information
     public class MapRouteEntry
     {
         public object Event; public string ResultScript, Pool, Id, Path;
+        public List<MapRoutePath> Paths = new List<MapRoutePath>();
         public bool HasChoice; public MapRouteState Current = MapRouteState.Met;
         public MapRouteState ReadCurrent(MapRouteRead read) => Current;
     }
