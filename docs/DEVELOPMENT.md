@@ -3,7 +3,7 @@
 ## alpha.21 — 선택 안내 근거·활동 독립성
 
 <!-- alpha21-publication -->
-main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·273개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드·공개 다운로드는 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.**
+2026-10-22 02:19:17 KST에 소스·주석 태그 [`9163d59`](https://github.com/jungpaeng/dicemaster/commit/9163d5931a9e95bb614f77dcfb48bbb45519b376)의 [alpha.21](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.21)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·273개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 62개 Release·63개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](ISSUE-6-ALPHA21-RELEASE.md).
 <!-- /alpha21-publication -->
 
 Reader의 플래그 독립성은 nullable bool로 증명/실제 영향/미확정을 구분한다. 정수 횟수형 스키마 검증은 플래그 독립성만 증명하며 plain Switch의 값을 읽거나 실행하지 않는다. 고정 활동의 미확정 독립성은 상세로 제한하고, 실제 조건 소모는 기존 이야기 후보로 남긴다. 준비 중 위치/색인에서 임시 툴팁을 만들지 않는다. 명시적 상세만 표시/제외 표본 각 한 건을 진단한다. [설계·범위·검증](ISSUE-6-CHOICE-EVIDENCE.md).

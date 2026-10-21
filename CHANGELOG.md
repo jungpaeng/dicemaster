@@ -1,9 +1,9 @@
 # 변경 이력
 
-## 미배포 — 선택 안내 근거·반복 활동 판정 보완
+## [v1.0.7-alpha.21](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.21) — 2026-10-22 (prerelease)
 
 <!-- alpha21-publication -->
-main의 검토 후보이며 커밋·게시 준비 중이다. 전체 소스 빌드의 21개 검사 프로그램·273개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP의 두 경로/CRC/바이트 대조를 통과했다. 고정 커밋 재빌드·공개 다운로드는 별도로 기록한다. **새 DLL의 실제 Windows·물리 입력·화면·프레임 성능 확인과 #6 전체 완료는 대기다.**
+2026-10-22 02:19:17 KST에 소스·주석 태그 [`9163d59`](https://github.com/jungpaeng/dicemaster/commit/9163d5931a9e95bb614f77dcfb48bbb45519b376)의 [alpha.21](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.21)를 게시했다. 전체·고정 커밋 재빌드 각각 21개 프로그램·273개 입력·112개 소스/리소스·16개 고정 참조·실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 바이트 대조를 통과했다. 기존 62개 Release·63개 태그·자산·Latest v1.0.6·#6 open을 보존했다. **새 DLL의 실제 Windows·물리 입력·가독성·프레임 성능 확인과 #6 전체 완료는 대기다.** [파일·검증·설치](docs/ISSUE-6-ALPHA21-RELEASE.md).
 <!-- /alpha21-publication -->
 
 - 준비 중/메뉴 위치 미확정의 임시 툴팁을 보류하고 완료 대화가 다시 가능성으로 표시되지 않도록 합니다.
