@@ -661,7 +661,7 @@ namespace DiceMaster.Information
                         Detail = "원본 경로에서 플레이어 이외의 명시된 화자와 대사를 확인한 인물 대화입니다. 휴식 안내문·독백과 구조적으로 확인한 활동의 고정 반응은 자동 안내에서 제외합니다. 1회성을 뜻하지 않습니다.\n첫 선택뿐 아니라 해당 대화에 이르는 내부 분기 조건을 현재 값으로 읽습니다. 선행 상태 변경·지원하지 않는 조건·경로 누락이 있으면 진행 가능성 있음으로 표시합니다. 이는 확률이나 이야기 발생 보증이 아닙니다." };
                     if (activityOnly) result.Detail = "별도의 이야기 분기 없이 비용 확인·활동 실행·결과 응답으로 이어지는 고정 반응입니다. 자동 이야기 안내에서 제외하며 활동의 선택·실행 가능 여부를 뜻하지 않습니다.";
                     if (currentBlocked)
-                        result.Detail += "\n현재 필수 진입 조건이 미충족하여 자동 안내에서 제외합니다. 현재 값 기준의 표시 판정이며 진입 뒤 상태 변경이나 미래 실행 불가를 증명하지 않습니다.";
+                        result.Detail += "\n현재 값의 필수 조건은 미충족입니다. 지도 경로 툴팁은 진입 후 가상 값을 별도로 확인하므로 아래 진입 후 진단과 구분합니다. 미래 실행 불가를 증명하지 않습니다.";
                     if (detailed)
                     {
                         var lines = new List<string>();
@@ -677,7 +677,8 @@ namespace DiceMaster.Information
                         {
                             diagnosticBudget--;
                             result.Detail += "\n현재 필수 조건 표본 (후속 상태/최종 실행 보증 아님):\n" +
-                                PreviewConditions.DescribeCurrent(captured.CurrentPrerequisite);
+                                PreviewConditions.DescribeCurrent(captured.CurrentPrerequisite) + "\n" +
+                                PreviewConditions.DescribePositionEntry(captured.CurrentPrerequisite, Read(controller, "_positionData"));
                         }
                         if (captured.Omitted) result.Detail += "\n경로 상한으로 일부 연결은 생략했습니다.";
                     }

@@ -154,6 +154,8 @@ static class Program {
    using(var free=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed","Mortal.Free.dll"))) {
     Check(free.MainModule.GetType("Mortal.Free.FreePositionData").Fields.Single(x=>x.Name=="_conditionFlags").FieldType.FullName=="Mortal.Free.PositionConditionFlagItem[]","supplied actual activity entry flag array metadata is pinned");
     Check(free.MainModule.GetType("Mortal.Free.PositionFlagItem").Methods.Single(x=>x.Name=="Setup").Body.Instructions.Count(x=>x.OpCode.Code==Mono.Cecil.Cil.Code.Stfld&&x.Operand is FieldReference f&&f.DeclaringType.FullName=="Mortal.Core.FlagData"&&f.Name=="State")==2,"supplied actual entry flag setup mutates both true and false outcomes");
+    foreach(var spec in new[]{("Mortal.Free.PositionConditionFlagItem","_condition","Mortal.Core.ConditionResultItem"),("Mortal.Free.PositionConditionFlagItem","_flagItem","Mortal.Free.PositionFlagItem[]"),("Mortal.Free.PositionFlagItem","_flagData","Mortal.Core.FlagData"),("Mortal.Free.PositionFlagItem","_trueState","System.Int32"),("Mortal.Free.PositionFlagItem","_falseState","System.Int32")})
+     Check(free.MainModule.GetType(spec.Item1).Fields.Single(x=>x.Name==spec.Item2).FieldType.FullName==spec.Item3,"actual entry projection metadata matches "+spec.Item1+"."+spec.Item2);
    }
    foreach(string typeName in new[]{"DiceMaster.Information.MapInformationPatches","DiceMaster.Information.OptionInformationPatches","DiceMaster.Information.ChoiceStoryPatches"}) {
     var root=m.GetType(typeName);var install=root.Methods.Single(x=>x.Name=="Install");
@@ -215,6 +217,15 @@ static class Program {
      Check(!((call.DeclaringType.Namespace.StartsWith("Mortal.")||call.DeclaringType.Namespace.StartsWith("Fungus")||call.DeclaringType.Namespace.StartsWith("UnityEngine"))&&forbidden.Contains(call.Name)),"delivered map/choice IL does not invoke game or input mutation "+call.FullName);
   }
   var anchors=m.GetType("DiceMaster.Information.InformationAnchors");
+  var backend=m.GetType("DiceMaster.LiveLog.PreviewConditions");
+  foreach(var method in DeepTypes(backend).SelectMany(x=>x.Methods).Where(x=>x.HasBody))
+   foreach(var instruction in method.Body.Instructions) {
+    if(instruction.Operand is MethodReference call)
+     Check(!(call.DeclaringType.Namespace.StartsWith("Mortal.")&&(forbidden.Contains(call.Name)||call.Name=="Setup"||call.Name=="set_State"))&&call.Name!="SetValue","delivered private entry backend calls no game evaluator/setup or reflected field write: "+call.FullName);
+    if(instruction.OpCode.Code==Mono.Cecil.Cil.Code.Stfld&&instruction.Operand is FieldReference field)
+     Check(!field.DeclaringType.Namespace.StartsWith("Mortal."),"delivered private entry backend writes no game field: "+field.FullName);
+   }
+  Check(m.GetType("DiceMaster.Information.MapRouteRead").Methods.Single(x=>x.Name=="ForSelectedPlace").Body.Instructions.Any(x=>x.Operand is MethodReference call&&call.Name=="ProjectPositionEntry"),"delivered selected-place guidance calls the read-only entry projector");
   Check(anchors.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="Raycast"&&x.Name!="SetValue"),"delivered geometry has no scene-wide scans, raycasts, or reflected field writes");
   var markerRead=m.GetType("DiceMaster.Information.MapGuideSource").Methods.Single(x=>x.Name=="ReadMarkers");
   Check(markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="GetSource"&&x.Name!="AdvanceBudgeted"&&x.Name!="GetTextFromResources"),"delivered global marker pass cannot start source loading or route preparation");

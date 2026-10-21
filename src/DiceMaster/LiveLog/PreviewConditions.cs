@@ -253,9 +253,9 @@ namespace DiceMaster.LiveLog
         {
             private readonly Snapshot snapshot;
             internal Reader(bool projectTalkResets = false) { snapshot = new Snapshot(false, projectTalkResets); }
-            // Selected-place research only. Entry conditions are never run;
-            // every flag they could write is treated as an unknown input.
-            internal bool MaskPositionEntry(object data) { snapshot.MaskPositionEntry(data); return snapshot.EntryBoundaryKnown; }
+            // Selected-place guidance only. Interpret serialized entry checks
+            // into this read's private values; never execute a game evaluator.
+            internal bool ProjectPositionEntry(object data) { snapshot.ProjectPositionEntry(data); return snapshot.EntryBoundaryKnown; }
             internal bool HasUnresolvedEntrySwitch(PreviewCondition condition)
             { try { return snapshot.UnresolvedEntrySwitch(condition, 0); } catch (Exception) { return true; } }
             public bool AreFlagWritesDisjoint(PreviewCondition condition, IEnumerable<string> flagWrites)
@@ -306,6 +306,15 @@ namespace DiceMaster.LiveLog
         { return DescribeSample(condition, false); }
         public static string DescribeRouteCurrent(PreviewCondition condition)
         { return "후속 경로 가상 조회: 확인된 대화 초기화 기본값만 반영 · 게임 상태 유지\n" + DescribeSample(condition, true); }
+        public static string DescribePositionEntry(PreviewCondition condition, object data)
+        {
+            var sample = new Snapshot(true, true); bool? result = null;
+            sample.ProjectPositionEntry(data);
+            try { if (sample.EntryBoundaryKnown) result = Snapshot.Truth(sample.Value(condition, 0)); }
+            catch (Exception) { sample.Trace("읽기 제한/미지원 자료 · 판정 미확정"); }
+            return "진입 후 가상 조건 진단: " + (!result.HasValue ? "미확정" : result.Value ? "충족" : "미충족") +
+                " · 게임 상태 유지\n" + sample.Diagnostics;
+        }
         private static string DescribeSample(PreviewCondition condition, bool projectTalkResets)
         {
             var sample = new Snapshot(true, projectTalkResets); bool? result = null;
@@ -370,8 +379,9 @@ namespace DiceMaster.LiveLog
             private bool setsAfterTalkReset;
             private HashSet<object> maskedTalkFlags, talkFlags;
             private bool maskAllFlagInputs, talkFootprintRead, talkFootprintKnown;
-            private HashSet<object> entryWrites;
-            private bool entryUnknown, enteringPlace;
+            private Dictionary<object, int?> entryValues;
+            private bool entryUnknown, enteringPlace, projectingEntry, entryReadFailed;
+            private int entryReadLimit;
             internal bool EntryBoundaryKnown { get { return !entryUnknown; } }
             private readonly Dictionary<object, int> resetDefaults;
             private sealed class DefinitionIndex
@@ -380,9 +390,10 @@ namespace DiceMaster.LiveLog
                 internal readonly Dictionary<string, object> Values = new Dictionary<string, object>(StringComparer.Ordinal);
             }
             private readonly Dictionary<object, DefinitionIndex> definitions;
-            internal void MaskPositionEntry(object data)
+            internal void ProjectPositionEntry(object data)
             {
-                enteringPlace = entryUnknown = true; entryWrites = null;
+                entryUnknown = true; enteringPlace = false; entryValues = null; entryReadFailed = false;
+                entryReadLimit = Math.Min(16384, work + 2048);
                 try
                 {
                     Exact(data, "Mortal.Free.FreePositionData");
@@ -393,6 +404,7 @@ namespace DiceMaster.LiveLog
                     foreach (object group in groups)
                     {
                         Step(); Exact(group, "Mortal.Free.PositionConditionFlagItem");
+                        Exact(Field(group, "_condition"), "Mortal.Core.ConditionResultItem");
                         Array items = Field(group, "_flagItem") as Array;
                         if (items == null || items.Rank != 1 || items.Length > 32 ||
                             items.GetType().GetElementType().FullName != "Mortal.Free.PositionFlagItem") return;
@@ -401,14 +413,52 @@ namespace DiceMaster.LiveLog
                             if (++count > 32) return;
                             Step(); Exact(item, "Mortal.Free.PositionFlagItem");
                             object flag = Field(item, "_flagData"); Exact(flag, "Mortal.Core.FlagData"); flags.Add(flag);
+                            if (!(Field(item, "_trueState") is int) || !(Field(item, "_falseState") is int)) return;
                         }
                     }
-                    entryWrites = flags; entryUnknown = false;
+                    // Validate the complete write footprint before reading a
+                    // condition. A malformed suffix cannot leave a trusted prefix.
+                    if (flags.Count == 0) { entryUnknown = false; return; }
+                    entryValues = new Dictionary<object, int?>(new Identity());
+                    projectingEntry = true;
+                    int ordinal = 0;
+                    foreach (object group in groups)
+                    {
+                        Step();
+                        // Native Setup checks once, then assigns all members.
+                        // Each later group observes earlier private assignments.
+                        bool? state = ReadCondition(Field(group, "_condition"), 0);
+                        if (entryReadFailed) throw new InvalidOperationException("Unreadable position entry predicate.");
+                        if (work > entryReadLimit) throw new InvalidOperationException("Position entry read limit.");
+                        if (diagnostics != null) Trace("진입 조건 " + (++ordinal) + ": " +
+                            (!state.HasValue ? "미확정" : state.Value ? "충족" : "미충족"));
+                        foreach (object item in (Array)Field(group, "_flagItem"))
+                        {
+                            Step(); object flag = Field(item, "_flagData");
+                            int yes = (int)Field(item, "_trueState"), no = (int)Field(item, "_falseState");
+                            int? value = state.HasValue ? (state.Value ? yes : no) : yes == no ? (int?)yes : null;
+                            entryValues[flag] = value;
+                            if (diagnostics != null) Trace("진입 가상 플래그 " + Name(flag) + " = " +
+                                (value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "?") + " · 실제 상태 유지");
+                        }
+                    }
+                    entryUnknown = false;
                 }
-                catch (Exception) { }
+                catch (Exception) { Trace("진입 설정/읽기 한도 확인 실패 · 안내 보류"); }
+                finally
+                {
+                    projectingEntry = false; enteringPlace = true; entryReadLimit = 0;
+                    if (entryUnknown) { entryValues = null; Trace("진입 처리 전체를 확인하지 못함 · 가상 값 사용 중단"); }
+                }
             }
             private sealed class AffectedInput : Exception { }
-            private void Step() { if (++work > 16384) throw new InvalidOperationException("Preview condition read limit."); }
+            private sealed class EntryReadLimit : Exception { }
+            private void Step()
+            {
+                ++work;
+                if (entryReadLimit != 0 && work > entryReadLimit) throw new EntryReadLimit();
+                if (work > 16384) throw new InvalidOperationException("Preview condition read limit.");
+            }
             internal bool? FlagWritesDisjoint(PreviewCondition node, HashSet<string> flags, IDictionary<string, int> sets, bool afterTalkReset)
             {
                 HashSet<string> previous = maskedFlags;
@@ -768,7 +818,8 @@ namespace DiceMaster.LiveLog
                     }
                     return unknown ? (bool?)null : logic == 0;
                 }
-                catch (Exception) { return null; }
+                catch (EntryReadLimit) { throw; }
+                catch (Exception) { if (projectingEntry) entryReadFailed = true; return null; }
                 finally { if (entered) active.Remove(value); }
             }
             private bool? ReadComparison(object value, int depth)
@@ -794,9 +845,12 @@ namespace DiceMaster.LiveLog
                         default: return null;
                     }
                 }
+                // Entry work exhaustion aborts the entire forecast instead of
+                // spending another caught exception on every remaining value.
+                catch (EntryReadLimit) { throw; }
                 // A random, affected or malformed comparison is one unknown
                 // operand. It must not hide a separate false AND / true OR.
-                catch (Exception) { return null; }
+                catch (Exception) { if (projectingEntry) entryReadFailed = true; return null; }
             }
             private int? ReadNumberGroup(object value, int depth)
             {
@@ -824,7 +878,8 @@ namespace DiceMaster.LiveLog
                     }
                     return unknown ? (int?)null : total;
                 }
-                catch (Exception) { return null; }
+                catch (EntryReadLimit) { throw; }
+                catch (Exception) { if (projectingEntry) entryReadFailed = true; return null; }
                 finally { if (entered) active.Remove(value); }
             }
             private int? ReadNumberReference(object value, int depth)
@@ -864,6 +919,12 @@ namespace DiceMaster.LiveLog
                             if (diagnostics != null) Trace("대화 초기화 기본값 " + Name(flag) + " = " + resetValue.ToString(CultureInfo.InvariantCulture) + " · 가상 조회 (게임 상태 유지)");
                             return unchecked(resetValue * ((bool)Field(value, "_negative") ? -1 : 1));
                         }
+                        int? projected;
+                        if ((!entryUnknown || projectingEntry) && entryValues != null && entryValues.TryGetValue(flag, out projected))
+                        {
+                            if (!projected.HasValue) throw new AffectedInput();
+                            return unchecked(projected.Value * ((bool)Field(value, "_negative") ? -1 : 1));
+                        }
                     }
                     ValidateReference(value, depth);
                     int number = SafeDisplayEvaluation.ReadReference(value);
@@ -874,8 +935,9 @@ namespace DiceMaster.LiveLog
                     }
                     return number;
                 }
+                catch (EntryReadLimit) { throw; }
                 catch (AffectedInput) { Trace("선행 쓰기/대화 초기화 영향 · 이전 값으로 확정하지 않음"); return null; }
-                catch (Exception) { Trace("미지원/읽기 제한 값 · 미확정"); return null; }
+                catch (Exception) { if (projectingEntry) entryReadFailed = true; Trace("미지원/읽기 제한 값 · 미확정"); return null; }
                 finally { if (entered) active.Remove(value); }
             }
             private void Enter(object value, int depth)
@@ -985,7 +1047,13 @@ namespace DiceMaster.LiveLog
                             {
                                 case "Mortal.Core.GameStatConvertData": case "Mortal.Core.GameStatRateConvertData":
                                     ValidateStat(Field(conversion, "_statData"), depth + 1); break;
-                                case "Mortal.Core.FlagDataRateConvertData": ValidateFlag(Field(conversion, "_flagData")); break;
+                                case "Mortal.Core.FlagDataRateConvertData":
+                                    object input = Field(conversion, "_flagData"); ValidateFlag(input);
+                                    // Its native getter still reads real State;
+                                    // direct virtual flag reads above are the
+                                    // only supported substitution boundary.
+                                    if (entryValues != null && entryValues.ContainsKey(input)) throw new AffectedInput();
+                                    break;
                                 case "Mortal.Core.BookLevelStatConvertData": Exact(Field(conversion, "_book"), "Mortal.Core.Book"); break;
                                 case "Mortal.Core.UpgradeItemStatConvertData": Exact(Field(conversion, "_statData"), "Mortal.Core.UpgradeItemData"); break;
                                 default: throw new UnsupportedDisplayStatException();
@@ -998,7 +1066,9 @@ namespace DiceMaster.LiveLog
             private void ValidateFlag(object value)
             {
                 Exact(value, "Mortal.Core.FlagData");
-                if (entryUnknown || entryWrites != null && entryWrites.Contains(value)) throw new AffectedInput();
+                if (entryUnknown && !projectingEntry) throw new AffectedInput();
+                int? projected;
+                if (entryValues != null && entryValues.TryGetValue(value, out projected) && !projected.HasValue) throw new AffectedInput();
                 if (maskAllFlagInputs || maskedTalkFlags != null && maskedTalkFlags.Contains(value)) throw new AffectedInput();
                 if (maskedFlags == null || maskedFlags.Count == 0) return;
                 string name = Name(value);
@@ -1015,7 +1085,8 @@ namespace DiceMaster.LiveLog
                         if (!talkFootprintKnown) throw new InvalidOperationException("Talk reset dependency is unavailable.");
                         if (talkFlags.Contains(value)) throw new AffectedInput();
                     }
-                    if (FlagState(value) == constant) return;
+                    if (entryValues != null && entryValues.TryGetValue(value, out projected)
+                        ? projected.HasValue && projected.Value == constant : FlagState(value) == constant) return;
                 }
                 throw new AffectedInput();
             }

@@ -35,9 +35,12 @@ internal static partial class Program
         persistent.State = 1; value = (MapGuideSnapshot)MapGuideSource.Discover(true, false)[0].Read();
         Check(!value.Summary.AutoText.Contains("경로 후보", StringComparison.Ordinal), "a locked persistent prerequisite removes the selected-place route");
         persistent.State = 0;
-        controller._positionData._conditionFlags = new[] { new PositionConditionFlagItem { _flagItem = new[] { new PositionFlagItem { _flagData = persistent } } } };
+        // A readable unknown condition, not a malformed null native object.
+        var random = IsZero(new FlagData()); random._items[0]._value1._value[0]._checkType = 7;
+        controller._positionData._conditionFlags = new[] { new PositionConditionFlagItem { _condition = random,
+            _flagItem = new[] { new PositionFlagItem { _flagData = persistent, _trueState = 0, _falseState = 1 } } } };
         value = (MapGuideSnapshot)MapGuideSource.Discover(true, false)[0].Read();
-        Check(!value.Summary.AutoText.Contains("경로 후보", StringComparison.Ordinal), "an entry-written unlock is unknown even when its present value passes; entry conditions are not executed");
+        Check(!value.Summary.AutoText.Contains("경로 후보", StringComparison.Ordinal), "an unresolved entry assignment stays unknown even when its present value passes; RNG and conditions are not executed");
         controller._positionData._conditionFlags[0]._flagItem[0]._flagData = new FlagData { name = "unrelated_visit" };
         value = (MapGuideSnapshot)MapGuideSource.Discover(true, false)[0].Read();
         Check(value.Summary.AutoText.Contains("경로 후보", StringComparison.Ordinal), "proven disjoint entry writes do not hide an otherwise verified route");

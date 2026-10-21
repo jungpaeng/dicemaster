@@ -1,5 +1,10 @@
 # 변경 이력
 
+## v1.0.7-alpha.27 후보 — 지도 진입 후 대화 조건
+
+- 장소가 클릭될 때 설정하는 플래그를 조회용 가상 값으로 반영해 현재0/진입후1인 대화 경로도 지도에서 확인한다. 실제 상태의 임시 변경·복원이나 게임 조건/RNG 호출은 없다.
+- 순서가 있는 진입 대입·미확정·상한을 구분하고 로그에 현재 값/진입 후 가상 진단을 함께 제공한다. 기존 마커·해금/완료/반복 활동·입력·0.25초/5초를 유지하며 cfg 변경은 없다. [설계·측정](docs/ISSUE-6-POSITION-ENTRY-PROJECTION.md) · [후보·Windows 대기](docs/ISSUE-6-ALPHA27-RELEASE.md).
+
 ## [v1.0.7-alpha.26](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.26) — 2026-10-22 (prerelease)
 
 <!-- alpha26-publication -->

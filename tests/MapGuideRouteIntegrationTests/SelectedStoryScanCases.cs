@@ -142,6 +142,13 @@ internal static partial class Program
             files[item.GetProperty("name").GetString()] = (item.GetProperty("path").GetString(), item.GetProperty("sha256").GetString());
         var manager = CheckPointManager.Instance; var switches = new SwitchResultConfig(); manager._switchList = new object[] { switches };
         var flags = new Dictionary<string, FlagData>(); var reset = new FlagCollectionData();
+        // Match the reported pre-entry value/guard, while the serialized entry
+        // assignment itself remains an explicit synthetic boundary.
+        var entryFlag = new FlagData { name = "Talk_Brother4", State = 0 };
+        var entryDriver = new FlagData { name = "native_entry_fixture", State = 0 };
+        flags.Add(entryFlag.name, entryFlag);
+        manager._condition._list.Add(new ConditionResultData { name = entryFlag.name,
+            _items = new List<ConditionResultItem> { FlagEquals(entryFlag, 1) } });
         var lua = new MoonSharp.Interpreter.Script();
         lua.m_GlobalTable.Values["statmodifymanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new StatModifyManager { _talkOptionFlag = reset }) };
         observedTalkEnvironment = new Fungus.LuaEnvironment(lua); PreviewConditions.ObserveLuaEnvironment(observedTalkEnvironment);
@@ -169,17 +176,23 @@ internal static partial class Program
             { string name = match.Groups[1].Value; if (!manager._position._list.Exists(item => item.name == name)) manager._position._list.Add(new PositionResultData { name = name }); }
             return new ScriptReadResult { State = ScriptReadState.Success, Text = body };
         };
-        var control = new PositionController { _positionData = new FreePositionData { name = "OriginalRoom", _defaultScript = "room_001" } };
+        var control = new PositionController { _positionData = new FreePositionData { name = "OriginalRoom", _defaultScript = "room_001",
+            _conditionFlags = new[] { Assign(IsZero(entryDriver), entryFlag, 1, 0) } } };
         MapGuideSource.Select(control); MapGuideSnapshot value = null; bool introduction = false;
         for (int at = 0; at < 200; at++) { value = ScanRead(); introduction |= value.Summary.AutoText.Contains("경로 후보: talk+talk+brother4 ·", StringComparison.Ordinal); }
-        Check(introduction && !value.Summary.Opportunity, "SHA-original room introduction appears on the selected map without a new marker");
+        Check(introduction && !value.Summary.Opportunity && entryFlag.State == 0 && entryFlag.StateWrites == 1,
+            "SHA-original room introduction appears with the reported 0 != 1 current gate and a private entry forecast, without a marker or real flag write");
         switches._list.Find(item => item.name == "Talk_Brother4_00")._count = 1;
         bool later = false;
         for (int at = 0; at < 80; at++) { value = ScanRead(); later |= value.Summary.AutoText.Contains("O_Talk_Brother4_014", StringComparison.Ordinal); }
         Check(later, "original completed-introduction -> later unlocked descendant reaches the map under unchanged path/read caps");
+        entryDriver.State = 1;
+        Check(!ScanRead().Summary.AutoText.Contains("경로 후보", StringComparison.Ordinal), "original map path closes when the synthetic entry condition becomes false");
+        entryDriver.State = 0;
+        for (int at = 0; at < 80; at++) value = ScanRead();
         flags["Talk_Brother4_02_06"]._default = 1;
         Check(!ScanRead().Summary.AutoText.Contains("O_Talk_Brother4_014", StringComparison.Ordinal), "locking the original descendant removes the preferred tooltip on the next query");
-        Check(Counters.GameCalls == 0 && switches._list.Find(item => item.name == "Talk_Brother4_00")._count == 1 && flags["Talk_Brother4_02_06"].State == 1,
+        Check(Counters.GameCalls == 0 && switches._list.Find(item => item.name == "Talk_Brother4_00")._count == 1 && flags["Talk_Brother4_02_06"].State == 1 && entryFlag.State == 0 && entryFlag.StateWrites == 1,
             "original Lua with explicit synthetic predicates executes no Lua/native game and mutates no condition, reset or count");
         DataHelper.ExternalReader = null; PreviewConditions.ObserveLuaEnvironment(null); observedTalkEnvironment = null;
     }

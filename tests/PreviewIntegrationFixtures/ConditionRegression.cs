@@ -555,8 +555,8 @@ namespace Mortal.Core
     public class FlagData : UnityEngine.Object
     {
         private int state;
-        public int _default, StateReads;
-        public int State { get { StateReads++; return state; } set { state = value; } }
+        public int _default, StateReads, StateWrites;
+        public int State { get { StateReads++; return state; } set { StateWrites++; state = value; } }
     }
     public class FlagCollectionData
     {

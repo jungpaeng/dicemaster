@@ -28,7 +28,7 @@ namespace DiceMaster.Information
         internal static MapRouteRead ForSelectedPlace(object data)
         {
             var read = new MapRouteRead(true);
-            return read.EnsureReader().MaskPositionEntry(data) ? read : null;
+            return read.EnsureReader().ProjectPositionEntry(data) ? read : null;
         }
         private PreviewConditions.Reader EnsureReader()
         { return reader ?? (reader = projectTalkResets ? PreviewConditions.CreateRouteReader() : PreviewConditions.CreateReader()); }
