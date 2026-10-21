@@ -735,7 +735,7 @@ static class Program
         Check(!resolver.Methods.SelectMany(Calls).Any(c => c.Name.StartsWith("set_") || c.Name == "OnControlsChanged"), "mode resolver never forces game control scheme");
         Check(module.AssemblyReferences.All(r => r.Name != "Unity.InputSystem"), "read-only mode reflection adds no unpinned assembly reference");
         var resources = module.Resources.OfType<EmbeddedResource>().ToArray();
-        Check(resources.Length == 8 && resources.All(r => r.Name.StartsWith("DiceMaster.")), "only eight existing mod resources embedded");
+        Check(resources.Length == 9 && resources.All(r => r.Name.StartsWith("DiceMaster.")), "eight existing mod resources plus one reviewed story image embedded");
         Check(!resources.Any(r => r.Name.Contains("Mortal.Core") || r.Name.Contains("Mortal.Story")), "game DLLs are not embedded");
         var preservedResources = new Dictionary<string, string> {
             ["DiceMaster.Assets.mortaldice"] = "5cb5c10adea77234bbef4f8f348514526c9765e9c45fe2b4e8d3c334ecfc0ff6",
@@ -745,11 +745,12 @@ static class Program
             ["DiceMaster.Translations.ModTranslation.txt"] = "7441c94d83df9f2ebe6ecdfe0489c752afe7ebeadc7b28ae6d15aca460acf5eb",
             ["DiceMaster.Translations.Pairs"] = "172489a3a34fd27d93410b71b23dcfeb6d597723e5d2e0f4878eef464899ec00",
             ["DiceMaster.Translations.TriggerTranslation1.0.5v.txt"] = "a528b4740da8fe1fd5218e50d8113720306ea1db21b959b0ab1545c13587dbd4",
-            ["DiceMaster.Translations._Substitutions.txt"] = "640d5fc2a5fae476b766c5b59481a10e7e7d68a605557485f5bf2277e6569909"
+            ["DiceMaster.Translations._Substitutions.txt"] = "640d5fc2a5fae476b766c5b59481a10e7e7d68a605557485f5bf2277e6569909",
+            ["DiceMaster.StoryBadge.rgba"] = "7c1d1a69b8370b5326e118d0902d9bce485d02ffbcb70464e8edb0214cab25f9"
         };
         foreach (var resource in resources)
             Check(Convert.ToHexString(SHA256.HashData(resource.GetResourceData())).Equals(preservedResources[resource.Name], StringComparison.OrdinalIgnoreCase),
-                "PRD 2 resource bytes preserved: " + resource.Name);
+                "legacy resource bytes preserved and reviewed badge bytes verified: " + resource.Name);
         Console.WriteLine($"PASS: {checks} actual candidate GUI/publication/input wiring and package boundary assertions; Unity/native/Windows execution remains untested.");
     }
 }

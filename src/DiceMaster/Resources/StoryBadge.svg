@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Original DiceMaster artwork. Kept as vectors for editing; no font glyphs. -->
+  <circle cx="32" cy="32" r="29" fill="#211b13" fill-opacity=".94" stroke="#e3c17c" stroke-width="2"/>
+  <circle cx="32" cy="32" r="25.5" fill="none" stroke="#a98445" stroke-opacity=".6" stroke-width="1"/>
+  <g stroke="#efd397" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 18h21a4 4 0 0 1 0 8h-3v19H22a4 4 0 0 1 0-8h3V22a4 4 0 0 0-8 0v3h8" fill="#4b3b22"/>
+    <path d="M25 18a4 4 0 0 1 0 8m15 0h3m-18 11h15m-18 0a4 4 0 0 1 0 8" fill="none"/>
+    <path d="M29 29h6m-6 5h6" fill="none" stroke-width="2"/>
+  </g>
+</svg>

@@ -114,7 +114,12 @@ static class LogRefreshTests
         var update = Find(module, "DiceMaster.DicePlugin", "Update");
         Check(update.Body.Instructions.Count(i => i.Operand is MethodReference r && r.Name == "RefreshLiveLogDisplay") == 1, "Live hook missing or duplicated");
         Check(update.Body.Instructions.Count(i => i.Operand is MethodReference r && r.Name == "UpdateGamepad") == 1, "Gamepad hook missing or duplicated");
-        Check(module.Resources.Count == 8, "Embedded resources changed");
+        Check(module.Resources.Select(resource => resource.Name).OrderBy(name => name).SequenceEqual(new[] {
+            "DiceMaster.Assets.mortaldice", "DiceMaster.Translations.ModTranslation.txt", "DiceMaster.Translations.Pairs",
+            "DiceMaster.Translations.TriggerTranslation1.0.5v.txt", "DiceMaster.Translations._Substitutions.txt",
+            "DiceMaster.Gamepad.Native.MinHook.x64.dll", "DiceMaster.Gamepad.Native.MinHook.x86.dll",
+            "DiceMaster.Gamepad.Native.LICENSE.txt", "DiceMaster.StoryBadge.rgba"
+        }.OrderBy(name => name)), "Exact legacy resources plus the reviewed story badge image are embedded");
 
         string output = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1]))!, "LogRefreshFixtures.patched.dll");
         using (var fixtures = AssemblyDefinition.ReadAssembly(args[1]))

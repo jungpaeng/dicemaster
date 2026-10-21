@@ -14,6 +14,7 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
     <!-- Gamepad and LiveLog are canonical sources within this single assembly. -->
     <EmbeddedResource Include="Resources/DiceMaster.Assets.mortaldice" LogicalName="DiceMaster.Assets.mortaldice" Access="Public" />
+    <EmbeddedResource Include="Resources/StoryBadge.rgba" LogicalName="DiceMaster.StoryBadge.rgba" Access="Private" />
     <EmbeddedResource Include="Resources/DiceMaster.Translations.*" LogicalName="%(Filename)%(Extension)" Access="Private" />
     <EmbeddedResource Include="Resources/native/MinHook.x64.dll" LogicalName="DiceMaster.Gamepad.Native.MinHook.x64.dll" Access="Private" />
     <EmbeddedResource Include="Resources/native/MinHook.x86.dll" LogicalName="DiceMaster.Gamepad.Native.MinHook.x86.dll" Access="Private" />

@@ -45,8 +45,7 @@ namespace DiceMaster.Information
         }
         private static GUIStyle informationStyle;
         private static int informationFont;
-        private static GUIStyle badgeStyle;
-        private static readonly GUIContent badgeContent = new GUIContent("●");
+        private static int badgeSize;
         private static readonly InformationFocus mapFocus = new InformationFocus(), choiceFocus = new InformationFocus();
         private static readonly List<InformationRow> mapFocusRows = new List<InformationRow>();
         private static readonly PassiveLabel mapLabel = new PassiveLabel(), branchLabel = new PassiveLabel(), choiceLabel = new PassiveLabel();
@@ -107,9 +106,8 @@ namespace DiceMaster.Information
             if (informationStyle == null || informationFont != font)
             {
                 informationFont = font; informationStyle = new GUIStyle(GUI.skin.box) { fontSize = font, wordWrap = true, richText = false, alignment = TextAnchor.UpperLeft };
-                badgeStyle = new GUIStyle(GUI.skin.label) { fontSize = font, alignment = TextAnchor.MiddleCenter, richText = false, wordWrap = false };
-                badgeStyle.normal.textColor = new Color(1f, .25f, .25f);
             }
+            badgeSize = Math.Min(28, Math.Max(20, font + 4));
             mapFocusRows.Clear();
             if (markerSnapshot != null) foreach (InformationRow row in markerSnapshot.Entries)
                 if (selected == null || !ReferenceEquals(row.Anchor, selected.Anchor)) mapFocusRows.Add(row);
@@ -117,9 +115,9 @@ namespace DiceMaster.Information
             InformationRow mapNative = null;
             foreach (InformationRow row in mapFocusRows) if (InformationAnchors.IsFocused(row.Anchor)) { mapNative = row; break; }
             if (mapNative == null) mapNative = selected;
-            InformationRow mapCurrent = Focused(mapFocusRows, mapNative, mapFocus);
+            InformationRow mapCurrent = Focused(mapFocusRows, mapNative, mapFocus, true);
             foreach (InformationRow row in mapFocusRows)
-                if (row.Opportunity && (!ReferenceEquals(row, selected) || status.Length == 0)) DrawBadge(row);
+                if (row.Opportunity && (!ReferenceEquals(row, selected) || status.Length == 0)) DrawBadge(row, true);
             if (mapCurrent != null && !string.IsNullOrEmpty(mapCurrent.AutoText))
             {
                 string currentStatus = ReferenceEquals(mapCurrent, selected) ? status : "";
@@ -134,12 +132,12 @@ namespace DiceMaster.Information
                 // Only the exact positive entry status is green. Mixed rows,
                 // headings and stale publications keep their neutral color.
                 Rect anchor;
-                if (InformationAnchors.TryRect(mapCurrent.Anchor, out anchor)) DrawPassive(mapLabel, mapText, false, default(Rect), false, true, anchor);
+                if (InformationAnchors.TryRect(mapCurrent.Anchor, out anchor)) DrawPassive(mapLabel, mapText, false, default(Rect), false, true, NoticeAnchor(anchor, mapCurrent.Opportunity && currentStatus.Length == 0, true));
             }
             if (choice != null)
             {
-                InformationRow current = Focused(choice.Entries, ChoiceStorySource.CurrentRow(choice), choiceFocus);
-                if (choiceStatus.Length == 0) foreach (InformationRow row in choice.Entries) if (row.Opportunity) DrawBadge(row);
+                InformationRow current = Focused(choice.Entries, ChoiceStorySource.CurrentRow(choice), choiceFocus, false);
+                if (choiceStatus.Length == 0) foreach (InformationRow row in choice.Entries) if (row.Opportunity) DrawBadge(row, false);
                 if (!ReferenceEquals(lastChoice, choice) || !ReferenceEquals(lastChoiceRow, current) || lastChoiceStatus != choiceStatus)
                 {
                     lastChoice = choice; lastChoiceRow = current; lastChoiceStatus = choiceStatus;
@@ -150,11 +148,11 @@ namespace DiceMaster.Information
                     choiceText = EntryConditionColors(string.Join("\n", lines), choiceStatus.Length == 0);
                 }
                 Rect anchor;
-                if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, anchor);
+                if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, NoticeAnchor(anchor, current.Opportunity && choiceStatus.Length == 0, false));
             }
             if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available);
         }
-        private static InformationRow Focused(IList<InformationRow> rows, InformationRow native, InformationFocus focus)
+        private static InformationRow Focused(IList<InformationRow> rows, InformationRow native, InformationFocus focus, bool map)
         {
             var ev = Event.current;
             Vector2 pointer = ev == null ? default(Vector2) : ev.mousePosition;
@@ -163,16 +161,20 @@ namespace DiceMaster.Information
             foreach (InformationRow row in rows)
             {
                 Rect anchor;
-                if (row.Anchor == null || !InformationAnchors.TryRect(row.Anchor, out anchor)) continue;
-                if (anchor.Contains(pointer) || row.Opportunity && InformationLayout.Badge(anchor, viewport, informationFont).Contains(pointer)) return row;
+                if (row.Anchor == null || !InformationAnchors.IsInteractive(row.Anchor) || !InformationAnchors.TryRect(row.Anchor, out anchor)) continue;
+                if (anchor.Contains(pointer) || row.Opportunity && InformationLayout.Badge(anchor, viewport, badgeSize, map).Contains(pointer)) return row;
             }
             return null;
         }
-        private static void DrawBadge(InformationRow row)
+        private static Rect NoticeAnchor(Rect anchor, bool opportunity, bool map)
+        { return opportunity ? InformationLayout.IncludingBadge(anchor, InformationLayout.Badge(anchor, new Rect(0, 0, Screen.width, Screen.height), badgeSize, map)) : anchor; }
+        private static void DrawBadge(InformationRow row, bool map)
         {
             Rect anchor;
             if (row.Anchor == null || !InformationAnchors.IsInteractive(row.Anchor) || !InformationAnchors.TryRect(row.Anchor, out anchor)) return;
-            GUI.Label(InformationLayout.Badge(anchor, new Rect(0, 0, Screen.width, Screen.height), informationFont), badgeContent, badgeStyle);
+            Rect badge = InformationLayout.Badge(anchor, new Rect(0, 0, Screen.width, Screen.height), badgeSize, map);
+            try { InformationBadge.Draw(badge, map ? InformationLayout.Stem(badge, anchor) : default(Rect)); }
+            catch (Exception error) { Failure("안내 아이콘", error); }
         }
         private static string EntryConditionColors(string text, bool current)
         {

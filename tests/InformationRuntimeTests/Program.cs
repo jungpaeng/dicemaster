@@ -145,6 +145,11 @@ static class Program {
    }
   }
   var config=m.GetType("DiceMaster.Config.ConfigManager");foreach(string key in new[]{"EnableMapGuide","EnableOneShotHints","EnableBranchNotices","EnableShopEffectInfo"})Check(config.Fields.Any(f=>f.Name==key),"delivered persistent setting "+key);
+  var badgeResource=m.Resources.OfType<EmbeddedResource>().SingleOrDefault(x=>x.Name=="DiceMaster.StoryBadge.rgba");
+  Check(badgeResource!=null&&badgeResource.GetResourceData().Length==64*64*4,"delivered DLL embeds the complete mod-owned image with no extra installation files");
+  var badgeType=m.GetType("DiceMaster.Information.InformationBadge");
+  Check(badgeType!=null&&badgeType.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.Texture2D"&&c.Name=="LoadRawTextureData")),"delivered badge uploads prepared pixels rather than relying on font or PNG decoder");
+  Check(m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name=="DrawBadge").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==badgeType.FullName&&c.Name=="Draw"),"delivered native-place and menu marker path calls the actual image renderer");
   var overlay = m.GetType("DiceMaster.Information.InformationRuntime").NestedTypes.Single(x=>x.Name=="PassiveLabel").Methods.Single(x=>x.Name=="Prepare");
   Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Place"),"delivered branch notice retains tested bounded fixed-corner layout");
   Check(overlay.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.DeclaringType.FullName=="DiceMaster.Information.InformationLayout"&&x.Name=="Near"),"delivered map/choice panel uses tested adjacent native anchor layout");

@@ -46,12 +46,16 @@ internal static partial class Program
             markers.Entries.Add(new InformationRow("marker/a", "첫 장소", "지도", "확인된 기회 2", "상세", "• 첫 임무 · 보조 임무 · 진행 가능\n• 첫 이야기 · 1회성 이야기 · 선택 후 진행 가능", first, true, true));
             markers.Entries.Add(new InformationRow("marker/b", "둘째 장소", "지도", "확인된 기회 1", "상세", "• 둘째 임무 · 보조 임무 · 진행 가능", second, true, true));
             InformationRuntime.TestMarkers(markers); Event.current = new Event { mousePosition = new Vector2(0, 0), type = EventType.Repaint };
-            void Draw() { GUI.PassiveLabels.Clear(); GUI.BadgeLabels.Clear(); InformationRuntime.Draw(false, false, default, 2000); }
+            void Draw() { GUI.PassiveLabels.Clear(); GUI.BadgeLabels.Clear(); GUI.BadgeStems.Clear(); InformationRuntime.Draw(false, false, default, 2000); }
             Draw();
+            Check(GUI.BadgeStems.Count == 2 && GUI.BadgeLabels[0].Text == "image", "map opportunities use the shared image and one short connector per place");
             Check(GUI.BadgeLabels.Count == 2 && GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("첫 장소") && GUI.PassiveLabels[0].Text.Contains("첫 이야기"), "all ready places show passive dots while only native focus reveals its multiple opportunities");
             Rect original = GUI.PassiveLabels[0].Rect; int measures = GUIStyle.Measurements;
             first.transform.position = new Vector3(150, 468, 1); Draw();
             Check(GUI.PassiveLabels[0].Rect.x == original.x + 50 && GUIStyle.Measurements == measures, "moving native anchor repositions cached text without measuring again");
+            Rect secondPin = GUI.BadgeLabels[1].Rect;
+            Event.current.mousePosition = new Vector2(secondPin.x + 10, secondPin.y + 10); Draw();
+            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("둘째 장소"), "hover uses the new top-center map pin bounds outside the native clickable area");
             Event.current.mousePosition = new Vector2(710, 410); Draw();
             Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("둘째 장소"), "moving mouse reveals another actual place beside its dot");
             system.currentSelectedGameObject = second.gameObject; Draw();
@@ -66,6 +70,7 @@ internal static partial class Program
             Check(GUI.BadgeLabels.Count == 0 && GUI.PassiveLabels.Count == 0, "logs and modals hide dots and attached descriptions");
             var choices = new ChoiceStorySnapshot(); choices.Entries.Add(markers.Entries[0]); choices.Entries.Add(new InformationRow("ordinary", "일반 대화", "연결", "진행 가능", "상세", "일반 대화 → 이야기 · 진행 가능", second, true));
             ChoiceStorySource.Current = choices; ChoiceStorySource.Selected = choices.Entries[0]; ChoiceStorySource.MenuVisible = true; InformationRuntime.TestChoices(choices); Draw();
+            Check(GUI.BadgeStems.Count == 0 && GUI.BadgeLabels[0].Rect.x > 250, "choice menu places a corner image without a map connector");
             Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 안내"), "choice screen suppresses underlying map and only confirmed choices get dots");
             ChoiceStorySource.Selected = choices.Entries[1]; Draw();
             Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("일반 대화") && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능</color>"), "ordinary confirmed dialogue remains readable in green without granting another red dot");
@@ -77,5 +82,6 @@ internal static partial class Program
             InformationRuntime.TestMarkers(null); InformationRuntime.TestMap(null); InformationRuntime.TestChoices(null); MapGuideSource.Selected = null;
             ChoiceStorySource.MenuVisible = false; ChoiceStorySource.Current = null; ChoiceStorySource.Selected = null; GUI.PassiveLabels.Clear(); GUI.BadgeLabels.Clear();
         }
+        StoryBadgeRendering();
     }
 }

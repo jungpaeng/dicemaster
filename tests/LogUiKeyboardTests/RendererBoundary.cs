@@ -104,6 +104,11 @@ namespace UnityEngine
     public sealed class GUISkin { public GUIStyle label = new GUIStyle(), button = new GUIStyle(), textField = new GUIStyle(), box = new GUIStyle(), window = new GUIStyle(), verticalScrollbar = new GUIStyle { fixedWidth = 18, margin = new RectOffset(0, 0, 0, 0) }; }
     public static class GUI
     {
+        public static Color color = Color.white;
+        public static readonly List<Rect> BadgeStems = new List<Rect>();
+        public static object WhiteTexture;
+        public static void DrawTexture(Rect rect, object image)
+        { if (ReferenceEquals(image, WhiteTexture)) BadgeStems.Add(rect); else BadgeLabels.Add((rect, "image", false)); }
         public static readonly List<(Rect Rect, string Text, bool RichText)> PassiveLabels = new List<(Rect, string, bool)>();
         public static readonly List<(Rect Rect, string Text, bool RichText)> BadgeLabels = new List<(Rect, string, bool)>();
         public static void Label(Rect rect, GUIContent content, GUIStyle style) { (content.text == "●" ? BadgeLabels : PassiveLabels).Add((rect, content.text, style.richText)); }

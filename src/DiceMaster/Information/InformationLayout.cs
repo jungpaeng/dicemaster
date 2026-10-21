@@ -28,8 +28,20 @@ namespace DiceMaster.Information
             }
             return best;
         }
-        public static Rect Badge(Rect anchor, Rect viewport, float size)
-        { return Place(new Rect(anchor.x + anchor.width - size * .25f, anchor.y - size * .75f, size, size), viewport, null); }
+        public static Rect Badge(Rect anchor, Rect viewport, float size, bool map = false)
+        { return Place(new Rect(map ? anchor.x + (anchor.width - size) * .5f : anchor.x + anchor.width - size * .25f,
+            map ? anchor.y - size - 7 : anchor.y - size * .75f, size, size), viewport, null); }
+        public static Rect Stem(Rect badge, Rect anchor)
+        {
+            float start = badge.y + badge.height, end = Math.Min(start + 7, anchor.y);
+            return end > start ? new Rect(badge.x + badge.width * .5f - .5f, start, 1, end - start) : default(Rect);
+        }
+        public static Rect IncludingBadge(Rect anchor, Rect badge)
+        {
+            float left = Math.Min(anchor.x, badge.x), top = Math.Min(anchor.y, badge.y);
+            return new Rect(left, top, Math.Max(anchor.x + anchor.width, badge.x + badge.width) - left,
+                Math.Max(anchor.y + anchor.height, badge.y + badge.height) - top);
+        }
         private static double Intersection(Rect a, Rect b)
         { return Math.Max(0, Math.Min((double)a.x + a.width, (double)b.x + b.width) - Math.Max(a.x, b.x)) * Math.Max(0, Math.Min((double)a.y + a.height, (double)b.y + b.height) - Math.Max(a.y, b.y)); }
         public static Rect Place(Rect preferred, Rect viewport, IList<Rect> occupied)

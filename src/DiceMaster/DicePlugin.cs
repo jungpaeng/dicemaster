@@ -229,6 +229,7 @@ public class DicePlugin : BaseUnityPlugin
 		EventSelectionRuntime.Invalidate("모드 종료");
 		EventSelectionRuntime.WaitingChanged = null;
 		InformationRuntime.Clear();
+		InformationBadge.Release();
 		logCursor.Release();
 		GameActionGate.SetLogState(false, false);
 		_harmony?.UnpatchSelf();

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 namespace UnityEngine
 {
-    public class Object { }
+    public class Object { public static int Destroyed; public static void Destroy(Object value) { Destroyed++; } }
     public struct Vector3 { public float x, y, z; public Vector3(float a, float b, float c) { x = a; y = b; z = c; } }
     public class Transform
     {

@@ -1,5 +1,10 @@
 # 변경 이력
 
+## v1.0.7-alpha.16 — 금색 이야기 표식 (게시 준비 중)
+
+- 붉은 글자 점을 내장 금색 두루마리 이미지로 교체합니다. 당문 장소는 상단 중앙 핀과 연결선, 선택 메뉴는 모서리 배지로 표시합니다.
+- 현재 기회 판정과 기존 포커스/입력·설정·캐시를 유지하고 이미지를 한 번 업로드해 재사용합니다. 실제 Windows 확인은 대기입니다. [범위·검증·확인표](docs/ISSUE-6-ALPHA16-RELEASE.md).
+
 ## [v1.0.7-alpha.15](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.15) — 2026-10-21 (prerelease)
 
 <!-- alpha15-publication -->
