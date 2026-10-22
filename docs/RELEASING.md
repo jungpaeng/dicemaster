@@ -1,8 +1,12 @@
 # 소스 기반 Release와 게시 이력
 
+<!-- alpha40-publication -->
+2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha40-publication -->
+
 ## alpha.40 — 최초 주사위 화면 안내 복구
 
-원래 main에서 최초 활성화의 Awake/Clear와 실제 종료를 구분했다. [alpha.40 후보·검증·게시 기록](ISSUE-6-ALPHA40-RELEASE.md). 고정 참조와 사용자 게임 복제본 DLL 연결 검사를 각각 수행하고 소스 커밋을 고정하여 DLL/cfg/ZIP·전체 입력을 다시 대조한 뒤 새 annotated tag와 main을 게시한다. 이전 릴리스·태그·자산·Latest v1.0.6·이슈 상태를 보존한다. 실제 Windows 확인과 #6 완료는 별도다.
+원래 main에서 최초 활성화의 Awake/Clear와 실제 종료를 구분했다. [alpha.40 후보·검증·게시 기록](ISSUE-6-ALPHA40-RELEASE.md). 고정 참조와 사용자 게임 복제본 DLL 연결 검사를 각각 수행하고 소스 `00744c64f226b6122f6582fbba2a1ec5b76ab31a`를 고정하여 DLL/cfg/ZIP·전체 입력을 다시 대조한 뒤 새 annotated tag와 main을 atomic push했다. prerelease·make_latest=false로 게시하고 인증 없는 공개 API/페이지/ZIP을 대조했다. 이전 릴리스·태그·자산·Latest v1.0.6·이슈 상태를 보존한다. 실제 Windows 확인과 #6 완료는 별도다.
 
 <!-- alpha39-publication -->
 2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**

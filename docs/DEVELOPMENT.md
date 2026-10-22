@@ -1,5 +1,9 @@
 # 개발 안내
 
+<!-- alpha40-publication -->
+2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha40-publication -->
+
 ## alpha.40 — 최초 주사위 화면 초기화와 실제 종료 분리
 
 `ExecuteRoll`은 IEnumerator 생성 시 인자를 먼저 관찰하지만 실제 UI 활성화는 MoveNext에서 진행된다. 제공된 게임 DLL의 `MenuDialog.Awake → Clear`가 이 사이에 호출되어 alpha.39의 소유자를 지웠다. 호출 인자는 대기 상태로 보관하고, 해당 호출의 Awake 범위만 초기화 Clear로 구분한다. 실제 `CustomMenuDialog.UpdateOptions` 완료 후 활성 소유자·현재 문맥·원본 결과 행 전체가 일치할 때 결합한다. Clear/OnDisable/불러오기/원문 변경/초기화 예외는 대기를 취소하며 늦은 갱신으로 되살리지 않는다. 초기화 예외는 원래 객체 그대로 전달한다.

@@ -1,7 +1,7 @@
 # alpha.40 — 최초 주사위 화면 안내 복구
 
 <!-- alpha40-publication -->
-2026-10-23 원래 main에서 구현·검증 중이다. **게시 준비이며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha40-publication -->
 
 ## 원인과 수정
@@ -28,7 +28,7 @@
 | 설치 ZIP | 441489 | `ccbf5174a6978a38d00b7d7a611bf6992a9a66c3c7540a6206fb179251f13f5a` |
 | 기존 cfg | 13083 | `deda801f4c061f3436732c1da6d4a3a2195dce79822dccb74846468faf9f99fd` |
 
-소스 고정 재빌드와 공개 다운로드 대조는 게시 단계에서 별도로 남긴다.
+소스 `00744c64f226b6122f6582fbba2a1ec5b76ab31a`의 고정 커밋 재빌드에서도 전체 22개 검사가 통과했다. 319개 입력·128개 생산 소스/리소스·고정 참조와 DLL/cfg/ZIP이 검토 후보와 같고 복제본 DLL도 같다. 성공 기록 21개는 정확히 같으며 MapGuideRouteIntegrationTests의 준비 루프 assertion 수만 달랐다. 같은 성공 형식/전체 의미와 양쪽 원본 기록을 보존했다. `artifacts/releases/v1.0.7-alpha.40/reviewed-candidate-comparison.json`과 고정 빌드 manifest에 기록했다.
 
 ## 설치와 실제 Windows 확인
 
@@ -38,4 +38,6 @@
 
 ## 게시
 
-새 소스 커밋 고정 재빌드와 검토 DLL/cfg/ZIP·빌드 입력 대조 후 main과 새 annotated tag만 게시한다. 이전 릴리스/태그/자산·Latest 정식 v1.0.6·#5/#6 상태를 보존한다. 게시 결과는 실제 공개 다운로드 검증 뒤 보충한다.
+2026-10-23 03:48:22 KST에 Release `421079623`·asset `666755582`를 draft=false·prerelease=true·make_latest=false로 게시했다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.40/DiceMaster-v1.0.7-alpha.40.zip)과 공개 API/페이지를 인증 없이 확인하고 ZIP 크기·SHA·두 경로·CRC·내부 DLL/cfg 바이트를 대조했다.
+
+main과 소스 `00744c64f226b6122f6582fbba2a1ec5b76ab31a`의 새 annotated tag `v1.0.7-alpha.40`만 atomic push했다. 이전 81개 Release·82개 태그·자산·Latest 정식 v1.0.6·#5 open/#6 open 상태를 보존했다. 게시 문서는 별도 main 커밋으로 보충하며 태그/산출물은 바꾸지 않는다. 게시 영수증은 `artifacts/releases/v1.0.7-alpha.40/`에 보관한다. 실제 Windows/Unity/Harmony·사용자 세이브·물리 입력·지연/FPS/GC와 #6 완료는 대기다.

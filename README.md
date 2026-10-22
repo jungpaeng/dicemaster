@@ -19,7 +19,11 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-**v1.0.7-alpha.40 후보 (2026-10-23):** 게임을 켠 뒤 처음 연 주사위 화면에서 결과별 안내가 사라지던 초기화 문제를 수정했습니다. 실제 결과 행 준비 후 안내를 연결하며, 종료·불러오기에서는 이전 안내를 정리합니다. [설치 후보·자동 검사·게시 기록](docs/ISSUE-6-ALPHA40-RELEASE.md). 게시 준비 중이며 실제 Windows 확인은 대기입니다.
+**v1.0.7-alpha.40 (2026-10-23):** 게임을 켠 뒤 처음 연 주사위 화면에서 결과별 안내가 사라지던 초기화 문제를 수정했습니다. 실제 결과 행 준비 후 안내를 연결하며, 종료·불러오기에서는 이전 안내를 정리합니다. [설치 후보·자동 검사·게시 기록](docs/ISSUE-6-ALPHA40-RELEASE.md). **[alpha.40 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.40/DiceMaster-v1.0.7-alpha.40.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 실제 Windows 확인은 대기입니다.
+
+<!-- alpha40-publication -->
+2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha40-publication -->
 
 **v1.0.7-alpha.39 (2026-10-23):** alpha.38의 우측 상단 주사위 `진행 중` 알림·결과 기록을 되돌리고, 실제 열린 주사위의 **결과 행별 이야기 연결 마커·짧은 요약**을 구현했습니다. 아이보리는 연결 후보, 어두운 금색은 현재 경로까지 확인한 등록 임무/증명 1회성입니다. 호버 없이 읽고 기존 로그 → 도구 → 지도 안내에서 상세를 조회합니다. 기존 효과·임계값을 피할 공간이 없으면 새 요약은 생략합니다. [표시·설정·한계·검사](docs/ISSUE-6-DICE-RESULT-GUIDANCE.md)
 

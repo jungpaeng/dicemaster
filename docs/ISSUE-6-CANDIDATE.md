@@ -1,5 +1,9 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+<!-- alpha40-publication -->
+2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha40-publication -->
+
 ## alpha.40 — 최초 주사위 화면과 설정
 
 최초 활성화의 초기화 때문에 사라지던 결과별 안내를 보완했다. [alpha.40 후보·검증·게시 기록](ISSUE-6-ALPHA40-RELEASE.md). `EnableMapGuide`/`EnableOneShotHints`와 상위 설정·기본값·cfg는 동일하다. 둘 다 OFF면 호출 안내/조회가 없고 준비 중 OFF에서도 분석하지 않는다. 이미 준비된 활성 화면에서 다시 ON이면 현재 인자로 복원한다. 실제 종료/OnDisable/불러오기/원문 전환/초기화 예외는 대기와 화면 소유자를 취소한다.
