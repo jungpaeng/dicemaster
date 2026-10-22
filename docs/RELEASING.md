@@ -3,10 +3,10 @@
 ## alpha.30 — 저장 불러오기 후 지도 안내 복구
 
 <!-- alpha30-publication -->
-v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 16:22:23 KST에 소스 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)의 [alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·사용자 저장·물리 입력·최초 지연/FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha30-publication -->
 
-main에서 구현·검증한 후보의 소스 커밋을 고정해 재빌드하고 검토 DLL/cfg/ZIP·전체21개 검사 기록을 대조한다. main·새 주석 태그만 atomic push하며 기존 Release·태그·자산·Latest v1.0.6·이슈 상태는 보존한다. 게시 보충은 빌드 입력을 바꾸지 않는 별도 main 문서 커밋이다. [파일·게시·검증 기록](ISSUE-6-ALPHA30-RELEASE.md).
+main에서 구현·검증한 후보의 소스 커밋을 고정해 재빌드하고 검토 DLL/cfg/ZIP·전체21개 검사 통과를 대조했다. main·새 주석 태그만 atomic push했고 기존 Release·태그·자산·Latest v1.0.6·이슈 상태를 보존했다. 게시 보충은 빌드 입력을 바꾸지 않는 별도 main 문서 커밋이다. [파일·게시·검증 기록](ISSUE-6-ALPHA30-RELEASE.md).
 
 ## alpha.29 — 밝은 대화·경로 안내 배지
 

@@ -3,7 +3,7 @@
 ## alpha.30 — 저장 지도 직행 복구·설정
 
 <!-- alpha30-publication -->
-v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 16:22:23 KST에 소스 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)의 [alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·사용자 저장·물리 입력·최초 지연/FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha30-publication -->
 
 기존 EnableMapGuide/EnableOptionInfo와 캐시·숨김/OFF 정책을 따른다. 새 키·기본값·패키지 cfg 변경은 없다. 새 게임/로드/장면 전환·두 정보 기능 OFF·종료에서 로드된 정의 자료 캐시도 지운다. [로컬 후보·자동 검사·설치·실제 Windows 대기](ISSUE-6-COLD-MAP-LOAD.md). alpha.30 후보이며 기존 alpha.29 ZIP은 별도 파일이다. [게시·설치 기록](ISSUE-6-ALPHA30-RELEASE.md).

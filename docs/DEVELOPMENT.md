@@ -3,7 +3,7 @@
 ## alpha.30 — cold map의 읽기 전용 정의 자료
 
 <!-- alpha30-publication -->
-v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 16:22:23 KST에 소스 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)의 [alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·사용자 저장·물리 입력·최초 지연/FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha30-publication -->
 
 PreviewConditions의 route reader에만 이미 로드된 설정 자산 대체 경로를 제공한다. MapDefinitionAssets는 세 설정 타입과 StatModifyManager의 직렬화 _talkOptionFlag만 조회한다. 위치/GameObject 검색·Resources.Load·생성·Init/Reset·Lua 실행이 없고 현재 owner의 손상/서로 다른 자료·횟수형 실행 값은 미확정이다. Unity가 파괴한 객체를 잡고 있는 CLR 정적 참조를 현재 owner로 취급하지 않는다. 정상 갱신은 정의 참조를 재사용하고 현재 값은 새로 읽는다. [수명·상한·회귀·성능·Windows 경계](ISSUE-6-COLD-MAP-LOAD.md). alpha.30 후보이며 게시 상태와 고정 소스는 [게시 기록](ISSUE-6-ALPHA30-RELEASE.md)을 따른다.

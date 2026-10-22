@@ -1,10 +1,10 @@
 # 재실행 후 저장된 지도의 대화 안내 — alpha.30
 
 <!-- alpha30-publication -->
-v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 16:22:23 KST에 소스 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)의 [alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·사용자 저장·물리 입력·최초 지연/FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha30-publication -->
 
-2026-10-22 main에서 보완했다. 기준 main은 `e247108d2337ffd4659d9e6c1c27643cb69780cc`이며 직전 공개 alpha.29의 기능 소스는 `0bee1e26dcc857ca87b7da0b92967befde8eafd4`다. alpha.30 후보로 게시를 준비한다. 고정 소스·주석 태그·공개 검증은 [게시 기록](ISSUE-6-ALPHA30-RELEASE.md)에서 확정한다. 기존 alpha.29 ZIP은 별도 보존한다. 사용자 Windows 세이브·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 main에서 보완했다. 기준 main은 `e247108d2337ffd4659d9e6c1c27643cb69780cc`이며 직전 공개 alpha.29의 기능 소스는 `0bee1e26dcc857ca87b7da0b92967befde8eafd4`다. 소스·주석 태그는 `0247491826dbd2d74f898ab8bbc194331c66be3d`이며 [게시 기록](ISSUE-6-ALPHA30-RELEASE.md)에 고정 커밋 재빌드와 공개 검증을 남겼다. 기존 alpha.29 ZIP은 별도 보존한다. 사용자 Windows 세이브·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
 
 ## 원인과 재현 경계
 
@@ -54,6 +54,6 @@ owner 없는 합성 지도/대화1개를 준비한 뒤500회 조회했다. 배�
 | `artifacts/issue-6/cold-map-load/candidate/DiceMaster-source-candidate.zip` | 381325 | `d661bc4ea1e265fa2a1c4ddeba46f6731b3b48b576a63ec11354c1b679e706a1` |
 | `기존 패키지 cfg (변경 없음)` | 13083 | `deda801f4c061f3436732c1da6d4a3a2195dce79822dccb74846468faf9f99fd` |
 
-게임을 종료하고 현재 DLL/cfg를 백업한 뒤 새 로컬 ZIP의 plugins/DiceMaster/DiceMaster.dll만 교체한다. cfg를 통째로 덮어쓰지 않는다. 공개 alpha.29는 별도 기존 파일로 보존한다. 이 검토 후보를 고정 커밋으로 재빌드해 alpha.30 설치 ZIP과 대조한다. 게시 상태는 위 기록을 따른다.
+게임을 종료하고 현재 DLL/cfg를 백업한 뒤 새 로컬 ZIP의 plugins/DiceMaster/DiceMaster.dll만 교체한다. cfg를 통째로 덮어쓰지 않는다. 공개 alpha.29는 별도 기존 파일로 보존한다. 이 검토 후보와 고정 커밋 재빌드의 DLL/cfg/ZIP 바이트가 일치한다. **[게시된 alpha.30 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.30/DiceMaster-v1.0.7-alpha.30.zip)**도 익명 다운로드로 대조했다.
 
 새 프로세스에서 저장된 지도 직행, 동일 세이브의 스토리 진입 전/후, 초회 인사/후속 주제·완료/잠김/반복 대련, 자료 출처·최초 지연/프레임·기존 입력을 [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha30--재실행-후-저장-지도-직행-확인-대기)로 분리한다. 실제 Windows 확인과 PRD #6 완료/종료는 대기다.

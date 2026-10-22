@@ -3,7 +3,7 @@
 ## alpha.30 — 재실행 후 저장 지도의 흰색 배지
 
 <!-- alpha30-publication -->
-v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 16:22:23 KST에 소스 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)의 [alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·사용자 저장·물리 입력·최초 지연/FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha30-publication -->
 
 스토리 과정을 거친 실행과 저장된 Free 장면 직행의 관리 자료 준비 차이를 조사했다. 이미 로드된 정의 자산을 읽는 대체 경로를 일반 대화/경로 조회에 추가하고 실행 값·기회/1회성 판정의 엄격한 경계를 유지한다. 코드/합성 경계에서 복구·현재 불가 제거·모호성·지연/실패·자료 재시도와 입력 회귀를 검사한다. 실제 사용자 Windows 세이브의 통과는 대기다. [설계·로컬 후보·자동 검사](ISSUE-6-COLD-MAP-LOAD.md). alpha.30 후보이며 아래 alpha.29 게시 파일은 별도로 보존한다. [게시·설치 기록](ISSUE-6-ALPHA30-RELEASE.md).

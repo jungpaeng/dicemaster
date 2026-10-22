@@ -1,7 +1,7 @@
 # v1.0.7-alpha.30 — 저장 불러오기 후 지도 안내 복구
 
 <!-- alpha30-publication -->
-v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 16:22:23 KST에 소스 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)의 [alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·사용자 저장·물리 입력·최초 지연/FPS 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha30-publication -->
 
 ## 변경과 지원 범위
@@ -14,7 +14,7 @@ v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 
 
 ## 자동 검증
 
-검토 후보는 전체21개 검사·294개 빌드 입력·118개 소스/리소스·16개 고정 게임 참조를 확인했다. MapGuideRouteIntegrationTests3688개·InformationRuntimeTests5931개·ChoiceStoryTests7719개·MapRouteTests6884개·UI5454개·Gamepad262831개를 포함한다. 설치 ZIP 두 경로·CRC·내부 DLL/cfg 바이트도 확인했다. 배포 검증기 회귀20개도 통과했다. 고정 커밋 재빌드·후보 동일성·공개 다운로드 결과는 게시 후 보충한다.
+검토 후보는 전체21개 검사·294개 빌드 입력·118개 소스/리소스·16개 고정 게임 참조를 확인했다. MapGuideRouteIntegrationTests3688개·InformationRuntimeTests5931개·ChoiceStoryTests7719개·MapRouteTests6884개·UI5454개·Gamepad262831개를 포함한다. 설치 ZIP 두 경로·CRC·내부 DLL/cfg 바이트도 확인했다. 배포 검증기 회귀20개도 통과했다. 고정 커밋 재빌드도 전체21개 검사를 통과했다. 294개 빌드 입력·118개 소스/리소스·16개 고정 참조·SDK 및 DLL/cfg/ZIP이 검토 후보와 일치한다. 공개 ZIP의 SHA-256·두 경로·CRC·내부 바이트를 익명 다운로드로 다시 확인했다.
 
 owner 없는 합성 지도500회 warm 조회에서 배지1개를 유지하고 native 경계 검색0회·Lua 읽기0회·게임 실행/State 쓰기0회를 확인했다. p95 0.016125ms·최대0.087208ms·할당9000B/회다. .NET8/macOS 관리 경계이며 native Unity 검색은 fixture다. 8/32/64장소 warm 측정도 안내와 Lua 추가 읽기0을 유지했다. 실제 최초 검색 시간·Windows FPS/GC 확인은 대기다. native 동기 검색은 협력식 예산으로 중간 취소할 수 없다.
 
@@ -31,3 +31,11 @@ owner 없는 합성 지도500회 warm 조회에서 배지1개를 유지하고 na
 ## 남은 실제 Windows 확인
 
 [확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha30--재실행-후-저장-지도-직행-확인-대기)의 새 프로세스 저장 지도 직행·포커스 전 배지/후속 주제·현재 불가/완료 제거·로드/창/OFF 전환·기존 입력과 최초/warm 지연·FPS를 확인해야 한다. ‘이 장소의 안내를 확인하는 중’은 흰색 마커 전체 로딩과 일대일 대응하는 완료 신호가 아니다. 새 DLL의 사용자 Windows 통과나 PRD #6 전체 완료·이슈 종료를 주장하지 않는다.
+
+## 게시 결과
+
+소스·주석 태그는 [`0247491`](https://github.com/jungpaeng/dicemaster/commit/0247491826dbd2d74f898ab8bbc194331c66be3d)다. main과 새 태그를 atomic push했다. 2026-10-22 16:22:23 KST에 Release `420414593`·asset `665030941`를 draft=false·prerelease=true·make_latest=false로 게시했다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.30/DiceMaster-v1.0.7-alpha.30.zip)**. 기존 71개 Release·72개 태그·자산·Latest v1.0.6과 #5/#6 이슈 상태를 보존했다.
+
+전체21개 성공 기록 중 21개가 문자열까지 일치한다.
+
+게시 보충은 별도 main 문서 커밋이며 빌드 입력·소스 태그·설치 파일을 바꾸지 않는다. 로컬 영수증은 artifacts/releases/v1.0.7-alpha.30/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json에 보관한다. 실제 Windows 확인은 대기다.
