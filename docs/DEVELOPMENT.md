@@ -1,5 +1,11 @@
 # 개발 안내
 
+## alpha.40 — 최초 주사위 화면 초기화와 실제 종료 분리
+
+`ExecuteRoll`은 IEnumerator 생성 시 인자를 먼저 관찰하지만 실제 UI 활성화는 MoveNext에서 진행된다. 제공된 게임 DLL의 `MenuDialog.Awake → Clear`가 이 사이에 호출되어 alpha.39의 소유자를 지웠다. 호출 인자는 대기 상태로 보관하고, 해당 호출의 Awake 범위만 초기화 Clear로 구분한다. 실제 `CustomMenuDialog.UpdateOptions` 완료 후 활성 소유자·현재 문맥·원본 결과 행 전체가 일치할 때 결합한다. Clear/OnDisable/불러오기/원문 변경/초기화 예외는 대기를 취소하며 늦은 갱신으로 되살리지 않는다. 초기화 예외는 원래 객체 그대로 전달한다.
+
+후킹은 인자 복사·행 확인만 수행하고 원문 파싱은 기존 예정 조회에 남긴다. 준비 중/원문 미확인은 현재 주사위 진단을 제공하며 예전 지도 결과를 대신 노출하지 않는다. 새 설정·입력·게임 쓰기가 없고 0.25초/5초·5ms 준비 양보·숨김/OFF 중단을 유지한다. [alpha.40 후보·검증·게시 기록](ISSUE-6-ALPHA40-RELEASE.md). 실제 Windows 실행은 대기다.
+
 <!-- alpha39-publication -->
 2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha39-publication -->
