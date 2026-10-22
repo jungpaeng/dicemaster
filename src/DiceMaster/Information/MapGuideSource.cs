@@ -190,10 +190,11 @@ namespace DiceMaster.Information
         }
         private static long Allocated() { try { return !allocationAvailable ? 0 : allocationReader(); } catch (Exception) { allocationAvailable = false; return 0; } }
         private static double Milliseconds(long start, long end) { return (end - start) * 1000.0 / Stopwatch.Frequency; }
-        private static void ClearTimings() { foreach (var timing in timings) { timing.Count = timing.Next = 0; } }
+        private static void ClearTimings() { foreach (var timing in timings) { timing.Count = timing.Next = 0; } routeReads = effectStarts = 0; }
         private static WeakReference selection, session;
         private static object observedManager, observedPlayer;
-        private static Place selectedPlace;
+        private static Place selectedPlace, detailPlace;
+        private static string detailFailure;
         private static int selectionVersion;
         private static string selectionId = "";
         private static PositionController Selected
@@ -205,7 +206,8 @@ namespace DiceMaster.Information
             }
         }
         public static bool IsCurrent(InformationRow row) { return row != null && Visible && selectedPlace != null && ReferenceEquals(row.Anchor, Selected) && row.Id == SelectionKey(selectedPlace); }
-        private static string SelectionKey(Place place) { return selectionId; }
+        private static string SelectionKey(Place place)
+        { return ReferenceEquals(place, selectedPlace) ? selectionId : "map/detail/" + place.Id + "/" + selectionVersion; }
         public static bool IsCurrent(string id) { return Visible && id == selectionId; }
         public static Func<bool> Enabled;
         private static bool IsEnabled { get { try { return Enabled == null || Enabled(); } catch (Exception) { return false; } } }
@@ -238,9 +240,10 @@ namespace DiceMaster.Information
         {
             if (controller == null) return;
             Register(controller);
-            if (selection != null && ReferenceEquals(selection.Target, controller)) return;
+            if (selection != null && ReferenceEquals(selection.Target, controller)) { detailPlace = selectedPlace; return; }
             selection = new WeakReference(controller); session = new WeakReference(controller);
             foreach (Place place in places) if (ReferenceEquals(place.Controller.Target, controller)) { selectedPlace = place; break; }
+            detailPlace = selectedPlace; detailFailure = null;
             selectionVersion++; selectionId = "map/" + selectedPlace.Id + "/" + selectionVersion; generation++;
         }
         public static void Deselect(PositionController controller)
@@ -249,13 +252,14 @@ namespace DiceMaster.Information
             selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
         }
         public static void Clear()
-        { backgroundPrepareCursor = backgroundReadCursor = 0; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
+        { backgroundPrepareCursor = backgroundReadCursor = 0; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = detailPlace = null; detailFailure = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
         public static void ClearSnapshots() { ClearSnapshotsCore(true); }
         public static void ClearSnapshotsPreservingSyntax() { ClearSnapshotsCore(false); }
         private static void ClearSnapshotsCore(bool clearSyntax)
         {
             // Used for OFF: retain weak lifecycle handles, never parsed data.
-            bool changed = scripts.Count != 0 || missionIndices.Count != 0;
+            bool changed = scripts.Count != 0 || missionIndices.Count != 0 || detailPlace != null || detailFailure != null;
+            detailPlace = null; detailFailure = null;
             foreach (Place place in places)
             {
                 changed |= place.Definition != null || place.Data != null || place.PositionConfig != null || place.Reads.Count != 0;
@@ -269,15 +273,22 @@ namespace DiceMaster.Information
         {
             var result = new List<DisplayQuery>();
             if (!IsEnabled || !guide && !oneShot) return result;
-            PositionController controller = Selected ?? Session;
-            Place captured = selectedPlace;
-            if (controller == null || Selected == null && !guide) return result;
+            Place captured = details ? DetailPlace() : selectedPlace;
+            PositionController controller = captured == null ? Selected ?? Session : Live(captured);
+            if (controller == null || captured == null && !guide) return result;
             int version = selectionVersion;
             string context = ContextKey;
-            result.Add(new DisplayQuery(Selected == null ? "map/global/" + context : SelectionKey(captured), () => {
-                if (version != selectionVersion || !ReferenceEquals(Selected ?? Session, controller)) throw new DataNotReadyException();
+            result.Add(new DisplayQuery(captured == null ? "map/global/" + context : SelectionKey(captured), () => {
+                if (version != selectionVersion || context != ContextKey || !ReferenceEquals(captured == null ? Selected ?? Session : Live(captured), controller) ||
+                    details && captured != null && !OnMap(controller)) throw new DataNotReadyException();
                 detailed = details;
-                try { return Selected == null ? ReadGlobal(controller, guide) : ReadCurrentPlace(captured, controller, guide, oneShot); }
+                try
+                {
+                    object snapshot = captured == null ? ReadGlobal(controller, guide) : ReadCurrentPlace(captured, controller, guide, oneShot);
+                    if (details) detailFailure = null;
+                    return snapshot;
+                }
+                catch (Exception error) { if (details) detailFailure = error.GetType().FullName; throw; }
                 finally { currentRoutes = null; preparationSlice = null; currentConditions.Clear(); dispatch = null; entryBarrier = null; }
             }));
             return result;
@@ -526,7 +537,9 @@ namespace DiceMaster.Information
             ObserveSessionData(controller);
             var candidates = new List<Candidate>();
             if (guide) CollectMissions(null, controller, candidates, true);
-            return Snapshot(null, controller, candidates, guide, false);
+            var snapshot = Snapshot(null, controller, candidates, guide, false);
+            if (detailed) snapshot.Entries.Add(DiagnosticRow());
+            return snapshot;
         }
         private static object ReadPlace(Place place, PositionController controller, bool guide, bool oneShot)
         {
@@ -571,8 +584,7 @@ namespace DiceMaster.Information
             var snapshot = Snapshot(place, controller, candidates, guide, oneShot);
             long finished = Stopwatch.GetTimestamp();
             timings[detailed ? 2 : 1].Add(Milliseconds(start, finished), Milliseconds(start, missionsEnd), Milliseconds(missionsEnd, prepared), Milliseconds(prepared, eventsEnd), Milliseconds(eventsEnd, finished), Math.Max(0, Allocated() - allocated));
-            if (detailed)
-                snapshot.Entries.Add(new InformationRow("map/performance/" + ContextKey, "지도 조회 성능", "자료 상태", "최근 실행 표본", timings[0].Describe("자동 · 대기 임무") + "\n" + timings[1].Describe("자동 · 1회성 포함") + "\n" + timings[2].Describe("명시적 상세") + "\n이번 조회: 경로 현재값 " + routeReads + "회 · 효과 분석 시작 " + effectStarts + "회 · 정적 구문 재사용 " + (source.Routes == null ? 0 : source.Routes.SharedSyntaxHits) + "회(현 경로 누적)\n" + MapDefinitionAssets.Describe() + "\n선택 장소의 자료 제공자 내부만 측정합니다. 메타데이터·이 진단문 구성·UI 렌더링·전체 프레임 시간은 포함하지 않습니다. 준비는 약 5 ms마다 양보하며 동기 리소스 읽기/단일 분석의 완료 시간을 보장하지 않습니다."));
+            if (detailed) snapshot.Entries.Add(DiagnosticRow());
             return snapshot;
         }
         private static void CollectStories(Place place, PositionController controller, Source source, List<Candidate> candidates)

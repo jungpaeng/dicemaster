@@ -1,5 +1,13 @@
 # 개발 안내
 
+## alpha.31 — 지도 상세 대상과 독립 진단
+
+<!-- alpha31-publication -->
+v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+<!-- /alpha31-publication -->
+
+MapGuideSource의 detailPlace는 기존 Place의 약한 컨트롤러만 참조하며 자동 selectedPlace와 별도로 사용한다. 문맥 정리에서 지우고 지연된 이전 요청은 문맥 키로 거절한다. InformationRuntime은 명시적 지도 도구에만 DiagnosticRow를 독립 게시하여 실패5초 재시도를 우회하지 않는다. 정의/현재값 읽기나 자산 검색을 진단 formatter에서 시작하지 않는다. [구현 경계·회귀·실제 Windows 대기](ISSUE-6-MAP-LOG-DIAGNOSTICS.md).
+
 ## alpha.30 — cold map의 읽기 전용 정의 자료
 
 <!-- alpha30-publication -->

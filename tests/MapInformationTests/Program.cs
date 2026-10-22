@@ -276,8 +276,10 @@ static partial class Program
         string globalOrder = Details(Snapshot());
         Check(globalOrder.IndexOf("asset-global-id", StringComparison.Ordinal) < globalOrder.IndexOf("global-main", StringComparison.Ordinal) && globalOrder.IndexOf("global-main", StringComparison.Ordinal) < globalOrder.IndexOf("global-after", StringComparison.Ordinal), "No-place detail preserves before-main/main/after-main route grouping");
         controller._missionsManager.MainMissionStart = false; controller._missionsManager.MainCheckData = null; controller._missionsManager.ActiveSubMissions.Remove("after");
-        MapGuideSource.Deselect(controller); snapshot = Snapshot();
-        Check(!snapshot.HasSelection && snapshot.Summary == null && Entry(snapshot, "global").Available, "Global detail remains available after deselection without a hidden place search");
+        MapGuideSource.Deselect(controller); snapshot = Snapshot(true, true, false);
+        Check(!snapshot.HasSelection && snapshot.Summary == null && Entry(snapshot, "global").Available, "Passive global scope remains unchanged after deselection without a hidden place search");
+        snapshot = Snapshot();
+        Check(snapshot.HasSelection && Entry(snapshot, "global").Available && Details(snapshot).Contains("마지막 선택 장소"), "Explicit detail retains the last place and its independent global mission rows after deselection");
         var savedManager = controller._missionsManager;
         controller._missionsManager = new MissionManagerData();
         Check(!Details(Snapshot()).Contains("asset-global-id"), "Changing the session manager clears old global source/failure snapshots immediately");

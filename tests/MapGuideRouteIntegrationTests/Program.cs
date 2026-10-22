@@ -123,6 +123,7 @@ internal static partial class Program
         PositionEntryProjectionCases();
         GuidanceMarkerCases();
         ColdMapDefinitionCases();
+        MapLogDiagnosticCases();
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
         if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); NativeSelectedStoryScan(corpus); }
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");

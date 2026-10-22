@@ -20,7 +20,7 @@ namespace DiceMaster.Information
             internal readonly RefreshEngine Engine = new RefreshEngine();
             internal string Context;
             internal List<DisplayRow> Rows = new List<DisplayRow>();
-            internal bool Visible;
+            internal bool Visible, Detailed;
         }
         private static readonly Page map = new Page(), shop = new Page(), branch = new Page(), hints = new Page(), choices = new Page(), markers = new Page();
         private static readonly bool[] enabled = new bool[4], ready = new bool[4];
@@ -109,6 +109,7 @@ namespace DiceMaster.Information
         { page.Engine.ResetContext(); page.Rows.Clear(); page.Context = null; page.Visible = false; }
         public static void Clear()
         {
+            map.Detailed = false;
             Reset(map); Reset(shop); Reset(branch); Reset(hints); Reset(choices); Reset(markers); OptionHintSource.Clear(); ChoiceStorySource.Clear();
             MapDefinitionAssets.Clear();
             MapGuideSource.Clear(); ShopEffectSource.Clear(); BranchHistory.Clear(); OneShotProof.Clear();
@@ -135,6 +136,7 @@ namespace DiceMaster.Information
             bool menuVisible = ChoiceStorySource.MenuVisible;
             bool mapVisible = !nativeWindow && focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
             bool mapDetails = detailPage == "지도 안내";
+            map.Detailed = mapDetails;
             MapGuideSource.BeginScheduledReads();
             try
             {
@@ -243,6 +245,15 @@ namespace DiceMaster.Information
                     Description = "현재 문맥의 자료만 조회합니다. 정보 조회는 게임 진행·예약·구매·사용을 실행하지 않습니다.",
                     ReservationAllowed = false, RefreshState = waiting ? LogRefreshState.Waiting : LogRefreshState.Healthy });
             }
+            if (title == "지도 안내" && page.Visible && page.Detailed && (Enabled(0) || Enabled(1)))
+            {
+                // Publish diagnostics independently of successful discovery or
+                // place reads. Failed/retained gameplay rows keep their status
+                // and five-second retry; this reads cached diagnostics only.
+                rows.RemoveAll(row => row.Id != null && row.Id.StartsWith("map/performance/", StringComparison.Ordinal));
+                InformationRow diagnostic = MapGuideSource.DiagnosticRow();
+                AddPublishedRow(rows, new DisplayRow(diagnostic.Id, diagnostic, ""), diagnostic);
+            }
             LogBridge.Model.Publish(new LogSnapshot(LogBridge.Model.ContextId, ModelTitle(title), rows));
         }
         private static void AddPublishedRow(List<LogItem> rows, DisplayRow source, InformationRow value)
@@ -272,6 +283,7 @@ namespace DiceMaster.Information
         public static string OptionDetail(string key) => Enabled(1) ? OneShotProof.CachedOptionDetail(key) : "";
         internal static void ResetDisplays()
         {
+            map.Detailed = false;
             PreviewConditions.ClearTalkContext(); MapDefinitionAssets.Clear();
             Reset(map); Reset(shop); Reset(hints); Reset(choices); Reset(markers);
             MapGuideSource.ClearSnapshots(); ShopEffectSource.Clear(); OptionHintSource.Clear(); OneShotProof.Clear(); ChoiceStorySource.Clear();

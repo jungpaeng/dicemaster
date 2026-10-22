@@ -1,5 +1,16 @@
 # 변경 이력
 
+## v1.0.7-alpha.31 — 지도 로그의 마지막 장소·자료 상태 (prerelease 후보)
+
+<!-- alpha31-publication -->
+v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+<!-- /alpha31-publication -->
+
+- 지도 포커스 해제 후에도 명시적 로그에서 마지막 유효한 장소의 상세를 새로 읽는다. 자동 툴팁과 마커의 포커스 기준은 유지한다.
+- 장소 미선택·미등록·조회 실패에도 `지도 조회 성능`을 표시한다. 본문 실패와 자료 상태를 구분하고 기존5초 재시도·문맥 정리를 유지한다. [설계·검증·Windows 확인](docs/ISSUE-6-MAP-LOG-DIAGNOSTICS.md).
+
+최초 불러오기 흰색 마커 누락 버그는 미해결이다. [후보·설치·검증 기록](docs/ISSUE-6-ALPHA31-RELEASE.md). 아래 alpha.30은 이전 공개 파일로 보존한다.
+
 ## [v1.0.7-alpha.30](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.30) — 2026-10-22 (prerelease)
 
 <!-- alpha30-publication -->

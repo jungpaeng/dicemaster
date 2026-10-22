@@ -1,5 +1,13 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.31 — 지도 로그 진단 보완
+
+<!-- alpha31-publication -->
+v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+<!-- /alpha31-publication -->
+
+마지막 선택 장소는 명시적 상세 조회에만 사용하고 자료 상태는 장소 미선택·실패에도 게시한다. 기존 EnableMapGuide/EnableOneShotHints·상위 설정·정상0.25초/실패5초·숨김/OFF 계약을 유지하며 새 키·기본값·cfg 변화는 없다. [로컬 후보·검사·실제 Windows 대기](ISSUE-6-MAP-LOG-DIAGNOSTICS.md). alpha.30 설치 ZIP은 별도 기존 파일이다.
+
 ## alpha.30 — 저장 지도 직행 복구·설정
 
 <!-- alpha30-publication -->

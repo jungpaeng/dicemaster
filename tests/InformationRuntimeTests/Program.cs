@@ -68,8 +68,34 @@ static class Program {
   ChoiceCadence();
   MarkerCadence();
   NativeWindowCadence();
+  MapDiagnosticPublication();
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
+ }
+ static void MapDiagnosticPublication(){
+  InformationRuntime.Clear();InformationRuntime.Install(new HarmonyLib.Harmony());ChoiceStorySource.Visible=false;
+  MapGuideSource.Visible=false;MapGuideSource.NoSelectionSession=false;MapGuideSource.Fail=false;MapGuideSource.ContextKey="diagnostic-no-session";
+  int reads=MapGuideSource.Reads,diagnostics=MapGuideSource.DiagnosticReads;
+  InformationRuntime.Tick("지도 안내",true,100,false,false);
+  var rows=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
+  Check(MapGuideSource.Reads==reads&&rows.Any(row=>row.Title=="지도 조회 성능"&&!row.CanReserve&&row.Target==null),"explicit map tool publishes read-only diagnostics even with no discovered place query");
+  Check(MapGuideSource.DiagnosticReads>diagnostics,"no-session diagnostics have an independent cache-only publication path");
+  diagnostics=MapGuideSource.DiagnosticReads;InformationRuntime.Tick(null,true,100.1f,false,false);
+  Check(MapGuideSource.DiagnosticReads==diagnostics,"closing detail stops diagnostic formatting");
+  MapGuideSource.NoSelectionSession=true;MapGuideSource.ContextKey="diagnostic-failure";MapGuideSource.Fail=true;
+  InformationRuntime.Tick("지도 안내",true,101,false,false);rows=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
+  Check(rows.Any(row=>row.RefreshState==DiceMaster.LogUI.LogRefreshState.ReadFailure)&&rows.Any(row=>row.Title=="지도 조회 성능"&&row.RefreshState==DiceMaster.LogUI.LogRefreshState.Healthy),"a first place-read failure remains failed while independent cached diagnostics remain available");
+  reads=MapGuideSource.Reads;MapGuideSource.Fail=false;InformationRuntime.Tick("지도 안내",true,105.99f,false,false);
+  Check(MapGuideSource.Reads==reads,"publishing diagnostics never bypasses the failed place query's five-second backoff");
+  InformationRuntime.Tick("지도 안내",true,106.01f,false,false);rows=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
+  Check(MapGuideSource.Reads==reads+1&&rows.Count(row=>row.Title=="지도 조회 성능")==1&&rows.Any(row=>row.Id=="mission/first"&&row.RefreshState==DiceMaster.LogUI.LogRefreshState.Healthy),"place recovery and one diagnostic row coexist at the retry deadline");
+  MapGuideSource.Fail=true;InformationRuntime.Tick("지도 안내",true,106.3f,false,false);rows=LogBridge.Model.Tab("지도 안내").Snapshot.Rows;
+  Check(rows.Any(row=>row.Id=="mission/first"&&row.RefreshState==DiceMaster.LogUI.LogRefreshState.RetainedFailure)&&rows.Single(row=>row.Title=="지도 조회 성능").RefreshState==DiceMaster.LogUI.LogRefreshState.Healthy,"retained place values keep their stale status without labeling independently sampled cache diagnostics stale");
+  diagnostics=MapGuideSource.DiagnosticReads;InformationVisibility.TestBlocked=true;InformationRuntime.Tick("지도 안내",true,107,false,false);
+  Check(MapGuideSource.DiagnosticReads==diagnostics,"native window occlusion stops diagnostic formatting as well as place queries");InformationVisibility.TestBlocked=false;
+  InformationRuntime.Toggle(0);InformationRuntime.Toggle(1);diagnostics=MapGuideSource.DiagnosticReads;InformationRuntime.Tick("지도 안내",true,108,false,false);
+  Check(MapGuideSource.DiagnosticReads==diagnostics,"both map settings OFF also stop cache diagnostics");InformationRuntime.Toggle(0);InformationRuntime.Toggle(1);
+  MapGuideSource.Fail=false;MapGuideSource.NoSelectionSession=false;InformationRuntime.Clear();
  }
  static void NativeWindowCadence(){
   InformationRuntime.Clear();MapGuideSource.Visible=true;MapGuideSource.NoSelectionSession=true;ChoiceStorySource.Visible=false;
@@ -196,6 +222,9 @@ static class Program {
   Check(m.GetType("DiceMaster.Information.ShopInformationPatches")!=null&&m.GetType("DiceMaster.Information.MapInformationPatches")!=null&&m.GetType("DiceMaster.Information.BranchObservationPatches")!=null,"delivered actual game observers included");
   var runtime=m.GetType("DiceMaster.Information.InformationRuntime");
   var publish=runtime.Methods.Single(x=>x.Name=="Publish");
+  Check(publish.Body.Instructions.Any(x=>x.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapGuideSource"&&c.Name=="DiagnosticRow"),"delivered map publication can append cache diagnostics independently of provider success");
+  var diagnostic=m.GetType("DiceMaster.Information.MapGuideSource").Methods.Single(x=>x.Name=="DiagnosticRow");
+  Check(diagnostic.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().All(x=>!new[]{"Discover","GetSource","LoadedDefinitions","ReadPreviewScript","CreateRouteReader","AdvanceBudgeted","FindObjectsOfTypeAll"}.Contains(x.Name)),"delivered diagnostic formatting initiates no source/game preparation or native asset scans");
   Check(publish.Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.MapGuideSnapshot"&&f.Name=="Entries"),"delivered runtime publishes typed map snapshot entries");
   Check(runtime.Methods.Single(x=>x.Name=="DrawCore").Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.MapGuideSnapshot"&&f.Name=="Summary"),"delivered overlay reads the same snapshot summary");
   Check(m.GetType("DiceMaster.Information.MapGuideSource").Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference call&&call.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&call.Name=="AdvanceBudgeted")),"delivered map provider prepares actual bounded route engine");

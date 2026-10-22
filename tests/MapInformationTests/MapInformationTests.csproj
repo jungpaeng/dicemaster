@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="../../src/DiceMaster/Information/OptionHintSource.cs" Link="OptionHintSource.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideSource.cs" Link="MapGuideSource.cs" />
+    <Compile Include="../../src/DiceMaster/Information/MapGuideDiagnostics.cs" Link="MapGuideDiagnostics.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideMarkers.cs" Link="MapGuideMarkers.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideBackground.cs" Link="MapGuideBackground.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideSnapshot.cs" Link="MapGuideSnapshot.cs" />
