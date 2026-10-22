@@ -1,9 +1,9 @@
 # 변경 이력
 
-## [v1.0.7-alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29) — 2026-10-22 (prerelease 후보)
+## [v1.0.7-alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29) — 2026-10-22 (prerelease)
 
 <!-- alpha29-publication -->
-alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->
 
 - 기존 어두운 금색 기회 배지와 구분되는 아이보리 두루마리를 추가한다. 현재 안내 가능한 일반 대화·후속 경로가 있음을 뜻하며 이벤트 발생·1회성·현재 실행을 보장하지 않는다. 같은 항목에 둘 다 있으면 기존 기회 배지를 우선한다.

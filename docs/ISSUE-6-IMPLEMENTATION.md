@@ -3,7 +3,7 @@
 ## alpha.29 — 안내와 기회의 마커 구분
 
 <!-- alpha29-publication -->
-alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->
 
 현재 안내 가능한 일반 대화·후속 경로에도 아이보리 배지를 붙인다. 기존 어두운 금색은 등록 대기 임무 또는 증명1회성+현재 도달성의 기회이며, 새 Guidance 비트는 기회 수/Opportunity/현재 실행 보장으로 승격하지 않는다. 지도와 실제 활성 선택 메뉴에 공통 적용하고 같은 항목에서는 기회 배지가 우선한다. 미선택 지도 장소의 제한된 준비를 새로 허용하며 포커스 장소를 먼저 처리한다. [설계·성능·자동 검사·남은 실제 Windows 확인](ISSUE-6-GUIDANCE-BADGES.md).

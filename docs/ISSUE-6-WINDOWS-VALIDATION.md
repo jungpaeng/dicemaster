@@ -3,7 +3,7 @@
 ## alpha.29 — 밝은 안내 배지 확인 대기
 
 <!-- alpha29-publication -->
-alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->
 
 [후보·자동 검사·성능 측정](ISSUE-6-GUIDANCE-BADGES.md). 아래 항목은 실제 Windows/Unity·사용자 세이브·물리 입력에서 아직 실행하지 않았다. alpha.28이나 과거의 부분 확인을 새 DLL의 전체 통과로 승계하지 않는다.

@@ -1,5 +1,13 @@
 # 소스 기반 Release와 게시 이력
 
+## alpha.29 — 밝은 대화·경로 안내 배지
+
+<!-- alpha29-publication -->
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha29-publication -->
+
+검토 후보와 고정 소스 재빌드의291개 입력·117개 소스/리소스·16개 고정 참조·전체21개 성공 기록과 DLL/cfg/ZIP이 일치한다. 새 소스 태그/main을 함께 push하고 기존 배포·Latest v1.0.6·#6 open을 보존한다. [설치·소스·게시·검증 기록](ISSUE-6-ALPHA29-RELEASE.md). 게시 보충은 빌드 입력을 바꾸지 않는 별도 main 문서 커밋이다.
+
 ## alpha.19 — 후속 선택지 해금 확인
 
 <!-- alpha19-publication -->

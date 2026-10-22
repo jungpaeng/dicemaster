@@ -1,7 +1,7 @@
 # v1.0.7-alpha.29 — 대화·경로 안내 배지
 
 <!-- alpha29-publication -->
-alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->
 
 일반 대화·해금된 후속 경로의 툴팁을 포커스 전에도 발견하도록 아이보리 두루마리 배지를 추가한다. 기존 어두운 금색 기회 배지는 그대로 유지하고 같은 항목에는 금색 하나를 우선한다. 밝은 배지는 ‘대화/경로 안내 있음’이며 이벤트 발생·1회성·현재 실행을 보장하지 않는다. [설계·측정·구현 경계](ISSUE-6-GUIDANCE-BADGES.md).
@@ -18,11 +18,11 @@ macOS 관리 코드/합성 게임 경계의 8/32/64장소 측정에서 warm p95 
 
 ## 자동 검사·후보 파일
 
-검토 후보는 전체21개 검사 프로그램·291개 입력·117개 소스/리소스·16개 고정 참조를 통과했다. 실제 후보 DLL 연결/읽기 전용 IL·설치 ZIP 두 경로/CRC/바이트 일치를 확인했다. 고정 커밋 재빌드와 익명 공개 다운로드 검증은 게시 후 기록한다.
+검토 후보는 전체21개 검사 프로그램·291개 입력·117개 소스/리소스·16개 고정 참조를 통과했다. 실제 후보 DLL 연결/읽기 전용 IL·설치 ZIP 두 경로/CRC/바이트 일치를 확인했다. 고정 커밋 재빌드도 전체21개 검사를 통과했다. 검토 후보와291개 입력·117개 소스/리소스·16개 참조·전체21개 성공 기록 및 DLL/cfg/ZIP 바이트가 정확히 일치한다. 익명 공개 ZIP의 SHA-256·두 경로·CRC·내부 DLL/cfg 바이트도 대조했다.
 
 - 지도 provider/route/current Reader 통합3,669개, 선택 안내7,719개, UI/입력 경계5,454개, DLL/스케줄/설정/읽기 전용5,892개를 포함한다.
 - route6,884개·기존 패드262,831개와 #5 팝업/예약·로그·주사위·상점·분기 회귀를 포함한다. 관리 경계 자동 검사와 실제 Windows 실행은 구분한다.
-- 배포 검증기 회귀20개, git diff --check, 기존 cfg 키/값 일치와 두 배지 이미지/내장 리소스 검증을 수행한다.
+- 배포 검증기 회귀20개, git diff --check, 기존 cfg 키/값 일치와 두 배지 이미지/내장 리소스 검증을 통과했다.
 
 | 파일 | 바이트 | SHA-256 |
 | --- | ---: | --- |
@@ -37,3 +37,9 @@ macOS 관리 코드/합성 게임 경계의 8/32/64장소 측정에서 warm p95 
 아무 장소도 포커스하지 않은 지도에서 밝은 배지가 순차적으로 나타나는지, 남제자방→사사형의 초회 인사/실제 해금 주제와 유학 활성 선택지의 안내, 금색 우선·완료/잠김 제거·행동력/임무 우선·창/로드/OFF/ON·기존 입력을 확인한다. 최초/warm 지연·가독성·FPS/GC와 읽기 전용 경계는 실제 Windows에서 별도로 확인해야 한다. [새 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha29--밝은-안내-배지-확인-대기).
 
 새 DLL의 Windows·물리 입력·프레임 확인과 #6 전체 완료는 대기다. 기존 Latest v1.0.6·이전 Release/태그/자산과 #6 open을 보존한다. 검토/측정 기록은 artifacts/issue-6/guidance-badges/, 고정 소스·게시·익명 검증 영수증은 artifacts/releases/v1.0.7-alpha.29/에 구분한다.
+
+## 게시 결과
+
+소스·주석 태그는 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)다. main과 새 태그를 atomic push했다. 2026-10-22 15:04:05 KST에 Release `420359508`·asset `664851312`를 draft=false·prerelease=true·make_latest=false로 게시했다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.29/DiceMaster-v1.0.7-alpha.29.zip)**. 기존 70개 Release·71개 태그·자산·Latest v1.0.6·#6 open을 보존했다.
+
+게시 보충 문서는 별도 main 커밋이며 소스 태그·빌드 입력·설치 파일을 바꾸지 않는다. 영수증은 artifacts/releases/v1.0.7-alpha.29/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json에 보관한다. 새 Windows 확인은 대기다.

@@ -3,7 +3,7 @@
 ## alpha.29 — 지도·선택 메뉴의 안내 배지
 
 <!-- alpha29-publication -->
-alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->
 
 InformationRow.Guidance와 기존 Opportunity를 분리하고 HasBadge에서 합친다. 금색 기회가 우선하고 Guide ON의 현재 대화/경로만 밝은 배지를 받는다. 지도는 보이는 장소 최대64개를 순환하며 선택 장소와 배경의 새 정의 준비가 한 갱신당8192작업·Lua1회/풀1회·협력식 약5ms를 공유한다. 현재 조건/가상 진입값은 장소별 Reader에만 두고 DefinitionScope는 한 갱신의 이름/정의 색인만 공유한다. EndScheduledReads의 finally에서 참조를 지우며 최대4개의 빈 색인 버퍼만 남긴다. [상세 설계·재현 가능한 벤치마크·자동 검사/Windows 구분](ISSUE-6-GUIDANCE-BADGES.md).

@@ -20,18 +20,12 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha29-publication -->
-alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->
 
-alpha.29 후보는 일반 대화·후속 경로에도 밝은 아이보리 배지를 추가합니다. 아래 기존 alpha.28 설치 ZIP에는 포함되지 않습니다. [표시 기준·성능](docs/ISSUE-6-GUIDANCE-BADGES.md) · [alpha.29 설치·검증 상태](docs/ISSUE-6-ALPHA29-RELEASE.md).
+alpha.29는 일반 대화·해금된 후속 경로에도 아이보리 배지를 추가합니다. 아무 장소에도 포커스하지 않은 지도에서 보이는 장소를 순환 확인하며 기존 금색 기회와 구분합니다. [표시 기준·성능](docs/ISSUE-6-GUIDANCE-BADGES.md) · [파일·검증 기록](docs/ISSUE-6-ALPHA29-RELEASE.md).
 
-<!-- alpha28-publication -->
-2026-10-22 06:59:56 KST에 소스 [`96a78a3`](https://github.com/jungpaeng/dicemaster/commit/96a78a30da8ba14eae2e0fc201576c96001f2c48)의 [alpha.28](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.28)을 게시했다. 전체·고정 커밋 자동 검사21개와 실제 후보 DLL 연결·설치 ZIP·익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·화면·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha28-publication -->
-
-alpha.28은 현재 게임의 Lua 연결에서 대화 초기화 자료를 다시 확보해, 지도에서 초회 인사만 보이고 해금된 후속 주제가 빠질 수 있는 경로를 보완합니다. 미확정·잠김/완료·반복 활동 필터와 일반 경로 최대 한 개·기회 마커 기준을 유지합니다. 로그 상세에 대화 초기화 자료의 확인 여부와 출처를 추가합니다. [설계·재현·성능](docs/ISSUE-6-CURRENT-TALK-CONTEXT.md) · [파일·설치·Windows 확인](docs/ISSUE-6-ALPHA28-RELEASE.md).
-
-**[v1.0.7-alpha.28 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.28/DiceMaster-v1.0.7-alpha.28.zip)**. 업데이트는 게임 종료 후 **DLL만 교체해 기존 cfg를 보존**하세요. 이전 [alpha.27 게시 기록](docs/ISSUE-6-ALPHA27-RELEASE.md)은 별도 보존합니다.
+**[v1.0.7-alpha.29 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.29/DiceMaster-v1.0.7-alpha.29.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 이전 [alpha.28 게시 기록](docs/ISSUE-6-ALPHA28-RELEASE.md)은 별도 보존합니다.
 
 현재 main은 확인된 기회를 **어두운 바탕의 금색 두루마리**, 그 외 현재 안내 가능한 대화·경로를 **아이보리 바탕의 두루마리**로 구분합니다. 같은 항목에 둘 다 있으면 금색 하나를 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. [새 배지의 의미·검증](docs/ISSUE-6-GUIDANCE-BADGES.md).
 

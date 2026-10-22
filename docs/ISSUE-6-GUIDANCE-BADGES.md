@@ -1,5 +1,9 @@
 # 지도·선택 메뉴의 밝은 안내 배지 — alpha.29 후보
 
+<!-- alpha29-publication -->
+2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha29-publication -->
+
 2026-10-22 main에서 구현한 alpha.29 후보이다. 기준 HEAD는 `c850006fd3ffefe9b36e07ffc68de10f9ffeaaa7`이며 공개 alpha.28의 소스/태그는 `96a78a30da8ba14eae2e0fc201576c96001f2c48`이다. 아래 새 배지는 기존 alpha.28 ZIP에 포함되지 않는다. 게시 상태와 소스·파일은 [alpha.29 기록](ISSUE-6-ALPHA29-RELEASE.md)을 따른다. 실제 Windows 확인은 대기다. PRD #6 전체 완료/종료는 대기다.
 
 ## 표시 의미와 범위
