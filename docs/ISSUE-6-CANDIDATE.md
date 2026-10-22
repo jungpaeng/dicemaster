@@ -1,12 +1,8 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
-<!-- alpha39-publication -->
-2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha39-publication -->
+## alpha.39 — 주사위 결과별 안내 (게시 준비)
 
-## alpha.39 — 주사위 결과별 안내
-
-2026-10-23 `main`에서 alpha.38을 되돌린 뒤 실제 열린 주사위의 결과별 두루마리/짧은 이야기 연결을 구현했다. [후보·해시·자동 검사·지원 한계](ISSUE-6-DICE-RESULT-GUIDANCE.md)와 [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#주사위-결과별-안내--로컬-후보-확인-대기)를 따른다. 새 alpha.39를 게시하고 이전 공개 태그·릴리스 파일은 보존했다. 새 후보의 Windows 확인은 대기다.
+2026-10-23 `main`에서 alpha.38을 되돌린 뒤 실제 열린 주사위의 결과별 두루마리/짧은 이야기 연결을 구현했다. [후보·해시·자동 검사·지원 한계](ISSUE-6-DICE-RESULT-GUIDANCE.md)와 [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#주사위-결과별-안내--로컬-후보-확인-대기)를 따른다. 공개 태그·릴리스 파일은 변경하지 않았고 새 후보의 Windows 확인도 대기다.
 
 새 키는 없다. `EnableMapGuide`가 일반 결과 연결·등록 임무를, `EnableOneShotHints`가 증명 1회성 표시를 제어한다. `EnableBranchNotices`는 기존 실제 분기 기록과 알림만 제어한다. 상위 설정·기본값·cfg 바이트·0.25초/5초·숨김/OFF·불러오기 정리는 유지한다. 표시 공간이 부족하면 원래 효과를 보존하고 새 요약은 생략한다.
 
