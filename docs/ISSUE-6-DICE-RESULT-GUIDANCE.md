@@ -1,6 +1,10 @@
-# 주사위 결과별 이야기 연결 안내 — alpha.39 후보
+# 주사위 결과별 이야기 연결 안내 — alpha.39
 
-2026-10-23, 원래 작업 폴더의 `main`에서 구현했다. **alpha.39 게시 준비 중이며 실제 Windows 확인은 대기다. PRD #6 전체 완료나 이슈 종료의 근거가 아니다.** [후보·게시 기록](ISSUE-6-ALPHA39-RELEASE.md).
+<!-- alpha39-publication -->
+2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha39-publication -->
+
+2026-10-23, 원래 작업 폴더의 `main`에서 구현했다. **alpha.39 prerelease를 게시했으며 실제 Windows 확인은 대기다. PRD #6 전체 완료나 이슈 종료의 근거가 아니다.** [후보·게시 기록](ISSUE-6-ALPHA39-RELEASE.md).
 
 ## alpha.38 되돌림과 이번 범위
 
@@ -70,18 +74,18 @@
 ### 2026-10-23 최종 자동 검증 기록
 
 - 고정 참조 16개로 소스 빌드·필수 22개 검사 통과. 별도로 사용자 Windows 복제본의 DLL 16개에 연결해 빌드·동일한 22개 검사 통과. 양쪽 생성 DLL 바이트가 같다. 참조 파일은 전후 해시가 같다.
-- 빌드/테스트/설정 입력 319개와 생산 소스·리소스 128개를 기록했다. 검사 중 입력 변경 없음과 최종 현재 입력 일치를 확인했다. 구현 당시 작업 파일 해시를 manifest에 보관했으며, 게시 전에 소스 커밋을 고정해 별도로 재빌드·대조한다.
+- 빌드/테스트/설정 입력 319개와 생산 소스·리소스 128개를 기록했다. 검사 중 입력 변경 없음과 최종 현재 입력 일치를 확인했다. 구현 당시 작업 파일 해시를 manifest에 보관하고 소스 `534a1f249cfce32ce3dd3139b7139308b7499aed`를 고정해 별도로 재빌드·대조했다.
 - 주사위 원문 288파일/402호출 구문을 색인했다. 결과 간 격리·키/배열 일치·중복 서명 차단·현재 false/미확정 AND 처리·일반 지도 추론에 결과 가정이 새지 않는 경우를 검사했다. 이는 게임 실행을 통한 402건 이벤트 검증이 아니다.
 - 새 native 경계 검사 17개, 실제 게임 필드/메서드 메타데이터·배포 DLL IL 연결, 기존 효과 폭/임계값/폰트 변경·창 가림·비활성 결과의 수동 배지·예약 보존·설정·현재 문맥 정리를 검사했다. 관리 코드 경계 대체물을 사용하며 실제 Unity/Harmony/Windows 실행은 아니다.
 - 릴리스 검증기 자체 검사 20개와 PRD6 후보 manifest 정책 검사 통과. 설치 ZIP의 경로 2개·CRC·각 파일 바이트를 대조했고 cfg는 기존 HEAD와 같다. 외부 게임 DLL/원문은 포함하지 않는다.
 
-| 로컬 산출물 | 바이트 | SHA-256 |
+| 검증 산출물 | 바이트 | SHA-256 |
 | --- | ---: | --- |
 | `DiceMaster.dll` | 1,116,160 | `876583db0312a27e2f0c3f8d154fbed7f784fd9bb5d44c72176f5d222aad7490` |
 | `DiceMaster-source-candidate.zip` | 440,736 | `f936dd7ec0530ac84a034d5cee7f7c6cf52070f8206ed1c757ed398f59ef37c3` |
 | 기존 `DiceMaster.cfg` | 13,083 | `deda801f4c061f3436732c1da6d4a3a2195dce79822dccb74846468faf9f99fd` |
 
-로컬 후보는 `artifacts/issue-6/dice-route-guide/candidate-final/`의 ZIP/DLL이며 `build-manifest.json`과 `build.log`가 함께 있다. 복제본 연결 기록은 `compatibility-final/summary.json`, 교차/패키지 대조는 `verification.json`이다. 게임 종료 후 ZIP의 `plugins/DiceMaster/DiceMaster.dll`을 기존 `BepInEx/plugins/DiceMaster/DiceMaster.dll`에 교체하고 cfg는 보존한다. 아직 새 릴리스/태그·원격 main에 게시하지 않았다.
+로컬 후보는 `artifacts/issue-6/dice-route-guide/candidate-final/`의 ZIP/DLL이며 `build-manifest.json`과 `build.log`가 함께 있다. 복제본 연결 기록은 `compatibility-final/summary.json`, 교차/패키지 대조는 `verification.json`이다. 게임 종료 후 ZIP의 `plugins/DiceMaster/DiceMaster.dll`을 기존 `BepInEx/plugins/DiceMaster/DiceMaster.dll`에 교체하고 cfg는 보존한다. 이후 소스 `534a1f2`의 고정 커밋 재빌드와 바이트 대조를 거쳐 [alpha.39 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.39/DiceMaster-v1.0.7-alpha.39.zip)을 게시했다. 게시 영수증과 고정 커밋 산출물은 `artifacts/releases/v1.0.7-alpha.39/`에 보관한다.
 
 ## 참고한 구현과 차이
 

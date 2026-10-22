@@ -1,6 +1,10 @@
 # alpha.39 — 주사위 결과별 이야기 연결 안내
 
-게시 준비 기록이다. 원래 `main`에서 구현했으며 별도 브랜치/worktree를 생성하지 않았다. alpha.38의 주사위 `진행 중` 패널·확정 결과 기록을 되돌린 `2db6a19`와 이번 결과별 안내를 함께 게시한다. **실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- alpha39-publication -->
+2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha39-publication -->
+
+소스·주석 태그는 `534a1f249cfce32ce3dd3139b7139308b7499aed` / `v1.0.7-alpha.39`다. 고정 커밋 재빌드와 공개 다운로드 대조 후 게시했다. 원래 `main`에서 구현했으며 별도 브랜치/worktree를 생성하지 않았다. alpha.38의 주사위 `진행 중` 패널·확정 결과 기록을 되돌린 `2db6a19`와 이번 결과별 안내를 함께 게시했다. **실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 
 ## 변경 사항
 
@@ -18,7 +22,7 @@ alpha.38의 우측 상단 주사위 진행 알림은 제거했다. 기존 실제
 
 주사위 원문 288파일/402호출 형태를 색인하고 결과 격리·거짓 AND 조건 제외·서명 중복 차단·일반 지도 가정 격리·등록 임무/예약·설정/가림/불러오기·글자 폭과 임계값·수동 배지/입력 보존을 검사했다. 1,000회 웜 경로 재조회는 새 파싱/준비 작업이 없고 1,000회 변경 없는 표시에는 재측정·요약 중복이 없다. 이는 실제 Windows/Unity/Harmony·사용자 세이브·물리 패드·FPS 검증이 아니다.
 
-게시 전 고정 커밋 재빌드와 검토 후보 대조를 추가 수행한다. 기록은 `artifacts/releases/v1.0.7-alpha.39/`, 기존 검토 후보/복제본 연결은 `artifacts/issue-6/dice-route-guide/`에 보관한다.
+고정 커밋 재빌드에서도 전체22개 검사가 통과했고 319개 입력·128개 소스/리소스와 DLL/cfg/ZIP이 검토 후보와 일치한다. 성공 기록21개는 정확히 같고 MapGuideRouteIntegrationTests의 준비 루프 assertion 수만 달랐으며, 같은 성공 형식/의미와 원본 양쪽 기록을 별도 보관했다. 기록은 `artifacts/releases/v1.0.7-alpha.39/`, 기존 검토 후보/복제본 연결은 `artifacts/issue-6/dice-route-guide/`에 보관한다.
 
 | 파일 | bytes | SHA-256 |
 | --- | ---: | --- |
@@ -33,3 +37,9 @@ alpha.38의 우측 상단 주사위 진행 알림은 제거했다. 기존 실제
 새 후보로 굴리기 전 결과별 요약/마커, 실제 연결, 긴 효과·임계값과 여러 해상도, 창 가림/설정/불러오기, 기존 주사위·로그·예약·팝업·패드 조작과 최초 지연/FPS를 확인해야 한다. [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#주사위-결과별-안내--로컬-후보-확인-대기).
 
 기존 공개 alpha.38·이전 Release/태그/설치 파일·Latest 정식 v1.0.6·이슈 상태를 보존한다. 새 후보 Windows 확인 전 #6 전체 완료/종료로 처리하지 않는다.
+
+## 게시 결과
+
+2026-10-23 03:13:15 KST에 Release `421047279`·asset `666671334`를 draft=false·prerelease=true·make_latest=false로 게시했다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.39/DiceMaster-v1.0.7-alpha.39.zip)을 인증 없이 내려받아 크기·SHA-256·두 경로·CRC·내부 DLL/cfg 바이트를 대조했다. 공개 API/페이지도 확인했다.
+
+이전 80개 Release·81개 태그·자산·Latest 정식 v1.0.6·이슈 상태(#5 open, #6 open)를 보존했다. main과 새 annotated tag만 atomic push했으며 게시 보충은 별도 main 문서 커밋으로 남긴다. 소스 태그·DLL/cfg/ZIP은 바꾸지 않는다. 실제 Windows/Unity/Harmony·사용자 세이브·물리 입력·최초 지연/FPS/GC와 #6 완료는 대기다.

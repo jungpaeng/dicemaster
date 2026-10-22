@@ -1,6 +1,10 @@
 # 개발 안내
 
-## alpha.39 — 주사위 결과 연결 (게시 준비)
+<!-- alpha39-publication -->
+2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha39-publication -->
+
+## alpha.39 — 주사위 결과 연결
 
 `DiceRouteIndex`가 관찰한 원문의 리터럴 결과 분기와 실제 `ExecuteRoll` 키/행을 유일하게 대조한다. `MapRouteDefinitions.DiceArm`은 결과 가정을 별도 그래프에만 주입하고 일반 지도/선택지 경로를 바꾸지 않는다. `DiceGuideSource`는 현재 조건·기존 증명·등록 임무를 읽고 원래 비활성 버튼에 수동 표시만 제공한다. 기존 네 탭의 지도 도구를 재사용한다. [설계·상한·설정·미지원 범위](ISSUE-6-DICE-RESULT-GUIDANCE.md).
 

@@ -1,10 +1,14 @@
 # 소스 기반 Release와 게시 이력
 
-## alpha.39 — 주사위 결과 연결 (게시 준비)
+<!-- alpha39-publication -->
+2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
+<!-- /alpha39-publication -->
+
+## alpha.39 — 주사위 결과 연결
 
 2026-10-23 alpha.38 되돌림 `2db6a19` 이후 결과별 경로 안내를 구현하고 필수 검사를 22개로 늘렸다. 고정 참조 빌드와 사용자 게임 복제본 DLL 연결 검사는 별개이며, Windows 실행은 둘 다 아니다. ZIP은 모드 DLL과 기존 cfg 두 파일만 포함한다. [검사·산출물·제약](ISSUE-6-DICE-RESULT-GUIDANCE.md).
 
-이번 후보는 아직 새 태그/Release·원격 main으로 게시하지 않았다. 공개 alpha.38 파일을 수정하거나 정식 Latest·#5/#6 상태를 바꾸지 않았다. 다음 게시에는 고정 소스 커밋의 재빌드·입력/DLL/cfg/ZIP 대조와 공개 다운로드 확인이 추가로 필요하며 실제 Windows 확인은 별도로 남긴다.
+고정 소스 `534a1f249cfce32ce3dd3139b7139308b7499aed`의 319개 빌드 입력·128개 생산 소스/리소스·필수22개 검사와 검토 DLL/cfg/ZIP을 대조한 뒤 main과 새 주석 태그만 atomic push했다. Release를 prerelease·make_latest=false로 게시하고 인증 없는 공개 API/페이지/ZIP을 확인했다. 기존 80개 Release·81개 태그·자산·Latest v1.0.6·#5/#6 상태를 보존했다. 실제 Windows 확인은 별도로 남긴다. [게시 영수증](ISSUE-6-ALPHA39-RELEASE.md).
 
 ## alpha.37 — 카드형 선택지 배치
 
