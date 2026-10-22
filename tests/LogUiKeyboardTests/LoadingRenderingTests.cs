@@ -8,7 +8,6 @@ internal static partial class Program
     private static void LoadingRendering()
     {
         CardAnchorRendering();
-        DiceGuideRendering();
         int width = Screen.width, height = Screen.height; var oldEvent = Event.current;
         try
         {

@@ -296,29 +296,6 @@ namespace DiceMaster.Information
             if (ValidScript(rootScript)) Admit(new Job { Script = rootScript, Path = rootScript, Identity = rootScript });
             else { rootCoverageLost = true; if (!string.IsNullOrEmpty(rootScript)) Reason("시작 스크립트 경로 확인 불가"); }
         }
-        // Only an actually opened dice view may seed a hypothetical result.
-        // The ordinary map/menu constructor never takes this path. The ready
-        // lexical definition is immutable; jobs, bindings and current reads
-        // remain private to this result. No Lua is evaluated or rewritten.
-        internal static MapRouteDefinitions DiceArm(string script, MapRouteSyntax syntax,
-            MapRouteSyntax.Branch arm, int offset, int index, string label, string variable,
-            Func<string, ScriptReadResult> reader, Func<string, IList<MapRouteEvent>> pools)
-        {
-            if (syntax == null || !syntax.Ready || syntax.Limited || syntax.Malformed || arm == null) throw new ArgumentException("Unclosed dice definition");
-            var result = new MapRouteDefinitions(null, reader, pools,
-                new MapRouteLimits { MaxScripts = 8, MaxContexts = 64, MaxEntries = 128, MaxDepth = 4, MaxWork = 262144 });
-            result.rootCoverageLost = false;
-            result.plans.Add(script, new Plan { Syntax = syntax });
-            var yes = PreviewConditions.Constant(true);
-            var job = new Job { Script = script, Started = true, At = arm.Start, End = arm.End,
-                TopicStart = arm.Start, TopicEnd = arm.End, HasChoice = true, StoryChoice = true,
-                LocalChoiceSeen = true, Identity = script + "/dice:" + offset + ":" + index, Path = label };
-            job.Ancestors.Add(script);
-            job.Bindings[variable] = new Value { Literal = index.ToString(CultureInfo.InvariantCulture), Condition = PreviewConditions.Parse(index.ToString(CultureInfo.InvariantCulture)) };
-            job.Steps.Add(new MapChoiceStep(script, offset, index, label, yes, yes, false, yes, true, yes, true));
-            result.Admit(job);
-            return result;
-        }
         public void Clear()
         { cleared = true; jobs.Clear(); followupJobs.Clear(); pendingRootJobs = 0; plans.Clear(); poolDefinitions.Clear(); poolRetries.Clear(); entries.Clear(); scriptEntries.Clear(); storyEntries.Clear(); storyPaths.Clear(); storyIndex.Clear(); choiceSteps.Clear(); reasons.Clear(); snapshotCuts.Clear(); snapshotTopics.Clear(); }
         private void Reason(string value, bool incompleteStory = true, bool immediateHandoff = false)

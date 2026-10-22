@@ -81,13 +81,3 @@ namespace DiceMaster.Information {
 namespace DiceMaster.Information { public static class InformationAnchors { public static bool IsVisible(object o)=>true; public static bool IsInteractive(object o)=>true; } }
 
 namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static void Install() {} internal static void Clear() {} internal static void SetVisible(bool visible) {} } }
-
-namespace DiceMaster.Information {
- public sealed class DiceGuideSnapshot { public string ContextKey; public readonly List<InformationRow> Entries=new();public readonly List<object> Preparing=new(); }
- public static class DiceGuideSource {
-  public static bool Active;public static string ContextKey="dice";public static DiceGuideSnapshot Snapshot;public static int Reads,Renders,Restores;
-  public static void Install(HarmonyLib.Harmony h){}public static void Configure(bool guide,bool once){if(!guide&&!once)Active=false;}
-  public static void Clear(){Active=false;Snapshot=null;ContextKey+="c";}public static void Render(DiceGuideSnapshot value){if(value==null)Restores++;else Renders++;}
-  public static List<DisplayQuery> Discover()=>new(){new DisplayQuery(ContextKey,()=>{Reads++;return Snapshot;})};
- }
-}

@@ -69,21 +69,8 @@ static class Program {
   MarkerCadence();
   NativeWindowCadence();
   MapDiagnosticPublication();
-  DiceCadence();
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
- }
- static void DiceCadence(){
-  InformationRuntime.Clear();MapGuideSource.Visible=true;ChoiceStorySource.Visible=false;DiceGuideSource.Active=true;
-  var snapshot=DiceGuideSource.Snapshot=new DiceGuideSnapshot{ContextKey=DiceGuideSource.ContextKey};snapshot.Entries.Add(new InformationRow("dice/1","결과 1","연결","후보","연결 상세"));
-  int reads=DiceGuideSource.Reads,map=MapGuideSource.Reads;InformationRuntime.Toggle(2);
-  InformationRuntime.Tick(null,true,200);Check(DiceGuideSource.Reads==reads+1&&MapGuideSource.Reads==map,"dice guide is independent of branch recording and hides underlying map reads");
-  Check(LogBridge.Model.Tab("지도 안내").Snapshot.Rows.Single().Id=="dice/1","dice detail owns existing map tool without creating a fifth tab");
-  InformationRuntime.Tick(null,true,200.1f);Check(DiceGuideSource.Reads==reads+1,"dice healthy query keeps quarter-second cadence");
-  InformationVisibility.TestBlocked=true;InformationRuntime.Tick(null,true,201);Check(DiceGuideSource.Reads==reads+1,"blocked dice does not query");InformationVisibility.TestBlocked=false;
-  InformationRuntime.Tick(null,true,202,false,false);Check(DiceGuideSource.Reads==reads+1,"hidden automatic view stops dice queries");
-  InformationRuntime.Tick("지도 안내",true,203,false,false);Check(DiceGuideSource.Reads==reads+2,"existing detail tool can inspect dice without automatic rendering");
-  InformationRuntime.Toggle(2);InformationRuntime.Clear();
  }
  static void MapDiagnosticPublication(){
   InformationRuntime.Clear();InformationRuntime.Install(new HarmonyLib.Harmony());ChoiceStorySource.Visible=false;
@@ -185,10 +172,6 @@ static class Program {
   }
   if(references!=null) {
    using(var story=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed","Mortal.Story.dll"))) {
-    var dice=story.MainModule.GetType("Mortal.Story.DiceMenuDialog");
-    Check(dice.Methods.Any(x=>x.Name=="ExecuteRoll"&&x.ReturnType.FullName=="System.Collections.IEnumerator"&&x.Parameters.Count==3&&x.Parameters[0].ParameterType.FullName=="System.String[]"&&x.Parameters[2].Name=="checkName"),"supplied native dice hook captures exact options/key without replacing its IEnumerator");
-    var option=story.MainModule.GetType("Mortal.Story.DiceOption");
-    foreach(string name in new[]{"_sourceText","_normalText","_highText","_conditionText"})Check(option.Fields.Any(f=>f.Name==name),"native dice display field exists: "+name);
     var lua=story.MainModule.GetType("Mortal.Story.LuaManager");
     Check(lua.Fields.Single(x=>x.Name=="<Instance>k__BackingField").IsStatic,"canonical Lua singleton is an existing backing field, not a lazy getter");
     Check(lua.Fields.Single(x=>x.Name=="_luaEnvironment").FieldType.FullName=="Fungus.LuaEnvironment","canonical current Lua environment is the supplied serialized field");
@@ -206,7 +189,7 @@ static class Program {
     foreach(var spec in new[]{("Mortal.Free.PositionConditionFlagItem","_condition","Mortal.Core.ConditionResultItem"),("Mortal.Free.PositionConditionFlagItem","_flagItem","Mortal.Free.PositionFlagItem[]"),("Mortal.Free.PositionFlagItem","_flagData","Mortal.Core.FlagData"),("Mortal.Free.PositionFlagItem","_trueState","System.Int32"),("Mortal.Free.PositionFlagItem","_falseState","System.Int32")})
      Check(free.MainModule.GetType(spec.Item1).Fields.Single(x=>x.Name==spec.Item2).FieldType.FullName==spec.Item3,"actual entry projection metadata matches "+spec.Item1+"."+spec.Item2);
    }
-   foreach(string typeName in new[]{"DiceMaster.Information.MapInformationPatches","DiceMaster.Information.OptionInformationPatches","DiceMaster.Information.ChoiceStoryPatches","DiceMaster.Information.DiceGuideSource"}) {
+   foreach(string typeName in new[]{"DiceMaster.Information.MapInformationPatches","DiceMaster.Information.OptionInformationPatches","DiceMaster.Information.ChoiceStoryPatches"}) {
     var root=m.GetType(typeName);var install=root.Methods.Single(x=>x.Name=="Install");
     foreach(var target in root.NestedTypes) {
      var patch=target.CustomAttributes.SingleOrDefault(x=>x.AttributeType.FullName=="HarmonyLib.HarmonyPatch");
@@ -222,9 +205,6 @@ static class Program {
    }
   }
   var config=m.GetType("DiceMaster.Config.ConfigManager");foreach(string key in new[]{"EnableMapGuide","EnableOneShotHints","EnableBranchNotices","EnableShopEffectInfo"})Check(config.Fields.Any(f=>f.Name==key),"delivered persistent setting "+key);
-  var diceSource=m.GetType("DiceMaster.Information.DiceGuideSource");
-  foreach(var type in new[]{diceSource}.Concat(diceSource.NestedTypes))foreach(var method in type.Methods.Where(x=>x.HasBody))foreach(var call in method.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>())
-   Check(!new[]{"ExecuteRoll","Execute","Dice","Range","PressStartButton","PressContinueButton","SetSelectedGameObject","AddListener","Take","ValidReservation"}.Contains(call.Name)&&!(call.DeclaringType.FullName=="System.Reflection.FieldInfo"&&call.Name=="SetValue"),"dice observer has no gameplay/input/reservation mutation: "+call.FullName);
   var visibility=m.GetType("DiceMaster.Information.InformationVisibility");
   Check(visibility!=null&&visibility.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="get_Instance"&&x.Name!="SetValue"&&!x.Name.StartsWith("set_")),"delivered native-window reader has no scene scan, singleton initialization or reflected/property writes");
   foreach(string name in new[]{"TickCore","DrawCore"})Check(m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name==name).Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==visibility.FullName&&c.Name=="get_Blocked"),"delivered query and paint boundaries both check native windows: "+name);

@@ -53,7 +53,6 @@ namespace DiceMaster.Information
                     Observe(() => {
                         if (InformationRuntime.Enabled(0) || InformationRuntime.Enabled(1)) PreviewConditions.ObserveLuaEnvironment(__instance);
                         ChoiceStorySource.ObserveScript(__state.Text, __state.Friendly);
-                        DiceGuideSource.ObserveScript(__state.Text, __state.Friendly);
                     });
                 return __exception;
             }
