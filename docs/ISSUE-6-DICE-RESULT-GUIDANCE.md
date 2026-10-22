@@ -1,8 +1,4 @@
-# 주사위 결과별 이야기 연결 안내
-
-<!-- alpha40-publication -->
-2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha40-publication -->
+# 주사위 결과별 이야기 연결 안내 — alpha.39
 
 ## alpha.40 후속 수정 — 최초 활성화
 

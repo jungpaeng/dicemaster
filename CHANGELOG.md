@@ -1,10 +1,6 @@
 # 변경 이력
 
-## [v1.0.7-alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40) — 2026-10-23 (prerelease)
-
-<!-- alpha40-publication -->
-2026-10-23 03:48:22 KST에 소스 [`00744c6`](https://github.com/jungpaeng/dicemaster/commit/00744c64f226b6122f6582fbba2a1ec5b76ab31a)의 [alpha.40](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.40)을 게시했다. 최초 주사위 화면 초기화로 사라지던 결과 안내를 복구했으며 전체·고정 커밋 22개 검사·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha40-publication -->
+## v1.0.7-alpha.40 — 2026-10-23 (게시 준비)
 
 - 최초 주사위 활성화의 `Awake → Clear`가 결과 안내를 지우던 문제를 수정한다. 원본 결과 행의 갱신 완료 후 현재 호출과 결합한다.
 - 실제 종료·비활성화·불러오기·원문 전환·초기화 예외는 대기와 표시를 취소하고 늦은 갱신으로 되살리지 않는다. 준비/원문 미확인은 현재 주사위의 상세 진단으로 제공한다.
