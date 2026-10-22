@@ -1,5 +1,7 @@
 # 지도·선택 메뉴의 밝은 안내 배지 — alpha.29 후보
 
+현재 alpha.33의 성공 경로 재사용·시간 예산 처리와 성능 검사는 [마커 캐시 보완](ISSUE-6-MARKER-CACHE.md)을 따른다. 아래 매번 새 Reader 판정·시간 초과 때 간헐 생략 설명은 alpha.29의 당시 동작이다. 표시 의미·기회와 안내의 구분은 유지한다.
+
 <!-- alpha29-publication -->
 2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha29-publication -->

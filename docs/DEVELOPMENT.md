@@ -1,5 +1,15 @@
 # 개발 안내
 
+## alpha.33 — 마커 경로의 입력 변화 확인
+
+<!-- alpha33-publication -->
+main의 alpha.33 후보다. 지도 대화 마커의 현재 메뉴 우선 준비와 입력 변화 확인을 통한 결과 재사용을 구현했다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha33-publication -->
+
+MapGuideSource의 지도 준비에도 PrioritizeRootPreparation을 적용한다. PreviewConditions.ReadStamp는 성공한 일반 경로가 읽은 현재 값·기존 소유자/자료 참조·배열 구성·List revision·경로 준비 상태의 제한된 읽기 계획을 저장한다. 다음 조회에서는 그 입력부터 검증하고 동일할 때만 경로 판정과 행/문자열 생성을 생략한다. 오래된 참 값을 무조건 유지하지 않으며 실패·변경·한도 초과는 새 판정으로 돌아간다.
+
+이미 표시된 장소의 입력 검증은 선택적 준비의 시간 예산보다 먼저 수행한다. 입력이 동일한 성공 경로는 새 탐색의 경로/조건 예산을 소모하지 않으므로 신규 장소를 막지 않는다. 정상0.25초/실패5초와 Lua1회·8192작업·선택적 준비 약5ms를 유지한다. 5ms는 기존처럼 협력식 준비 예산이며 전체 프레임의 하드 상한이 아니다. [상한·수명·검사·성능](ISSUE-6-MARKER-CACHE.md) · [후보·배포](ISSUE-6-ALPHA33-RELEASE.md).
+
 ## alpha.32 — 설치 파일 정의와 현재 값의 분리
 
 MapDefinitionFileReader는 SHA-256·크기·인덱스·스키마를 검증한 설치 파일의 조건/분기/초기화 정의만 읽는다. 내장 MapDefinitions.index에는 파일 지문·타입·오프셋만 있고 게임 payload는 없다. State/시간/능력치/실행 count를 디스크에서 복구하지 않는다. MapFileDefinitions는 기존 등록 장소의 현재 missions/player 카탈로그로 정확한 타입/이름의 입력 객체를 연결한다. 불명·중복 객체는 미확정이며 현재 Story owner가 우선한다. 파일 정의는 경로 reader 전용으로 기회·1회성 권한에 쓰지 않는다.

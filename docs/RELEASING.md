@@ -1,5 +1,13 @@
 # 소스 기반 Release와 게시 이력
 
+## alpha.33 — 지도 마커 준비·재검사 개선
+
+<!-- alpha33-publication -->
+main의 alpha.33 후보다. 지도 대화 마커의 현재 메뉴 우선 준비와 입력 변화 확인을 통한 결과 재사용을 구현했다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha33-publication -->
+
+main에서 구현·전체 검사 후 고정 커밋으로 다시 빌드해 DLL/cfg/ZIP과 입력 SHA를 비교한다. 기존 Release/태그/자산·Latest 정식 v1.0.6·#5/#6 상태를 보존하며 annotated tag와 main만 atomic push한다. [설치·자동 검사·게시 기록](ISSUE-6-ALPHA33-RELEASE.md).
+
 ## alpha.32 — 저장 지도 직행의 이야기 안내
 
 <!-- alpha32-publication -->

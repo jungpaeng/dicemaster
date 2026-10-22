@@ -1,5 +1,13 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.33 — 마커 캐시·설정 범위
+
+<!-- alpha33-publication -->
+main의 alpha.33 후보다. 지도 대화 마커의 현재 메뉴 우선 준비와 입력 변화 확인을 통한 결과 재사용을 구현했다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha33-publication -->
+
+EnableMapGuide와 기존 상위 EnableOptionInfo 규칙을 따른다. EnableOneShotHints·EnableBranchNotices·EnableShopEffectInfo를 포함해 키/기본값/패키지 cfg 바이트 변화는 없다. 변경 없는 관련 입력의 성공 경로만 재사용하고, 게임 값·조건 자료·소유자·진입/초기화 자료가 바뀌면 무효화한다. Lua 문맥·로드·장면·OFF·종료의 기존 정리를 유지한다. 숨김/OFF에서 값 검증도 하지 않는다. [설계·검사](ISSUE-6-MARKER-CACHE.md) · [후보·Windows 대기](ISSUE-6-ALPHA33-RELEASE.md).
+
 ## alpha.31 — 지도 로그 진단 보완
 
 <!-- alpha31-publication -->

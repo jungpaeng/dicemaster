@@ -1,5 +1,17 @@
 # 변경 이력
 
+## [v1.0.7-alpha.33](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.33) — 2026-10-22 (prerelease)
+
+<!-- alpha33-publication -->
+main의 alpha.33 후보다. 지도 대화 마커의 현재 메뉴 우선 준비와 입력 변화 확인을 통한 결과 재사용을 구현했다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha33-publication -->
+
+- 지도에서 현재 메뉴를 후속 경로보다 먼저 분석해 흰색 대화 마커의 첫 표시를 앞당긴다.
+- 성공 경로의 관련 입력이 그대로면 판정과 표시 행을 재사용한다. 준비 예산 부족 때문에 기존 마커가 빠지던 경계를 수정하고, 기존 표시 재검사로 새 장소 탐색이 멈추는 현상을 보완한다.
+- 완료·해금·조건/자료 교체·행동력·우선순위·문맥·가림을 계속 반영한다. 기존 표시 범위·설정·입력·정상0.25초/실패5초·읽기 전용 계약은 유지한다.
+
+[설계·측정](docs/ISSUE-6-MARKER-CACHE.md) · [파일·검사·게시 기록](docs/ISSUE-6-ALPHA33-RELEASE.md). 실제 Windows 확인과 #6 전체 완료는 대기다.
+
 ## [v1.0.7-alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32) — 2026-10-22 (prerelease)
 
 <!-- alpha32-publication -->

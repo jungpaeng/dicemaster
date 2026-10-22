@@ -64,7 +64,7 @@ def main():
         (output / (label + '-benchmark-build.log')).write_text(build.stdout)
         build.check_returncode()
         report = {'baseline': args.baseline, 'measurements': {}}
-        for mode in ('unselected', 'selected'):
+        for mode in ('unselected', 'selected', 'deep'):
             result = subprocess.run([args.dotnet, str(temporary / 'bin/Probe.dll'), mode],
                 env=environment, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             report['measurements'][mode] = json.loads(result.stdout.strip().splitlines()[-1])

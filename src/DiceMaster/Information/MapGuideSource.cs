@@ -51,8 +51,11 @@ namespace DiceMaster.Information
         {
             internal readonly List<StoryLink> Candidates = new List<StoryLink>();
             internal int Indexed, Cursor;
-            // A definition hint, always revalidated with a fresh Reader.
+            // A successful witness reuses only an unchanged observed read set.
             internal StoryLink Preferred;
+            internal PreviewConditions.ReadStamp Stamp;
+            internal InformationRow Marker;
+            internal Candidate MarkerRoute;
         }
         private sealed class StoryGroup
         {
@@ -71,7 +74,7 @@ namespace DiceMaster.Information
             internal readonly List<StoryLink> Links = new List<StoryLink>();
         }
         private sealed class StoryLink
-        { internal MapStoryEntry Story; internal MapRoutePath Path; }
+        { internal MapStoryEntry Story; internal MapRoutePath Path; internal Candidate Notice; }
         private sealed class EventDefinition
         {
             internal PositionEventData Data;
@@ -429,7 +432,7 @@ namespace DiceMaster.Information
             try
             {
                 if (source.Routes == null && !string.IsNullOrEmpty(source.Script))
-                    source.Routes = new MapRouteDefinitions(source.Script, DataHelper.ReadPreviewScript, key => ReadPool(place, key)) { UseSharedSyntax = true };
+                    source.Routes = new MapRouteDefinitions(source.Script, DataHelper.ReadPreviewScript, key => ReadPool(place, key)) { UseSharedSyntax = true, PrioritizeRootPreparation = true };
                 if (source.Routes != null)
                 {
                     if (!scheduledReads || !routeAdvanced)

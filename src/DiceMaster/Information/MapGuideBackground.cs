@@ -9,14 +9,16 @@ namespace DiceMaster.Information
         private static int backgroundPrepareCursor, backgroundReadCursor;
         // One screen-wide preparation slot (shared with the selected place),
         // never one full preparation budget per visible place. Positive
-        // witnesses are definitions only and are revalidated every publication.
+        // witnesses validate their observed inputs before optional preparation.
         private static void CollectGuidanceMarkers(List<Place> visible, MarkerBatch batch, MapMarkerSnapshot snapshot, MapRouteDefinitions.PreparationSlice slice)
         {
             if (visible.Count == 0) return;
             guidanceBudget = new GuidanceBudget { Paths = 64, Gates = 128, Kinds = 128, Index = 128 };
             guidancePreferredOnly = true;
             int start = (backgroundReadCursor++ & int.MaxValue) % visible.Count;
-            for (int offset = 0; offset < visible.Count && !slice.ShouldYield(); offset++)
+            // Mandatory bounded input checks must precede optional cold work.
+            // Expiring its deadline must not erase an unchanged visible badge.
+            for (int offset = 0; offset < visible.Count; offset++)
                 AddGuidanceMarker(visible[(start + offset) % visible.Count], batch, snapshot, false);
 
             // Round-robin cold work cannot repeatedly restart from place zero.
@@ -75,9 +77,13 @@ namespace DiceMaster.Information
                 CollectSelectedRoute(place, controller, source, candidates);
                 if (candidates.Count == 0) return null;
                 Candidate route = candidates[0];
+                var cached = source.SelectedStories;
+                if (cached.Marker != null && ReferenceEquals(cached.MarkerRoute, route))
+                { row = cached.Marker; return route; }
                 string title = Plain(LocationTranslations.TranslateLocation((place.Key ?? "").Replace("養成_", "")));
                 row = new InformationRow("map/guidance/" + place.Id, title, "연결 안내", "진행 가능성 있음", route.Detail,
                     MapGuidePresentation.Summary(new[] { route.RoutePreview }, false, false), controller, false, false, true);
+                cached.Marker = row; cached.MarkerRoute = route;
                 return route;
             });
             if (row != null) snapshot.Entries.Add(row);

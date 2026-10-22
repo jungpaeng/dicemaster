@@ -22,7 +22,25 @@ namespace DiceMaster.LiveLog
         private sealed class Evaluation
         {
             private readonly HashSet<object> active = new HashSet<object>(new Identity());
-            private static object Read(object value, string name) { return value is DisplayDefinition definition ? definition.Read(name) : LogBridge.ReadFieldStrict(value, name); }
+            private static object Read(object value, string name)
+            {
+                object result = value is DisplayDefinition definition ? definition.Read(name) : LogBridge.ReadFieldStrict(value, name);
+                if (PreviewConditions.ReadStamp.IsRecording) ObserveRead(value, name, result);
+                return result;
+            }
+            // Revalidate through this same audited boundary; do not add a
+            // dependency from the standalone predicate reader to LogBridge.
+            private static void ObserveRead(object value, string name, object result)
+            { PreviewConditions.ReadStamp.Observe(value, name, () => ReplayRead(value, name), result); }
+            private static object ReplayRead(object value, string name)
+            {
+                // FinalValue can recurse through conversion graphs. Recheck
+                // that guard before the native getter even when replay order
+                // differs or a conversion was changed into a cycle.
+                if (name == "FinalValue" && value.GetType().FullName == "Mortal.Core.GameStat")
+                    return ReadStatFinalValue(value);
+                return value is DisplayDefinition definition ? definition.Read(name) : LogBridge.ReadFieldStrict(value, name);
+            }
             private static int Number(object value, string name) { return Convert.ToInt32(Read(value, name)); }
             private static IList List(object value, string name)
             {

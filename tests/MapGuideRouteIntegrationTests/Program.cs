@@ -122,6 +122,7 @@ internal static partial class Program
         CurrentTalkContextCases();
         PositionEntryProjectionCases();
         GuidanceMarkerCases();
+        StableGuidanceMarkerCases();
         ColdMapDefinitionCases();
         MapLogDiagnosticCases();
         FileDefinitionCases();
@@ -568,6 +569,8 @@ internal static partial class Program
         DataHelper.Scripts["large_root"] = "local r=checkpointmanager.Position('large_pool'); luamanager.SetNextScript(r)";
         var controller = new PositionController { _positionData = new FreePositionData { name = "Large", _defaultScript = "large_root" } };
         MapGuideSource.Select(controller); var value = Read();
+        for (int at = 0; at < 20 && pool._list[0].ResultReads == 0; at++)
+        { Time.unscaledTime += .25f; value = Read(); }
         int count = 0, nativeResultReads = 0;
         foreach (var row in value.Entries) if (row.Title.StartsWith("large-", StringComparison.Ordinal)) count++;
         foreach (var entry in pool._list) nativeResultReads += entry.ResultReads;
@@ -584,6 +587,8 @@ internal static partial class Program
         manager._position._list.Add(new PositionResultData { name = "beyond_pool", _list = new List<PositionEventData> { beyond } });
         DataHelper.Scripts["beyond_root"] = "local r=checkpointmanager.Position('beyond_pool'); luamanager.SetNextScript(r)";
         controller._positionData._defaultScript = "beyond_root"; value = Read();
+        for (int at = 0; at < 20 && !HasStatus(value, "풀 검색 상한"); at++)
+        { Time.unscaledTime += .25f; value = Read(); }
         Check(Find(value, "beyond-limit") == null && beyond.ResultReads == 0 && HasStatus(value, "풀 검색 상한"), "Native config lookup stops before a 1025th pool and reports the exact lookup boundary");
         var diagnostic = Find(value, "풀 자료");
         Check(diagnostic != null && diagnostic.Detail.Contains("1,024", StringComparison.Ordinal), "Pool search budget is distinct from missing data and successful emptiness");

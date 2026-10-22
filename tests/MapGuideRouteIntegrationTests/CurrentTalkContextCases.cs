@@ -50,8 +50,19 @@ internal static partial class Program
         LuaManager.Instance._luaEnvironment = CurrentTalkEnvironment(flags);
         Check(PreviewConditions.CreateRouteReader().Current(gate) == PreviewConditionState.Met,
             "late current-environment initialization recovers on the next fresh read without a game reload");
+        PreviewConditions.ReadStamp stamp;
+        using (stamp = new PreviewConditions.ReadStamp())
+            Check(PreviewConditions.CreateRouteReader().Current(gate) == PreviewConditionState.Met, "capture a valid current reset dependency");
+        var interpreterField = typeof(Fungus.LuaEnvironment).GetField("interpreter", BindingFlags.Instance | BindingFlags.NonPublic);
+        interpreterField.SetValue(LuaManager.Instance._luaEnvironment, new MoonSharp.Interpreter.Script());
+        Check(!stamp.IsCurrent(), "replacing the interpreter inside the same environment invalidates the old reset witness");
         var observed = CurrentTalkEnvironment(flags);
         LuaManager.Instance = null; PreviewConditions.ObserveLuaEnvironment(observed);
+        using (stamp = new PreviewConditions.ReadStamp())
+            Check(PreviewConditions.CreateRouteReader().Current(gate) == PreviewConditionState.Met, "capture an observed fallback reset dependency");
+        PreviewConditions.ClearTalkContext();
+        Check(!stamp.IsCurrent(), "clearing the observed Lua binding invalidates its retained dependency plan");
+        PreviewConditions.ObserveLuaEnvironment(observed);
         var observedScript = (MoonSharp.Interpreter.Script)typeof(Fungus.LuaEnvironment).GetField("interpreter", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(observed);
         observedScript.m_GlobalTable.Values["checkpointmanager"] = new MoonSharp.Interpreter.DynValue { m_Object = new MoonSharp.Interpreter.UserData(new CheckPointManager()) };
         Check(PreviewConditions.CreateRouteReader().Current(gate) == PreviewConditionState.Unknown,

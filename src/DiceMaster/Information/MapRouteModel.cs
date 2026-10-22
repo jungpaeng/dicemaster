@@ -73,6 +73,7 @@ namespace DiceMaster.Information
         {
             if (check == null) return false;
             bool value; if (!completeness.TryGetValue(check, out value)) { value = check(); completeness.Add(check, value); }
+            PreviewConditions.ReadStamp.Observe(check, "complete", () => check(), value);
             return value;
         }
         internal bool BudgetedCurrent(PreviewCondition gate, ref int budget, out PreviewConditionState state)

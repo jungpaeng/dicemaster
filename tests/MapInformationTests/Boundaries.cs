@@ -227,6 +227,11 @@ namespace DiceMaster.LiveLog
         internal static bool OwnerAlive(object value) => value != null;
         internal static object[] LoadedDefinitions(PreviewDefinitionKind kind) => null;
         internal sealed class DefinitionScope { public void Reset() { } }
+        internal sealed class ReadStamp
+        {
+            internal static bool IsRecording => false;
+            internal static void Observe(object owner, string key, Func<object> read, object value) { }
+        }
         public static readonly PreviewCondition Unknown = new PreviewCondition();
         public static string DescribeCurrent(PreviewCondition condition) => "fixture current diagnostic";
         public static string DescribePositionEntry(PreviewCondition condition, object data) => "fixture private entry diagnostic";
@@ -281,6 +286,7 @@ namespace DiceMaster.Information
     }
     public class MapRouteDefinitions
     {
+        public bool PrioritizeRootPreparation { get; set; }
         public bool UseSharedSyntax { get; set; }
         public int SharedSyntaxHits => 0;
         public static void ClearSharedSyntaxCache() { }

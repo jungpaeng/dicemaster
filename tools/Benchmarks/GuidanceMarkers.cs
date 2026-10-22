@@ -17,6 +17,7 @@ static class GuideProbe
     static void Main(string[] args)
     {
         bool selected = args.Contains("selected");
+        bool deep = args.Contains("deep");
         var results = new List<object>();
         foreach (int count in new[] { 8, 32, 64 }) foreach (int padding in new[] { 0, 4096 })
         {
@@ -27,9 +28,17 @@ static class GuideProbe
             var first = new PositionController(); var kept = new List<PositionController>();
             for (int i = 0; i < count; i++)
             {
-                var flag = new FlagData { name = "probe_" + i };
-                manager._condition._list.Add(new ConditionResultData { name = flag.name, _items = new List<ConditionResultItem> { IsZero(flag) } });
-                DataHelper.Scripts["probe_root_" + i] = "local a={};a[1]=checkpointmanager.Condition('probe_" + i + "') and 'O_probe_" + i + "' or '~x';local r=choose(a);if r==1 then setcharacter(characters.Get('person'));say(luamanager.GetStoryText('D_probe')) end";
+                int depth = deep ? 3 : 1;
+                for (int step = 0; step < depth; step++)
+                {
+                    string key = "probe_" + i + "_" + step;
+                    var flag = new FlagData { name = key };
+                    manager._condition._list.Add(new ConditionResultData { name = key, _items = new List<ConditionResultItem> { IsZero(flag) } });
+                    string next = step + 1 < depth ? "luamanager.SetNextScript('probe_tail_" + i + "_" + (step + 1) + "');luamanager.Init()" :
+                        "setcharacter(characters.Get('person'));say(luamanager.GetStoryText('D_probe'))";
+                    DataHelper.Scripts[step == 0 ? "probe_root_" + i : "probe_tail_" + i + "_" + step] =
+                        "local a={};a[1]=checkpointmanager.Condition('" + key + "') and 'O_" + key + "' or '~x';local r=choose(a);if r==1 then " + next + " end";
+                }
                 var place = new PositionController { _positionData = new FreePositionData { name = "Place" + i, _defaultScript = "probe_root_" + i },
                     _missionsManager = first._missionsManager, _gameStatManager = first._gameStatManager, _freeManager = first._freeManager };
                 kept.Add(place); MapGuideSource.Register(place);
@@ -72,7 +81,7 @@ static class GuideProbe
             }
             allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
             Array.Sort(times); Array.Sort(cold);
-            results.Add(new { count, padding, selected, firstMarkerTick = firstTick, allMarkersTick = allTick,
+            results.Add(new { count, padding, selected, deep, firstMarkerTick = firstTick, allMarkersTick = allTick,
                 coldMaxReadsPerTick = maxReads, coldTotalReads = coldReads, coldP95Ms = cold[284], coldMaxMs = cold[299],
                 minShown = min, maxShown = max, p95Ms = times[189], maxMs = times[199], bytesPerQuery = allocated / times.Length,
                 resourceReads = DataHelper.Reads - resources });

@@ -79,11 +79,16 @@ namespace DiceMaster.LiveLog
         internal static object[] LoadedDefinitions(PreviewDefinitionKind kind)
         {
             var values = LoadedDefinitionReader == null ? null : LoadedDefinitionReader(kind);
+            if (ReadStamp.IsRecording) ReadStamp.ObserveLoaded(kind, values);
             if (values == null || values.Length > 64) return null;
             return values;
         }
         internal static bool OwnerAlive(object value)
-        { return value != null && (ExistingOwnerAlive == null || ExistingOwnerAlive(value)); }
+        {
+            bool alive = value != null && (ExistingOwnerAlive == null || ExistingOwnerAlive(value));
+            if (ReadStamp.IsRecording) ReadStamp.ObserveAlive(value, alive);
+            return alive;
+        }
         private static object LoadedTalkCollection(out string source)
         {
             source = "로드된 대화 초기화 설정";
@@ -124,6 +129,7 @@ namespace DiceMaster.LiveLog
             FieldInfo interpreter = owner.GetField("interpreter", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
             if (interpreter == null) return null;
             object script = interpreter.GetValue(environment);
+            if (ReadStamp.IsRecording) ReadStamp.ObserveField(environment, interpreter, script);
             Snapshot.Exact(script, "MoonSharp.Interpreter.Script");
             object globals = Snapshot.Field(script, "m_GlobalTable");
             Snapshot.Exact(globals, "MoonSharp.Interpreter.Table");
@@ -145,6 +151,7 @@ namespace DiceMaster.LiveLog
         private static object RawObject(object globals, MethodInfo raw, string key)
         {
             object value = raw.Invoke(globals, new object[] { key });
+            if (ReadStamp.IsRecording) ReadStamp.ObserveRaw(globals, raw, key, value);
             Snapshot.Exact(value, "MoonSharp.Interpreter.DynValue");
             object data = Snapshot.Field(value, "m_Object");
             Snapshot.Exact(data, "MoonSharp.Interpreter.UserData");
@@ -171,6 +178,7 @@ namespace DiceMaster.LiveLog
                 }
             }
             source = "동일 문맥에서 관찰한 Lua 연결";
+            if (ReadStamp.IsRecording) ReadStamp.ObserveTalkContext();
             if (observedCheckpoints == null) return LoadedTalkCollection(out source);
             if (!ReferenceEquals(observedCheckpoints.Target, checkpoints)) return null;
             return TalkCollection(observedEnvironment == null ? null : observedEnvironment.Target, checkpoints);
@@ -442,6 +450,104 @@ namespace DiceMaster.LiveLog
             internal int Count, Cursor;
             internal readonly Dictionary<string, object> Values = new Dictionary<string, object>(StringComparer.Ordinal);
         }
+        // A route witness may reuse its decision only while every observed
+        // input/reference and collection revision still matches. No game
+        // evaluator, global flag scan or setter is used by this read plan.
+        internal sealed class ReadStamp : IDisposable
+        {
+            [ThreadStatic] private static ReadStamp recording;
+            private readonly ReadStamp previous;
+            private readonly Dictionary<object, Dictionary<string, Observation>> reads =
+                new Dictionary<object, Dictionary<string, Observation>>(new Identity());
+            private int count;
+            private bool reusable = true;
+            internal static bool IsRecording { get { return recording != null; } }
+            internal ReadStamp() { previous = recording; recording = this; }
+            public void Dispose() { recording = previous; }
+            private sealed class Observation
+            {
+                internal Func<object> Read;
+                internal object Value;
+                internal FieldInfo VersionField;
+                internal object Version;
+                internal object[] Cells;
+                internal bool Matches(object value)
+                {
+                    if (!Same(Value, value)) return false;
+                    if (VersionField != null && !Equals(Version, VersionField.GetValue(value))) return false;
+                    if (Cells != null)
+                    {
+                        var list = value as IList;
+                        if (list == null || list.Count != Cells.Length) return false;
+                        for (int at = 0; at < Cells.Length; at++) if (!Same(Cells[at], list[at])) return false;
+                    }
+                    return true;
+                }
+            }
+            private static bool Same(object left, object right)
+            {
+                if (ReferenceEquals(left, right)) return true;
+                if (left == null || right == null || left.GetType() != right.GetType()) return false;
+                return left is string || left.GetType().IsPrimitive || left.GetType().IsEnum ? left.Equals(right) : false;
+            }
+            internal static void Observe(string key, Func<object> read, object value)
+            { Observe(typeof(ReadStamp), key, read, value); }
+            internal static void ObserveLoaded(PreviewDefinitionKind kind, object[] values)
+            { Observe("loaded/" + kind, () => LoadedDefinitionReader == null ? null : LoadedDefinitionReader(kind), values); }
+            internal static void ObserveAlive(object value, bool alive)
+            { Observe(value, "alive", () => value != null && (ExistingOwnerAlive == null || ExistingOwnerAlive(value)), alive); }
+            internal static void ObserveRaw(object owner, MethodInfo raw, string key, object value)
+            { Observe(owner, key, () => raw.Invoke(owner, new object[] { key }), value); }
+            internal static void ObserveField(object target, FieldInfo field, object result)
+            { Observe(target, field.Name, () => field.GetValue(target is Type ? null : target), result); }
+            internal static void ObserveTalkContext()
+            {
+                Observe("observed/environment", () => observedEnvironment, observedEnvironment);
+                Observe("observed/checkpoints", () => observedCheckpoints, observedCheckpoints);
+            }
+            internal static void Observe(object owner, string key, Func<object> read, object value)
+            {
+                var stamp = recording;
+                if (stamp == null || !stamp.reusable) return;
+                Dictionary<string, Observation> fields;
+                owner = owner ?? typeof(ReadStamp);
+                if (!stamp.reads.TryGetValue(owner, out fields)) stamp.reads.Add(owner, fields = new Dictionary<string, Observation>(StringComparer.Ordinal));
+                Observation old;
+                if (fields.TryGetValue(key, out old))
+                { if (!old.Matches(value)) stamp.reusable = false; return; }
+                if (++stamp.count > 1024) { stamp.reusable = false; return; }
+                var item = new Observation { Read = read, Value = value };
+                var list = value as IList;
+                if (list != null)
+                {
+                    Type type = value.GetType();
+                    if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        item.VersionField = type.GetField("_version", BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (item.VersionField == null) { stamp.reusable = false; return; }
+                        item.Version = item.VersionField.GetValue(value);
+                    }
+                    else if (type.IsArray && type.GetArrayRank() == 1 && list.Count <= 256)
+                    { item.Cells = new object[list.Count]; list.CopyTo(item.Cells, 0); }
+                    else { stamp.reusable = false; return; }
+                }
+                fields.Add(key, item);
+            }
+            internal bool IsCurrent()
+            {
+                if (!reusable) return false;
+                ReadStamp outer = recording; recording = null;
+                try
+                {
+                    foreach (var fields in reads.Values) foreach (var item in fields.Values)
+                        if (!item.Matches(item.Read())) return false;
+                    return true;
+                }
+                catch (Exception) { return false; }
+                finally { recording = outer; }
+            }
+        }
+
         private sealed class Snapshot
         {
             private readonly List<string> diagnostics;
@@ -711,14 +817,20 @@ namespace DiceMaster.LiveLog
 
             internal static object Field(object target, string name)
             {
-                if (target is DisplayDefinition definition) return definition.Read(name);
+                if (target is DisplayDefinition definition) return definition.Read(name); // immutable installation definitions
                 if (target == null) throw new InvalidOperationException("Missing preview condition data.");
                 Type type = target as Type ?? target.GetType();
                 for (Type at = type; at != null; at = at.BaseType)
                 {
                     FieldInfo field = at.GetField(name, BindingFlags.Public | BindingFlags.NonPublic |
                         BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-                    if (field != null) return field.GetValue(target is Type ? null : target);
+                    if (field != null)
+                    {
+                        object owner = target is Type ? null : target;
+                        object result = field.GetValue(owner);
+                        if (ReadStamp.IsRecording) ReadStamp.ObserveField(target, field, result);
+                        return result;
+                    }
                 }
                 throw new MissingFieldException(type.FullName, name);
             }
