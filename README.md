@@ -20,7 +20,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha32-publication -->
-alpha.32 게시 준비: 저장된 지도로 바로 시작할 때 Story 장면의 과거 로딩에 의존하던 흰색 안내 마커를 보완했습니다. 실제 Windows 확인은 대기이며 PRD #6 전체 완료를 뜻하지 않습니다.
+2026-10-22 19:42:42 KST에 소스 [`5e85a2f`](https://github.com/jungpaeng/dicemaster/commit/5e85a2f09b5f9eedb7b745c81551ee90997692e5)의 [alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32)를 게시했다. 전체·고정 커밋 자동 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **저장 지도 직행의 정의 확보·독립 경로 표시를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha32-publication -->
 
 alpha.32는 설치된 게임의 검증된 정의 자료와 현재 게임 값을 연결해 지도 대화를 안내합니다. 다른 분기의 이벤트 풀을 읽지 못해도 독립적으로 확인한 대화 경로는 표시합니다. **제공받은 게임 복제본과 같은 자산·관리 DLL 지문에서 디스크 대체 조회를 지원**하며, 파일 구성이 다르면 기존 로드 자료 조회를 유지하고 상세에 지원 자료 불일치를 표시합니다. [지원 범위·검사](docs/ISSUE-6-FILE-DEFINITIONS.md) · [후보·게시 기록](docs/ISSUE-6-ALPHA32-RELEASE.md).

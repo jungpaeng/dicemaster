@@ -1,10 +1,10 @@
 # alpha.32 — 저장 지도 직행의 이야기 안내
 
 <!-- alpha32-publication -->
-게시 준비. main의 구현·자동 검증 후보이며 실제 Windows 확인은 대기다. PRD #6 전체 완료/이슈 종료로 처리하지 않는다.
+2026-10-22 19:42:42 KST에 소스 [`5e85a2f`](https://github.com/jungpaeng/dicemaster/commit/5e85a2f09b5f9eedb7b745c81551ee90997692e5)의 [alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32)를 게시했다. 전체·고정 커밋 자동 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **저장 지도 직행의 정의 확보·독립 경로 표시를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha32-publication -->
 
-기준 main은 `d42be54449bf2a3e8f75365af24d1262a812fd02`다. 소스는 커밋 후 annotated tag `v1.0.7-alpha.32`로 고정하고 같은 소스를 새로 빌드해 아래 검토 후보와 대조한다. [구현·원인·지원 지문](ISSUE-6-FILE-DEFINITIONS.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha32--저장-지도-직행의-파일-정의-확인-대기).
+기준 main은 `d42be54449bf2a3e8f75365af24d1262a812fd02`다. 소스·annotated tag는 `5e85a2f09b5f9eedb7b745c81551ee90997692e5` / `v1.0.7-alpha.32`로 고정했다. 같은 소스를 새로 빌드해 아래 검토 후보와 대조했다. [구현·원인·지원 지문](ISSUE-6-FILE-DEFINITIONS.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha32--저장-지도-직행의-파일-정의-확인-대기).
 
 ## 변화와 지원 범위
 
@@ -50,3 +50,9 @@ FileDefinitionCases는 Story owner/config/pool이 없는 지도에서 실제 파
 ## 남은 실제 확인
 
 Windows에서 프로세스를 완전히 다시 켜 지도 저장을 바로 불러온 후, 미포커스·남제자방 포커스·방 안 사사형·초회 전후·잠김/후속 주제를 비교한다. `파일 정의: 확인` 또는 지원 불일치 원인, 가림/OFF/다른 저장 뒤 정리, 초기/정상 지연·FPS/GC와 기존 입력·게임 상태 불변을 확인해야 한다. 사용자 확인 전 전체 완료나 #6 종료로 처리하지 않는다.
+
+## 게시 결과
+
+2026-10-22 19:42:42 KST에 Release `420596690`·asset `665534092`를 draft=false·prerelease=true·make_latest=false로 게시했다. main/새 태그 atomic push, 302개 빌드 입력·123개 소스/리소스·SDK/16개 고정 참조, 전체21개 성공 기록과 DLL/cfg/ZIP이 검토 후보와 일치한다. 공개 ZIP의 SHA·두 경로·CRC·내부 바이트를 인증 없이 다시 확인했다.
+
+이전 73개 Release·74개 태그와 자산·Latest 정식 v1.0.6·#5/#6 이슈 상태를 보존했다. 게시 보충은 별도 main 문서 커밋이며 소스 태그와 파일을 바꾸지 않는다. 실제 Windows·사용자 저장·물리 입력·지연/FPS 확인과 #6 완료는 대기다. 로컬 영수증은 artifacts/releases/v1.0.7-alpha.32/에 보관한다.

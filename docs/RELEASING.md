@@ -3,7 +3,7 @@
 ## alpha.32 — 저장 지도 직행의 이야기 안내
 
 <!-- alpha32-publication -->
-게시 준비. 설치 파일 정의의 지문 검증·읽기 전용 현재 값 연결과 독립 경로의 실패 분리를 포함한다. 실제 Windows 확인은 대기다.
+2026-10-22 19:42:42 KST에 소스 [`5e85a2f`](https://github.com/jungpaeng/dicemaster/commit/5e85a2f09b5f9eedb7b745c81551ee90997692e5)의 [alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32)를 게시했다. 전체·고정 커밋 자동 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **저장 지도 직행의 정의 확보·독립 경로 표시를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha32-publication -->
 
 고정 커밋 재빌드·기존 후보 DLL/cfg/ZIP 바이트 대조 뒤 annotated tag와 main을 게시한다. 이전 Release/태그/자산·Latest v1.0.6·#6 open을 보존한다. [지원 범위](ISSUE-6-FILE-DEFINITIONS.md) · [소스·파일·검증·게시 기록](ISSUE-6-ALPHA32-RELEASE.md).

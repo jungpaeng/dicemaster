@@ -3,7 +3,7 @@
 ## [v1.0.7-alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32) — 2026-10-22 (prerelease)
 
 <!-- alpha32-publication -->
-게시 준비. 구현·자동 검증 후보이며 실제 Windows 확인은 대기다.
+2026-10-22 19:42:42 KST에 소스 [`5e85a2f`](https://github.com/jungpaeng/dicemaster/commit/5e85a2f09b5f9eedb7b745c81551ee90997692e5)의 [alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32)를 게시했다. 전체·고정 커밋 자동 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **저장 지도 직행의 정의 확보·독립 경로 표시를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha32-publication -->
 
 - 저장 지도로 바로 시작해 Story 관리자가 없어도, 지원하는 설치 파일의 정의와 현재 게임 값을 연결해 흰색 대화 안내를 준비한다. 파일 지문이 다르면 보류한다.
