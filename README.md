@@ -20,7 +20,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha37-publication -->
-main에서 alpha.37의 카드 선택지 배치를 구현·자동 검사했다. 이름 옆에 마커·스피너를 정렬하고 툴팁은 보이는 카드의 그림·설명을 피한다. 고정 커밋 검사·게시 기록과 새 DLL의 실제 Windows 확인은 별도로 기록하며 PRD #6 전체 완료는 대기다.
+2026-10-22 23:53:20 KST에 소스 [`15d0962`](https://github.com/jungpaeng/dicemaster/commit/15d0962e821d41eec0ef5bcc041e3c806f714ccd)의 [alpha.37](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.37)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **카드 선택지의 이름 옆 마커/스피너·카드를 피하는 툴팁을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha37-publication -->
 
 alpha.37은 alpha.36의 카드 배치를 유지하면서 지도·일반 선택지의 같은 좌표를 한 번 그리는 동안 재사용해 중복 투영을 줄인다. 다음 그리기와 원천 조회는 새 좌표를 읽는다. 표시·판정·입력 규칙은 같다.

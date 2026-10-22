@@ -1,7 +1,7 @@
 # alpha.37 — 카드 선택지의 마커·스피너·툴팁 배치
 
 <!-- alpha37-publication -->
-main에서 alpha.37의 카드 선택지 배치를 구현·자동 검사했다. 이름 옆에 마커·스피너를 정렬하고 툴팁은 보이는 카드의 그림·설명을 피한다. 고정 커밋 검사·게시 기록과 새 DLL의 실제 Windows 확인은 별도로 기록하며 PRD #6 전체 완료는 대기다.
+2026-10-22 23:53:20 KST에 소스 [`15d0962`](https://github.com/jungpaeng/dicemaster/commit/15d0962e821d41eec0ef5bcc041e3c806f714ccd)의 [alpha.37](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.37)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **카드 선택지의 이름 옆 마커/스피너·카드를 피하는 툴팁을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha37-publication -->
 
 alpha.37은 alpha.36의 카드 배치를 유지하면서 지도·일반 선택지의 같은 좌표를 한 번 그리는 동안 재사용해 중복 투영을 줄인다. 다음 그리기와 원천 조회는 새 좌표를 읽는다. 표시·판정·입력 규칙은 같다.
@@ -30,7 +30,7 @@ SDK 8.0.426으로 전체21개 검사 프로그램을 통과했다. 고정 참조
 
 alpha.36에서 수행한 관리 모형의 생산 카드 기하 참고 측정은 10,000회/표본에서 3카드 p95 0.011458ms,16카드 0.095750ms,64카드 0.045833ms, 추가 할당0byte/프레임이었다. JIT/스케줄링 영향을 포함한 참고치며 카드 수 증가에 따른 단조 비교나 실제 Unity FPS 보증으로 사용하지 않는다. 한 Draw 안에서 같은 카드의 위치를 반복 읽어도 기하를 재사용하며 Draw 종료 finally에서 참조를 버린다. 주기를 늘리거나 조회/분석 예산을 바꾸지 않았다.
 
-고정 커밋 재빌드·게시 결과는 후속 기록으로 남긴다.
+소스·annotated tag는 `15d0962e821d41eec0ef5bcc041e3c806f714ccd` / `v1.0.7-alpha.37`다. 고정 커밋 재빌드의 312개 입력·126개 소스/리소스·21개 검사 통과와 DLL/cfg/ZIP이 검토 후보와 모두 일치한다. 예약 준비 루프의 동적 assertion 수가 달라질 수 있는 두 검사는 원래 로그와 허용 경계 비교를 따로 보존한다.
 
 ## 설치 후보 파일
 
@@ -55,3 +55,9 @@ alpha.36 게시 후 검토에서 DrawBadge와 Focused가 기존 TryRect 결과�
 자동 검사에서 같은 루트의20회 요청은 GetWorldCorners1회였고, 그리기 밖2회 조회는 각각 다시 읽었다. 다음 그리기에서도 이동한 좌표를 새로 읽었다. 같은 생산 코드의 비캐시/그리기 재사용 경로를 대조한10,000프레임 관리 모형은3루트 p95 0.026708→0.006417ms,64루트 0.075916→0.045833ms였으며 웜 추가 할당은 모두0byte/프레임이었다. 이는 반복 요청을 강조한 대조 모형이며 실제 게임의 일반 호출 횟수나 Unity/native/FPS 개선 폭을 뜻하지 않는다. 기록은 artifacts/issue-6/card-anchor-reuse/root-benchmark.json에 있다.
 
 alpha.37에서도 고정 참조/게임 복제본 DLL 연결의 전체21개 검사가 통과하고 같은 DLL을 생성했다. 설정/cfg·0.25초/5초·준비 수명·표시 범위/판정·카드 이름 옆 배치·형제 카드 회피·입력 보호는 그대로다. [최종 후보·게시](ISSUE-6-ALPHA37-RELEASE.md)의 새 DLL은 실제 Windows 확인 대기다. alpha.36과 이전 배포는 보존한다.
+
+## 게시 결과
+
+2026-10-22 23:53:20 KST에 Release `420849854`·asset `666166898`를 draft=false·prerelease=true·make_latest=false로 게시했다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.37/DiceMaster-v1.0.7-alpha.37.zip)의 SHA-256·크기·두 경로·CRC·내부 DLL/cfg 바이트를 인증 없이 확인했다.
+
+이전 78개 Release·79개 태그·자산·Latest 정식v1.0.6과 #5/#6 상태를 보존했다. main과 새 annotated tag만 atomic push했으며 게시 보충은 별도 main 문서 커밋이다. 소스 태그·배포 파일은 바꾸지 않는다. 실제 Windows/사용자 세이브·입력·FPS/GC 확인과 #6 완료는 대기다. 영수증은 artifacts/releases/v1.0.7-alpha.37/에 보관한다.
