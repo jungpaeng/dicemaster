@@ -19,6 +19,14 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
+<!-- alpha38-publication -->
+main에서 alpha.38의 주사위 판정 안내와 확정 결과 기록을 구현·자동 검사했다. 마커 유무와 독립적으로 실제 열린 주사위를 관찰한다. 고정 커밋 검사·게시 결과는 별도로 기록하며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha38-publication -->
+
+alpha.38은 **마커 유무와 관계없이 실제 열린 주사위**에서 판정 이름·확인된 진입 선택을 안내하고, 최종 확정 결과를 기존 분기 기록에 함께 보관합니다. 재굴림 중간 결과는 기록하지 않습니다. 기존 `EnableBranchNotices` 설정을 따르며 지도/1회성 설정과 독립적입니다. [범위·설계](docs/ISSUE-6-DICE-INFORMATION.md) · [검사·게시](docs/ISSUE-6-ALPHA38-RELEASE.md).
+
+**[v1.0.7-alpha.38 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.38/DiceMaster-v1.0.7-alpha.38.zip)**. 게임 종료 후 DLL만 교체해 cfg를 보존하세요. 실제 Windows 확인은 대기입니다.
+
 <!-- alpha37-publication -->
 2026-10-22 23:53:20 KST에 소스 [`15d0962`](https://github.com/jungpaeng/dicemaster/commit/15d0962e821d41eec0ef5bcc041e3c806f714ccd)의 [alpha.37](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.37)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **카드 선택지의 이름 옆 마커/스피너·카드를 피하는 툴팁을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha37-publication -->
@@ -195,7 +203,7 @@ alpha.33은 흰색 대화/경로 마커의 현재 메뉴를 먼저 준비하고,
 | `EnableSwitchSelectionPopup` | `false` | 지원하는 대화 중 조건 분기의 선택 팝업 |
 | `EnableMapGuide` | `true` | 지도·실제 활성 선택지의 대화/경로 안내와 밝은 배지·미선택 장소의 순환 준비·대기 임무·지도 로그. 진입 플래그는 조회 안에서만 가상 반영. 일반 경로는 기회 수를 늘리지 않으며 1회성 OFF여도 준비 가능 |
 | `EnableOneShotHints` | `true` | 증명한 항목만 1회성 표식. OFF면 해당 증명/표시 중단. 지도 안내 ON의 대화/경로 준비는 별도이며 미확인·실패 사유는 상세 |
-| `EnableBranchNotices` | `true` | 실제 분기 알림과 메모리 기록 |
+| `EnableBranchNotices` | `true` | 실제 이벤트·조건·주사위 분기 알림과 메모리 기록 |
 | `EnableShopEffectInfo` | `true` | 상점의 짧은 효과 요약. 학습 조건·소모·학습점은 상세, OFF 때 원래 설명 복원 |
 | `LogMenuToggleKey` | `Tab` | 로그 열기·닫기 키 |
 | `EnableGamepadLogOpen` | `true` | L3/R3 겹침으로 로그 열기 |

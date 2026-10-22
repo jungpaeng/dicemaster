@@ -162,7 +162,14 @@ namespace DiceMaster.Information
         public static bool IsCurrent(string id) => Selected != null && ReferenceEquals(Selected, CurrentAnchor) && id == CurrentId;
         public static bool IsCurrent(InformationRow row) => Selected != null && ReferenceEquals(row.Anchor, Selected);
     }
-    public static class BranchHistory { public static InformationRow Latest(float now) => null; }
+    public static class BranchHistory
+    {
+        public static bool Enabled => InformationRuntime.TestFlags[2]; public static string ContextKey="ui-dice";
+        private static InformationRow dice; private static float time;
+        public static InformationRow Latest(float now) => dice != null && now-time>=0 && now-time<5 ? dice : null;
+        internal static void RecordDice(DiceRollRecord record,float now,string context) { if(context==ContextKey){dice=new InformationRow("dice",record.Name,"주사위","실제 선택 확인",record.Detail,record.Notice,available:true);time=now;} }
+        public static void Clear() {dice=null;ContextKey+="c";DiceInformation.Clear();}
+    }
     public static partial class InformationRuntime
     {
         private sealed class Row { internal string Id; internal object Value; internal string Status = ""; }

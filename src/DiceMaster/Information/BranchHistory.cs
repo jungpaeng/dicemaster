@@ -33,6 +33,7 @@ namespace DiceMaster.Information
             internal PreviewAnalysis Analysis;
             internal InformationRow SummaryRow;
             internal string Failure;
+            internal DiceRollRecord Dice;
         }
 
         private static readonly List<Observation> entries = new List<Observation>();
@@ -62,6 +63,7 @@ namespace DiceMaster.Information
             contextKey = generation.ToString(CultureInfo.InvariantCulture);
             entries.Clear();
             boundaryFailures.Clear();
+            DiceInformation.Clear();
             // Published display rows are discarded synchronously as well; a
             // notification failure must never interrupt save/load/gameplay.
             try { Cleared?.Invoke(); }
@@ -80,13 +82,19 @@ namespace DiceMaster.Information
             if (observation == null || observation.Completed) return;
             observation.Completed = true;
             if (error != null || !enabled || observation.Generation != generation) return;
-            observation.Result = observation.Kind == "이벤트" ? result : branch.ToString(CultureInfo.InvariantCulture);
+            observation.Result = observation.Dice != null ? observation.Dice.ResultName : observation.Kind == "이벤트" ? result : branch.ToString(CultureInfo.InvariantCulture);
             observation.Branch = branch;
             observation.Time = now;
-            try { observation.Matched = Match(observation, false); RecoverBoundary(observation.Kind); }
+            try { observation.Matched = observation.Dice != null || Match(observation, false); RecoverBoundary(observation.Kind); }
             catch (Exception failure) { BoundaryFailure(observation.Kind, observation.Name, failure); }
             entries.Insert(0, observation);
             if (entries.Count > Capacity) entries.RemoveAt(Capacity);
+        }
+        internal static void RecordDice(DiceRollRecord record, float now, string context)
+        {
+            if (!enabled || record == null || record.Index < 1 || context != contextKey) return;
+            Observation entry = Begin("주사위", null, record.Checkpoint, null, null, null);
+            entry.Dice = record; Complete(entry, null, record.Index, now, null);
         }
 
         // Name reads are deferred to automatic/detail presentation. The actual
@@ -94,6 +102,9 @@ namespace DiceMaster.Information
         private static InformationRow Summary(Observation entry)
         {
             if (entry.SummaryRow != null) return entry.SummaryRow;
+            if (entry.Dice != null)
+                return entry.SummaryRow = new InformationRow(Id(entry), entry.Dice.Name + " → " + entry.Dice.ResultName,
+                    "주사위", Confirmed, entry.Dice.Detail, entry.Dice.Notice, available: true);
             string name = entry.Name;
             string title = entry.Kind == "이벤트" ? ReturnText(entry) :
                 (string.IsNullOrEmpty(name) ? "조건" : name) + ": 분기 " + entry.Result;
@@ -135,6 +146,7 @@ namespace DiceMaster.Information
         {
             if (!enabled || entry.Generation != generation || !entries.Contains(entry)) throw new DataNotReadyException();
             InformationRow summary = Summary(entry);
+            if (entry.Dice != null) return summary;
             string detail = "실제 반환 결과: " + ReturnText(entry) + "\n원래 체크포인트: " +
                 (string.IsNullOrEmpty(entry.Name) ? "확인 불가" : entry.Name);
             if (!entry.Matched || !Match(entry, true))
