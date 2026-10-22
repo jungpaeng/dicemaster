@@ -65,6 +65,13 @@ namespace DiceMaster.Information
         }
         public static bool TryRect(object anchor, out Rect rect)
         {
+            if (painting && anchor != null && rootGeometry.TryGetValue(anchor, out rect)) return rect.width > 0 && rect.height > 0;
+            bool found = ComputeRect(anchor, out rect);
+            if (painting && anchor != null) rootGeometry[anchor] = found ? rect : default(Rect);
+            return found;
+        }
+        private static bool ComputeRect(object anchor, out Rect rect)
+        {
             rect = default(Rect);
             try
             {

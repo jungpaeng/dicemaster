@@ -1,5 +1,13 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.37 — 카드 배치와 설정
+
+<!-- alpha37-publication -->
+main에서 alpha.37의 카드 선택지 배치를 구현·자동 검사했다. 이름 옆에 마커·스피너를 정렬하고 툴팁은 보이는 카드의 그림·설명을 피한다. 고정 커밋 검사·게시 기록과 새 DLL의 실제 Windows 확인은 별도로 기록하며 PRD #6 전체 완료는 대기다.
+<!-- /alpha37-publication -->
+
+새 설정은 없다. 기존 EnableMapGuide/EnableOneShotHints와 상위 EnableOptionInfo·기본값·OFF/가림 처리를 유지하며 cfg 바이트는 alpha.35와 같다. 금색 기회/아이보리 경로 안내/금색 준비 스피너의 의미와 크기는 그대로다. 카드형 선택지만 이름 옆을 공통 표시 위치로 사용하며 당문 지도와 일반 선택지는 기존 배치를 유지한다. [규칙·예외·성능](ISSUE-6-CARD-ANCHORS.md) · [후보·Windows 대기](ISSUE-6-ALPHA37-RELEASE.md).
+
 ## alpha.36 — 카드 배치와 설정
 
 <!-- alpha36-publication -->

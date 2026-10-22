@@ -15,9 +15,9 @@ namespace UnityEngine
     }
     public class RectTransform : Transform
     {
-        public float Width = 120, Height = 32;
+        public float Width = 120, Height = 32; public int CornerReads;
         public void GetWorldCorners(Vector3[] corners)
-        { corners[0] = position; corners[1] = new Vector3(position.x, position.y + Height, position.z); corners[2] = new Vector3(position.x + Width, position.y + Height, position.z); corners[3] = new Vector3(position.x + Width, position.y, position.z); }
+        { CornerReads++; corners[0] = position; corners[1] = new Vector3(position.x, position.y + Height, position.z); corners[2] = new Vector3(position.x + Width, position.y + Height, position.z); corners[3] = new Vector3(position.x + Width, position.y, position.z); }
     }
     public class GameObject
     {

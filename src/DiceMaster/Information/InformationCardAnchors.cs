@@ -18,9 +18,10 @@ namespace DiceMaster.Information
         private static readonly FieldInfo[] breakGraphics = Graphics(typeof(BreakOptionButton), "_typeText", "_titleText", "_actionText", "_contributeText");
         private struct CardGeometry { internal Rect Title, Body; internal bool HasTitle, HasBody; }
         private static readonly Dictionary<object, CardGeometry> cardGeometry = new Dictionary<object, CardGeometry>();
+        private static readonly Dictionary<object, Rect> rootGeometry = new Dictionary<object, Rect>();
         private static bool painting;
-        internal static void BeginPaint() { cardGeometry.Clear(); painting = true; }
-        internal static void EndPaint() { painting = false; cardGeometry.Clear(); }
+        internal static void BeginPaint() { cardGeometry.Clear(); rootGeometry.Clear(); painting = true; }
+        internal static void EndPaint() { painting = false; cardGeometry.Clear(); rootGeometry.Clear(); }
         public static bool IsCard(object anchor) { return anchor is PositionOptionButton || anchor is BreakOptionButton; }
         private static FieldInfo[] Graphics(Type type, params string[] names)
         {

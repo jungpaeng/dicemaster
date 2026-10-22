@@ -25,6 +25,15 @@ internal static partial class Program
         try
         {
             Screen.width = 1920; Screen.height = 1200; var canvas = new Canvas();
+            var plain = UiAnchor(200,200); var root = (RectTransform)plain.transform;
+            InformationAnchors.BeginPaint();
+            for(int at=0;at<10;at++) { InformationAnchors.TryRect(plain,out _); InformationAnchors.TryBadgeRect(plain,32,true,out _); }
+            Check(root.CornerReads==1,"a paint projects a repeated native/map root once for focus, badge and tooltip geometry");
+            InformationAnchors.EndPaint(); root.position=new Vector3(250,900,1);
+            InformationAnchors.TryRect(plain,out var moved); InformationAnchors.TryRect(plain,out _);
+            Check(root.CornerReads==3 && moved.x==250,"scheduled reads outside painting never reuse geometry from a previous paint");
+            InformationAnchors.BeginPaint(); InformationAnchors.TryRect(plain,out moved);InformationAnchors.EndPaint();
+            Check(root.CornerReads==4 && moved.x==250,"next paint observes changed native geometry rather than a persistent position cache");
             var first = new PositionOptionButton(); Area(first, canvas, new Rect(1270,400,431,141));
             var title = CardTitle(canvas, new Rect(1500,395,240,80), new Rect(1570,420,65,32));
             var hidden = CardTitle(canvas, new Rect(50,50,240,80), new Rect(100,60,65,32)); hidden.gameObject.activeInHierarchy = false;
