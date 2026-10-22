@@ -56,8 +56,6 @@ namespace DiceMaster.Information
             catch (Exception error) { Failure("상점 후킹", error); }
             try { BranchObservationPatches.Install(harmony); ready[2] = true; }
             catch (Exception error) { Failure("분기 후킹", error); }
-            try { DiceObservationPatches.Install(harmony); }
-            catch (Exception error) { Failure("주사위 안내 후킹", error); }
             try { OptionInformationPatches.Install(harmony); InformationLifecyclePatches.Install(harmony); }
             catch (Exception error) { ready[1] = false; Failure("선택지 후킹", error); }
             RefreshSettings();

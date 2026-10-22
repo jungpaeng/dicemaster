@@ -210,4 +210,3 @@ namespace UnityEngine.EventSystems
 {
     public class EventSystem { public static EventSystem current = new EventSystem(); public UnityEngine.GameObject currentSelectedGameObject; }
 }
-namespace DiceMaster.Information { public static class DiceInformation { public static void SourceChanged() { } } }

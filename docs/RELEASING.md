@@ -1,13 +1,5 @@
 # 소스 기반 Release와 게시 이력
 
-## alpha.38 — 주사위 판정 안내·확정 결과 기록
-
-<!-- alpha38-publication -->
-2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha38-publication -->
-
-전체21개 프로그램과 복제본 DLL 연결을 통과한 318개 입력·129개 생산 소스/리소스를 고정 커밋에서 재빌드하고 DLL/cfg/ZIP을 대조한다. 기존 alpha.37/태그/Latest 정식v1.0.6·#5/#6 상태는 보존한다. SDK/패키지는 기존 고정 버전을 별도 임시 검사 환경에 복구했으며 게임 파일을 변경하거나 배포하지 않는다. [게시·설치·검사 기록](ISSUE-6-ALPHA38-RELEASE.md).
-
 ## alpha.37 — 카드형 선택지 배치
 
 <!-- alpha37-publication -->

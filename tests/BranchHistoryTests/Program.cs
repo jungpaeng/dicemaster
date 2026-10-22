@@ -7,7 +7,7 @@ using Mono.Cecil;
 using Mortal.Story;
 using UnityEngine;
 
-internal static partial class Program
+internal static class Program
 {
     private static int assertions;
     private static void Check(bool condition, string reason) { assertions++; if (!condition) throw new Exception(reason); }
@@ -242,10 +242,8 @@ internal static partial class Program
     public static void Main(string[] args)
     {
         Outcomes(); Lifetime(); SwitchesAndSources(); FailuresAndResetHooks();
-        DiceCases(); DicePatchCases();
         if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0])) Candidate(args[0]);
         if (args.Length > 1) ActualGameApi(args[1]);
-        if (args.Length > 1) DiceApiContract(args[0], args[1]);
         string scope = "actual-source history/observation" +
             (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? ", actual candidate DLL IL" : "") +
             (args.Length > 1 ? ", supplied save/scene/result API metadata" : "");

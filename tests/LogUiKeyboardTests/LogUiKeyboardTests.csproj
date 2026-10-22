@@ -14,8 +14,6 @@
     <Compile Include="../../src/DiceMaster/Information/InformationCardAnchors.cs" Link="InformationCardAnchors.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationVisibility.cs" Link="InformationVisibility.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationOverlay.cs" Link="InformationOverlay.cs" />
-    <Compile Include="../../src/DiceMaster/Information/DiceInformation.cs" Link="DiceInformation.cs" />
-    <Compile Include="../../src/DiceMaster/Information/DiceRollRecord.cs" Link="DiceRollRecord.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationBadge.cs" Link="InformationBadge.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationLoadingState.cs" Link="InformationLoadingState.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationSpinner.cs" Link="InformationSpinner.cs" />

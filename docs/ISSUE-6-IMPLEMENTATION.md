@@ -1,15 +1,5 @@
 # PRD #6 — 지도·1회성·실제 분기·상점 정보 구현 기록
 
-## alpha.38 — 지도/선택 안내가 주사위에서 끊기는 경계 보완
-
-<!-- alpha38-publication -->
-2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha38-publication -->
-
-주사위가 실제 열리면 우측 상단에 게임이 표시한 판정 이름과 확인된 진입 선택을 안내한다. 마커 없는 경로·자동 진행도 대상이며 출처를 확인하지 못하면 주사위 정보만 표시한다. 진행 확정·정상 메뉴 정리가 확인된 결과만 기존 분기 알림/최근20건 메모리에 함께 보관한다. 재굴림 중간 결과는 기록하지 않는다.
-
-일반 선택지와 별도의 DiceOption 전용 UI는 기존 마커 대상에 추가하지 않았다. 이번 범위는 실제 판정의 맥락·확정 결과이며 결과별 미래 이야기 예측은 포함하지 않는다. 이름/목록은 이미 렌더링된 UI에서 복사하고 게임 판정·실행 횟수·RNG·세이브·입력을 변경하지 않는다. [설계·검증](ISSUE-6-DICE-INFORMATION.md) · [후보](ISSUE-6-ALPHA38-RELEASE.md).
-
 ## alpha.37 — 카드형 선택지의 표시 위치 보완
 
 <!-- alpha37-publication -->

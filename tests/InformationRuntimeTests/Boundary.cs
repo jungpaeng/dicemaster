@@ -68,7 +68,6 @@ namespace DiceMaster.Information {
  public class MapRouteEvent { }
  public class ChoiceStorySnapshot { public string ContextKey; public readonly List<InformationRow> Entries=new(); }
  public static class ChoiceStoryPatches {public static void Install(HarmonyLib.Harmony h) {}}
- public static class DiceObservationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class ChoiceStorySource {
   public static Func<bool> Enabled,GuideEnabled,OneShotEnabled;public static Func<object,bool> Interactive,CanReadEvent;public static Func<string,IList<MapRouteEvent>> PoolReader; public static bool Visible,Fail;public static bool MenuVisible=>Visible;public static string ContextKey="choice";public static int Reads,DetailReads,Clears;
   public static List<DisplayQuery> Discover(bool details=false)=>new(){new DisplayQuery(ContextKey,()=>{Reads++;if(Fail)throw new InvalidOperationException();if(details)DetailReads++;var snapshot=new ChoiceStorySnapshot{ContextKey=ContextKey};snapshot.Entries.Add(new InformationRow("choice/story","사사형","연결 이야기","선택 조건 충족 (현재)",details?"사사형 → 대화 항목":"상세에서 확인"));return snapshot;})};

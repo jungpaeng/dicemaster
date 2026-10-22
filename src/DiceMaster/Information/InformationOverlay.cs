@@ -15,28 +15,23 @@ namespace DiceMaster.Information
             internal bool CanDraw;
             private string text;
             private int font, screenWidth, screenHeight;
-            private bool right, richText, isDice;
+            private bool right, richText;
             private Rect avoid;
             private float width, height;
             private readonly List<Rect> obstacles = new List<Rect>(1);
-            internal void Prepare(string value, GUIStyle style, bool topRight, Rect occlusion, Rect? anchor = null, IList<Rect> cards = null, bool fitDice = false)
+            internal void Prepare(string value, GUIStyle style, bool topRight, Rect occlusion, Rect? anchor = null, IList<Rect> cards = null)
             {
                 CanDraw = true;
                 float margin = Math.Min(12, Math.Max(0, (Math.Min(Screen.width, Screen.height) - 1) * .5f));
                 var viewport = new Rect(margin, margin, Math.Max(1, Screen.width - margin * 2), Math.Max(1, Screen.height - margin * 2));
-                if (text != value || font != style.fontSize || screenWidth != Screen.width || screenHeight != Screen.height || right != topRight || richText != style.richText || avoid != occlusion || isDice != fitDice)
+                if (text != value || font != style.fontSize || screenWidth != Screen.width || screenHeight != Screen.height || right != topRight || richText != style.richText || avoid != occlusion)
                 {
                 text = value; font = style.fontSize; screenWidth = Screen.width; screenHeight = Screen.height;
-                right = topRight; richText = style.richText; avoid = occlusion; isDice = fitDice; Content.text = value;
+                right = topRight; richText = style.richText; avoid = occlusion; Content.text = value;
                 width = Math.Min(viewport.width, Math.Min(420, Math.Max(160, Screen.width * (topRight ? .35f : .5f))));
                 float maximumHeight = viewport.height * .35f;
                 float measured = style.CalcHeight(Content, width);
-                if (fitDice && measured > maximumHeight)
-                {
-                    Content.text = DiceRollRecord.FitNotice(value, candidate => style.CalcHeight(new GUIContent(candidate), width), maximumHeight);
-                    measured = style.CalcHeight(Content, width);
-                }
-                else if (!topRight && measured > maximumHeight)
+                if (!topRight && measured > maximumHeight)
                 {
                     Content.text = MapGuidePresentation.Fit(value, candidate => style.CalcHeight(new GUIContent(candidate), width), maximumHeight);
                     measured = style.CalcHeight(Content, width);
@@ -78,17 +73,16 @@ namespace DiceMaster.Information
         private static void DrawCore(bool logOpen, bool popupOpen, Rect logRect, float now)
         {
             if (!Application.isFocused || Screen.width <= 0 || Screen.height <= 0) { mapLoading.Clear(); choiceLoading.Clear(); return; }
-            bool nativeWindow = (Enabled(0) || Enabled(1) || Enabled(2)) && InformationVisibility.Blocked;
-            InformationRow dice = Enabled(2) && !nativeWindow && !logOpen && !popupOpen ? DiceInformation.CurrentRow() : null;
+            bool nativeWindow = (Enabled(0) || Enabled(1)) && InformationVisibility.Blocked;
             InformationRow selected = null; string status = "";
             ChoiceStorySnapshot choice = null; string choiceStatus = "";
-            if (dice == null && !nativeWindow && !logOpen && !popupOpen && choices.Visible && (Enabled(0) || Enabled(1)) && choices.Rows.Count == 1)
+            if (!nativeWindow && !logOpen && !popupOpen && choices.Visible && (Enabled(0) || Enabled(1)) && choices.Rows.Count == 1)
             {
                 var source = choices.Rows[0];
                 var snapshot = source.Value as ChoiceStorySnapshot;
                 if (snapshot != null && ChoiceStorySource.IsCurrent(snapshot)) { choice = snapshot; choiceStatus = source.Status ?? ""; }
             }
-            if (dice == null && !nativeWindow && choice == null && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && map.Visible && (Enabled(0) || Enabled(1)) && map.Rows.Count == 1)
+            if (!nativeWindow && choice == null && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && map.Visible && (Enabled(0) || Enabled(1)) && map.Rows.Count == 1)
             {
                 var source = map.Rows[0];
                 status = source.Status ?? "";
@@ -100,7 +94,7 @@ namespace DiceMaster.Information
                 }
             }
             MapMarkerSnapshot markerSnapshot = null;
-            if (dice == null && !nativeWindow && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && markers.Visible && (Enabled(0) || Enabled(1)) && markers.Rows.Count == 1)
+            if (!nativeWindow && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && markers.Visible && (Enabled(0) || Enabled(1)) && markers.Rows.Count == 1)
             {
                 var source = markers.Rows[0];
                 var snapshot = source.Value as MapMarkerSnapshot;
@@ -109,7 +103,7 @@ namespace DiceMaster.Information
             var latest = Enabled(2) ? BranchHistory.Latest(now) : null;
             mapLoading.Update(markerSnapshot == null ? null : markerSnapshot.Preparing, markerSnapshot == null ? null : markerSnapshot.ContextKey, now, 64);
             choiceLoading.Update(choice == null || choiceStatus.Length != 0 ? null : choice.Preparing, choice == null ? null : choice.ContextKey, now, 256);
-            if (selected == null && latest == null && dice == null && choice == null && markerSnapshot == null) { lastMapRow = null; mapText = null; lastChoice = null; lastChoiceRow = null; choiceText = null; mapFocusRows.Clear(); mapFocus.Clear(); choiceFocus.Clear(); return; }
+            if (selected == null && latest == null && choice == null && markerSnapshot == null) { lastMapRow = null; mapText = null; lastChoice = null; lastChoiceRow = null; choiceText = null; mapFocusRows.Clear(); mapFocus.Clear(); choiceFocus.Clear(); return; }
             int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 24);
             if (informationStyle == null || informationFont != font)
             {
@@ -172,8 +166,7 @@ namespace DiceMaster.Information
                 }
                 else if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, NoticeAnchor(anchor, current.HasBadge && choiceStatus.Length == 0, false));
             }
-            if (dice != null) DrawPassive(branchLabel, dice.AutoText, true, default(Rect), false, true, fitDice: true);
-            else if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available, fitDice: latest.Kind == "주사위");
+            if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available);
         }
         private static InformationRow Focused(IList<InformationRow> rows, InformationRow native, InformationFocus focus, bool map)
         {
@@ -243,10 +236,10 @@ namespace DiceMaster.Information
             }
             return string.Join("\n", lines);
         }
-        private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available, bool neutral = false, Rect? anchor = null, IList<Rect> cards = null, bool fitDice = false)
+        private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available, bool neutral = false, Rect? anchor = null, IList<Rect> cards = null)
         {
             informationStyle.richText = neutral;
-            label.Prepare(text, informationStyle, right, occlusion, anchor, cards, fitDice);
+            label.Prepare(text, informationStyle, right, occlusion, anchor, cards);
             if (!label.CanDraw || string.IsNullOrEmpty(label.Content.text)) return;
             informationStyle.normal.textColor = neutral ? new Color(.95f, .95f, .95f) : available ? new Color(.75f, 1f, .8f) : new Color(1f, .88f, .55f);
             GUI.Label(label.Rect, label.Content, informationStyle);

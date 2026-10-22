@@ -51,7 +51,6 @@ namespace DiceMaster.Information
             {
                 if (__exception == null && __result != null && __state != null && OptionInfoPatch.DisplayRefreshDepth == 0)
                     Observe(() => {
-                        DiceInformation.SourceChanged();
                         if (InformationRuntime.Enabled(0) || InformationRuntime.Enabled(1)) PreviewConditions.ObserveLuaEnvironment(__instance);
                         ChoiceStorySource.ObserveScript(__state.Text, __state.Friendly);
                     });
