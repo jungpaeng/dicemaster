@@ -1,7 +1,7 @@
 # alpha.33 — 지도 대화 마커 준비·깜빡임 개선
 
 <!-- alpha33-publication -->
-main의 alpha.33 후보다. 지도 대화 마커의 현재 메뉴 우선 준비와 입력 변화 확인을 통한 결과 재사용을 구현했다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 21:20:36 KST에 소스 [`6242395`](https://github.com/jungpaeng/dicemaster/commit/62423951e9e429caf592818ac683a64d838e17e6)의 [alpha.33](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.33)을 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도 마커의 초기 준비·입력 변화 확인·깜빡임 경계를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha33-publication -->
 
 기준 main은68772fddc58050984326842a177e030b0613b184다. 같은 main에서 구현·검증하며 별도 branch/worktree는 만들지 않는다. [원인·설계·상한·측정](ISSUE-6-MARKER-CACHE.md) · [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md).
@@ -26,7 +26,7 @@ SDK8.0.426으로 전체21개 검사 프로그램을 통과했다. 고정 참조1
 
 실제 파일/번체 Lua2,199개를 사용하는 경로 검사는 명시적인 현재 상태·Unity/게임 대체 객체를 사용한다. 새 회귀는11/64장소, 이미 만료된 준비 마감, 현재 값/조건/배열/목록/소유자/초기화·Lua 연결 교체와 읽기 실패·한도를 검사한다. 일반 경로 재사용이 엄격1회성·기회·게임 입력을 바꾸지 않는 경계를 함께 확인한다. 초기 전체 검사의 분리된 test stub 연결과 이전 지도 phase 정책 검사를 보완한 기록도 보존하며 최종 소스로 전체 검사를 다시 통과했다.
 
-고정 소스 커밋 재빌드는 커밋 후 수행해 이 후보와 대조한다. 실제 Windows 실행·사용자 세이브·물리 입력·FPS 확인을 수행했다는 뜻이 아니다.
+소스·annotated tag는 `62423951e9e429caf592818ac683a64d838e17e6` / `v1.0.7-alpha.33`이다. 고정 커밋 재빌드의303개 입력·123개 소스/리소스·21개 성공 기록과 DLL/cfg/ZIP이 검토 후보와 모두 일치한다. 실제 Windows 실행·사용자 세이브·물리 입력·FPS 확인을 수행했다는 뜻이 아니다.
 
 ## 설치 후보 파일
 
@@ -41,3 +41,9 @@ SDK8.0.426으로 전체21개 검사 프로그램을 통과했다. 고정 참조1
 [v1.0.7-alpha.33 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.33/DiceMaster-v1.0.7-alpha.33.zip). 활협전용 BepInEx 모드 베이스가 필요하다. 게임 종료 후 DLL/cfg를 백업하고 DLL만 교체해 기존 cfg를 보존한다. 최초 설치는 ZIP의 config·plugins 두 경로를 BepInEx 아래에 넣는다. 자동 Source code 압축은 설치용이 아니다. 문제 시 게임 종료 후 백업 DLL/cfg를 복구한다. 이전 alpha.32와 Latest 정식v1.0.6은 보존한다.
 
 새 후보는 실제 Windows에서 재실행·지도 저장 직행·포커스 전/후 첫 표시 시간, 기존 흰색 표식의30초 유지, 대화 완료·주제 해금·날짜·행동력·우선순위 변경, 로드/장면/OFF/가림·기존 입력/기능을 확인해야 한다. 사용자 확인 전 #6 전체 완료나 이슈 종료로 처리하지 않는다.
+
+## 게시 결과
+
+2026-10-22 21:20:36 KST에 Release `420686458`·asset `665791223`를 draft=false·prerelease=true·make_latest=false로 게시했다. main/새 annotated tag만 atomic push했다. 공개 ZIP의 SHA-256·크기·두 경로·CRC·내부 DLL/cfg 바이트를 인증 없이 다시 확인했다.
+
+이전 74개 Release·75개 태그·자산·Latest 정식 v1.0.6과 #5/#6 상태를 보존했다. 게시 보충은 별도 main 문서 커밋이며 소스 태그/배포 파일은 바꾸지 않는다. 실제 Windows·사용자 세이브·입력·FPS/GC 확인과 #6 완료는 대기다. 로컬 영수증은 artifacts/releases/v1.0.7-alpha.33/에 보관한다.

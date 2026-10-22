@@ -3,7 +3,7 @@
 ## alpha.33 — 흰색 마커 속도·깜빡임 확인 대기
 
 <!-- alpha33-publication -->
-main의 alpha.33 후보다. 지도 대화 마커의 현재 메뉴 우선 준비와 입력 변화 확인을 통한 결과 재사용을 구현했다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 21:20:36 KST에 소스 [`6242395`](https://github.com/jungpaeng/dicemaster/commit/62423951e9e429caf592818ac683a64d838e17e6)의 [alpha.33](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.33)을 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도 마커의 초기 준비·입력 변화 확인·깜빡임 경계를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha33-publication -->
 
 [후보·검사·측정](ISSUE-6-ALPHA33-RELEASE.md). 아래는 새 DLL의 실제 Windows/Unity·사용자 세이브·물리 입력에서 아직 확인하지 않았다.
