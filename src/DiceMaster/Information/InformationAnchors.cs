@@ -9,7 +9,7 @@ namespace DiceMaster.Information
 {
     // Geometry and native focus only. No scene scan, raycast, pointer capture,
     // gameplay evaluation, or selectable UI is introduced by passive hints.
-    public static class InformationAnchors
+    public static partial class InformationAnchors
     {
         private static readonly FieldInfo colliders = typeof(PositionController).GetField("_colliders", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
         private static readonly FieldInfo free = typeof(PositionController).GetField("_freeManager", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);

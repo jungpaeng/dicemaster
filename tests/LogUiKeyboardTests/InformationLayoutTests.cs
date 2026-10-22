@@ -146,7 +146,7 @@ internal static partial class Program
 namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
 namespace DiceMaster.Information
 {
-    public class ChoiceStorySnapshot { public string ContextKey; public readonly List<object> Preparing = new List<object>(); public readonly List<InformationRow> Entries = new List<InformationRow>(); }
+    public class ChoiceStorySnapshot { public string ContextKey; public readonly List<object> Preparing = new List<object>(); public readonly List<object> Anchors = new List<object>(); public readonly List<InformationRow> Entries = new List<InformationRow>(); }
     public static class ChoiceStorySource
     {
         public static bool MenuVisible;

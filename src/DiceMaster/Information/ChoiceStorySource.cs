@@ -17,6 +17,9 @@ namespace DiceMaster.Information
         public readonly List<InformationRow> Entries = new List<InformationRow>();
         public readonly List<InformationRow> Hints = new List<InformationRow>();
         public readonly List<object> Preparing = new List<object>();
+        // All live native buttons, including empty/disabled choices. Used only
+        // as tooltip obstacles; this does not add a story query or UI control.
+        public readonly List<object> Anchors = new List<object>();
         public string ContextKey;
         internal MenuDialog Menu;
     }
@@ -203,6 +206,8 @@ namespace DiceMaster.Information
         private static ChoiceStorySnapshot Read(MenuDialog menu, string key, bool details)
         {
             var snapshot = new ChoiceStorySnapshot { ContextKey = key, Menu = menu };
+            foreach (Option option in options)
+                if (Live(option.Control.Target, menu)) snapshot.Anchors.Add(option.Control.Target);
             if (string.IsNullOrEmpty(script) || sourceContext != Context)
             { snapshot.Entries.Add(Status("현재 선택 화면의 이야기 자료 대기 중")); return snapshot; }
             if (source == null)

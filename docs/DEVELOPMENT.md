@@ -1,5 +1,13 @@
 # 개발 안내
 
+## alpha.36 — 카드 선택지의 실제 이름 기준 배치
+
+<!-- alpha36-publication -->
+main에서 alpha.36의 카드 선택지 배치를 구현·자동 검사했다. 이름 옆에 마커·스피너를 정렬하고 툴팁은 보이는 카드의 그림·설명을 피한다. 고정 커밋 검사·게시 기록과 새 DLL의 실제 Windows 확인은 별도로 기록하며 PRD #6 전체 완료는 대기다.
+<!-- /alpha36-publication -->
+
+PositionOptionButton/BreakOptionButton의 활성 _titleText와 이미 생성된 Text.m_TextCache 정점만 읽어 글자 경계를 투영한다. 비활성 포커스 변형·공백/종료 정점은 제외하고 텍스트 생성/레이아웃 갱신/게임 UI 쓰기를 호출하지 않는다. 같은 Draw의 기하를 재사용하고 finally에서 참조를 해제한다. 기존 예약 조회가 모든 실제 버튼 anchor를 발행하며, 카드 그림/설명까지 포함한 장애물 최대64개와 고정8개 후보로 툴팁을 배치한다. [근거·측정·한계](ISSUE-6-CARD-ANCHORS.md) · [후보](ISSUE-6-ALPHA36-RELEASE.md).
+
 ## alpha.35 — 항목별 마커 준비 상태
 
 <!-- alpha35-publication -->

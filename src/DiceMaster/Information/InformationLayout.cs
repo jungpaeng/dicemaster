@@ -4,8 +4,7 @@ using UnityEngine;
 
 namespace DiceMaster.Information
 {
-    // At most four adjacent candidates for the focused item. Branch notices
-    // retain fixed corners; neither path searches the map's obstacle grid.
+    // Fixed candidate placements only; no map/choice obstacle grid search.
     public static class InformationLayout
     {
         public static float BadgeSize(int screenWidth, int screenHeight, bool map)
@@ -36,6 +35,43 @@ namespace DiceMaster.Information
         public static Rect Badge(Rect anchor, Rect viewport, float size, bool map = false)
         { return Place(new Rect(map ? anchor.x + (anchor.width - size) * .5f : anchor.x + anchor.width - size * .25f,
             map ? anchor.y - size - 7 : anchor.y - size * .75f, size, size), viewport, null); }
+        public static Rect InlineBadge(Rect title, Rect viewport, float size)
+        {
+            const float gap = 8;
+            float x = title.x - gap - size;
+            if (x < viewport.x) x = title.x + title.width + gap;
+            return Place(new Rect(x, title.y + (title.height - size) * .5f, size, size), viewport, null);
+        }
+        public static bool TryNearCards(Rect anchor, Rect viewport, float width, float height, IList<Rect> cards, out Rect result)
+        {
+            result = default(Rect);
+            if (cards == null || cards.Count == 0 || cards.Count > 64) return false;
+            Rect group = anchor;
+            for (int at = 0; at < cards.Count; at++) group = IncludingBadge(group, cards[at]);
+            width = Size(width, viewport.width); height = Size(height, viewport.height);
+            const float gap = 12;
+            // Below the selected card, then outside the whole group. Prefer
+            // the group's bottom/right before its left (often the room title).
+            for (int at = 0; at < 8; at++)
+            {
+                float x = at == 0 ? anchor.x + anchor.width - width : at == 1 ? group.x + group.width - width :
+                    at == 2 ? group.x + group.width + gap : at == 3 ? group.x :
+                    at == 4 ? group.x + group.width - width : at == 5 ? group.x - width - gap :
+                    at == 6 ? viewport.x + viewport.width - width : viewport.x;
+                float y = at == 0 ? anchor.y + anchor.height + gap : at == 1 || at == 3 ? group.y + group.height + gap :
+                    at == 2 || at == 5 ? group.y + group.height - height : at == 4 ? group.y - height - gap : viewport.y;
+                Rect candidate = Place(new Rect(x, y, width, height), viewport, null);
+                bool clear = true;
+                for (int n = 0; n < cards.Count; n++)
+                {
+                    Rect card = cards[n];
+                    if (Intersection(candidate, new Rect(card.x - gap, card.y - gap, card.width + gap * 2, card.height + gap * 2)) > 0) { clear = false; break; }
+                }
+                if (clear) { result = candidate; return true; }
+            }
+            // A crowded viewport must not cover native choices/descriptions.
+            return false;
+        }
         public static Rect Stem(Rect badge, Rect anchor)
         {
             float start = badge.y + badge.height, end = Math.Min(start + 7, anchor.y);

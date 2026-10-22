@@ -7,6 +7,7 @@ internal static partial class Program
 {
     private static void LoadingRendering()
     {
+        CardAnchorRendering();
         int width = Screen.width, height = Screen.height; var oldEvent = Event.current;
         try
         {

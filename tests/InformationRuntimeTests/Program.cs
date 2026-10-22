@@ -267,6 +267,13 @@ static class Program {
      Check(!((call.DeclaringType.Namespace.StartsWith("Mortal.")||call.DeclaringType.Namespace.StartsWith("Fungus")||call.DeclaringType.Namespace.StartsWith("UnityEngine"))&&forbidden.Contains(call.Name)),"delivered map/choice IL does not invoke game or input mutation "+call.FullName);
   }
   var anchors=m.GetType("DiceMaster.Information.InformationAnchors");
+  foreach(string name in new[]{"DrawBadge","DrawLoading","Focused"})
+   Check(runtime.Methods.Single(x=>x.Name==name).Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==anchors.FullName&&c.Name=="TryBadgeRect"),"delivered badge/spinner/pointer geometry uses the same card name anchor: "+name);
+  Check(overlay.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.Name=="TryNearCards"),"delivered card tooltip uses bounded sibling-aware placement");
+  Check(choiceRead.Body.Instructions.Any(i=>i.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.ChoiceStorySnapshot"&&f.Name=="Anchors"),"scheduled choice read captures all live native anchors independently of hint eligibility");
+  Check(anchors.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Any(i=>i.OpCode.Code==Mono.Cecil.Cil.Code.Ldstr&&(string)i.Operand=="m_TextCache"),"card geometry reads the existing rendered Text cache");
+  Check(anchors.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>!new[]{"get_cachedTextGenerator","get_cachedTextGeneratorForLayout","Populate","PopulateWithErrors","Invalidate","get_preferredWidth","get_preferredHeight","SetVerticesDirty","SetLayoutDirty"}.Contains(x.Name)),"card painting never forces native text generation or layout changes");
+  Check(runtime.Methods.Single(x=>x.Name=="Draw").Body.ExceptionHandlers.Any(x=>x.HandlerType==Mono.Cecil.Cil.ExceptionHandlerType.Finally),"paint geometry cache always releases native anchor references");
   var backend=m.GetType("DiceMaster.LiveLog.PreviewConditions");
   foreach(var method in DeepTypes(backend).SelectMany(x=>x.Methods).Where(x=>x.HasBody))
    foreach(var instruction in method.Body.Instructions) {

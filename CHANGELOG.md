@@ -1,5 +1,15 @@
 # 변경 이력
 
+## [v1.0.7-alpha.36](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.36) — 2026-10-22 (prerelease)
+
+<!-- alpha36-publication -->
+main에서 alpha.36의 카드 선택지 배치를 구현·자동 검사했다. 이름 옆에 마커·스피너를 정렬하고 툴팁은 보이는 카드의 그림·설명을 피한다. 고정 커밋 검사·게시 기록과 새 DLL의 실제 Windows 확인은 별도로 기록하며 PRD #6 전체 완료는 대기다.
+<!-- /alpha36-publication -->
+
+- 남제자방 등의 카드형 선택지는 현재 보이는 이름의 실제 글자 옆에 마커와 준비 스피너를 같은 중심으로 표시한다. 카드 전체 모서리나 넓은 제목 상자의 모서리를 사용하지 않는다.
+- 툴팁에 선택 이름을 명시하고, 안내 없는 선택지까지 포함한 카드 그림·이름·설명 영역을 피한다. 빈 공간이 없으면 툴팁을 숨기고 기존 상세 로그를 이용한다.
+- 당문 지도 핀·일반 선택지·판정 범위·설정·입력·0.25초/5초 갱신을 유지한다. [설계·검사](docs/ISSUE-6-CARD-ANCHORS.md) · [후보·게시](docs/ISSUE-6-ALPHA36-RELEASE.md).
+
 ## [v1.0.7-alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35) — 2026-10-22 (prerelease)
 
 <!-- alpha35-publication -->

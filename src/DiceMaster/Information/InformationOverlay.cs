@@ -12,14 +12,16 @@ namespace DiceMaster.Information
         {
             internal readonly GUIContent Content = new GUIContent("");
             internal Rect Rect;
+            internal bool CanDraw;
             private string text;
             private int font, screenWidth, screenHeight;
             private bool right, richText;
             private Rect avoid;
             private float width, height;
             private readonly List<Rect> obstacles = new List<Rect>(1);
-            internal void Prepare(string value, GUIStyle style, bool topRight, Rect occlusion, Rect? anchor = null)
+            internal void Prepare(string value, GUIStyle style, bool topRight, Rect occlusion, Rect? anchor = null, IList<Rect> cards = null)
             {
+                CanDraw = true;
                 float margin = Math.Min(12, Math.Max(0, (Math.Min(Screen.width, Screen.height) - 1) * .5f));
                 var viewport = new Rect(margin, margin, Math.Max(1, Screen.width - margin * 2), Math.Max(1, Screen.height - margin * 2));
                 if (text != value || font != style.fontSize || screenWidth != Screen.width || screenHeight != Screen.height || right != topRight || richText != style.richText || avoid != occlusion)
@@ -36,7 +38,12 @@ namespace DiceMaster.Information
                 }
                 height = Math.Min(maximumHeight, Math.Max(1, measured));
                 }
-                if (anchor.HasValue) { Rect = InformationLayout.Near(anchor.Value, viewport, width, height); return; }
+                if (anchor.HasValue)
+                {
+                    if (cards != null) CanDraw = InformationLayout.TryNearCards(anchor.Value, viewport, width, height, cards, out Rect);
+                    else Rect = InformationLayout.Near(anchor.Value, viewport, width, height);
+                    return;
+                }
                 var preferred = new Rect(topRight ? viewport.x + viewport.width - width : viewport.x, viewport.y, width, height);
                 obstacles.Clear();
                 if (occlusion.width > 0 && occlusion.height > 0) obstacles.Add(occlusion);
@@ -49,6 +56,7 @@ namespace DiceMaster.Information
         private static readonly InformationFocus mapFocus = new InformationFocus(), choiceFocus = new InformationFocus();
         private static readonly InformationLoadingState mapLoading = new InformationLoadingState(), choiceLoading = new InformationLoadingState();
         private static readonly List<InformationRow> mapFocusRows = new List<InformationRow>();
+        private static readonly List<Rect> choiceCards = new List<Rect>(64);
         private static readonly PassiveLabel mapLabel = new PassiveLabel(), branchLabel = new PassiveLabel(), choiceLabel = new PassiveLabel();
         private static InformationRow lastMapRow;
         private static string lastMapStatus, mapText;
@@ -58,8 +66,9 @@ namespace DiceMaster.Information
 
         public static void Draw(bool logOpen, bool popupOpen, Rect logRect, float now)
         {
-            try { DrawCore(logOpen, popupOpen, logRect, now); }
+            try { InformationAnchors.BeginPaint(); DrawCore(logOpen, popupOpen, logRect, now); }
             catch (Exception error) { Failure("정보 배치 경계", error); }
+            finally { InformationAnchors.EndPaint(); choiceCards.Clear(); }
         }
         private static void DrawCore(bool logOpen, bool popupOpen, Rect logRect, float now)
         {
@@ -138,13 +147,24 @@ namespace DiceMaster.Information
                 {
                     lastChoice = choice; lastChoiceRow = current; lastChoiceStatus = choiceStatus;
                     var lines = new List<string>();
-                    lines.Add("현재 선택의 안내" + (choiceStatus.Length == 0 ? "" : " · " + choiceStatus));
+                    lines.Add("현재 선택의 안내" + (current != null && InformationAnchors.IsCard(current.Anchor) ? ": " + current.Title : "") + (choiceStatus.Length == 0 ? "" : " · " + choiceStatus));
                     if (current != null) lines.Add("• " + current.AutoText);
                     lines.Add("자세히: 로그 → 도구 → 지도 안내");
                     choiceText = EntryConditionColors(string.Join("\n", lines), choiceStatus.Length == 0);
                 }
                 Rect anchor;
-                if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, NoticeAnchor(anchor, current.HasBadge && choiceStatus.Length == 0, false));
+                if (current != null && InformationAnchors.IsCard(current.Anchor))
+                {
+                    choiceCards.Clear();
+                    foreach (object target in choice.Anchors)
+                        if (InformationAnchors.TryCardRect(target, out anchor)) { choiceCards.Add(anchor); if (choiceCards.Count > 64) break; }
+                    if (InformationAnchors.TryCardRect(current.Anchor, out anchor))
+                    {
+                        if (choiceCards.Count == 0) choiceCards.Add(anchor);
+                        DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, anchor, choiceCards);
+                    }
+                }
+                else if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, NoticeAnchor(anchor, current.HasBadge && choiceStatus.Length == 0, false));
             }
             if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available);
         }
@@ -154,13 +174,14 @@ namespace DiceMaster.Information
             var ev = Event.current;
             Vector2 pointer = ev == null ? default(Vector2) : ev.mousePosition;
             if (!focus.Pointer(native == null ? null : native.Anchor, pointer, ev != null)) return native;
-            var viewport = new Rect(0, 0, Screen.width, Screen.height);
             foreach (InformationRow row in rows)
             {
                 if (string.IsNullOrEmpty(row.AutoText)) continue;
                 Rect anchor;
                 if (row.Anchor == null || !InformationAnchors.IsInteractive(row.Anchor) || !InformationAnchors.TryRect(row.Anchor, out anchor)) continue;
-                if (anchor.Contains(pointer) || row.HasBadge && InformationLayout.Badge(anchor, viewport, map ? mapBadgeSize : choiceBadgeSize, map).Contains(pointer)) return row;
+                Rect card, badge;
+                if (!map && InformationAnchors.TryCardRect(row.Anchor, out card)) anchor = card;
+                if (anchor.Contains(pointer) || row.HasBadge && InformationAnchors.TryBadgeRect(row.Anchor, map ? mapBadgeSize : choiceBadgeSize, map, out badge) && badge.Contains(pointer)) return row;
             }
             return null;
         }
@@ -170,7 +191,8 @@ namespace DiceMaster.Information
         {
             Rect anchor;
             if (row.Anchor == null || !InformationAnchors.IsInteractive(row.Anchor) || !InformationAnchors.TryRect(row.Anchor, out anchor)) return;
-            Rect badge = InformationLayout.Badge(anchor, new Rect(0, 0, Screen.width, Screen.height), map ? mapBadgeSize : choiceBadgeSize, map);
+            Rect badge;
+            if (!InformationAnchors.TryBadgeRect(row.Anchor, map ? mapBadgeSize : choiceBadgeSize, map, out badge)) return;
             try { InformationBadge.Draw(badge, map ? InformationLayout.Stem(badge, anchor) : default(Rect), row.Guidance && !row.Opportunity); }
             catch (Exception error) { Failure("안내 아이콘", error); }
         }
@@ -185,9 +207,8 @@ namespace DiceMaster.Information
                 foreach (InformationRow row in entries) if (ReferenceEquals(row.Anchor, anchor) && row.HasBadge) { hasBadge = true; break; }
                 // A known positive always wins, including a newer selected row.
                 if (hasBadge) continue;
-                Rect rect;
-                if (!InformationAnchors.TryRect(anchor, out rect)) continue;
-                Rect badge = InformationLayout.Badge(rect, new Rect(0, 0, Screen.width, Screen.height), map ? mapBadgeSize : choiceBadgeSize, map);
+                Rect badge;
+                if (!InformationAnchors.TryBadgeRect(anchor, map ? mapBadgeSize : choiceBadgeSize, map, out badge)) continue;
                 float size = badge.width * .65f;
                 Rect spinner = new Rect(badge.x + (badge.width - size) * .5f, badge.y + (badge.height - size) * .5f, size, size);
                 try { InformationSpinner.Draw(spinner, now); }
@@ -215,11 +236,11 @@ namespace DiceMaster.Information
             }
             return string.Join("\n", lines);
         }
-        private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available, bool neutral = false, Rect? anchor = null)
+        private static void DrawPassive(PassiveLabel label, string text, bool right, Rect occlusion, bool available, bool neutral = false, Rect? anchor = null, IList<Rect> cards = null)
         {
             informationStyle.richText = neutral;
-            label.Prepare(text, informationStyle, right, occlusion, anchor);
-            if (string.IsNullOrEmpty(label.Content.text)) return;
+            label.Prepare(text, informationStyle, right, occlusion, anchor, cards);
+            if (!label.CanDraw || string.IsNullOrEmpty(label.Content.text)) return;
             informationStyle.normal.textColor = neutral ? new Color(.95f, .95f, .95f) : available ? new Color(.75f, 1f, .8f) : new Color(1f, .88f, .55f);
             GUI.Label(label.Rect, label.Content, informationStyle);
         }
