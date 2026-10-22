@@ -19,13 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-<!-- alpha29-publication -->
-2026-10-22 15:04:05 KST에 소스 [`0bee1e2`](https://github.com/jungpaeng/dicemaster/commit/0bee1e26dcc857ca87b7da0b92967befde8eafd4)의 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)를 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **새 DLL의 실제 Windows·가독성·물리 입력·프레임 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha29-publication -->
+<!-- alpha30-publication -->
+v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha30-publication -->
 
-alpha.29는 일반 대화·해금된 후속 경로에도 아이보리 배지를 추가합니다. 아무 장소에도 포커스하지 않은 지도에서 보이는 장소를 순환 확인하며 기존 금색 기회와 구분합니다. [표시 기준·성능](docs/ISSUE-6-GUIDANCE-BADGES.md) · [파일·검증 기록](docs/ISSUE-6-ALPHA29-RELEASE.md).
+alpha.30은 게임을 다시 켜 저장된 지도로 바로 들어왔을 때 대화·경로 안내가 누락될 수 있는 경우를 보완합니다. 이미 로드된 정의 자료로 조회하며 현재 조건·해금·완료·반복 활동 판정과 기존 금색/아이보리 구분을 유지합니다. [설계·지원 범위](docs/ISSUE-6-COLD-MAP-LOAD.md) · [후보·검증 기록](docs/ISSUE-6-ALPHA30-RELEASE.md).
 
-**[v1.0.7-alpha.29 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.29/DiceMaster-v1.0.7-alpha.29.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 이전 [alpha.28 게시 기록](docs/ISSUE-6-ALPHA28-RELEASE.md)은 별도 보존합니다.
+현재 공개 설치 파일은 [alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29)이며 alpha.30 게시 후 이 링크를 갱신합니다. 업데이트는 게임 종료 후 DLL만 교체해 기존 cfg를 보존합니다.
 
 현재 main은 확인된 기회를 **어두운 바탕의 금색 두루마리**, 그 외 현재 안내 가능한 대화·경로를 **아이보리 바탕의 두루마리**로 구분합니다. 같은 항목에 둘 다 있으면 금색 하나를 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. [새 배지의 의미·검증](docs/ISSUE-6-GUIDANCE-BADGES.md).
 

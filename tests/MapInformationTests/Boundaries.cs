@@ -7,7 +7,18 @@ using LuaAction = DiceMaster.LuaParse.Action;
 namespace UnityEngine
 {
     public class Transform { public Transform Parent; public bool IsChildOf(Transform other) => ReferenceEquals(Parent, other) || ReferenceEquals(this, other); }
-    public class Object { public Transform transform = new Transform(); public string name { get; set; } public int GetInstanceID() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this); }
+    public class Object
+    {
+        public bool Destroyed;
+        public static bool operator ==(Object a, Object b) => ReferenceEquals(a, b) ||
+            ReferenceEquals(a, null) && !ReferenceEquals(b, null) && b.Destroyed ||
+            ReferenceEquals(b, null) && !ReferenceEquals(a, null) && a.Destroyed;
+        public static bool operator !=(Object a, Object b) => !(a == b);
+        public override bool Equals(object other) => ReferenceEquals(this, other);
+        public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
+        public Transform transform = new Transform(); public string name { get; set; }
+        public int GetInstanceID() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
+    }
     public class GameObject { public bool activeInHierarchy = true; }
     public static class Time { public static float unscaledTime; }
 }
@@ -94,11 +105,11 @@ namespace Mortal.Story
         public int GetRate() { Mortal.Core.Counters.GameCalls++; throw new Exception(); }
     }
     public class PositionResultData : UnityEngine.Object { public string _scriptPrefix = "result"; public List<PositionEventData> _list = new List<PositionEventData>(); }
-    public class PositionResultConfig { public List<PositionResultData> _list = new List<PositionResultData>(); }
-    public class ConditionResultConfig { public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>(); }
-    public class SwitchResultConfig { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
+    public class PositionResultConfig : UnityEngine.Object { public List<PositionResultData> _list = new List<PositionResultData>(); }
+    public class ConditionResultConfig : UnityEngine.Object { public List<Mortal.Core.ConditionResultData> _list = new List<Mortal.Core.ConditionResultData>(); }
+    public class SwitchResultConfig : UnityEngine.Object { public List<SwitchResultData> _list = new List<SwitchResultData>(); }
     public class SwitchResultData : UnityEngine.Object { public bool _useCount; public int _count; public List<Mortal.Core.ValueCompareItem> _countItems = new List<Mortal.Core.ValueCompareItem>(); public List<Mortal.Core.ConditionResultItem> _items = new List<Mortal.Core.ConditionResultItem>(); }
-    public class CheckPointManager
+    public class CheckPointManager : UnityEngine.Object
     {
         public static CheckPointManager Instance { get; set; }
         public PositionResultConfig _position = new PositionResultConfig();
@@ -210,8 +221,11 @@ namespace DiceMaster.LiveLog
 {
     public enum PreviewConditionState { Unknown, Met, NotMet }
     public class PreviewCondition { }
+    public enum PreviewDefinitionKind { Conditions, Switches, Positions, TalkFlags }
     public static class PreviewConditions
     {
+        internal static bool OwnerAlive(object value) => value != null;
+        internal static object[] LoadedDefinitions(PreviewDefinitionKind kind) => null;
         internal sealed class DefinitionScope { public void Reset() { } }
         public static readonly PreviewCondition Unknown = new PreviewCondition();
         public static string DescribeCurrent(PreviewCondition condition) => "fixture current diagnostic";
@@ -330,3 +344,7 @@ namespace DiceMaster.Information
         { var labels = new System.Collections.Generic.List<string>(); foreach (var step in steps) labels.Add(step.RawLabel); return string.Join(" → ", labels); }
     }
 }
+
+#if !MAP_ROUTE_INTEGRATION
+namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static string Describe() => "definition fixture"; } }
+#endif

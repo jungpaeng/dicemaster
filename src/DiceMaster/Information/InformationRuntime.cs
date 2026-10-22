@@ -38,6 +38,7 @@ namespace DiceMaster.Information
             if (!parent) { Array.Clear(enabled, 0, enabled.Length); BranchHistory.Enabled = false; Clear(); return; }
             BranchHistory.Cleared = () => { Reset(branch); Publish(branch, "분기 기록"); };
             OptionHintSource.Enabled = () => Enabled(1);
+            MapDefinitionAssets.Install();
             MapGuideSource.Enabled = () => Enabled(0) || Enabled(1);
             MapGuideSource.MarkerVisible = InformationAnchors.IsVisible;
             ChoiceStorySource.Enabled = () => Enabled(0) || Enabled(1);
@@ -102,13 +103,14 @@ namespace DiceMaster.Information
                 enabled[index] = value;
             }
             BranchHistory.Enabled = enabled[2];
-            if (!enabled[0] && !enabled[1]) { MapGuideSource.ClearSnapshots(); PreviewConditions.ClearTalkContext(); }
+            if (!enabled[0] && !enabled[1]) { MapGuideSource.ClearSnapshots(); PreviewConditions.ClearTalkContext(); MapDefinitionAssets.Clear(); }
         }
         private static void Reset(Page page)
         { page.Engine.ResetContext(); page.Rows.Clear(); page.Context = null; page.Visible = false; }
         public static void Clear()
         {
             Reset(map); Reset(shop); Reset(branch); Reset(hints); Reset(choices); Reset(markers); OptionHintSource.Clear(); ChoiceStorySource.Clear();
+            MapDefinitionAssets.Clear();
             MapGuideSource.Clear(); ShopEffectSource.Clear(); BranchHistory.Clear(); OneShotProof.Clear();
             PreviewConditions.ClearTalkContext();
         }
@@ -270,7 +272,7 @@ namespace DiceMaster.Information
         public static string OptionDetail(string key) => Enabled(1) ? OneShotProof.CachedOptionDetail(key) : "";
         internal static void ResetDisplays()
         {
-            PreviewConditions.ClearTalkContext();
+            PreviewConditions.ClearTalkContext(); MapDefinitionAssets.Clear();
             Reset(map); Reset(shop); Reset(hints); Reset(choices); Reset(markers);
             MapGuideSource.ClearSnapshots(); ShopEffectSource.Clear(); OptionHintSource.Clear(); OneShotProof.Clear(); ChoiceStorySource.Clear();
             Publish(map, "지도 안내"); Publish(shop, "상점 효과");

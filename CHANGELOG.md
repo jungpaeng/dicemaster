@@ -1,5 +1,16 @@
 # 변경 이력
 
+## v1.0.7-alpha.30 — 재실행 후 저장된 지도의 안내 자료 복구 (prerelease 후보)
+
+<!-- alpha30-publication -->
+v1.0.7-alpha.30 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 소스 커밋 고정 재빌드와 공개 다운로드 검증은 게시 과정에서 별도로 기록한다. 새 DLL의 실제 Windows·사용자 세이브·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha30-publication -->
+
+- 스토리 관리자가 없는 저장 지도 직행에서도 이미 로드된 조건·분기·이벤트 풀 정의로 일반 대화/경로를 조회한다. 대화 초기화는 실제 직렬화된 목록만 읽고 출처가 없거나 충돌하면 보류한다.
+- 현재 스토리 관리자는 우선하며 실행 횟수 미확정·엄격한 기회/1회성 기준을 유지한다. 정상 주기에는 전체 자산 검색을 반복하지 않고 미확인 자료는5초 후 재시도한다. [원인·지원 경계·자동 검사·Windows 확인](docs/ISSUE-6-COLD-MAP-LOAD.md).
+
+[후보·설치·검증 기록](docs/ISSUE-6-ALPHA30-RELEASE.md). 아래 alpha.29는 이전 공개 파일로 보존한다.
+
 ## [v1.0.7-alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29) — 2026-10-22 (prerelease)
 
 <!-- alpha29-publication -->

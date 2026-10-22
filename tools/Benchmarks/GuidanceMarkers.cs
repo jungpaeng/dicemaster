@@ -81,3 +81,9 @@ static class GuideProbe
         Console.WriteLine(JsonSerializer.Serialize(results));
     }
 }
+
+#if GUIDANCE_NATIVE_DEFINITIONS
+namespace Mortal.Core { public sealed class FlagCollectionData : UnityEngine.Object { public System.Collections.Generic.List<FlagData> _list = new System.Collections.Generic.List<FlagData>(); } }
+namespace Mortal.Story { public sealed class StatModifyManager : UnityEngine.Object { public Mortal.Core.FlagCollectionData _talkOptionFlag; } }
+namespace UnityEngine { public static class Resources { public static T[] FindObjectsOfTypeAll<T>() where T : Object { return System.Array.Empty<T>(); } } }
+#endif

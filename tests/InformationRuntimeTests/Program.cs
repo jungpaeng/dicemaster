@@ -222,7 +222,7 @@ static class Program {
   Check(!m.GetType("DiceMaster.Information.MapGuideSource").Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Any(i=>i.Operand is MethodReference c&&c.Name=="set_PrioritizeRootPreparation"),"delivered map scheduling does not opt into the choice-only local phase");
   Check(choice.Methods.Single(x=>x.Name=="CurrentRow").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.EventSystems.EventSystem"&&c.Name=="get_currentSelectedGameObject"),"delivered pad focus reads the existing native selected object");
   var forbidden=new[]{"Check","Execute","GetResult","GetRate","Position","Switch","Condition","SetStoryScript","SetNextScript","SetCurrentStoryScript","SetCurrentKey","SetConditionFlag","GetRandomResult","UpdateCheckMissions","GetActiveMissions","GetStoryText","UpdateContent","LoadLuaFunction","SetSelectedGameObject","OnSelect","Select","AddOption","Use","Learn","Apply","Buy"};
-  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name=="InformationAnchors"||x.Name=="InformationVisibility"||x.Name=="InformationRuntime"||x.Name.StartsWith("ChoiceStory")))) {
+  foreach(var type in m.Types.Where(x=>x.Namespace=="DiceMaster.Information"&&(x.Name.StartsWith("MapRoute")||x.Name=="MapGuideSource"||x.Name=="InformationAnchors"||x.Name=="InformationVisibility"||x.Name=="MapDefinitionAssets"||x.Name=="InformationRuntime"||x.Name.StartsWith("ChoiceStory")))) {
    foreach(var method in DeepTypes(type).SelectMany(x=>x.Methods).Where(x=>x.HasBody))
     foreach(var call in method.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>())
      Check(!((call.DeclaringType.Namespace.StartsWith("Mortal.")||call.DeclaringType.Namespace.StartsWith("Fungus")||call.DeclaringType.Namespace.StartsWith("UnityEngine"))&&forbidden.Contains(call.Name)),"delivered map/choice IL does not invoke game or input mutation "+call.FullName);
@@ -238,6 +238,14 @@ static class Program {
    }
   Check(m.GetType("DiceMaster.Information.MapRouteRead").Methods.Single(x=>x.Name=="ForSelectedPlace").Body.Instructions.Any(x=>x.Operand is MethodReference call&&call.Name=="ProjectPositionEntry"),"delivered selected-place guidance calls the read-only entry projector");
   Check(anchors.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="Raycast"&&x.Name!="SetValue"),"delivered geometry has no scene-wide scans, raycasts, or reflected field writes");
+  var assets=m.GetType("DiceMaster.Information.MapDefinitionAssets");
+  Check(assets!=null,"delivered DLL contains the cold-map metadata boundary");
+  foreach(string method in new[]{"Install","Clear"})
+   Check(runtime.Methods.Single(x=>x.Name==(method=="Install"?"Install":"ResetDisplays")).Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==assets.FullName&&c.Name==method),"delivered runtime binds and invalidates loaded metadata: "+method);
+  var assetRead=assets.Methods.Single(x=>x.Name=="Read");
+  var scanned=assetRead.Body.Instructions.Select(i=>i.Operand).OfType<GenericInstanceMethod>().Where(x=>x.DeclaringType.FullName==assets.FullName&&x.Name=="Objects").Select(x=>x.GenericArguments.Single().FullName).OrderBy(x=>x).ToArray();
+  Check(scanned.SequenceEqual(new[]{"Mortal.Story.ConditionResultConfig","Mortal.Story.PositionResultConfig","Mortal.Story.StatModifyManager","Mortal.Story.SwitchResultConfig"}.OrderBy(x=>x)),"cold lookup searches only three exact config types and the serialized reset owner; no broad flag or position/game-object discovery");
+  Check(assets.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="Load"&&x.Name!="LoadAll"&&x.Name!="Instantiate"&&x.Name!="InitEnvironment"&&x.Name!="get_Instance"&&x.Name!="FindObjectsOfType"),"cold metadata lookup neither loads/instantiates assets nor initializes gameplay owners");
   var markerRead=m.GetType("DiceMaster.Information.MapGuideSource").Methods.Single(x=>x.Name=="ReadMarkers");
   Check(markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="GetSource"&&x.Name!="AdvanceBudgeted"&&x.Name!="GetTextFromResources")&&
    markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.Name=="CollectGuidanceMarkers"),"delivered marker pass delegates cold dialogue work to the shared bounded guidance scheduler");

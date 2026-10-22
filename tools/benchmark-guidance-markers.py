@@ -41,8 +41,12 @@ def main():
         properties = xml.find('PropertyGroup')
         ET.SubElement(properties, 'StartupObject').text = 'GuideProbe'
         ET.SubElement(properties, 'EnableDefaultCompileItems').text = 'false'
-        if not args.baseline:
-            ET.SubElement(properties, 'DefineConstants').text = '$(DefineConstants);SCHEDULED_SCOPE'
+        symbols = []
+        if 'BeginScheduledReads' in (root / 'src/DiceMaster/Information/MapGuideSource.cs').read_text():
+            symbols.append('SCHEDULED_SCOPE')
+        if (root / 'src/DiceMaster/Information/MapDefinitionAssets.cs').is_file():
+            symbols.append('GUIDANCE_NATIVE_DEFINITIONS')
+        ET.SubElement(properties, 'DefineConstants').text = '$(DefineConstants);' + ';'.join(symbols)
         for item in xml.findall('.//Compile'):
             item.set('Include', str((project.parent / item.get('Include')).resolve()))
         ET.SubElement(xml.find('ItemGroup'), 'Compile', {

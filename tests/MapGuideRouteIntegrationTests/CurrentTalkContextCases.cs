@@ -69,7 +69,7 @@ internal static partial class Program
 namespace Mortal.Story
 {
     // Same existing-owner and serialized field boundary as the supplied game.
-    public sealed class LuaManager
+    public sealed class LuaManager : UnityEngine.Object
     {
         public static LuaManager Instance { get; set; }
         public Fungus.LuaEnvironment _luaEnvironment;

@@ -300,7 +300,7 @@ namespace DiceMaster.Information
                 object data = Read(controller, "_positionData");
                 if (data == null) throw new DataNotReadyException();
                 object checkpoints = ExistingCheckpoints();
-                object config = checkpoints == null ? null : Read(checkpoints, "_position");
+                object config = checkpoints == null ? PreviewConditions.LoadedDefinitions(PreviewDefinitionKind.Positions) : Read(checkpoints, "_position");
                 string script = (string)Read(data, "_defaultScript");
                 string key = (string)Read(data, "name");
                 if (!ReferenceEquals(data, place.Data) || !ReferenceEquals(config, place.PositionConfig) || script != place.Script || key != place.Key)
@@ -331,7 +331,7 @@ namespace DiceMaster.Information
                 foreach (string name in new[] { "<Instance>k__BackingField", "_instance", "Instance" })
                 {
                     FieldInfo field = type.GetField(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-                    if (field != null) return field.GetValue(null);
+                    if (field != null) { object value = field.GetValue(null); return PreviewConditions.OwnerAlive(value) ? value : null; }
                 }
             throw new MissingFieldException(typeof(CheckPointManager).FullName, "existing instance field");
         }
@@ -366,19 +366,32 @@ namespace DiceMaster.Information
         public static IList<MapRouteEvent> ReadChoicePool(string key)
         {
             object manager = ExistingCheckpoints();
-            if (manager == null) throw new DataNotReadyException();
-            return ReadPoolDefinition(Read(manager, "_position"), key, null);
+            object config = manager == null ? PreviewConditions.LoadedDefinitions(PreviewDefinitionKind.Positions) : Read(manager, "_position");
+            return ReadPoolDefinition(config, key, null);
         }
         private static IList<MapRouteEvent> ReadPoolDefinition(object config, string key, Action<string> diagnostic)
         {
             if (config == null) throw new DataNotReadyException();
-            IList pools = List(config, "_list");
-            // Native PositionResultConfig.GetResult uses the first exact name.
-            // Locate that same pool without materializing unrelated definitions.
-            for (int at = 0; at < pools.Count && at < 1024; at++)
+            object match = null;
+            var configs = config as object[] ?? new[] { config };
+            if (configs.Length > 64) throw new DataNotReadyException();
+            int budget = 1024;
+            foreach (object definition in configs)
             {
-                object pool = pools[at];
-                if (pool == null || Name(pool) != key) continue;
+                IList pools = List(definition, "_list");
+                foreach (object pool in pools)
+                {
+                    if (--budget < 0) { diagnostic?.Invoke("풀 검색 상한 · 1,024개 안에서 일치 항목을 찾지 못했습니다. 이후 자료는 확인하지 않았습니다."); throw new InvalidOperationException("Map pool search limit reached."); }
+                    if (pool == null || Name(pool) != key) continue;
+                    if (match != null && !ReferenceEquals(match, pool)) throw new DataNotReadyException();
+                    match = pool;
+                    // The native owner has a defined first-match ordering.
+                    if (!(config is object[])) break;
+                }
+            }
+            if (match != null)
+            {
+                object pool = match;
                 diagnostic?.Invoke(null);
                 string prefix = (string)Read(pool, "_scriptPrefix");
                 IList entries = List(pool, "_list");
@@ -394,11 +407,6 @@ namespace DiceMaster.Information
                 // limit before dereferencing it, and publishes partial status.
                 if (entries.Count > count) result.Add(null);
                 return result;
-            }
-            if (pools.Count > 1024)
-            {
-                diagnostic?.Invoke("풀 검색 상한 · 1,024개 안에서 일치 항목을 찾지 못했습니다. 이후 자료는 확인하지 않았습니다.");
-                throw new InvalidOperationException("Map pool search limit reached.");
             }
             throw new DataNotReadyException();
         }
@@ -564,7 +572,7 @@ namespace DiceMaster.Information
             long finished = Stopwatch.GetTimestamp();
             timings[detailed ? 2 : 1].Add(Milliseconds(start, finished), Milliseconds(start, missionsEnd), Milliseconds(missionsEnd, prepared), Milliseconds(prepared, eventsEnd), Milliseconds(eventsEnd, finished), Math.Max(0, Allocated() - allocated));
             if (detailed)
-                snapshot.Entries.Add(new InformationRow("map/performance/" + ContextKey, "지도 조회 성능", "자료 상태", "최근 실행 표본", timings[0].Describe("자동 · 대기 임무") + "\n" + timings[1].Describe("자동 · 1회성 포함") + "\n" + timings[2].Describe("명시적 상세") + "\n이번 조회: 경로 현재값 " + routeReads + "회 · 효과 분석 시작 " + effectStarts + "회 · 정적 구문 재사용 " + (source.Routes == null ? 0 : source.Routes.SharedSyntaxHits) + "회(현 경로 누적)\n선택 장소의 자료 제공자 내부만 측정합니다. 메타데이터·이 진단문 구성·UI 렌더링·전체 프레임 시간은 포함하지 않습니다. 준비는 약 5 ms마다 양보하며 동기 리소스 읽기/단일 분석의 완료 시간을 보장하지 않습니다."));
+                snapshot.Entries.Add(new InformationRow("map/performance/" + ContextKey, "지도 조회 성능", "자료 상태", "최근 실행 표본", timings[0].Describe("자동 · 대기 임무") + "\n" + timings[1].Describe("자동 · 1회성 포함") + "\n" + timings[2].Describe("명시적 상세") + "\n이번 조회: 경로 현재값 " + routeReads + "회 · 효과 분석 시작 " + effectStarts + "회 · 정적 구문 재사용 " + (source.Routes == null ? 0 : source.Routes.SharedSyntaxHits) + "회(현 경로 누적)\n" + MapDefinitionAssets.Describe() + "\n선택 장소의 자료 제공자 내부만 측정합니다. 메타데이터·이 진단문 구성·UI 렌더링·전체 프레임 시간은 포함하지 않습니다. 준비는 약 5 ms마다 양보하며 동기 리소스 읽기/단일 분석의 완료 시간을 보장하지 않습니다."));
             return snapshot;
         }
         private static void CollectStories(Place place, PositionController controller, Source source, List<Candidate> candidates)

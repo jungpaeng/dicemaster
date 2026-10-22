@@ -78,3 +78,5 @@ namespace DiceMaster.Information {
 }
 
 namespace DiceMaster.Information { public static class InformationAnchors { public static bool IsVisible(object o)=>true; public static bool IsInteractive(object o)=>true; } }
+
+namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static void Install() {} internal static void Clear() {} } }

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable><DefineConstants>$(DefineConstants);MAP_ROUTE_INTEGRATION</DefineConstants></PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/DiceMaster/Information/MapDefinitionAssets.cs" Link="MapDefinitionAssets.cs" />
     <Compile Include="../MapInformationTests/Boundaries.cs" Link="Boundaries.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideSource.cs" Link="MapGuideSource.cs" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideMarkers.cs" Link="MapGuideMarkers.cs" />

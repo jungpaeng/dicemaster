@@ -122,6 +122,7 @@ internal static partial class Program
         CurrentTalkContextCases();
         PositionEntryProjectionCases();
         GuidanceMarkerCases();
+        ColdMapDefinitionCases();
         string corpus = Environment.GetEnvironmentVariable("DICEMASTER_CORPUS_INDEX");
         if (!string.IsNullOrEmpty(corpus)) { NativeCurrentGuardMap(corpus); NativeCompletedTopicsMap(corpus); NativeSelectedStoryScan(corpus); }
         Console.WriteLine("PASS: MapGuideRouteIntegrationTests " + checks + " production provider/route/syntax/current-reader/one-shot assertions; shared explicit Unity/game/resource/effect-formatter fixtures; Lua/Windows/native execution NOT performed.");
@@ -694,8 +695,8 @@ internal static partial class Program
 // Exact type/field boundaries for observing an already existing interpreter.
 // The production reader only uses RawGet; these fixtures provide no Lua run,
 // ResetTalkFlag or environment-initialization implementation.
-namespace Mortal.Core { public sealed class FlagCollectionData { public List<FlagData> _list = new List<FlagData>(); } }
-namespace Mortal.Story { public sealed class StatModifyManager { public Mortal.Core.FlagCollectionData _talkOptionFlag; } }
+namespace Mortal.Core { public sealed class FlagCollectionData : UnityEngine.Object { public List<FlagData> _list = new List<FlagData>(); } }
+namespace Mortal.Story { public sealed class StatModifyManager : UnityEngine.Object { public Mortal.Core.FlagCollectionData _talkOptionFlag; } }
 namespace MoonSharp.Interpreter
 {
     public sealed class Script { public Table m_GlobalTable = new Table(); }

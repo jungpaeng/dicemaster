@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 namespace DiceMaster.LiveLog
 {
     public enum PreviewConditionState { Unknown, Met, NotMet }
+    public enum PreviewDefinitionKind { Conditions, Switches, Positions, TalkFlags }
 
     // Syntax only. No current game value is retained in a cached analysis.
     public sealed class PreviewCondition
@@ -71,6 +72,27 @@ namespace DiceMaster.LiveLog
         }
 
         private static WeakReference observedEnvironment, observedCheckpoints;
+        // Installed by the visible information owner. Only route readers may
+        // use loaded definition assets; strict judgments/proofs stay unchanged.
+        internal static Func<PreviewDefinitionKind, object[]> LoadedDefinitionReader = null;
+        internal static Func<object, bool> ExistingOwnerAlive = null;
+        internal static object[] LoadedDefinitions(PreviewDefinitionKind kind)
+        {
+            var values = LoadedDefinitionReader == null ? null : LoadedDefinitionReader(kind);
+            if (values == null || values.Length > 64) return null;
+            return values;
+        }
+        internal static bool OwnerAlive(object value)
+        { return value != null && (ExistingOwnerAlive == null || ExistingOwnerAlive(value)); }
+        private static object LoadedTalkCollection(out string source)
+        {
+            source = "로드된 대화 초기화 설정";
+            var values = LoadedDefinitions(PreviewDefinitionKind.TalkFlags);
+            if (values == null || values.Length == 0) return null;
+            object result = values[0]; Snapshot.Exact(result, "Mortal.Core.FlagCollectionData");
+            foreach (object value in values) if (!ReferenceEquals(value, result)) return null;
+            return result;
+        }
 
         public static void ClearTalkContext()
         { observedEnvironment = observedCheckpoints = null; }
@@ -129,25 +151,27 @@ namespace DiceMaster.LiveLog
         }
 
         // Prefer the game's CURRENT serialized owner, not whichever Lua file
-        // happened to compile last. No Instance getter, InitEnvironment, Lua
-        // execution or Unity object search is used. A broken current owner is
-        // authoritative: never revive an older observed environment instead.
+        // happened to compile last. No Instance getter, initialization or Lua
+        // execution is used. Absent owners may use bounded loaded metadata;
+        // broken current owners never borrow an older observed environment.
         private static object CurrentTalkCollection(object checkpoints, out string source)
         {
             source = "현재 게임 Lua 연결";
+            if (checkpoints == null) return LoadedTalkCollection(out source);
             Snapshot.Exact(checkpoints, "Mortal.Story.CheckPointManager");
             Type type = checkpoints.GetType().Assembly.GetType("Mortal.Story.LuaManager", false);
             if (type != null)
             {
                 object owner = Snapshot.Field(type, "<Instance>k__BackingField");
-                if (owner != null)
+                if (OwnerAlive(owner))
                 {
                     Snapshot.Exact(owner, "Mortal.Story.LuaManager");
                     return TalkCollection(Snapshot.Field(owner, "_luaEnvironment"), checkpoints);
                 }
             }
             source = "동일 문맥에서 관찰한 Lua 연결";
-            if (observedCheckpoints == null || !ReferenceEquals(observedCheckpoints.Target, checkpoints)) return null;
+            if (observedCheckpoints == null) return LoadedTalkCollection(out source);
+            if (!ReferenceEquals(observedCheckpoints.Target, checkpoints)) return null;
             return TalkCollection(observedEnvironment == null ? null : observedEnvironment.Target, checkpoints);
         }
 
@@ -553,41 +577,24 @@ namespace DiceMaster.LiveLog
                 }
                 if (node.Operation == "Condition" || node.Operation == "Switch" || node.Operation == "NextSwitch")
                 {
-                    if (!managerRead) { manager = ExistingManager(); managerRead = true; }
-                    if (manager == null) return false;
-                    if (node.Operation == "Condition")
+                    object item = FindCheckpoint(node.Operation == "Condition", node.Key);
+                    if (item == null) return false;
+                    if (node.Operation == "Condition") { ValidateConditionData(item, 0); return true; }
+                    object countMode = Field(item, "_useCount");
+                    if (!(countMode is bool)) return false;
+                    if ((bool)countMode)
                     {
-                        object item = Find(Field(manager, "_condition"), "Mortal.Story.ConditionResultConfig", "Mortal.Core.ConditionResultData", node.Key);
-                        if (item == null) return false;
-                        ValidateConditionData(item, 0); return true;
-                    }
-                    Array configs = Field(manager, "_switchList") as Array;
-                    if (configs == null || configs.Rank != 1 || configs.Length > 256) return false;
-                    foreach (object config in configs)
-                    {
-                        Step();
-                        object item = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", node.Key);
-                        if (item == null) continue;
-                        object countMode = Field(item, "_useCount");
-                        if (!(countMode is bool)) return false;
-                        // A serialized integer counter/comparison table has no
-                        // FlagData dependency. This proves independence only;
-                        // it does not evaluate or advance an ordinary Switch.
-                        if ((bool)countMode)
+                        if (!(Field(item, "_count") is int)) return false;
+                        foreach (object entry in List(item, "_countItems", 256))
                         {
-                            if (!(Field(item, "_count") is int)) return false;
-                            foreach (object entry in List(item, "_countItems", 256))
-                            {
-                                Step(); Exact(entry, "Mortal.Core.ValueCompareItem");
-                                int op = Convert.ToInt32(Field(entry, "_compareOp"));
-                                if (!(Field(entry, "_value") is int) || op < 0 || op > 5) return false;
-                            }
-                            return true;
+                            Step(); Exact(entry, "Mortal.Core.ValueCompareItem");
+                            int op = Convert.ToInt32(Field(entry, "_compareOp"));
+                            if (!(Field(entry, "_value") is int) || op < 0 || op > 5) return false;
                         }
-                        foreach (object condition in List(item, "_items", 256)) ValidateCondition(condition, 0);
                         return true;
                     }
-                    return false;
+                    foreach (object condition in List(item, "_items", 256)) ValidateCondition(condition, 0);
+                    return true;
                 }
                 if (node.Operation == "not") return ValidateDependencies(node.Left, depth + 1);
                 if (node.Operation != "and" && node.Operation != "or" && node.Operation != "==" && node.Operation != "~=" &&
@@ -724,15 +731,22 @@ namespace DiceMaster.LiveLog
                 if (list.Count > limit) throw new InvalidOperationException("Preview condition collection limit.");
                 return list;
             }
+            private static Type checkpointType;
             internal static object ExistingManager()
             {
                 const string name = "Mortal.Story.CheckPointManager";
-                Type type = typeof(PreviewConditions).Assembly.GetType(name, false);
+                Type type = checkpointType;
                 if (type == null)
-                    foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-                    { type = assembly.GetType(name, false); if (type != null) break; }
-                if (type == null) return null;
+                {
+                    type = typeof(PreviewConditions).Assembly.GetType(name, false);
+                    if (type == null)
+                        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                        { type = assembly.GetType(name, false); if (type != null) break; }
+                    if (type == null) return null;
+                    checkpointType = type; // Assembly metadata only, never an instance or current value.
+                }
                 object manager = Field(type, "<Instance>k__BackingField");
+                if (!OwnerAlive(manager)) return null;
                 Exact(manager, name);
                 return manager;
             }
@@ -774,44 +788,56 @@ namespace DiceMaster.LiveLog
                 }
                 return null;
             }
-            private object ReadCheckpoint(string operation, string key)
+            private object FindCheckpoint(bool condition, string key)
             {
                 if (!managerRead) { manager = ExistingManager(); managerRead = true; }
-                if (manager == null) return null;
-                if (operation == "Condition")
-                {
-                    if (diagnostics != null) Trace("Condition " + key);
-                    object condition = Find(Field(manager, "_condition"), "Mortal.Story.ConditionResultConfig", "Mortal.Core.ConditionResultData", key);
-                    if (condition == null) return null;
-                    return ReadConditionData(condition, 0);
-                }
-                Array configs = Field(manager, "_switchList") as Array;
-                if (configs == null || configs.Rank != 1 || configs.Length > 256) return null;
+                string configType = condition ? "Mortal.Story.ConditionResultConfig" : "Mortal.Story.SwitchResultConfig";
+                string itemType = condition ? "Mortal.Core.ConditionResultData" : "Mortal.Story.SwitchResultData";
+                Array configs;
+                bool loaded = manager == null;
+                if (!loaded) configs = condition ? new object[] { Field(manager, "_condition") } : Field(manager, "_switchList") as Array;
+                else configs = projectTalkResets ? LoadedDefinitions(condition ? PreviewDefinitionKind.Conditions : PreviewDefinitionKind.Switches) : null;
+                if (configs == null || configs.Rank != 1 || configs.Length > (loaded ? 64 : 256)) return null;
+                object result = null;
                 foreach (object config in configs)
                 {
-                    Step();
-                    object data = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", key);
-                    if (data == null) continue;
-                    if (diagnostics != null)
-                    {
-                        string count;
-                        try { count = Convert.ToString(Field(data, "_count"), CultureInfo.InvariantCulture); } catch (Exception) { count = "?"; }
-                        Trace("Switch " + key + " · useCount=" + Convert.ToString(Field(data, "_useCount"), CultureInfo.InvariantCulture) + " · count=" + count);
-                    }
-                    if (!(Field(data, "_useCount") is bool)) return null;
-                    if ((bool)Field(data, "_useCount")) return operation == "NextSwitch" ? ReadNextCount(data) : null;
-                    IList items = List(data, "_items", 256);
-                    var possible = new List<int>(); bool stopped = false;
-                    for (int i = 0; i < items.Count; i++)
-                    {
-                        bool? value = ReadCondition(items[i], 0);
-                        if (value != false) possible.Add(i + 1);
-                        if (value == true) { stopped = true; break; }
-                    }
-                    if (!stopped) possible.Add(items.Count + 1);
-                    return possible.Count == 1 ? (object)possible[0] : new SwitchChoices(possible);
+                    Step(); object item = Find(config, configType, itemType, key);
+                    if (item == null) continue;
+                    // Native ownership keeps its first-match semantics. Asset
+                    // fallback has no authoritative order: conflicting names
+                    // stay unknown instead of borrowing an unrelated config.
+                    if (!loaded) return item;
+                    if (result != null && !ReferenceEquals(result, item)) throw new InvalidOperationException("Ambiguous loaded checkpoint definition.");
+                    result = item;
                 }
-                return null;
+                return result;
+            }
+            private object ReadCheckpoint(string operation, string key)
+            {
+                object data = FindCheckpoint(operation == "Condition", key);
+                if (data == null) return null;
+                if (operation == "Condition")
+                { if (diagnostics != null) Trace("Condition " + key); return ReadConditionData(data, 0); }
+                if (diagnostics != null)
+                {
+                    string count;
+                    try { count = Convert.ToString(Field(data, "_count"), CultureInfo.InvariantCulture); } catch (Exception) { count = "?"; }
+                    Trace("Switch " + key + " · useCount=" + Convert.ToString(Field(data, "_useCount"), CultureInfo.InvariantCulture) + " · count=" + count);
+                }
+                if (!(Field(data, "_useCount") is bool)) return null;
+                // A missing story owner has not established its execution
+                // counters. Serialized asset counts cannot stand in for them.
+                if ((bool)Field(data, "_useCount")) return operation == "NextSwitch" && manager != null ? ReadNextCount(data) : null;
+                IList items = List(data, "_items", 256);
+                var possible = new List<int>(); bool stopped = false;
+                for (int i = 0; i < items.Count; i++)
+                {
+                    bool? value = ReadCondition(items[i], 0);
+                    if (value != false) possible.Add(i + 1);
+                    if (value == true) { stopped = true; break; }
+                }
+                if (!stopped) possible.Add(items.Count + 1);
+                return possible.Count == 1 ? (object)possible[0] : new SwitchChoices(possible);
             }
             private object ReadNextCount(object data)
             {
@@ -838,19 +864,11 @@ namespace DiceMaster.LiveLog
                 PreviewCondition leaf = node.Operation == "captured" ? node.Left : node;
                 if (leaf != null && (leaf.Operation == "Switch" || leaf.Operation == "NextSwitch"))
                 {
-                    if (!managerRead) { manager = ExistingManager(); managerRead = true; }
-                    if (manager == null) return leaf.Operation == "NextSwitch";
-                    Array configs = Field(manager, "_switchList") as Array;
-                    if (configs == null || configs.Length > 256) return leaf.Operation == "NextSwitch";
-                    foreach (object config in configs)
-                    {
-                        Step(); object data = Find(config, "Mortal.Story.SwitchResultConfig", "Mortal.Story.SwitchResultData", leaf.Key);
-                        if (data == null) continue;
-                        object mode = Field(data, "_useCount");
-                        if (mode is bool && !(bool)mode) return false; // Known random/ordinary uncertainty is distinct.
-                        return !(mode is bool) || Value(node, depth + 1) == null;
-                    }
-                    return leaf.Operation == "NextSwitch";
+                    object data = FindCheckpoint(false, leaf.Key);
+                    if (data == null) return leaf.Operation == "NextSwitch";
+                    object mode = Field(data, "_useCount");
+                    if (mode is bool && !(bool)mode) return false;
+                    return !(mode is bool) || Value(node, depth + 1) == null;
                 }
                 return UnresolvedEntrySwitch(node.Left, depth + 1) || UnresolvedEntrySwitch(node.Right, depth + 1);
             }
