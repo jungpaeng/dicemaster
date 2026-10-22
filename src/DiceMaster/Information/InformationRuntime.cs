@@ -22,7 +22,7 @@ namespace DiceMaster.Information
             internal List<DisplayRow> Rows = new List<DisplayRow>();
             internal bool Visible, Detailed;
         }
-        private static readonly Page map = new Page(), shop = new Page(), branch = new Page(), hints = new Page(), choices = new Page(), markers = new Page();
+        private static readonly Page map = new Page(), shop = new Page(), branch = new Page(), hints = new Page(), choices = new Page(), markers = new Page(), diceGuide = new Page();
         private static readonly bool[] enabled = new bool[4], ready = new bool[4];
         private static readonly Dictionary<string,string> failures = new Dictionary<string,string>();
                 private static bool parent;
@@ -52,6 +52,8 @@ namespace DiceMaster.Information
             catch (Exception error) { Failure("지도 후킹", error); }
             try { ChoiceStoryPatches.Install(harmony); }
             catch (Exception error) { ready[0] = false; Failure("선택 경로 후킹", error); }
+            try { DiceGuideSource.Install(harmony); }
+            catch (Exception error) { Failure("주사위 경로 후킹", error); }
             try { ShopInformationPatches.Install(harmony); ready[3] = true; }
             catch (Exception error) { Failure("상점 후킹", error); }
             try { BranchObservationPatches.Install(harmony); ready[2] = true; }
@@ -103,6 +105,7 @@ namespace DiceMaster.Information
                 enabled[index] = value;
             }
             BranchHistory.Enabled = enabled[2];
+            DiceGuideSource.Configure(enabled[0], enabled[1]);
             if (!enabled[0] && !enabled[1]) { MapGuideSource.ClearSnapshots(); PreviewConditions.ClearTalkContext(); MapDefinitionAssets.Clear(); }
         }
         private static void Reset(Page page)
@@ -114,6 +117,7 @@ namespace DiceMaster.Information
             MapDefinitionAssets.Clear();
             MapGuideSource.Clear(); ShopEffectSource.Clear(); BranchHistory.Clear(); OneShotProof.Clear();
             PreviewConditions.ClearTalkContext();
+            DiceGuideSource.Clear(); Reset(diceGuide);
         }
         public static void Tick(string detailPage, bool focused, float now, bool manual = false, bool automaticVisible = true, bool popupVisible = false)
         {
@@ -133,9 +137,14 @@ namespace DiceMaster.Information
             }
             bool nativeWindow = (enabled[0] || enabled[1]) && InformationVisibility.Blocked;
             bool choiceVisible = !nativeWindow && (enabled[0] || enabled[1]) && ChoiceStorySource.Visible;
-            bool menuVisible = ChoiceStorySource.MenuVisible;
+            bool menuVisible = ChoiceStorySource.MenuVisible || DiceGuideSource.Active;
             bool mapVisible = !nativeWindow && focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
             bool mapDetails = detailPage == "지도 안내";
+            Run(diceGuide, "주사위 경로", DiceGuideSource.ContextKey,
+                (enabled[0] || enabled[1]) && focused && !nativeWindow && !popupVisible && DiceGuideSource.Active && (automaticVisible || mapDetails), now,
+                DiceGuideSource.Discover, manual, () => DiceGuideSource.ContextKey);
+            DiceGuideSource.Render(focused && automaticVisible && !nativeWindow && !popupVisible && diceGuide.Visible && diceGuide.Rows.Count == 1 && string.IsNullOrEmpty(diceGuide.Rows[0].Status)
+                ? diceGuide.Rows[0].Value as DiceGuideSnapshot : null);
             MapDefinitionAssets.SetVisible(enabled[0] && focused && !nativeWindow && !menuVisible &&
                 (automaticVisible && MapGuideSource.MarkerSessionVisible || mapDetails));
             map.Detailed = mapDetails;
@@ -195,7 +204,7 @@ namespace DiceMaster.Information
         private static string MapKey(bool details) => MapGuideSource.ContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + details + ":" + ChoiceStorySource.MenuVisible + ":" + ChoiceStorySource.ContextKey;
         private static string MarkerKey() => MapGuideSource.MarkerContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + luaContext;
         private static string ChoiceKey(bool details) => ChoiceStorySource.ContextKey + ":" + enabled[0] + ":" + enabled[1] + ":" + details;
-        private static string ModelTitle(string title) => title == "선택 경로" ? "지도 안내" : title;
+        private static string ModelTitle(string title) => title == "선택 경로" || title == "주사위 경로" ? "지도 안내" : title;
         private static void Run(Page page, string title, string key, bool visible, float now,
             Func<List<DisplayQuery>> discover, bool manual, Func<string> currentKey = null)
         {
@@ -215,6 +224,8 @@ namespace DiceMaster.Information
         private static void Publish(Page page, string title)
         {
             if (title == "1회성" || title == "지도 표식") return;
+            if ((title == "지도 안내" || title == "선택 경로") && DiceGuideSource.Active) return;
+            if (title == "주사위 경로" && (!DiceGuideSource.Active || !(Enabled(0) || Enabled(1)))) return;
             // Both contexts use the existing map tool, with only the currently
             // visible owner publishing. A hidden map must not erase menu rows.
             if (title == "지도 안내" && (Enabled(0) || Enabled(1)) && ChoiceStorySource.Visible) return;
@@ -222,6 +233,8 @@ namespace DiceMaster.Information
             var rows = new List<LogItem>();
             foreach (DisplayRow source in page.Rows)
             {
+                if (source.Value is DiceGuideSnapshot dice)
+                { foreach (InformationRow entry in dice.Entries) AddPublishedRow(rows, source, entry); continue; }
                 var choice = source.Value as ChoiceStorySnapshot;
                 if (title == "선택 경로" && choice != null)
                 {
@@ -240,8 +253,8 @@ namespace DiceMaster.Information
             }
             if (rows.Count == 0)
             {
-                bool on = title == "선택 경로" ? Enabled(0) || Enabled(1) : title == "지도 안내" ? Enabled(0) || Enabled(1) : title == "상점 효과" ? Enabled(3) : Enabled(2);
-                bool waiting = on && (title == "선택 경로" ? ChoiceStorySource.Visible : title == "지도 안내" ? MapGuideSource.Visible || Enabled(0) && MapGuideSource.SessionVisible : title == "상점 효과" && ShopEffectSource.Visible);
+                bool on = title == "주사위 경로" || title == "선택 경로" || title == "지도 안내" ? Enabled(0) || Enabled(1) : title == "상점 효과" ? Enabled(3) : Enabled(2);
+                bool waiting = on && (title == "주사위 경로" ? DiceGuideSource.Active : title == "선택 경로" ? ChoiceStorySource.Visible : title == "지도 안내" ? MapGuideSource.Visible || Enabled(0) && MapGuideSource.SessionVisible : title == "상점 효과" && ShopEffectSource.Visible);
                 rows.Add(new LogItem { Id = "__empty__", Title = !on ? "기능 OFF" : waiting ? RefreshEngine.WaitingStatus :
                     title == "지도 안내" ? "현재 지도 장소 없음" : title == "상점 효과" ? "현재 선택한 상점 물품 없음" : "실제 분기 기록 없음",
                     Description = "현재 문맥의 자료만 조회합니다. 정보 조회는 게임 진행·예약·구매·사용을 실행하지 않습니다.",
@@ -285,6 +298,7 @@ namespace DiceMaster.Information
         public static string OptionDetail(string key) => Enabled(1) ? OneShotProof.CachedOptionDetail(key) : "";
         internal static void ResetDisplays()
         {
+            DiceGuideSource.Clear(); Reset(diceGuide);
             map.Detailed = false;
             PreviewConditions.ClearTalkContext(); MapDefinitionAssets.Clear();
             Reset(map); Reset(shop); Reset(hints); Reset(choices); Reset(markers);

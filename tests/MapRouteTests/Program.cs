@@ -7,7 +7,7 @@ using System.Text.Json;
 using DiceMaster.Information;
 using DiceMaster.LiveLog;
 
-internal static class Program
+internal static partial class Program
 {
     private static int checks;
     private static readonly Dictionary<string, object> targets = new Dictionary<string, object>(StringComparer.Ordinal);
@@ -29,6 +29,7 @@ internal static class Program
     private static void Main()
     {
         var manager = Mortal.Story.CheckPointManager.Instance = new Mortal.Story.CheckPointManager();
+        DiceRoutes();
         var condition = new Mortal.Core.ConditionResultData { name = "gate", Current = true };
         manager._condition._list.Add(condition);
         var d = Build(Use("pool"));

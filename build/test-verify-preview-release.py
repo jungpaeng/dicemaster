@@ -195,10 +195,10 @@ class PreviewValidationTests(unittest.TestCase):
                         preview.validate_preview_candidate(manifest, scope)
 
     def test_all_twenty_prd6_programs_required_with_pass_evidence(self):
-        self.assertEqual(len(preview.PRD6_REQUIRED_TESTS), 21)
+        self.assertEqual(len(preview.PRD6_REQUIRED_TESTS), 22)
         self.assertEqual(preview.PRD6_REQUIRED_TESTS - preview.PRD5_REQUIRED_TESTS,
                          {'MapInformationTests', 'MapRouteTests', 'MapGuideRouteIntegrationTests', 'ShopInformationTests',
-                          'BranchHistoryTests', 'InformationRuntimeTests', 'ChoiceStoryTests'})
+                          'BranchHistoryTests', 'InformationRuntimeTests', 'ChoiceStoryTests', 'DiceGuideTests'})
         for name in preview.PRD6_REQUIRED_TESTS:
             manifest = deepcopy(self.prd6)
             del manifest['tests'][name]
@@ -225,7 +225,7 @@ class PreviewValidationTests(unittest.TestCase):
             'METADATA CONTRACT: actual game/Harmony target signatures and pure description wrappers verified; native game NOT executed.',
             'PASS: 4265 managed behavior assertions and 1278 metadata contract assertions; native game runtime NOT executed.',
         ]
-        self.assertEqual(len(manifest['tests']), 21)
+        self.assertEqual(len(manifest['tests']), 22)
         preview.validate_preview_candidate(manifest, 'prd6')
 
     def test_prd6_rejects_metadata_only_wrong_suite_and_invalid_success_counts(self):

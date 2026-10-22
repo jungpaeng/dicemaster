@@ -1,5 +1,11 @@
 # 개발 안내
 
+## alpha.39 — 주사위 결과 연결 (게시 준비)
+
+`DiceRouteIndex`가 관찰한 원문의 리터럴 결과 분기와 실제 `ExecuteRoll` 키/행을 유일하게 대조한다. `MapRouteDefinitions.DiceArm`은 결과 가정을 별도 그래프에만 주입하고 일반 지도/선택지 경로를 바꾸지 않는다. `DiceGuideSource`는 현재 조건·기존 증명·등록 임무를 읽고 원래 비활성 버튼에 수동 표시만 제공한다. 기존 네 탭의 지도 도구를 재사용한다. [설계·상한·설정·미지원 범위](ISSUE-6-DICE-RESULT-GUIDANCE.md).
+
+alpha.38은 `2db6a19`에서 되돌렸다. 새 `DiceGuideTests`를 포함한 필수 검사는 22개이며 실제 게임 DLL의 `ExecuteRoll`/TMP/임계값 필드와 배포 DLL IL의 읽기 전용 경계를 검사한다. 자동 검사는 Unity/Harmony·물리 패드·Windows 표시 확인을 대신하지 않는다. 준비 슬라이스와 결과/경로 상한을 유지하며 정상 주기 변경의 효과는 입증하지 않아 0.25초를 유지한다.
+
 ## alpha.37 — 카드 선택지의 실제 이름 기준 배치
 
 <!-- alpha37-publication -->

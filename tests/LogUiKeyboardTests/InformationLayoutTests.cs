@@ -167,7 +167,7 @@ namespace DiceMaster.Information
     {
         private sealed class Row { internal string Id; internal object Value; internal string Status = ""; }
         private sealed class Page { internal bool Visible; internal List<Row> Rows = new List<Row>(); }
-        private static readonly Page map = new Page(), choices = new Page(), markers = new Page();
+        private static readonly Page map = new Page(), choices = new Page(), markers = new Page(), diceGuide = new Page();
         public static bool[] TestFlags = new[] { true, true, false, true };
         public static readonly List<string> TestErrors = new List<string>();
         public static bool Enabled(int index) => TestFlags[index];
@@ -178,4 +178,10 @@ namespace DiceMaster.Information
         public static void TestMarkers(MapMarkerSnapshot value,string status="") { MapGuideSource.CurrentMarkers=value; markers.Visible=value!=null; markers.Rows.Clear();if(value!=null)markers.Rows.Add(new Row { Value=value, Status=status }); }
         public static void TestChoices(ChoiceStorySnapshot value) { choices.Rows.Clear(); choices.Visible = value != null; if (value != null) choices.Rows.Add(new Row { Value = value }); }
     }
+}
+
+namespace DiceMaster.Information {
+ public sealed class DiceGuideSnapshot {public string ContextKey;public readonly List<InformationRow> Entries=new();public readonly List<object> Preparing=new();}
+ public static class DiceGuideSource {public static bool Active;public static string ContextKey="dice";}
+ public static partial class InformationRuntime {public static void TestDice(DiceGuideSnapshot value) {diceGuide.Rows.Clear();diceGuide.Visible=value!=null;DiceGuideSource.Active=value!=null;if(value!=null)diceGuide.Rows.Add(new Row{Value=value});}}
 }

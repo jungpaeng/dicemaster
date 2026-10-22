@@ -12,7 +12,7 @@ namespace DiceMaster.Information
 {
     public static partial class ChoiceStorySource
     {
-        private sealed class PendingChoice { internal string Name, Kind; }
+        internal sealed class PendingChoice { internal string Name, Kind; }
         private static readonly FieldInfo waitingInstance = typeof(MissionManagerData).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
         private static readonly Dictionary<MapRouteEntry, string> eventNames = new Dictionary<MapRouteEntry, string>();
         private static int opportunityWork = -1;
@@ -68,7 +68,7 @@ namespace DiceMaster.Information
             }
             return opportunityIndexed = opportunityKind == 2;
         }
-        private static Dictionary<string, PendingChoice> WaitingScripts()
+        internal static Dictionary<string, PendingChoice> WaitingScripts()
         {
             var result = new Dictionary<string, PendingChoice>(StringComparer.Ordinal);
             object manager = waitingInstance == null ? null : waitingInstance.GetValue(null);

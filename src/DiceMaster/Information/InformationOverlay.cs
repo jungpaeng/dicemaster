@@ -74,15 +74,18 @@ namespace DiceMaster.Information
         {
             if (!Application.isFocused || Screen.width <= 0 || Screen.height <= 0) { mapLoading.Clear(); choiceLoading.Clear(); return; }
             bool nativeWindow = (Enabled(0) || Enabled(1)) && InformationVisibility.Blocked;
+            DiceGuideSnapshot dice = !nativeWindow && !logOpen && !popupOpen && DiceGuideSource.Active && diceGuide.Visible && diceGuide.Rows.Count == 1 && string.IsNullOrEmpty(diceGuide.Rows[0].Status)
+                ? diceGuide.Rows[0].Value as DiceGuideSnapshot : null;
+            if (dice != null && dice.ContextKey != DiceGuideSource.ContextKey) dice = null;
             InformationRow selected = null; string status = "";
             ChoiceStorySnapshot choice = null; string choiceStatus = "";
-            if (!nativeWindow && !logOpen && !popupOpen && choices.Visible && (Enabled(0) || Enabled(1)) && choices.Rows.Count == 1)
+            if (!DiceGuideSource.Active && !nativeWindow && !logOpen && !popupOpen && choices.Visible && (Enabled(0) || Enabled(1)) && choices.Rows.Count == 1)
             {
                 var source = choices.Rows[0];
                 var snapshot = source.Value as ChoiceStorySnapshot;
                 if (snapshot != null && ChoiceStorySource.IsCurrent(snapshot)) { choice = snapshot; choiceStatus = source.Status ?? ""; }
             }
-            if (!nativeWindow && choice == null && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && map.Visible && (Enabled(0) || Enabled(1)) && map.Rows.Count == 1)
+            if (!DiceGuideSource.Active && !nativeWindow && choice == null && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && map.Visible && (Enabled(0) || Enabled(1)) && map.Rows.Count == 1)
             {
                 var source = map.Rows[0];
                 status = source.Status ?? "";
@@ -94,7 +97,7 @@ namespace DiceMaster.Information
                 }
             }
             MapMarkerSnapshot markerSnapshot = null;
-            if (!nativeWindow && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && markers.Visible && (Enabled(0) || Enabled(1)) && markers.Rows.Count == 1)
+            if (!DiceGuideSource.Active && !nativeWindow && !logOpen && !popupOpen && !ChoiceStorySource.MenuVisible && markers.Visible && (Enabled(0) || Enabled(1)) && markers.Rows.Count == 1)
             {
                 var source = markers.Rows[0];
                 var snapshot = source.Value as MapMarkerSnapshot;
@@ -103,7 +106,7 @@ namespace DiceMaster.Information
             var latest = Enabled(2) ? BranchHistory.Latest(now) : null;
             mapLoading.Update(markerSnapshot == null ? null : markerSnapshot.Preparing, markerSnapshot == null ? null : markerSnapshot.ContextKey, now, 64);
             choiceLoading.Update(choice == null || choiceStatus.Length != 0 ? null : choice.Preparing, choice == null ? null : choice.ContextKey, now, 256);
-            if (selected == null && latest == null && choice == null && markerSnapshot == null) { lastMapRow = null; mapText = null; lastChoice = null; lastChoiceRow = null; choiceText = null; mapFocusRows.Clear(); mapFocus.Clear(); choiceFocus.Clear(); return; }
+            if (selected == null && latest == null && choice == null && markerSnapshot == null && dice == null) { lastMapRow = null; mapText = null; lastChoice = null; lastChoiceRow = null; choiceText = null; mapFocusRows.Clear(); mapFocus.Clear(); choiceFocus.Clear(); return; }
             int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 24);
             if (informationStyle == null || informationFont != font)
             {
@@ -111,6 +114,17 @@ namespace DiceMaster.Information
             }
             mapBadgeSize = InformationLayout.BadgeSize(Screen.width, Screen.height, true);
             choiceBadgeSize = InformationLayout.BadgeSize(Screen.width, Screen.height, false);
+            if (dice != null)
+            {
+                // Dice outcome buttons are deliberately non-interactable.
+                // Passive geometry must not change their focus/input state.
+                foreach (var row in dice.Entries)
+                    if (row.HasBadge && row.Anchor != null && InformationAnchors.TryBadgeRect(row.Anchor, choiceBadgeSize, false, out Rect badge))
+                        InformationBadge.Draw(badge, default(Rect), row.Guidance && !row.Opportunity);
+                if (Event.current != null && Event.current.type == EventType.Repaint)
+                    foreach (var anchor in dice.Preparing)
+                        if (InformationAnchors.TryBadgeRect(anchor, choiceBadgeSize * .65f, false, out Rect spinner)) InformationSpinner.Draw(spinner, now);
+            }
             mapFocusRows.Clear();
             if (markerSnapshot != null) foreach (InformationRow row in markerSnapshot.Entries)
                 if (selected == null || string.IsNullOrEmpty(selected.AutoText) || !ReferenceEquals(row.Anchor, selected.Anchor)) mapFocusRows.Add(row);

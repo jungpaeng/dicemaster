@@ -154,7 +154,7 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
                  'SourceBehaviorFixtures', 'SourceBehaviorTests',
                  'PreviewIntegrationFixtures', 'PreviewIntegrationTests',
                  'LogUiModelTests', 'LogUiWiringTests', 'LogUiKeyboardTests', 'LogOpenerIntegrationTests',
-                 'EventSelectionRuntimeTests', 'EventPopupTests', 'MapInformationTests', 'MapRouteTests', 'MapGuideRouteIntegrationTests', 'ShopInformationTests', 'BranchHistoryTests', 'InformationRuntimeTests', 'ChoiceStoryTests'):
+                 'EventSelectionRuntimeTests', 'EventPopupTests', 'MapInformationTests', 'MapRouteTests', 'MapGuideRouteIntegrationTests', 'ShopInformationTests', 'BranchHistoryTests', 'InformationRuntimeTests', 'ChoiceStoryTests', 'DiceGuideTests'):
         outputs[name] = build(dotnet, 'tests/' + name + '/' + name + '.csproj',
                               work, name, log,
                               ['-p:GameReferences=' + str(reference_root)] if name == 'EventSelectionRuntimeTests' else ())
@@ -192,6 +192,7 @@ def behavior_tests(dotnet, candidate, reference_root, work, log):
     if os.environ.get('DICEMASTER_CORPUS_INDEX'):
         choice_args.append(os.environ['DICEMASTER_CORPUS_INDEX'])
     test('ChoiceStoryTests', *choice_args)
+    test('DiceGuideTests')
     return results
 
 

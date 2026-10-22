@@ -45,5 +45,5 @@ REQUIRED_TESTS = frozenset({
     'LogUiWiringTests', 'LogUiKeyboardTests', 'LogOpenerIntegrationTests',
     'EventSelectionRuntimeTests', 'EventPopupTests',
     'MapInformationTests', 'MapRouteTests', 'MapGuideRouteIntegrationTests', 'ShopInformationTests', 'BranchHistoryTests',
-    'InformationRuntimeTests', 'ChoiceStoryTests',
+    'InformationRuntimeTests', 'ChoiceStoryTests', 'DiceGuideTests',
 })
