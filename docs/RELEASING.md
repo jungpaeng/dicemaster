@@ -3,7 +3,7 @@
 ## alpha.31 — 지도 로그의 장소 상세·자료 상태
 
 <!-- alpha31-publication -->
-v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+2026-10-22 17:17:04 KST에 소스 [`cc656fc`](https://github.com/jungpaeng/dicemaster/commit/cc656fc901466aba0c105e2b17c4c508ab672094)의 [alpha.31](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.31)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha31-publication -->
 
 로그·진단 보완을 게시하며 최초 불러오기 흰색 마커 누락 해결로 표현하지 않는다. main의 검토 후보를 고정 커밋 재빌드·전체21개 검사·실제 DLL/ZIP·익명 공개 다운로드로 대조한다. 기존 배포·태그·Latest v1.0.6·이슈 상태를 보존하고 게시 보충은 별도 main 문서 커밋으로 남긴다. [파일·게시·검증 기록](ISSUE-6-ALPHA31-RELEASE.md).

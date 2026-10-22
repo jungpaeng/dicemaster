@@ -3,7 +3,7 @@
 ## alpha.31 — 포커스 해제 뒤 지도 로그
 
 <!-- alpha31-publication -->
-v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+2026-10-22 17:17:04 KST에 소스 [`cc656fc`](https://github.com/jungpaeng/dicemaster/commit/cc656fc901466aba0c105e2b17c4c508ab672094)의 [alpha.31](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.31)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha31-publication -->
 
 마지막 선택 장소는 명시적 지도 로그에만 유지하고 자동 툴팁·마커는 기존 현재 포커스 규칙을 따른다. 새 입력·설정은 없다. 로그 열기·복귀·로드/OFF/장면 뒤의 상세 정리와 기존 Xbox/XInput·해제/중립을 [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha31--지도-로그의-대상자료-상태-확인-대기)에서 확인한다. 최초 불러오기 흰색 마커 버그는 미해결이다.

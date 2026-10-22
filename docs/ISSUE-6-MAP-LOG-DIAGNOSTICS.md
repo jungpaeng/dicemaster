@@ -1,10 +1,10 @@
 # 지도 로그의 포커스·자료 상태 — alpha.31
 
 <!-- alpha31-publication -->
-v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+2026-10-22 17:17:04 KST에 소스 [`cc656fc`](https://github.com/jungpaeng/dicemaster/commit/cc656fc901466aba0c105e2b17c4c508ab672094)의 [alpha.31](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.31)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha31-publication -->
 
-2026-10-22, 공개 alpha.30 이후 main에서 보완했다. 기준 main은 `99ec7537d6bc2c6aef443f9e0760ad4fa380e4a8`, 공개 DLL 소스는 `0247491826dbd2d74f898ab8bbc194331c66be3d`다. 이 변경은 기존 alpha.30 설치 ZIP에 포함되지 않는다. alpha.31 게시를 준비하며 고정 소스·공개 파일 검증은 [게시 기록](ISSUE-6-ALPHA31-RELEASE.md)에 확정한다. 실제 Windows 확인은 대기다.
+2026-10-22, 공개 alpha.30 이후 main에서 보완했다. 기준 main은 `99ec7537d6bc2c6aef443f9e0760ad4fa380e4a8`, 공개 DLL 소스는 `0247491826dbd2d74f898ab8bbc194331c66be3d`다. 이 변경은 기존 alpha.30 설치 ZIP에 포함되지 않는다. 소스·주석 태그는 `cc656fc901466aba0c105e2b17c4c508ab672094`이며 고정 커밋 재빌드·공개 파일 검증을 [게시 기록](ISSUE-6-ALPHA31-RELEASE.md)에 남겼다. 실제 Windows 확인은 대기다.
 
 ## 보고와 확인한 경계
 
@@ -48,4 +48,4 @@ SDK 8.0.426, 빌드 입력 296개·생산 소스/리소스 119개·고정 게임
 | `artifacts/issue-6/map-log-diagnostics/candidate/DiceMaster-source-candidate.zip` | 382198 | `025a899df3e91a588e64dedda83665c83eaefebb1d8e8bea2d535eb5494a4bda` |
 | `기존 패키지 cfg (변경 없음)` | 13083 | `deda801f4c061f3436732c1da6d4a3a2195dce79822dccb74846468faf9f99fd` |
 
-게임 종료 후 DLL/cfg를 백업하고 새 로컬 ZIP의 plugins/DiceMaster/DiceMaster.dll만 교체해 기존 cfg를 보존한다. 이 검토 후보를 소스 커밋 고정 재빌드와 대조해 alpha.31로 게시한다. 게시 상태는 위 기록을 따른다. 공개 alpha.30은 별도 기존 파일이다. 재현/검증 로그와 최종 영수증은 artifacts/issue-6/map-log-diagnostics/에 남긴다.
+게임 종료 후 DLL/cfg를 백업하고 새 로컬 ZIP의 plugins/DiceMaster/DiceMaster.dll만 교체해 기존 cfg를 보존한다. 이 검토 후보와 고정 커밋 재빌드의 DLL/cfg/ZIP이 일치한다. **[게시된 alpha.31 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.31/DiceMaster-v1.0.7-alpha.31.zip)**도 익명 다운로드로 대조했다. 공개 alpha.30은 별도 기존 파일이다. 재현/검증 로그와 최종 영수증은 artifacts/issue-6/map-log-diagnostics/에 남긴다.

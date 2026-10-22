@@ -1,7 +1,7 @@
 # v1.0.7-alpha.31 — 지도 로그의 장소 상세·자료 상태
 
 <!-- alpha31-publication -->
-v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증을 통과했다. 고정 커밋 재빌드·공개 다운로드는 게시 과정에서 기록한다. 이번 변경은 로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 실제 Windows 확인과 PRD #6 완료는 대기다.
+2026-10-22 17:17:04 KST에 소스 [`cc656fc`](https://github.com/jungpaeng/dicemaster/commit/cc656fc901466aba0c105e2b17c4c508ab672094)의 [alpha.31](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.31)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha31-publication -->
 
 ## 변경과 지원 범위
@@ -16,7 +16,7 @@ v1.0.7-alpha.31 게시 준비 중. 로컬 전체21개 자동 검사·실제 DLL 
 
 ## 자동 검증
 
-검토 후보의 전체21개 검사·296개 빌드 입력·119개 소스/리소스·16개 고정 게임 참조와 실제 후보 DLL 연결·ZIP 두 경로·CRC·내부 DLL/cfg 바이트를 확인했다. 배포 검증기 회귀20개도 통과했다. 고정 커밋 재빌드·후보 동일성·공개 다운로드 결과는 게시 후 보충한다.
+검토 후보의 전체21개 검사·296개 빌드 입력·119개 소스/리소스·16개 고정 게임 참조와 실제 후보 DLL 연결·ZIP 두 경로·CRC·내부 DLL/cfg 바이트를 확인했다. 배포 검증기 회귀20개도 통과했다. 고정 커밋 재빌드도 전체21개 검사를 통과했다. 296개 빌드 입력·119개 소스/리소스·16개 고정 참조·SDK 및 DLL/cfg/ZIP이 검토 후보와 일치한다. 공개 ZIP의 SHA-256·두 경로·CRC·내부 바이트를 익명 다운로드로 다시 확인했다.
 
 MapGuideRouteIntegrationTests3748개·InformationRuntimeTests6016개·MapInformationTests679개·ChoiceStoryTests7719개·GamepadTests262831개를 포함한다. 포커스 해제 뒤 마지막 상세·현재 값 재조회, 자동 오버레이 부활 차단·문맥 정리·실패 중 독립 진단·5초 재시도·숨김/OFF·읽기 전용과 실제 DLL 연결을 확인했다. 관리 코드·명시적 Unity/게임 경계 검사이며 실제 Windows·native 화면·물리 입력·FPS 실행은 아니다.
 
@@ -33,3 +33,11 @@ MapGuideRouteIntegrationTests3748개·InformationRuntimeTests6016개·MapInforma
 ## 실제 Windows 확인 대기
 
 [확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha31--지도-로그의-대상자료-상태-확인-대기)에서 게임 재실행·저장 지도 직행의 미선택 진단, 남제자방 포커스 뒤 로그 열기·상세 유지, 창/로드/OFF/장면 복귀·기존 입력과 지연/FPS를 확인한다. 새 DLL의 실제 사용자 Windows 확인과 #6 전체 완료·이슈 종료는 대기다.
+
+## 게시 결과
+
+소스·주석 태그는 [`cc656fc`](https://github.com/jungpaeng/dicemaster/commit/cc656fc901466aba0c105e2b17c4c508ab672094)다. main과 새 태그를 atomic push했다. 2026-10-22 17:17:04 KST에 Release `420462126`·asset `665157898`를 draft=false·prerelease=true·make_latest=false로 게시했다. **[설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.31/DiceMaster-v1.0.7-alpha.31.zip)**. 기존 72개 Release·73개 태그·자산·Latest v1.0.6과 #5/#6 이슈 상태를 보존했다.
+
+전체21개 성공 기록 중 21개가 문자열까지 일치한다.
+
+게시 보충은 별도 main 문서 커밋이며 빌드 입력·소스 태그·설치 파일을 바꾸지 않는다. 영수증은 artifacts/releases/v1.0.7-alpha.31/의 release-verification.json·reviewed-candidate-comparison.json·tag-verification.json·anonymous-verification.json·final-verification.json에 남긴다. 최초 불러오기 마커 버그는 미해결이며 실제 Windows 확인은 대기다.
