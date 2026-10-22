@@ -1,7 +1,7 @@
 # alpha.35 — 지도·선택지의 마커 준비 스피너
 
 <!-- alpha35-publication -->
-main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 23:07:45 KST에 소스 [`cff13f2`](https://github.com/jungpaeng/dicemaster/commit/cff13f2960f27a9c8f32c6f0b335ff86d49beae5)의 [alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도·선택지의 마커 준비 스피너를 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha35-publication -->
 
 기준 main은 `fdce0c702d149b17c7f1798ff86ab835605dd149`다. 원래 main에서 구현·검증하며 별도 브랜치/worktree를 만들지 않는다. [설계·검사·측정](ISSUE-6-LOADING-INDICATORS.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md).
@@ -29,7 +29,7 @@ SDK8.0.426으로 전체21개 검사 프로그램을 통과했다. 고정 참조1
 
 alpha.34 비교18개 관리 표본에서 첫/전체 마커 표시 조회 횟수와 Lua 읽기 상한이 같았다.64항목 지연 상태 관리100,000프레임은428.15ms, 약0.0043ms/프레임이며 루프 할당은0이었다. Unity geometry/GPU/FPS 비용을 포함하지 않는다. 자세한 p95와 한계는 설계 문서에 남겼다.0.25초 주기를 늘리지 않았다.
 
-고정 커밋 재빌드·게시 결과는 후속 기록으로 남긴다.
+소스·annotated tag는 `cff13f2960f27a9c8f32c6f0b335ff86d49beae5` / `v1.0.7-alpha.35`다. 고정 커밋 재빌드의310개 입력·125개 소스/리소스·21개 성공 기록과 DLL/cfg/ZIP이 검토 후보와 모두 일치한다.
 
 ## 설치 후보 파일
 
@@ -44,3 +44,9 @@ alpha.34 비교18개 관리 표본에서 첫/전체 마커 표시 조회 횟수�
 활협전용 BepInEx 모드 베이스가 필요하다. 게임 종료 후 DLL/cfg를 백업하고 DLL만 교체해 기존 cfg를 보존한다. 최초 설치는 ZIP의 config·plugins를 BepInEx 아래에 넣는다. 자동 Source code 압축은 설치용이 아니다. 문제 시 게임 종료 후 백업 DLL/cfg를 복구한다. alpha.34와 Latest 정식v1.0.6을 보존한다.
 
 완전 재실행·지도 저장 직행과 유학 등 선택 메뉴에서 스피너 표시/완료·빈/실패 종료·기존 마커 유지·가림/OFF·물리 입력과 실제 크기/색·FPS/GC를 확인해야 한다. alpha.34 연단방/기한 회귀도 확인한다. 사용자 확인 전 #6 전체 완료나 이슈 종료로 처리하지 않는다.
+
+## 게시 결과
+
+2026-10-22 23:07:45 KST에 Release `420803017`·asset `666059787`를 draft=false·prerelease=true·make_latest=false로 게시했다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.35/DiceMaster-v1.0.7-alpha.35.zip)의 SHA-256·크기·두 경로·CRC·내부 DLL/cfg 바이트를 인증 없이 확인했다.
+
+이전 76개 Release·77개 태그·자산·Latest 정식v1.0.6과 #5/#6 상태를 보존했다. main과 새 annotated tag만 atomic push했으며 게시 보충은 별도 main 문서 커밋이다. 소스 태그·배포 파일은 바꾸지 않는다. 실제 Windows/사용자 세이브·입력·FPS/GC 확인과 #6 완료는 대기다. 영수증은 artifacts/releases/v1.0.7-alpha.35/에 보관한다.

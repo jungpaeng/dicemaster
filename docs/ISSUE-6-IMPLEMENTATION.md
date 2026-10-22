@@ -3,7 +3,7 @@
 ## alpha.35 — 준비 중 툴팁을 항목별 스피너로 변경
 
 <!-- alpha35-publication -->
-main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 23:07:45 KST에 소스 [`cff13f2`](https://github.com/jungpaeng/dicemaster/commit/cff13f2960f27a9c8f32c6f0b335ff86d49beae5)의 [alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도·선택지의 마커 준비 스피너를 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha35-publication -->
 
 선택 장소 요약의 preparing은 배경 마커의 준비 완료와 일치하지 않았다. 일반 대기 툴팁을 제거하고 같은 마커 조회가 대기 anchor도 발행하도록 했다. 최초 음성 검사·예산/색인 진행과 실패/미지원 상태를 구분하며, 긍정 마커는 후속 전체 준비보다 우선한다. 실제 표시 코드의 지연·전환·가림·입력 불변을 검사했다. [설계·근거·한계](ISSUE-6-LOADING-INDICATORS.md) · [검사·게시](ISSUE-6-ALPHA35-RELEASE.md).

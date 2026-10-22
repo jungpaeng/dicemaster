@@ -3,7 +3,7 @@
 ## alpha.35 — 지도·선택지 준비 스피너 확인 대기
 
 <!-- alpha35-publication -->
-main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 23:07:45 KST에 소스 [`cff13f2`](https://github.com/jungpaeng/dicemaster/commit/cff13f2960f27a9c8f32c6f0b335ff86d49beae5)의 [alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도·선택지의 마커 준비 스피너를 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha35-publication -->
 
 [후보·설치·자동 검사](ISSUE-6-ALPHA35-RELEASE.md) · [표시 규칙·성능 측정](ISSUE-6-LOADING-INDICATORS.md). 아래 항목은 새 DLL의 실제 Windows/Unity·사용자 세이브·물리 입력에서 아직 확인하지 않았다.

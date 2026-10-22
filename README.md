@@ -20,7 +20,7 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 ## 정보 기능 시험판
 
 <!-- alpha35-publication -->
-main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 23:07:45 KST에 소스 [`cff13f2`](https://github.com/jungpaeng/dicemaster/commit/cff13f2960f27a9c8f32c6f0b335ff86d49beae5)의 [alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도·선택지의 마커 준비 스피너를 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha35-publication -->
 
 alpha.35는 일반 준비 중 툴팁을 없애고, 지도 장소와 실제 선택 버튼의 마커 위치에 작은 금색 스피너를 표시합니다.0.2초 이상 준비할 때 나타나며 마커 근거를 찾으면 바로 교체합니다. 빈 항목·실패는 계속 돌지 않고 실제 내용 툴팁은 유지합니다. [표시 규칙·성능](docs/ISSUE-6-LOADING-INDICATORS.md) · [검사·게시 기록](docs/ISSUE-6-ALPHA35-RELEASE.md).

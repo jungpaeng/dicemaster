@@ -3,7 +3,7 @@
 ## alpha.35 — 지도·선택지의 준비 스피너
 
 <!-- alpha35-publication -->
-main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 23:07:45 KST에 소스 [`cff13f2`](https://github.com/jungpaeng/dicemaster/commit/cff13f2960f27a9c8f32c6f0b335ff86d49beae5)의 [alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도·선택지의 마커 준비 스피너를 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha35-publication -->
 
 main에서 구현·전체 검사 후 고정 커밋 재빌드의310개 입력·125개 생산 소스/리소스와 DLL/cfg/ZIP을 대조한다. 기존 Release/태그/자산·Latest 정식v1.0.6·#5/#6 상태를 보존하며 새 annotated tag와 main만 게시한다. 스피너는 코드가 만든 공유 그림으로 추가 설치 파일·게임 원문/DLL 배포가 없다. [후보·검사·게시 기록](ISSUE-6-ALPHA35-RELEASE.md).
