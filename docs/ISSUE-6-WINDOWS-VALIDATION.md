@@ -3,7 +3,7 @@
 ## alpha.36 — 카드형 선택지 배치 확인 대기
 
 <!-- alpha36-publication -->
-main에서 alpha.36의 카드 선택지 배치를 구현·자동 검사했다. 이름 옆에 마커·스피너를 정렬하고 툴팁은 보이는 카드의 그림·설명을 피한다. 고정 커밋 검사·게시 기록과 새 DLL의 실제 Windows 확인은 별도로 기록하며 PRD #6 전체 완료는 대기다.
+2026-10-22 23:42:22 KST에 소스 [`b20d898`](https://github.com/jungpaeng/dicemaster/commit/b20d898d01fa33b85823090cff9e1a392940c63f)의 [alpha.36](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.36)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **카드 선택지의 이름 옆 마커/스피너·카드를 피하는 툴팁을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha36-publication -->
 
 [후보·설치·자동 검사](ISSUE-6-ALPHA36-RELEASE.md) · [원인·표시·측정](ISSUE-6-CARD-ANCHORS.md). 아래는 실제 Windows/Unity·사용자 세이브·물리 입력에서 확인해야 한다.
