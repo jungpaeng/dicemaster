@@ -19,6 +19,14 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
+<!-- alpha34-publication -->
+main에서 alpha.34 후보를 준비했다. 고정 날짜와 가변 시각의 조회를 분리해 연단방 첫 대화의 지도 누락을 보완했다. 전체·고정 커밋 검사와 게시 결과를 아래 기록에 추가하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha34-publication -->
+
+alpha.34는 연단방 첫 대화에 필요한 고정 날짜를 현재 시각과 구분해 읽어, 장소에 들어가기 전 지도에서 아이보리 안내가 누락되는 문제를 보완합니다. 대화 완료·기한 경과를 계속 반영합니다. [원인·지원 범위](docs/ISSUE-6-FIXED-CALENDAR.md) · [검사·파일·게시](docs/ISSUE-6-ALPHA34-RELEASE.md).
+
+**[v1.0.7-alpha.34 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.34/DiceMaster-v1.0.7-alpha.34.zip)**. 게임 종료 후 DLL만 교체하고 기존 cfg를 보존하세요. 새 DLL의 실제 Windows 확인은 대기입니다.
+
 <!-- alpha33-publication -->
 2026-10-22 21:20:36 KST에 소스 [`6242395`](https://github.com/jungpaeng/dicemaster/commit/62423951e9e429caf592818ac683a64d838e17e6)의 [alpha.33](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.33)을 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도 마커의 초기 준비·입력 변화 확인·깜빡임 경계를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha33-publication -->

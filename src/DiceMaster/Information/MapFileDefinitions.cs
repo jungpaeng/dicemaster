@@ -50,7 +50,7 @@ namespace DiceMaster.Information
             if (pending != null && !pending.IsCompleted) return "설치 파일 확인 중 · 별도 스레드 · 게임 실행 없음";
             if (ready == null) return "미조회";
             if (ready.Roots == null) return (ready.Permanent ? "지원 자료 불일치/미확인 · " : "읽기 대기 · 5초 후 재시도 · ") + ready.Failure;
-            return "확인 · 조건/분기/초기화 정의 + 현재 게임 참조 · " + ready.Milliseconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " ms (파일 검증/해석, 프레임 시간 아님)";
+            return "확인 · 조건/분기/초기화·고정 날짜 정의 + 현재 게임 참조 · " + ready.Milliseconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " ms (파일 검증/해석, 프레임 시간 아님)";
         }
         internal static object[] Read(PreviewDefinitionKind kind)
         {

@@ -1,5 +1,13 @@
 # 개발 안내
 
+## alpha.34 — 고정 날짜 정의와 현재 시각 분리
+
+<!-- alpha34-publication -->
+main에서 alpha.34 후보를 준비했다. 고정 날짜와 가변 시각의 조회를 분리해 연단방 첫 대화의 지도 누락을 보완했다. 전체·고정 커밋 검사와 게시 결과를 아래 기록에 추가하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha34-publication -->
+
+DMD2는 GameTimeData 위치를 검토한 고정 날짜37개와 native 현재/임무 시각19개로 구분한다. 플레이어 시계·GameTimeDataCollection은 파일 기본값을 빌리지 않는다. 기존 native 참조/충돌을 우선하고, 없는 고정 날짜만6개 파일 지문 확인 후 private DTO로 읽는다. 현재 입력 ReadStamp·엄격 증명 분리·작업 스레드와 기존 수명/준비 예산을 유지한다. [근거·스키마·상한·검사](ISSUE-6-FIXED-CALENDAR.md) · [후보](ISSUE-6-ALPHA34-RELEASE.md).
+
 ## alpha.33 — 마커 경로의 입력 변화 확인
 
 <!-- alpha33-publication -->

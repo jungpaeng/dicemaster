@@ -738,7 +738,7 @@ static class Program
         Check(resources.Length == 13 && resources.All(r => r.Name.StartsWith("DiceMaster.")), "existing mod/badge resources plus reviewed definition offset index embedded");
         Check(!resources.Any(r => r.Name.Contains("Mortal.Core") || r.Name.Contains("Mortal.Story")), "game DLLs are not embedded");
         var preservedResources = new Dictionary<string, string> {
-            ["DiceMaster.MapDefinitions.index"] = "9a845ff3cf66b3ef7caca24df2333965904ebd377eb964a01df356a8f2f94ce3",
+            ["DiceMaster.MapDefinitions.index"] = "a5c9242472caf46e0cac53f8b49a3102058927f2b495576edcd3b69ea86c1666",
             ["DiceMaster.Assets.mortaldice"] = "5cb5c10adea77234bbef4f8f348514526c9765e9c45fe2b4e8d3c334ecfc0ff6",
             ["DiceMaster.Gamepad.Native.LICENSE.txt"] = "d5c2224982b0b95a16b098a561335fa93f3eaf4d0aa964b7843edb986df78dc8",
             ["DiceMaster.Gamepad.Native.MinHook.x64.dll"] = "033e55af8995c3b260e56de73daf99ff4a7ce2fcbe4b3872db2270678d8c6585",

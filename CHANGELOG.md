@@ -1,5 +1,17 @@
 # 변경 이력
 
+## [v1.0.7-alpha.34](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.34) — 2026-10-22 (prerelease)
+
+<!-- alpha34-publication -->
+main에서 alpha.34 후보를 준비했다. 고정 날짜와 가변 시각의 조회를 분리해 연단방 첫 대화의 지도 누락을 보완했다. 전체·고정 커밋 검사와 게시 결과를 아래 기록에 추가하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha34-publication -->
+
+- 지도에서 연단방 첫 대화의 고정 날짜 조건을 읽지 못해, 장소 진입 전 아이보리 마커가 빠지던 문제를 수정한다.
+- 현재 시각·임무 저장 시각은 기존 게임 참조로 읽고, 검토한 고정 날짜만 지문이 일치하는 설치 파일에서 확보한다. 이름·인물·플래그 예외는 추가하지 않는다. 완료·기한 경과 시 제거를 유지한다.
+- 설정·cfg·입력·표시 범위·갱신/준비 예산과 읽기 전용 계약은 유지한다.
+
+[원인·판정 경계](docs/ISSUE-6-FIXED-CALENDAR.md) · [검사·설치·게시](docs/ISSUE-6-ALPHA34-RELEASE.md).
+
 ## [v1.0.7-alpha.33](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.33) — 2026-10-22 (prerelease)
 
 <!-- alpha33-publication -->

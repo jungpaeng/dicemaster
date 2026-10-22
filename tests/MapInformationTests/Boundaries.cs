@@ -40,7 +40,8 @@ namespace Mortal.Core
     public class PlayerStatData { public List<GameStat> _list = new List<GameStat> { new GameStat() }; }
     public class GameTime { public int Year = 1, Month = 5, Stage = 1, _roundsPerMonth = 3; }
     public class GameTimeData : UnityEngine.Object { public GameTime GameTime = new GameTime(); }
-    public class PlayerStatManagerData { public PlayerStatData _stats = new PlayerStatData(); public GameTimeData _gameTimeData = new GameTimeData(); }
+    public class GameTimeDataCollection { public List<GameTimeData> _list = new List<GameTimeData>(); }
+    public class PlayerStatManagerData { public PlayerStatData _stats = new PlayerStatData(); public GameTimeData _gameTimeData = new GameTimeData(); public GameTimeDataCollection _timeCollection = new GameTimeDataCollection(); }
     public class MissionCheckData : UnityEngine.Object
     { public string _key = "start", _startScript = "mission"; public PositionType _position = PositionType.Hall; public bool _active = true, _dayCheck, _beforeMainMission; public int _timeCheckType = 1; public GameTime _specificTime = new GameTime(), _minTime = new GameTime(), _maxTime = new GameTime(); public ConditionResultItem[] _conditions = Array.Empty<ConditionResultItem>(); }
     public class MissionData : UnityEngine.Object

@@ -1,5 +1,13 @@
 # 소스 기반 Release와 게시 이력
 
+## alpha.34 — 고정 날짜 조건의 지도 안내
+
+<!-- alpha34-publication -->
+main에서 alpha.34 후보를 준비했다. 고정 날짜와 가변 시각의 조회를 분리해 연단방 첫 대화의 지도 누락을 보완했다. 전체·고정 커밋 검사와 게시 결과를 아래 기록에 추가하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha34-publication -->
+
+main에서 구현·검사하고 고정 소스 커밋으로 재빌드해 DLL/cfg/ZIP·전체 입력 SHA를 대조한다. 기존 Release/태그/자산·Latest 정식v1.0.6·#5/#6 상태를 보존하며 새 annotated tag와 main만 게시한다. 게임 원문/DLL·날짜 값은 배포하지 않는다. [DMD2 지원 범위](ISSUE-6-FIXED-CALENDAR.md) · [설치·검증·게시 기록](ISSUE-6-ALPHA34-RELEASE.md).
+
 ## alpha.33 — 지도 마커 준비·재검사 개선
 
 <!-- alpha33-publication -->

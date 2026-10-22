@@ -21,6 +21,7 @@ namespace DiceMaster.Information
         private readonly List<FileIndex> files = new List<FileIndex>();
         private readonly Dictionary<string, Entry> entries = new Dictionary<string, Entry>();
         private readonly Dictionary<string, object> values = new Dictionary<string, object>();
+        private readonly HashSet<string> fixedCalendars = new HashSet<string>();
         private readonly Dictionary<string, object> live;
         private readonly CancellationToken cancellation;
         private int depth;
@@ -40,7 +41,7 @@ namespace DiceMaster.Information
             if (profile == null) throw new InvalidDataException("Definition index missing.");
             using (var input = new BinaryReader(profile, utf8, true))
             {
-                if (Encoding.ASCII.GetString(input.ReadBytes(4)) != "DMD1") throw new InvalidDataException("Definition index format.");
+                if (Encoding.ASCII.GetString(input.ReadBytes(4)) != "DMD2") throw new InvalidDataException("Definition index format.");
                 int count = Count(input, 8);
                 var approved = new HashSet<string>(StringComparer.Ordinal) { "globalgamemanagers.assets", "sharedassets2.assets", "level2", "Managed/Mortal.Core.dll", "Managed/Mortal.Story.dll", "Managed/Mortal.Free.dll" };
                 for (int i = 0; i < count; i++)
@@ -67,6 +68,13 @@ namespace DiceMaster.Information
                 int roots = Count(input, 18); if (roots < 3) throw new InvalidDataException("Definition roots.");
                 var rootKeys = new string[roots];
                 for (int i = 0; i < roots; i++) rootKeys[i] = Key(input.ReadByte(), input.ReadInt64());
+                int calendars = Count(input, 8192);
+                for (int i = 0; i < calendars; i++)
+                {
+                    string key = Key(input.ReadByte(), input.ReadInt64());
+                    if (!entries.TryGetValue(key, out Entry entry) || entry.Type != "Mortal.Core.GameTimeData" || !fixedCalendars.Add(key))
+                        throw new InvalidDataException("Fixed calendar index.");
+                }
                 if (input.BaseStream.Position != input.BaseStream.Length) throw new InvalidDataException("Definition index suffix.");
                 foreach (var file in files)
                 {
@@ -139,9 +147,21 @@ namespace DiceMaster.Information
                     bool metadata = entry.Type.EndsWith("Config", StringComparison.Ordinal) || entry.Type.EndsWith("ConditionResultData", StringComparison.Ordinal) || entry.Type.EndsWith("SwitchResultData", StringComparison.Ordinal) || entry.Type.EndsWith("StatGroupVariable", StringComparison.Ordinal) || entry.Type.EndsWith("FlagCollectionData", StringComparison.Ordinal);
                     if (!metadata)
                     {
-                        // Only identity is read. Serialized State/count/time/item
-                        // values are NEVER used as current game inputs.
-                        live.TryGetValue(entry.Type + "/" + name, out object native); values.Add(key, native); return native;
+                        // Existing native identities (including ambiguous null)
+                        // win. Missing live clocks/mission times stay unknown.
+                        if (live.TryGetValue(entry.Type + "/" + name, out object native) || !fixedCalendars.Contains(key))
+                        { values.Add(key, native); return native; }
+                        // Only profile-reviewed immutable calendar definitions
+                        // may be decoded. No serialized State/count/item/default
+                        // clock values become current game inputs.
+                        var time = new DisplayDefinition("Mortal.Core.GameTime");
+                        int year = r.ReadInt32(), month = r.ReadInt32(), stage = r.ReadInt32(), environment = r.ReadInt32();
+                        if (year < 1 || year > 9 || month < 1 || month > 12 || stage < 1 || stage > 3 || environment < 0 || environment > 2 || r.BaseStream.Position != r.BaseStream.Length)
+                            throw new InvalidDataException("Fixed calendar payload/schema differs.");
+                        time.Fields.Add("Year", year); time.Fields.Add("Month", month); time.Fields.Add("Stage", stage);
+                        time.Fields.Add("_roundsPerMonth", 3); // reviewed GameTime.ConvertToRounds contract
+                        var calendar = new DisplayDefinition(entry.Type, name); calendar.Fields.Add("GameTime", time);
+                        values.Add(key, calendar); return calendar;
                     }
                     var node = new DisplayDefinition(entry.Type, name); values.Add(key, node);
                     if (entry.Type.EndsWith("Config", StringComparison.Ordinal) || entry.Type.EndsWith("FlagCollectionData", StringComparison.Ordinal))

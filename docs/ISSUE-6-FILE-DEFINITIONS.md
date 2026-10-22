@@ -1,5 +1,7 @@
 # 저장 지도 직행의 파일 정의 — alpha.32
 
+현재 alpha.34는 아래 파일 조회를 유지하며, 가변 시각과 분리해 검토한 고정 날짜 정의만 보충한다. DMD2 인덱스의 날짜 분류·native 우선순위·상한·검사는 [후속 보완](ISSUE-6-FIXED-CALENDAR.md)을 따른다. 아래는 alpha.32 당시 기록이다.
+
 2026-10-22 main에서 구현했다. 기준은 `d42be54449bf2a3e8f75365af24d1262a812fd02`, 직전 공개 DLL은 alpha.31 소스 `cc656fc901466aba0c105e2b17c4c508ab672094`다. [alpha.32 게시 기록](ISSUE-6-ALPHA32-RELEASE.md)과 [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha32--저장-지도-직행의-파일-정의-확인-대기)를 구분한다. 새 DLL의 사용자 Windows 확인·PRD #6 전체 완료는 대기다.
 
 ## 실제 원인과 변경 범위
