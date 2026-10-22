@@ -106,6 +106,8 @@ namespace UnityEngine
     {
         public static Color color = Color.white;
         public static readonly List<Rect> BadgeStems = new List<Rect>();
+        public static readonly List<(Rect Rect, Rect Uv)> Spinners = new List<(Rect, Rect)>();
+        public static void DrawTextureWithTexCoords(Rect rect, object image, Rect uv) { Spinners.Add((rect, uv)); }
         public static object WhiteTexture;
         public static void DrawTexture(Rect rect, object image)
         { if (ReferenceEquals(image, WhiteTexture)) BadgeStems.Add(rect); else BadgeLabels.Add((rect, "image", false)); }

@@ -22,8 +22,11 @@ namespace DiceMaster.Information
             if (guidancePreferredOnly && scan.Preferred == null) return;
             // Verify only the successful witness's observed inputs. An
             // unchanged witness needs no graph walk or shared search slots.
-            if (scan.Preferred != null && scan.Stamp != null && scan.Stamp.IsCurrent())
-            { AddSelectedRoute(scan.Preferred, candidates); return; }
+            if (scan.Preferred != null && scan.Stamp != null)
+            {
+                if (scan.Stamp.IsCurrent()) { AddSelectedRoute(scan.Preferred, candidates); return; }
+                scan.Checked = 0;
+            }
             scan.Stamp = null;
             using (var stamp = new PreviewConditions.ReadStamp())
                 CollectUncachedRoute(controller, source, candidates, scan, stamp);
@@ -83,8 +86,10 @@ namespace DiceMaster.Information
                 if (budget.Gates < 0 || budget.Kinds < 0)
                 {
                     if (priorGates < 32 || priorKinds < 32) scan.Cursor = at;
+                    else if (at == scan.Checked) scan.Checked++;
                     break;
                 }
+                if (at == scan.Checked) scan.Checked++;
                 if (preparationSlice.ShouldYield()) break;
             }
         }

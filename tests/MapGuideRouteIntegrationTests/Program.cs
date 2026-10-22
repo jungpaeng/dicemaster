@@ -123,6 +123,7 @@ internal static partial class Program
         PositionEntryProjectionCases();
         GuidanceMarkerCases();
         StableGuidanceMarkerCases();
+        LoadingMarkerCases();
         ColdMapDefinitionCases();
         MapLogDiagnosticCases();
         FileDefinitionCases();

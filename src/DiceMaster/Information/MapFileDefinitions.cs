@@ -21,6 +21,7 @@ namespace DiceMaster.Information
         private static CancellationTokenSource cancellation;
         private static Result ready;
         private static float retryAt;
+        internal static bool IsPreparing { get { return pending != null && !pending.IsCompleted; } }
         // Test seam; normal code resolves only the actual loaded assembly's
         // installation folder. No working-directory guesses or config changes.
         internal static Func<string> DirectoryReader = InstallationDirectory;

@@ -214,6 +214,13 @@ static class Program {
    Check(badgeResource!=null&&badgeResource.GetResourceData().Length==64*64*4,"delivered DLL embeds the complete mod-owned image with no extra installation files: "+name);
   }
   var badgeType=m.GetType("DiceMaster.Information.InformationBadge");
+  var spinner=m.GetType("DiceMaster.Information.InformationSpinner");
+  Check(spinner!=null&&spinner.Methods.Single(x=>x.Name=="Draw").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.Name=="DrawTextureWithTexCoords"),"loading uses one cached atlas frame draw per spinner, with no repaint texture generation");
+  var drawLoading=m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name=="DrawLoading");
+  Check(drawLoading.Body.Instructions.Select(i=>i.Operand).OfType<MethodReference>().All(c=>!new[]{"Discover","AdvanceBudgeted","ReadPreviewScript","CreateRouteReader","FindObjectsOfTypeAll"}.Contains(c.Name)),"painting a spinner never advances or rediscovers source/game work");
+  Check(badgeType.Methods.Single(x=>x.Name=="Release").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==spinner.FullName&&c.Name=="Release"),"existing shutdown release also destroys the loading texture");
+  foreach(string name in new[]{"DiceMaster.Information.MapMarkerSnapshot","DiceMaster.Information.ChoiceStorySnapshot"})
+   Check(m.GetType(name).Fields.Any(f=>f.Name=="Preparing"),"pending anchors are published beside actual badges: "+name);
   Check(badgeType!=null&&badgeType.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.Texture2D"&&c.Name=="LoadRawTextureData")),"delivered badge uploads prepared pixels rather than relying on font or PNG decoder");
   Check(m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name=="DrawBadge").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==badgeType.FullName&&c.Name=="Draw"),"delivered native-place and menu marker path calls the actual image renderer");
   var overlay = m.GetType("DiceMaster.Information.InformationRuntime").NestedTypes.Single(x=>x.Name=="PassiveLabel").Methods.Single(x=>x.Name=="Prepare");

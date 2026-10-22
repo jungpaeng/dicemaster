@@ -107,7 +107,7 @@ internal static partial class Program
             InformationRuntime.TestFlags[0] = true;
             InformationRuntime.TestWaiting("waiting"); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1009);
-            Check(GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("게임 데이터 대기 중", StringComparison.Ordinal), "first-read waiting is visible without inventing a zero-candidate success");
+            Check(GUI.PassiveLabels.Count == 0, "first-read waiting no longer invents a generic focus tooltip; loading comes from marker snapshots");
             InformationRuntime.TestGlobal(); GUI.PassiveLabels.Clear();
             InformationRuntime.Draw(false, false, default, 1010);
             Check(GUI.PassiveLabels.Count == 0, "no-selection snapshot with global rows never creates a selected-place panel");
@@ -146,7 +146,7 @@ internal static partial class Program
 namespace UnityEngine { public static class Application { public static bool isFocused = true; } }
 namespace DiceMaster.Information
 {
-    public class ChoiceStorySnapshot { public readonly List<InformationRow> Entries = new List<InformationRow>(); }
+    public class ChoiceStorySnapshot { public string ContextKey; public readonly List<object> Preparing = new List<object>(); public readonly List<InformationRow> Entries = new List<InformationRow>(); }
     public static class ChoiceStorySource
     {
         public static bool MenuVisible;

@@ -129,6 +129,22 @@ namespace DiceMaster.Information
                 { if (config == null || slice.ShouldYield() || markerCandidates <= 0) break; AddMarker(place, batch, snapshot, preparedNotices, false, true, config); }
             }
             if (guide) CollectGuidanceMarkers(visible, batch, snapshot, slice);
+            // One-shot-only mode prepares only the selected place, as before.
+            // Reflect work that its existing query actually scheduled; never
+            // start proof/Lua work just to make a loading indicator appear.
+            if (oneShot && selectedPlace != null && visible.Contains(selectedPlace) && !HasMarker(snapshot, selectedPlace))
+            {
+                Source source = selectedPlace.Definition;
+                if (source != null && source.Failure == null && source.Routes != null &&
+                    (source.PreparingProofs || !guide && source.Routes.IsPreparing))
+                    try
+                    {
+                        var controller = Live(selectedPlace); dispatch = MarkerDispatch(controller, batch); entryBarrier = null;
+                        var probe = new Candidate { Rank = 0, Status = "", Detail = "" }; ApplyPlace(controller, probe);
+                        if (probe.Rank == 0 && !snapshot.Preparing.Contains(controller)) snapshot.Preparing.Add(controller);
+                    }
+                    catch (Exception) { } // a failed read is not ongoing work
+            }
             return snapshot;
         }
         private static void AddMarker(Place place, MarkerBatch batch, MapMarkerSnapshot snapshot, Dictionary<Place, List<string>> preparedNotices, bool guide, bool oneShot, object config)

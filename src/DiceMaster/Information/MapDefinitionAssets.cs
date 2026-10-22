@@ -21,6 +21,7 @@ namespace DiceMaster.Information
         }
         private static readonly Cache[] caches = { new Cache(), new Cache(), new Cache(), new Cache() };
         private static int searches;
+        internal static bool IsPreparing { get { return MapFileDefinitions.IsPreparing; } }
         internal static void Install()
         { PreviewConditions.LoadedDefinitionReader = Read; PreviewConditions.ExistingOwnerAlive = Alive; }
         internal static bool Alive(object value)

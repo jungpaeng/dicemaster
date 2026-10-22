@@ -84,7 +84,7 @@ static partial class Program
         Check(text.Contains("약초 찾기 · 보조 임무 · 진행 가능") && text.Contains("사형과 대화 · 주 임무 · 발생 조건 충족"), "Notice distinguishes ready waiting missions from currently met stage candidates in plain language");
         Check(text.Contains("문파 방문 · 1회성 이야기 · 지금 진행 불가") && !text.Contains("나머지 이야기") && text.Contains("외 1개"), "Automatic notice bounds complete entries rather than cutting statuses midway");
         Check(text.EndsWith("자세히: 로그 → 도구 → 지도 안내") && !text.Contains("단계 후보") && !text.Contains("확인 불가"), "Compact notice keeps the detail path and omits analysis jargon");
-        Check(MapGuidePresentation.Summary(new List<string>(), true, true).StartsWith("이 장소의 안내를 확인하는 중"), "Preparing is distinct from confirmed empty");
+        Check(MapGuidePresentation.Summary(new List<string>(), true, true) == "", "Preparation has no generic tooltip; per-anchor snapshot state drives loading");
         Check(MapGuidePresentation.Summary(new List<string>(), true, false) == "", "Settled empty notices leave no passive panel or detail-link-only noise");
         Check(MapGuidePresentation.Summary(null, true, false) == "", "A settled absent notice list also hides the passive panel");
         Check(MapGuidePresentation.Summary(new List<string>(), false, true) == "", "One-shot-only mode does not create an empty or unknown noise panel");
@@ -124,7 +124,7 @@ static partial class Program
         Check(!row.AutoText.Contains("allowed", StringComparison.Ordinal) && !row.AutoText.Contains("fixture effects", StringComparison.Ordinal), "Automatic summary omits ordinary names and detailed effects");
         Check(Entry(snapshot, "allowed").Kind.Contains("기타 연결 정보") && Details(snapshot).Contains("fixture effects"), "Ordinary and unknown stories remain readable as individual detail rows");
         Check(Details(snapshot).Contains("읽기 실패") && Counters.GameCalls == 0, "One broken event is isolated without invoking game checks");
-        Check(row.AutoText.StartsWith("이 장소의 안내를 확인하는 중", StringComparison.Ordinal), "Unfinished result analysis contributes real preparation independently of a simultaneous failed candidate");
+        Check(row.AutoText == "" && Details(snapshot).Contains("효과·1회성 준비 중"), "Result preparation remains in detail without a generic passive tooltip");
         int preparing = 0;
         while (Details(snapshot).Contains("효과·1회성 준비 중", StringComparison.Ordinal) && preparing++ < 16)
         {
@@ -411,8 +411,10 @@ static partial class Program
         controller._positionData._defaultScript = "empty_overlay"; DataHelper.Scripts["empty_overlay"] = "";
         MapRouteDefinitions.FixturePreparing = true;
         value = Snapshot();
-        Check(value.Summary.AutoText.StartsWith("이 장소의 안내를 확인하는 중", StringComparison.Ordinal) && Details(value).Contains("경로 준비 중"),
-            "Actual unfinished route work exposes a checking notice even when no automatic candidates have been discovered yet");
+        Check(value.Summary.AutoText == "" && Details(value).Contains("경로 준비 중"),
+            "Unfinished route work stays in detail while the passive summary remains empty");
+        var loading = (MapMarkerSnapshot)MapGuideSource.DiscoverMarkers(false, true)[0].Read();
+        Check(loading.Preparing.Contains(controller), "one-shot-only reflects the selected place's already scheduled route work without loading unselected places");
         MapRouteDefinitions.FixturePreparing = false; MapRouteDefinitions.FixturePartial = true;
         value = Snapshot();
         Check(value.Summary.AutoText == "" && Details(value).Contains("경로 일부 확인 불가") && value.Summary.Status.Contains("경로 일부 확인 불가"),
@@ -601,5 +603,5 @@ static partial class Program
         Check(!OptionHintSource.Visible && OptionHintSource.Discover().Count == 0, "Hidden menu performs no read retries");
         OptionHintSource.RenderHints(); Check(button._text[0].Writes == writes, "Hidden menu does not decorate stale text");
     }
-    public static int Main() { Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); IndependentPreparation(); AutomaticScope(); MarkerCases(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
+    public static int Main(string[] args) { if (args.Length == 2 && args[0] == "--loading-benchmark") { LoadingBenchmark(args[1]); return 0; } LoadingStateCases(); Proofs(); Presentation(); Map(); StoryConditionAggregation(); AutomaticNoticeFiltering(); SettledEmptyOverlay(); IndependentPreparation(); AutomaticScope(); MarkerCases(); Options(); Console.WriteLine("PASS: " + assertions + " map/one-shot managed boundary assertions; Unity/Windows runtime not executed."); return 0; }
 }

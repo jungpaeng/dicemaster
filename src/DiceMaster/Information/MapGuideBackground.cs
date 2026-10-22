@@ -37,6 +37,23 @@ namespace DiceMaster.Information
             guidancePreferredOnly = false;
             for (int offset = 0; offset < visible.Count && !slice.ShouldYield() && guidanceBudget.Paths > 0; offset++)
                 AddGuidanceMarker(visible[(start + offset) % visible.Count], batch, snapshot, false);
+            // This is the SAME publication as the badges. Absence alone never
+            // means pending. Completed/unsupported/failed queries stop loading.
+            foreach (Place place in visible)
+                if (!HasMarker(snapshot, place) && GuidancePreparing(place)) snapshot.Preparing.Add(Live(place));
+        }
+        private static bool GuidancePreparing(Place place)
+        {
+            if (!place.GuidanceReadable || string.IsNullOrEmpty(place.Script)) return false;
+            Source source = place.Definition;
+            if (source == null) return true; // queued under the shared budget
+            if (source.Failure != null) return false;
+            var routes = source.Routes;
+            if (routes == null || routes.HasReadFailure) return false;
+            if (routes.IsPreparing) return true;
+            var scan = source.SelectedStories;
+            return scan.Indexed < routes.StoryPaths.Count || scan.Checked < scan.Candidates.Count ||
+                scan.Candidates.Count > 0 && MapDefinitionAssets.IsPreparing;
         }
         private static bool HasMarker(MapMarkerSnapshot snapshot, Place place)
         {
@@ -62,6 +79,7 @@ namespace DiceMaster.Information
         private static void AddGuidanceMarker(Place place, MarkerBatch batch, MapMarkerSnapshot snapshot, bool prepare)
         {
             if (HasMarker(snapshot, place)) return;
+            place.GuidanceReadable = false;
             InformationRow row = null;
             TryCandidate(place, "marker/guidance", () => {
                 PositionController controller;
@@ -71,6 +89,7 @@ namespace DiceMaster.Information
                 var probe = new Candidate { Rank = 0, Status = "", Detail = "" };
                 ApplyPlace(controller, probe);
                 if (probe.Rank != 0) return null;
+                place.GuidanceReadable = true;
                 Source source = prepare ? GetSource(place) : place.Definition;
                 if (source == null || source.Failure != null || source.Routes == null) return null;
                 var candidates = new List<Candidate>(1);

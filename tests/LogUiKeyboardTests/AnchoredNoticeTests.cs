@@ -115,5 +115,6 @@ internal static partial class Program
         }
         StoryBadgeRendering();
         NativeInformationWindows();
+        LoadingRendering();
     }
 }

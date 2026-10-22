@@ -47,12 +47,11 @@ namespace DiceMaster.Information
         private static int informationFont;
         private static float mapBadgeSize, choiceBadgeSize;
         private static readonly InformationFocus mapFocus = new InformationFocus(), choiceFocus = new InformationFocus();
+        private static readonly InformationLoadingState mapLoading = new InformationLoadingState(), choiceLoading = new InformationLoadingState();
         private static readonly List<InformationRow> mapFocusRows = new List<InformationRow>();
         private static readonly PassiveLabel mapLabel = new PassiveLabel(), branchLabel = new PassiveLabel(), choiceLabel = new PassiveLabel();
         private static InformationRow lastMapRow;
         private static string lastMapStatus, mapText;
-        private static object lastWaitingSource;
-        private static InformationRow waitingRow;
         private static ChoiceStorySnapshot lastChoice;
         private static InformationRow lastChoiceRow;
         private static string choiceText, lastChoiceStatus;
@@ -64,7 +63,7 @@ namespace DiceMaster.Information
         }
         private static void DrawCore(bool logOpen, bool popupOpen, Rect logRect, float now)
         {
-            if (!Application.isFocused || Screen.width <= 0 || Screen.height <= 0) return;
+            if (!Application.isFocused || Screen.width <= 0 || Screen.height <= 0) { mapLoading.Clear(); choiceLoading.Clear(); return; }
             bool nativeWindow = (Enabled(0) || Enabled(1)) && InformationVisibility.Blocked;
             InformationRow selected = null; string status = "";
             ChoiceStorySnapshot choice = null; string choiceStatus = "";
@@ -82,16 +81,7 @@ namespace DiceMaster.Information
                 {
                     var snapshot = source.Value as MapGuideSnapshot;
                     selected = snapshot != null && snapshot.HasSelection ? snapshot.Summary : null;
-                    if (selected == null && status.Length != 0)
-                    {
-                        if (!ReferenceEquals(lastWaitingSource, source))
-                        {
-                            lastWaitingSource = source;
-                            waitingRow = new InformationRow(source.Id, "선택한 장소", "지도", status, "", status, MapGuideSource.SelectedAnchor);
-                        }
-                        selected = waitingRow;
-                    }
-                    else if (selected != null && !MapGuideSource.IsCurrent(selected)) selected = null;
+                    if (selected != null && !MapGuideSource.IsCurrent(selected)) selected = null;
                 }
             }
             MapMarkerSnapshot markerSnapshot = null;
@@ -102,6 +92,8 @@ namespace DiceMaster.Information
                 if (string.IsNullOrEmpty(source.Status) && MapGuideSource.IsCurrent(snapshot)) markerSnapshot = snapshot;
             }
             var latest = Enabled(2) ? BranchHistory.Latest(now) : null;
+            mapLoading.Update(markerSnapshot == null ? null : markerSnapshot.Preparing, markerSnapshot == null ? null : markerSnapshot.ContextKey, now, 64);
+            choiceLoading.Update(choice == null || choiceStatus.Length != 0 ? null : choice.Preparing, choice == null ? null : choice.ContextKey, now, 256);
             if (selected == null && latest == null && choice == null && markerSnapshot == null) { lastMapRow = null; mapText = null; lastChoice = null; lastChoiceRow = null; choiceText = null; mapFocusRows.Clear(); mapFocus.Clear(); choiceFocus.Clear(); return; }
             int font = Mathf.Clamp(ConfigManager.LogFontSize.Value, 12, 24);
             if (informationStyle == null || informationFont != font)
@@ -112,8 +104,10 @@ namespace DiceMaster.Information
             choiceBadgeSize = InformationLayout.BadgeSize(Screen.width, Screen.height, false);
             mapFocusRows.Clear();
             if (markerSnapshot != null) foreach (InformationRow row in markerSnapshot.Entries)
-                if (selected == null || !ReferenceEquals(row.Anchor, selected.Anchor)) mapFocusRows.Add(row);
+                if (selected == null || string.IsNullOrEmpty(selected.AutoText) || !ReferenceEquals(row.Anchor, selected.Anchor)) mapFocusRows.Add(row);
             if (selected != null && !string.IsNullOrEmpty(selected.AutoText)) mapFocusRows.Add(selected);
+            if (markerSnapshot != null) DrawLoading(markerSnapshot.Preparing, mapFocusRows, mapLoading, true, now);
+            if (choice != null && choiceStatus.Length == 0) DrawLoading(choice.Preparing, choice.Entries, choiceLoading, false, now);
             InformationRow mapNative = null;
             foreach (InformationRow row in mapFocusRows) if (InformationAnchors.IsFocused(row.Anchor)) { mapNative = row; break; }
             if (mapNative == null) mapNative = selected;
@@ -179,6 +173,26 @@ namespace DiceMaster.Information
             Rect badge = InformationLayout.Badge(anchor, new Rect(0, 0, Screen.width, Screen.height), map ? mapBadgeSize : choiceBadgeSize, map);
             try { InformationBadge.Draw(badge, map ? InformationLayout.Stem(badge, anchor) : default(Rect), row.Guidance && !row.Opportunity); }
             catch (Exception error) { Failure("안내 아이콘", error); }
+        }
+        private static void DrawLoading(IList<object> pending, IList<InformationRow> entries, InformationLoadingState loading, bool map, float now)
+        {
+            if (Event.current == null || Event.current.type != EventType.Repaint) return;
+            for (int at = 0; at < Math.Min(pending.Count, map ? 64 : 256); at++)
+            {
+                object anchor = pending[at];
+                if (!loading.Visible(anchor, now) || !InformationAnchors.IsInteractive(anchor)) continue;
+                bool hasBadge = false;
+                foreach (InformationRow row in entries) if (ReferenceEquals(row.Anchor, anchor) && row.HasBadge) { hasBadge = true; break; }
+                // A known positive always wins, including a newer selected row.
+                if (hasBadge) continue;
+                Rect rect;
+                if (!InformationAnchors.TryRect(anchor, out rect)) continue;
+                Rect badge = InformationLayout.Badge(rect, new Rect(0, 0, Screen.width, Screen.height), map ? mapBadgeSize : choiceBadgeSize, map);
+                float size = badge.width * .65f;
+                Rect spinner = new Rect(badge.x + (badge.width - size) * .5f, badge.y + (badge.height - size) * .5f, size, size);
+                try { InformationSpinner.Draw(spinner, now); }
+                catch (Exception error) { Failure("안내 준비 표시", error); }
+            }
         }
         private static string EntryConditionColors(string text, bool current)
         {

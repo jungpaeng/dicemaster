@@ -14,6 +14,8 @@
     <Compile Include="../../src/DiceMaster/Information/InformationVisibility.cs" Link="InformationVisibility.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationOverlay.cs" Link="InformationOverlay.cs" />
     <Compile Include="../../src/DiceMaster/Information/InformationBadge.cs" Link="InformationBadge.cs" />
+    <Compile Include="../../src/DiceMaster/Information/InformationLoadingState.cs" Link="InformationLoadingState.cs" />
+    <Compile Include="../../src/DiceMaster/Information/InformationSpinner.cs" Link="InformationSpinner.cs" />
     <EmbeddedResource Include="../../src/DiceMaster/Resources/StoryBadge.rgba" LogicalName="DiceMaster.StoryBadge.rgba" />
     <EmbeddedResource Include="../../src/DiceMaster/Resources/StoryGuideBadge.rgba" LogicalName="DiceMaster.StoryGuideBadge.rgba" />
     <Compile Include="../../src/DiceMaster/Information/MapGuideSnapshot.cs" Link="MapGuideSnapshot.cs" />

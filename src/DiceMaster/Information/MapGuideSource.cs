@@ -30,6 +30,7 @@ namespace DiceMaster.Information
             internal object Data, PositionConfig;
             internal string Script, Key;
             internal Source Definition;
+            internal bool GuidanceReadable;
             internal readonly Dictionary<object, CandidateRead> Reads = new Dictionary<object, CandidateRead>();
         }
         private sealed class Source
@@ -40,6 +41,7 @@ namespace DiceMaster.Information
             internal Exception Failure;
             internal float RetryAt;
             internal bool Ready;
+            internal bool PreparingProofs;
             internal readonly Dictionary<string, string> PoolDiagnostics = new Dictionary<string, string>(StringComparer.Ordinal);
             internal readonly Dictionary<MapRouteEntry, EventDefinition> RouteEvents = new Dictionary<MapRouteEntry, EventDefinition>();
             internal readonly List<StoryGroup> Stories = new List<StoryGroup>();
@@ -50,7 +52,7 @@ namespace DiceMaster.Information
         private sealed class SelectedStoryScan
         {
             internal readonly List<StoryLink> Candidates = new List<StoryLink>();
-            internal int Indexed, Cursor;
+            internal int Indexed, Cursor, Checked;
             // A successful witness reuses only an unchanged observed read set.
             internal StoryLink Preferred;
             internal PreviewConditions.ReadStamp Stamp;
@@ -571,6 +573,7 @@ namespace DiceMaster.Information
                 Candidate candidate = TryCandidate(place, "event/" + RuntimeHelpers.GetHashCode(entry.Data) + "/" + entry.Script, () => Event(controller, source, captured, guide, oneShot));
                 if (candidate != null) candidates.Add(candidate);
             }
+            source.PreparingProofs = effectsPreparing;
             // Future NPC stories are research/detail, not passive predictions.
             // Only an explicit log query samples their downstream conditions.
             if (guide && detailed && source.Routes != null) CollectStories(place, controller, source, candidates);

@@ -300,6 +300,7 @@ namespace DiceMaster.Information
         public static readonly List<MapStoryEntry> StoryFixtures = new List<MapStoryEntry>();
         public readonly List<MapRouteEntry> Entries = new List<MapRouteEntry>();
         public readonly List<MapStoryEntry> StoryEntries = new List<MapStoryEntry>();
+        public readonly List<MapRoutePath> StoryPaths = new List<MapRoutePath>();
         public int WorkCount => Advances;
         public int ScriptReadCount => Advances;
         public int PoolReadCount => 0;
@@ -353,5 +354,5 @@ namespace DiceMaster.Information
 }
 
 #if !MAP_ROUTE_INTEGRATION
-namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static string Describe() => "definition fixture"; internal static void Observe(object missions, object player) {} } }
+namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static bool IsPreparing => false; internal static string Describe() => "definition fixture"; internal static void Observe(object missions, object player) {} } }
 #endif

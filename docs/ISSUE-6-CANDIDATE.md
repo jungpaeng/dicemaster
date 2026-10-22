@@ -1,5 +1,13 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.35 — 스피너의 설정·범위
+
+<!-- alpha35-publication -->
+main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha35-publication -->
+
+기존 EnableMapGuide/EnableOneShotHints와 상위 EnableOptionInfo를 따른다.1회성만 켠 지도에서는 기존 선택 장소 조회가 이미 예약한 준비만 표시하고, 스피너 때문에 미선택 장소 분석을 시작하지 않는다. 네 기능의 키/기본값·cfg 바이트는 그대로다. OFF/가림/숨김과 문맥 변경에서 지연을 정리한다. 실제 준비/실패 구분과 금색/아이보리 마커 의미는 [설계](ISSUE-6-LOADING-INDICATORS.md)를 따른다. [후보·Windows 대기](ISSUE-6-ALPHA35-RELEASE.md).
+
 ## alpha.34 — 고정 날짜 조회·설정 범위
 
 <!-- alpha34-publication -->

@@ -8,6 +8,7 @@ namespace DiceMaster.Information
     {
         public string ContextKey;
         public readonly List<InformationRow> Entries = new List<InformationRow>();
+        public readonly List<object> Preparing = new List<object>();
     }
     // One scheduled read owns both surfaces; rendering never discovers entries.
     public sealed class MapGuideSnapshot
@@ -40,9 +41,8 @@ namespace DiceMaster.Information
         public static string Summary(IList<string> notices, bool guide, bool preparing)
         {
             int count = notices == null ? 0 : notices.Count;
-            if (count == 0 && (!guide || !preparing)) return "";
+            if (count == 0) return "";
             var text = new StringBuilder();
-            if (count == 0) text.Append("이 장소의 안내를 확인하는 중");
             for (int index = 0; index < Math.Min(3, count); index++)
             {
                 if (text.Length != 0) text.Append('\n');

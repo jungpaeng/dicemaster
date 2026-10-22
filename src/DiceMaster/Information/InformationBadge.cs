@@ -12,6 +12,7 @@ namespace DiceMaster.Information
         private static readonly bool[] attempted = new bool[2];
         public static void Release()
         {
+            InformationSpinner.Release();
             for (int at = 0; at < images.Length; at++)
             { if (images[at] != null) UnityEngine.Object.Destroy(images[at]); images[at] = null; attempted[at] = false; }
         }

@@ -16,6 +16,7 @@ namespace DiceMaster.Information
         public InformationRow Selected;
         public readonly List<InformationRow> Entries = new List<InformationRow>();
         public readonly List<InformationRow> Hints = new List<InformationRow>();
+        public readonly List<object> Preparing = new List<object>();
         public string ContextKey;
         internal MenuDialog Menu;
     }
@@ -319,6 +320,18 @@ namespace DiceMaster.Information
             }
             // Route-only projections never become new opportunity evidence.
             AppendOpportunities(snapshot, new MapRouteRead(), indexing, details, preparation, ref choiceBudget);
+            // A positive witness finishes this button immediately, independently
+            // of unrelated descendants. A failed/unsupported read is not busy.
+            if (!routes.HasReadFailure && (routes.IsPreparing || indexing ||
+                !routes.HasIncompleteOpportunityPaths && !opportunityIndexed))
+                foreach (Option option in options)
+                {
+                    object anchor = option.Control.Target;
+                    if (option.Raw == null || option.Context != Context || !ReferenceEquals(option.Menu, menu) || !Live(anchor, menu) || !Interactable(anchor)) continue;
+                    bool found = false;
+                    foreach (InformationRow row in snapshot.Entries) if (ReferenceEquals(row.Anchor, anchor) && row.HasBadge) { found = true; break; }
+                    if (!found) snapshot.Preparing.Add(anchor);
+                }
             if (routes.IsPreparing || indexing || routes.IsPartial || routes.HasReadFailure)
                 snapshot.Entries.Add(Status(routes.HasReadFailure ? "이야기 연결 자료 읽기 대기/실패 · 5초 뒤 재시도" : routes.IsPreparing || indexing ? "이야기 안내 준비 중" : "이야기 연결 일부 확인 필요"));
             snapshot.Selected = CurrentRow(snapshot);

@@ -1,5 +1,17 @@
 # 변경 이력
 
+## [v1.0.7-alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35) — 2026-10-22 (prerelease)
+
+<!-- alpha35-publication -->
+main에서 alpha.35 후보를 구현·자동 검사했다. 지도·선택지의 마커 판정과 준비 스피너를 같은 발행 결과에 연결했다. 고정 커밋 검사와 게시 결과를 기록하며 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha35-publication -->
+
+- 포커스 시 나오는 일반 준비 중 툴팁을 제거하고, 지도 장소·실제 활성 선택 버튼의 마커 위치에 작은 금색 스피너를 표시한다.0.2초 이상 대기할 때 나타나며 포커스가 필요 없다.
+- 같은 조회 결과에서 마커 근거를 찾으면 즉시 스피너를 교체한다. 빈 항목·실패는 계속 회전하지 않고 기존 마커도 정상 갱신마다 로딩으로 돌아가지 않는다. 실제 내용 툴팁은 유지한다.
+- 공유 그림1회 업로드·캐시 프레임 그리기를 사용하며 새 게임 조회/분석/입력을 추가하지 않는다. 기존 예산·설정·cfg·갱신 간격을 유지한다.
+
+[설계·측정](docs/ISSUE-6-LOADING-INDICATORS.md) · [검사·설치·게시](docs/ISSUE-6-ALPHA35-RELEASE.md).
+
 ## [v1.0.7-alpha.34](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.34) — 2026-10-22 (prerelease)
 
 <!-- alpha34-publication -->
