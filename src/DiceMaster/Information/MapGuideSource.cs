@@ -257,11 +257,12 @@ namespace DiceMaster.Information
             selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
         }
         public static void Clear()
-        { backgroundPrepareCursor = backgroundReadCursor = 0; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = detailPlace = null; detailFailure = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
+        { backgroundPrepareCursor = backgroundPrepareStreak = backgroundReadCursor = 0; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = detailPlace = null; detailFailure = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
         public static void ClearSnapshots() { ClearSnapshotsCore(true); }
         public static void ClearSnapshotsPreservingSyntax() { ClearSnapshotsCore(false); }
         private static void ClearSnapshotsCore(bool clearSyntax)
         {
+            backgroundPrepareStreak = 0;
             // Used for OFF: retain weak lifecycle handles, never parsed data.
             bool changed = scripts.Count != 0 || missionIndices.Count != 0 || detailPlace != null || detailFailure != null;
             detailPlace = null; detailFailure = null;

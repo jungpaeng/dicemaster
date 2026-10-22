@@ -19,9 +19,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', help='Read-only Git ref to compare with the current checkout')
     parser.add_argument('--dotnet', default='dotnet', help='.NET 8 SDK executable')
+    parser.add_argument('--output', type=Path, help='Separate report directory; preserves earlier measurements')
+    parser.add_argument('--modes', nargs='+', default=['unselected', 'selected', 'deep'])
     args = parser.parse_args()
     repository = Path(__file__).resolve().parent.parent
-    output = repository / 'artifacts/issue-6/guidance-badges'
+    output = args.output or repository / 'artifacts/issue-6/guidance-badges'
     output.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
     with tempfile.TemporaryDirectory(prefix='dicemaster-guidance-benchmark-') as temporary:
@@ -64,7 +66,7 @@ def main():
         (output / (label + '-benchmark-build.log')).write_text(build.stdout)
         build.check_returncode()
         report = {'baseline': args.baseline, 'measurements': {}}
-        for mode in ('unselected', 'selected', 'deep'):
+        for mode in args.modes:
             result = subprocess.run([args.dotnet, str(temporary / 'bin/Probe.dll'), mode],
                 env=environment, check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             report['measurements'][mode] = json.loads(result.stdout.strip().splitlines()[-1])

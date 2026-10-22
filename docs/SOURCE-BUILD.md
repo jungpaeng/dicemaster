@@ -1,5 +1,10 @@
 # 전체 소스 빌드 — 이슈 #3
 
+## alpha.41 — 지도 정보의 단계별 성능 개선
+
+동일 정보의 로그 발행 억제·검증된 순수 정의의 재사용/지연 연결·짧은 경로의 제한된 연속 준비를 게시한다. 원래 작업 폴더의 main에서 커밋하고 고정 커밋 재빌드·21개 검사·DLL/cfg/ZIP을 검토 후보와 대조한다. alpha.39·40 주사위 자동 이야기 마커/요약의 revert를 포함하며 기존 배포·태그·Latest 정식 v1.0.6·이슈 상태를 보존한다. 자동 성능 측정은 Windows FPS 검증이 아니다. [소스·파일·게시·Windows 확인](ISSUE-6-ALPHA41-RELEASE.md) · [측정·역효과와 제외한 실험](ISSUE-6-PERFORMANCE-STAGES.md).
+
+
 ## alpha.19 — 후속 선택지 해금 확인
 
 <!-- alpha19-publication -->

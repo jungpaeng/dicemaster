@@ -1,5 +1,14 @@
 # 변경 이력
 
+## [v1.0.7-alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41) — 2026-10-23 (prerelease)
+
+- 동일한 정보의 로그 재발행을 줄이고 설치 정의와 현재 세이브의 연결을 분리해 필요한 부분만 연결한다.
+- 진전이 있는 짧은 이야기 경로를 최대 네 조회까지 이어 준비해 첫 지도 마커의 대기를 줄인다. 기존 공유 예산·원문 읽기 상한·0.25초/5초를 유지한다.
+- alpha.39·40의 주사위 자동 이야기 마커·요약을 제거한다. 기존 주사위 조작·실제 분기 기록·지도/선택지 안내는 보존한다.
+- 전체 provider에서 효과가 명확하지 않은 필드 캐시와 추가 노드 분류는 채택하지 않았다. 최초 전체 정의 일괄 조회는 비용이 증가하는 한계가 있어 실게임 FPS 개선으로 일반화하지 않는다.
+- [후보·고정 커밋 재빌드·공개 파일 검증·Windows 대기](docs/ISSUE-6-ALPHA41-RELEASE.md) · [단계별 측정](docs/ISSUE-6-PERFORMANCE-STAGES.md).
+
+
 ## [v1.0.7-alpha.37](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.37) — 2026-10-22 (prerelease)
 
 <!-- alpha37-publication -->

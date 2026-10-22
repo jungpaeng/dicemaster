@@ -19,47 +19,11 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-<!-- alpha37-publication -->
-2026-10-22 23:53:20 KST에 소스 [`15d0962`](https://github.com/jungpaeng/dicemaster/commit/15d0962e821d41eec0ef5bcc041e3c806f714ccd)의 [alpha.37](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.37)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **카드 선택지의 이름 옆 마커/스피너·카드를 피하는 툴팁을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha37-publication -->
+**[v1.0.7-alpha.41 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.41/DiceMaster-v1.0.7-alpha.41.zip)** · [변경·검사·Windows 확인](docs/ISSUE-6-ALPHA41-RELEASE.md)
 
-alpha.37은 alpha.36의 카드 배치를 유지하면서 지도·일반 선택지의 같은 좌표를 한 번 그리는 동안 재사용해 중복 투영을 줄인다. 다음 그리기와 원천 조회는 새 좌표를 읽는다. 표시·판정·입력 규칙은 같다.
+alpha.41은 같은 내용의 로그 발행을 줄이고, 검증한 설치 정의를 재사용하며, 짧은 이야기 경로의 첫 마커가 먼저 준비되도록 순서를 개선합니다. 정상 0.25초·실패 5초와 기존 표시·입력 기준을 유지합니다. 자동 측정에서 재준비·할당량과 첫 안내 대기가 줄었으며 실제 Windows FPS 개선 여부는 확인 대기입니다. 최초에 모든 정의를 일괄 조회하는 검사에서는 비용이 증가한 한계도 있습니다. [측정 범위·수치·한계](docs/ISSUE-6-PERFORMANCE-STAGES.md).
 
-alpha.37은 남제자방 같은 그림 카드에서 마커와 준비 스피너를 **현재 보이는 이름 옆**에 표시합니다. 툴팁은 옆 카드의 그림·설명까지 피하고 선택 이름을 명시합니다. 당문 지도 핀·일반 선택지 배치는 유지합니다. [표시 규칙·검사·한계](docs/ISSUE-6-CARD-ANCHORS.md) · [검사·게시 기록](docs/ISSUE-6-ALPHA37-RELEASE.md).
-
-**[v1.0.7-alpha.37 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.37/DiceMaster-v1.0.7-alpha.37.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 새 DLL의 실제 Windows 확인은 대기입니다.
-
-<!-- alpha36-publication -->
-2026-10-22 23:42:22 KST에 소스 [`b20d898`](https://github.com/jungpaeng/dicemaster/commit/b20d898d01fa33b85823090cff9e1a392940c63f)의 [alpha.36](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.36)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **카드 선택지의 이름 옆 마커/스피너·카드를 피하는 툴팁을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha36-publication -->
-
-alpha.36은 남제자방 같은 그림 카드에서 마커와 준비 스피너를 **현재 보이는 이름 옆**에 표시합니다. 툴팁은 옆 카드의 그림·설명까지 피하고 선택 이름을 명시합니다. 당문 지도 핀·일반 선택지 배치는 유지합니다. [표시 규칙·검사·한계](docs/ISSUE-6-CARD-ANCHORS.md) · [검사·게시 기록](docs/ISSUE-6-ALPHA36-RELEASE.md).
-
-**[v1.0.7-alpha.36 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.36/DiceMaster-v1.0.7-alpha.36.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 새 DLL의 실제 Windows 확인은 대기입니다.
-
-<!-- alpha35-publication -->
-2026-10-22 23:07:45 KST에 소스 [`cff13f2`](https://github.com/jungpaeng/dicemaster/commit/cff13f2960f27a9c8f32c6f0b335ff86d49beae5)의 [alpha.35](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.35)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도·선택지의 마커 준비 스피너를 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha35-publication -->
-
-alpha.35는 일반 준비 중 툴팁을 없애고, 지도 장소와 실제 선택 버튼의 마커 위치에 작은 금색 스피너를 표시합니다.0.2초 이상 준비할 때 나타나며 마커 근거를 찾으면 바로 교체합니다. 빈 항목·실패는 계속 돌지 않고 실제 내용 툴팁은 유지합니다. [표시 규칙·성능](docs/ISSUE-6-LOADING-INDICATORS.md) · [검사·게시 기록](docs/ISSUE-6-ALPHA35-RELEASE.md).
-
-**[v1.0.7-alpha.35 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.35/DiceMaster-v1.0.7-alpha.35.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 새 DLL의 실제 Windows 확인은 대기입니다.
-
-<!-- alpha34-publication -->
-2026-10-22 21:58:37 KST에 소스 [`cf10c0a`](https://github.com/jungpaeng/dicemaster/commit/cf10c0ab37d30ec125ef16baee2edfd0765e1c7e)의 [alpha.34](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.34)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **고정 날짜 조건 누락에 따른 연단방 첫 대화의 지도 안내를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha34-publication -->
-
-alpha.34는 연단방 첫 대화에 필요한 고정 날짜를 현재 시각과 구분해 읽어, 장소에 들어가기 전 지도에서 아이보리 안내가 누락되는 문제를 보완합니다. 대화 완료·기한 경과를 계속 반영합니다. [원인·지원 범위](docs/ISSUE-6-FIXED-CALENDAR.md) · [검사·파일·게시](docs/ISSUE-6-ALPHA34-RELEASE.md).
-
-**[v1.0.7-alpha.34 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.34/DiceMaster-v1.0.7-alpha.34.zip)**. 게임 종료 후 DLL만 교체하고 기존 cfg를 보존하세요. 새 DLL의 실제 Windows 확인은 대기입니다.
-
-<!-- alpha33-publication -->
-2026-10-22 21:20:36 KST에 소스 [`6242395`](https://github.com/jungpaeng/dicemaster/commit/62423951e9e429caf592818ac683a64d838e17e6)의 [alpha.33](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.33)을 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **지도 마커의 초기 준비·입력 변화 확인·깜빡임 경계를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha33-publication -->
-
-alpha.33은 흰색 대화/경로 마커의 현재 메뉴를 먼저 준비하고, 관련 입력이 그대로면 성공 경로와 표시 행을 재사용합니다. 다른 경로를 준비하느라 이미 확인한 마커가 빠지던 경계를 보완하며, 완료·잠김·행동력·우선순위 변경은 계속 반영합니다. [설계·측정](docs/ISSUE-6-MARKER-CACHE.md) · [후보·게시 기록](docs/ISSUE-6-ALPHA33-RELEASE.md).
-
-**[v1.0.7-alpha.33 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.33/DiceMaster-v1.0.7-alpha.33.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 이전 [alpha.32의 설치 파일 정의 지원·게시 기록](docs/ISSUE-6-ALPHA32-RELEASE.md)은 별도로 보존합니다. 디스크 대체 조회의 지원 지문과 미확인 자료 보류는 [기존 범위](docs/ISSUE-6-FILE-DEFINITIONS.md)를 따릅니다.
+**alpha.39·40의 주사위 자동 이야기 마커·요약은 제거했습니다.** 지도·선택지 배지와 기존 주사위 값 지정·실제 분기 기록은 유지합니다. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기입니다.
 
 현재 main은 확인된 기회를 **어두운 바탕의 금색 두루마리**, 그 외 현재 안내 가능한 대화·경로를 **아이보리 바탕의 두루마리**로 구분합니다. 같은 항목에 둘 다 있으면 금색 하나를 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. [새 배지의 의미·검증](docs/ISSUE-6-GUIDANCE-BADGES.md).
 

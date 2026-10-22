@@ -47,8 +47,9 @@ namespace DiceMaster.Information {
   public static List<DisplayQuery> Discover(bool g,bool o,bool details=false){Discoveries++;if(!Visible&&(!NoSelectionSession||!g))return new();return new(){new DisplayQuery("map",()=>{Reads++;if(details)DetailReads++;if(Fail)throw new InvalidOperationException();var snapshot=new MapGuideSnapshot{HasSelection=Visible,ContextKey=ContextKey,Summary=Visible?new InformationRow("map","장소","지도","가능","조건과 효과"):null};snapshot.Entries.Add(new InformationRow("mission/first","첫 임무",NoSelectionSession?"장소 무관":"선택 장소","발생 대기",details?"첫 조건과 효과":"상세에서 확인"));snapshot.Entries.Add(new InformationRow("event/second","둘째 이야기","기타 연결","확인 불가",details?"둘째 조건과 효과":"상세에서 확인"));return snapshot;})};}public static void Clear(){Clears++;}public static void ClearSnapshots(){Clears++;}public static void ClearSnapshotsPreservingSyntax(){Clears++;}
  }
  public static class ShopEffectSource {
+  public static InformationRow TestRow;
   public static Func<bool> Enabled;public static bool Visible,Fail;public static string ContextKey="s";public static int Reads;public static string Summary;
-  public static List<DisplayQuery> Discover(){return new(){new DisplayQuery("shop",()=>{Reads++;if(Fail)throw new InvalidOperationException();return new InformationRow("shop","책","학습","현재 상태","학습 효과·조건 상세","학습: 근력 +5");})};}
+  public static List<DisplayQuery> Discover(){return new(){new DisplayQuery("shop",()=>{Reads++;if(Fail)throw new InvalidOperationException();return TestRow??new InformationRow("shop","책","학습","현재 상태","학습 효과·조건 상세","학습: 근력 +5");})};}
   public static void Clear(){Visible=false;ContextKey+="c";}public static void RenderSummary(string s){Summary=s;}
  }
  public static class BranchHistory {

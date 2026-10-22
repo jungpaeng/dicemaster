@@ -18,25 +18,90 @@ namespace DiceMaster.Information
         { internal string Name; internal long Length; internal byte[] Hash; internal int[] Externals; internal FileStream Stream; }
         private sealed class Entry
         { internal int File; internal long Id, Offset; internal int Length; internal string Type; }
+        // One bounded installation template. It contains names/schema/literals
+        // only, never a native object, current value, owner or binding dictionary.
+        private sealed class InputReference
+        { internal string Key; internal object Fallback; }
+        private sealed class Template
+        { internal string Directory, Profile; internal object[][] Roots; }
+        private static readonly object templateLock = new object();
+        private static Template template;
+        internal static long TemplateCacheHits, TemplateBuilds;
         private readonly List<FileIndex> files = new List<FileIndex>();
         private readonly Dictionary<string, Entry> entries = new Dictionary<string, Entry>();
         private readonly Dictionary<string, object> values = new Dictionary<string, object>();
         private readonly HashSet<string> fixedCalendars = new HashSet<string>();
-        private readonly Dictionary<string, object> live;
         private readonly CancellationToken cancellation;
         private int depth;
         private static readonly UTF8Encoding utf8 = new UTF8Encoding(false, true);
         internal long BytesHashed { get; private set; }
-        private MapDefinitionFileReader(Dictionary<string, object> bindings, CancellationToken token) { live = bindings; cancellation = token; }
+        private MapDefinitionFileReader(CancellationToken token) { cancellation = token; }
         private static string Key(int file, long id) { return file + ":" + id; }
         internal static object[][] Read(string directory, Stream profile, Dictionary<string, object> bindings, CancellationToken token, out long bytes)
         {
-            using (var reader = new MapDefinitionFileReader(bindings, token))
+            token.ThrowIfCancellationRequested();
+            if (profile == null) throw new InvalidDataException("Definition index missing.");
+            string identity;
+            using (var hash = SHA256.Create()) identity = Convert.ToBase64String(hash.ComputeHash(profile));
+            profile.Position = 0;
+            string path = Path.GetFullPath(directory);
+            Template cached;
+            lock (templateLock) cached = template;
+            using (var reader = new MapDefinitionFileReader(token))
             {
-                object[][] result = reader.Open(directory, profile); bytes = reader.BytesHashed; return result;
+                bool reuse = cached != null && cached.Directory == path && cached.Profile == identity;
+                // Even a cache hit opens and hashes all six approved files.
+                // Reuse cannot turn path/mtime into proof of content identity.
+                object[][] roots = reader.Open(directory, profile, reuse ? cached.Roots : null);
+                bytes = reader.BytesHashed;
+                token.ThrowIfCancellationRequested();
+                if (reuse) Interlocked.Increment(ref TemplateCacheHits);
+                else
+                {
+                    var complete = new Template { Directory = path, Profile = identity, Roots = roots };
+                    lock (templateLock) template = complete;
+                    Interlocked.Increment(ref TemplateBuilds);
+                }
+                return Bind(roots, bindings, token);
             }
         }
-        private object[][] Open(string directory, Stream profile)
+        private static object[][] Bind(object[][] roots, Dictionary<string, object> bindings, CancellationToken token)
+        {
+            var seen = new Dictionary<object, object>();
+            Func<object, object> bind = null;
+            bind = value => {
+                token.ThrowIfCancellationRequested();
+                if (value == null) return null;
+                if (seen.TryGetValue(value, out object old)) return old;
+                if (value is InputReference input)
+                {
+                    // Ambiguous null bindings also take priority over literals.
+                    object current = bindings.TryGetValue(input.Key, out object native) ? native : bind(input.Fallback);
+                    seen[value] = current; return current;
+                }
+                if (value is DisplayDefinition source)
+                {
+                    var node = new DisplayDefinition(source, bind); seen[value] = node;
+                    return node;
+                }
+                if (value is List<object> list)
+                {
+                    var copy = new List<object>(list.Count); seen[value] = copy;
+                    foreach (object child in list) copy.Add(bind(child));
+                    return copy;
+                }
+                return value; // reviewed scalar/string literals only
+            };
+            var result = new object[roots.Length][];
+            for (int at = 0; at < roots.Length; at++)
+                if (roots[at] != null)
+                {
+                    result[at] = new object[roots[at].Length];
+                    for (int item = 0; item < roots[at].Length; item++) result[at][item] = bind(roots[at][item]);
+                }
+            return result;
+        }
+        private object[][] Open(string directory, Stream profile, object[][] verifiedTemplate)
         {
             if (profile == null) throw new InvalidDataException("Definition index missing.");
             using (var input = new BinaryReader(profile, utf8, true))
@@ -90,6 +155,7 @@ namespace DiceMaster.Information
                         if (!hash.Hash.SequenceEqual(file.Hash)) throw new InvalidDataException("Installed definition fingerprint differs: " + file.Name);
                     }
                 }
+                if (verifiedTemplate != null) return verifiedTemplate;
                 var result = new object[4][];
                 result[0] = new[] { Node(rootKeys[0]) }; result[1] = new object[roots - 2];
                 for (int i = 1; i < roots - 1; i++) result[1][i - 1] = Node(rootKeys[i]);
@@ -147,10 +213,8 @@ namespace DiceMaster.Information
                     bool metadata = entry.Type.EndsWith("Config", StringComparison.Ordinal) || entry.Type.EndsWith("ConditionResultData", StringComparison.Ordinal) || entry.Type.EndsWith("SwitchResultData", StringComparison.Ordinal) || entry.Type.EndsWith("StatGroupVariable", StringComparison.Ordinal) || entry.Type.EndsWith("FlagCollectionData", StringComparison.Ordinal);
                     if (!metadata)
                     {
-                        // Existing native identities (including ambiguous null)
-                        // win. Missing live clocks/mission times stay unknown.
-                        if (live.TryGetValue(entry.Type + "/" + name, out object native) || !fixedCalendars.Contains(key))
-                        { values.Add(key, native); return native; }
+                        var input = new InputReference { Key = entry.Type + "/" + name }; values.Add(key, input);
+                        if (!fixedCalendars.Contains(key)) return input;
                         // Only profile-reviewed immutable calendar definitions
                         // may be decoded. No serialized State/count/item/default
                         // clock values become current game inputs.
@@ -161,7 +225,7 @@ namespace DiceMaster.Information
                         time.Fields.Add("Year", year); time.Fields.Add("Month", month); time.Fields.Add("Stage", stage);
                         time.Fields.Add("_roundsPerMonth", 3); // reviewed GameTime.ConvertToRounds contract
                         var calendar = new DisplayDefinition(entry.Type, name); calendar.Fields.Add("GameTime", time);
-                        values.Add(key, calendar); return calendar;
+                        input.Fallback = calendar; return input;
                     }
                     var node = new DisplayDefinition(entry.Type, name); values.Add(key, node);
                     if (entry.Type.EndsWith("Config", StringComparison.Ordinal) || entry.Type.EndsWith("FlagCollectionData", StringComparison.Ordinal))

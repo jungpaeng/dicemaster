@@ -6,7 +6,7 @@ namespace DiceMaster.Information
 {
     public static partial class MapGuideSource
     {
-        private static int backgroundPrepareCursor, backgroundReadCursor;
+        private static int backgroundPrepareCursor, backgroundPrepareStreak, backgroundReadCursor;
         // One screen-wide preparation slot (shared with the selected place),
         // never one full preparation budget per visible place. Positive
         // witnesses validate their observed inputs before optional preparation.
@@ -31,7 +31,19 @@ namespace DiceMaster.Information
                     if (HasMarker(snapshot, place) || !CanReadGuidance(place, batch, out _)) continue;
                     Source source = place.Definition;
                     if (source != null && source.Routes != null && !source.Routes.HasPendingWork && source.Failure == null) continue;
+                    int work = source?.Routes?.WorkCount ?? 0;
+                    int reads = (source?.Routes?.ScriptReadCount ?? 0) + (source?.Routes?.PoolReadCount ?? 0);
                     AddGuidanceMarker(place, batch, snapshot, true);
+                    source = place.Definition;
+                    bool progressed = source?.Routes != null && (source.Routes.WorkCount != work ||
+                        source.Routes.ScriptReadCount + source.Routes.PoolReadCount != reads);
+                    // Complete a short continuation before opening every other
+                    // place's root. Four turns cap the wait imposed on peers;
+                    // a blocked/failed job yields immediately. The existing ONE
+                    // cold read/work slot and shared deadline remain unchanged.
+                    if (progressed && source.Routes.HasPendingWork && ++backgroundPrepareStreak < 4)
+                        backgroundPrepareCursor--;
+                    else backgroundPrepareStreak = 0;
                     break;
                 }
             guidancePreferredOnly = false;

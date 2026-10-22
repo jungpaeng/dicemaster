@@ -134,5 +134,14 @@ internal static partial class Program
         using (stamp = new PreviewConditions.ReadStamp()) SafeDisplayEvaluation.ReadReference(reference);
         stat._value++;
         Check(!stamp.IsCurrent(), "a changed audited stat getter invalidates the decision without native condition execution");
+        reference = new StatValueReference { _constant = 9 };
+        var snapshotType = typeof(PreviewConditions).GetNestedType("Snapshot", System.Reflection.BindingFlags.NonPublic);
+        var read = (Func<object,string,object>)snapshotType.GetMethod("Field", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+            .CreateDelegate(typeof(Func<object,string,object>));
+        using (stamp = new PreviewConditions.ReadStamp()) Check((int)read(reference, "_constant") == 9, "strict field metadata reads the current instance's value");
+        reference._constant = 10;
+        Check(!stamp.IsCurrent() && (int)read(reference,"_constant") == 10, "strict field metadata preserves ReadStamp observation and never caches current values");
+        bool missing = false; try { read(reference,"not_a_field"); } catch (MissingFieldException) { missing = true; }
+        Check(missing, "missing schema members retain the strict lookup failure");
     }
 }

@@ -22,7 +22,7 @@ internal static partial class Program
         {
             if (value == null || !visited.Add(value)) return;
             if (value is DisplayDefinition definition)
-            { result.Add(definition); foreach (object child in definition.Fields.Values) Visit(child); }
+            { result.Add(definition); foreach (string key in definition.Fields.Keys) Visit(definition.Read(key)); }
             else if (value is IList list) foreach (object child in list) Visit(child);
         }
         Visit(roots); return result;

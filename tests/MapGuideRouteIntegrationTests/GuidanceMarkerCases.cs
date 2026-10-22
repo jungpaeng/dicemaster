@@ -114,6 +114,29 @@ internal static partial class Program
         }
         MapGuideSource.Clear();
         SharedGuidanceDefinitions();
+        PreparationFairness();
+    }
+    private static void PreparationFairness()
+    {
+        MapGuideSource.Clear(); DataHelper.Scripts.Clear(); DataHelper.ExternalReader = null;
+        MapGuideSource.Enabled = () => true; MapGuideSource.MarkerVisible = _ => true;
+        CheckPointManager.Instance = new CheckPointManager();
+        DataHelper.Scripts["long_peer"] = new string(';', 120000) + "local a={'leave'};choose(a)";
+        DataHelper.Scripts["short_peer"] = "local a={'talk'};local r=choose(a);if r==1 then setcharacter(characters.Get('peer'));say(luamanager.GetStoryText('D_peer')) end";
+        var slow = new PositionController { _positionData = new FreePositionData { name = "LongPeer", _defaultScript = "long_peer" } };
+        var fast = new PositionController { _positionData = new FreePositionData { name = "ShortPeer", _defaultScript = "short_peer" },
+            _missionsManager = slow._missionsManager, _gameStatManager = slow._gameStatManager, _freeManager = slow._freeManager };
+        MapGuideSource.Register(slow); MapGuideSource.Register(fast); bool shown = false;
+        for (int at = 0; at < 12 && !shown; at++)
+        {
+            int reads = DataHelper.Reads, work = AllRouteWork();
+            MapGuideSource.BeginScheduledReads();
+            try { shown = GuidanceMarkers().Entries.Any(row => ReferenceEquals(row.Anchor, fast)); }
+            finally { MapGuideSource.EndScheduledReads(); }
+            Check(DataHelper.Reads - reads <= 1 && AllRouteWork() - work <= 8192, "short continuation bursts preserve the shared read/work ceiling");
+        }
+        Check(shown, "a long lexical preparation yields to an independent short story instead of monopolizing background work");
+        GC.KeepAlive(slow); GC.KeepAlive(fast); MapGuideSource.Clear(); MapGuideSource.MarkerVisible = null;
     }
     private static void SharedGuidanceDefinitions()
     {

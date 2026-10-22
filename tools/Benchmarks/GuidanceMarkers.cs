@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
 using DiceMaster;
 using DiceMaster.Information;
 using Mortal.Core;
@@ -16,6 +19,8 @@ static class GuideProbe
         _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 0 } } } } } };
     static void Main(string[] args)
     {
+        if (args.Contains("definitions")) { Definitions(); return; }
+        if (args.Contains("metadata")) { Metadata(); return; }
         bool selected = args.Contains("selected");
         bool deep = args.Contains("deep");
         var results = new List<object>();
@@ -73,21 +78,80 @@ static class GuideProbe
             int resources = DataHelper.Reads, min = count, max = 0; var times = new double[200];
             GC.Collect(); GC.WaitForPendingFinalizers();
             long allocated = GC.GetAllocatedBytesForCurrentThread();
+            MapMarkerSnapshot last = null;
             for (int i = 0; i < times.Length; i++)
             {
                 long begin = Stopwatch.GetTimestamp(); var value = Read();
+                last = value;
                 times[i] = (Stopwatch.GetTimestamp() - begin) * 1000.0 / Stopwatch.Frequency;
                 min = Math.Min(min, value.Entries.Count); max = Math.Max(max, value.Entries.Count);
             }
             allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
             Array.Sort(times); Array.Sort(cold);
+            string canonical = string.Join("\n", last.Entries.Select(row => row.Title + "|" + row.Kind + "|" + row.Status + "|" + row.AutoText + "|" + row.Available + "|" + row.Opportunity + "|" + row.Guidance).OrderBy(text => text, StringComparer.Ordinal));
+            string displayHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
             results.Add(new { count, padding, selected, deep, firstMarkerTick = firstTick, allMarkersTick = allTick,
                 coldMaxReadsPerTick = maxReads, coldTotalReads = coldReads, coldP95Ms = cold[284], coldMaxMs = cold[299],
                 minShown = min, maxShown = max, p95Ms = times[189], maxMs = times[199], bytesPerQuery = allocated / times.Length,
-                resourceReads = DataHelper.Reads - resources });
+                resourceReads = DataHelper.Reads - resources, displayHash });
             GC.KeepAlive(kept);
         }
         Console.WriteLine(JsonSerializer.Serialize(results));
+    }
+    static void Definitions()
+    {
+        string directory = Environment.GetEnvironmentVariable("DICEMASTER_MAP_GAME_DATA");
+        if (string.IsNullOrEmpty(directory)) throw new Exception("Supply read-only actual game data for definition measurements.");
+        var rows = new List<object>();
+        for (int i = 0; i < 6; i++)
+        {
+            GC.Collect(); GC.WaitForPendingFinalizers();
+            long before = GC.GetAllocatedBytesForCurrentThread(), start = Stopwatch.GetTimestamp();
+            using var index = typeof(MapFileDefinitions).Assembly.GetManifestResourceStream("DiceMaster.MapDefinitions.index");
+            var roots = MapDefinitionFileReader.Read(directory, index, new Dictionary<string, object>(), System.Threading.CancellationToken.None, out long bytes);
+            double ms = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            // Include the worst case too: laziness must not hide the cost of
+            // asking for EVERY definition after setup. Normal map queries ask
+            // for a small subset, but this exposes the deferred work separately.
+            int nodes = 0; var visited = new HashSet<object>();
+            var templateField = typeof(DiceMaster.LiveLog.DisplayDefinition).GetField("template", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Action<object> walk = null;
+            walk = value => {
+                if (value == null || !visited.Add(value)) return;
+                if (value is DiceMaster.LiveLog.DisplayDefinition definition)
+                {
+                    nodes++;
+                    var source = templateField?.GetValue(definition) as DiceMaster.LiveLog.DisplayDefinition ?? definition;
+                    foreach (string key in source.Fields.Keys) walk(definition.Read(key));
+                }
+                else if (value is System.Collections.IEnumerable list && !(value is string)) foreach (object item in list) walk(item);
+            };
+            walk(roots);
+            double fullMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
+            long fullAllocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            rows.Add(new { load = i, ms, allocated, fullMs, fullAllocated, materializedNodes = nodes, hashedBytes = bytes, conditions = roots[0].Length, switches = roots[1].Length });
+        }
+        Console.WriteLine(JsonSerializer.Serialize(rows));
+    }
+    static void Metadata()
+    {
+        var type = typeof(DiceMaster.LiveLog.PreviewConditions).GetNestedType("Snapshot", System.Reflection.BindingFlags.NonPublic);
+        var method = type.GetMethod("Field", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var read = (Func<object, string, object>)method.CreateDelegate(typeof(Func<object, string, object>));
+        var value = new StatValueReference { _constant = 7 };
+        var rows = new List<object>();
+        for (int round = 0; round < 6; round++)
+        {
+            for (int i = 0; i < 10000; i++) read(value, "_constant");
+            const int count = 600000; long sum = 0, start = Stopwatch.GetTimestamp(), bytes = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < count; i++) sum += (int)read(value, "_constant");
+            double ms = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
+            bytes = GC.GetAllocatedBytesForCurrentThread() - bytes;
+            value._constant++; bool fresh = (int)read(value, "_constant") == value._constant;
+            rows.Add(new { round, count, ms, bytes, sum, fresh });
+        }
+        Console.WriteLine(JsonSerializer.Serialize(rows));
     }
 }
 

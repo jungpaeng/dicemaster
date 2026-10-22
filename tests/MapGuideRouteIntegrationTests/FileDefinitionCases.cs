@@ -61,6 +61,25 @@ internal static partial class Program
             flags[2].State = 0;
             for (int at = 0; at < 40; at++) snapshot = GuidanceMarkers();
             Check(snapshot.Entries.Any(row => row.Guidance) && DataHelper.Reads == resources, "restored current inputs recover without rereading files/Lua or restarting the game");
+            var bindings = MapFileDefinitions.Bindings(control._missionsManager, control._gameStatManager);
+            object[][] LoadBindings(Dictionary<string, object> current)
+            {
+                using Stream index = typeof(MapFileDefinitions).Assembly.GetManifestResourceStream("DiceMaster.MapDefinitions.index");
+                var result = MapDefinitionFileReader.Read(data, index, current, CancellationToken.None, out long bytes);
+                Check(bytes == 69272604, "even template reuse fully fingerprints all six approved installed files");
+                return result;
+            }
+            var previousRoots = LoadBindings(bindings);
+            long hits = MapDefinitionFileReader.TemplateCacheHits;
+            var replacement = new FlagData { name = "Talk_Brother4", State = 1 };
+            var nextBindings = new Dictionary<string, object>(bindings) { ["Mortal.Core.FlagData/Talk_Brother4"] = replacement };
+            var nextRoots = LoadBindings(nextBindings);
+            var oldInputs = BoundInputs(previousRoots); var newInputs = BoundInputs(nextRoots);
+            Check(MapDefinitionFileReader.TemplateCacheHits > hits && oldInputs.Contains(flags[0]) && newInputs.Contains(replacement) && !newInputs.Contains(flags[0]),
+                "one verified pure template rebinds to today's identities without retaining a previous save's native flag");
+            Check(!ReferenceEquals(previousRoots[0][0], nextRoots[0][0]), "each binding context owns its lazy display views");
+            var cached = typeof(MapDefinitionFileReader).GetField("template", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null);
+            Check(BoundInputs(Private(cached, "Roots")).Count == 0, "the process-wide template contains no Unity/current owner/input references");
             var gate = PreviewConditions.Parse("checkpointmanager.Condition('Talk_Brother4')");
             Check(PreviewConditions.CreateReader().Current(gate) == PreviewConditionState.Unknown,
                 "strict one-shot/opportunity readers never borrow file-backed route definitions");
@@ -108,6 +127,24 @@ internal static partial class Program
             MapGuideSource.MarkerVisible = null; PreviewConditions.LoadedDefinitionReader = null; PreviewConditions.ExistingOwnerAlive = null;
             CheckPointManager.Instance = new CheckPointManager(); LuaManager.Instance = null;
         }
+    }
+    private static HashSet<object> BoundInputs(object root)
+    {
+        var found = new HashSet<object>(); var visited = new HashSet<object>();
+        var templateField = typeof(DisplayDefinition).GetField("template", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Action<object> walk = null;
+        walk = value => {
+            if (value == null || !visited.Add(value)) return;
+            if (value is UnityEngine.Object) { found.Add(value); return; }
+            if (value is DisplayDefinition definition)
+            {
+                var source = templateField.GetValue(definition) as DisplayDefinition ?? definition;
+                foreach (string key in source.Fields.Keys) walk(definition.Read(key));
+            }
+            else if (value is System.Collections.IEnumerable items && !(value is string)) foreach (object item in items) walk(item);
+            else if (value.GetType().Name == "InputReference") walk(Private(value, "Fallback"));
+        };
+        walk(root); return found;
     }
 }
 

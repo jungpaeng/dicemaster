@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using DiceMaster.Information;
 using DiceMaster.LiveLog;
@@ -69,8 +70,46 @@ static class Program {
   MarkerCadence();
   NativeWindowCadence();
   MapDiagnosticPublication();
+  StablePublication();
   if(args.Length>0) Metadata(args[0], args.Length>1 ? args[1] : null);
   Console.WriteLine("PASS: InformationRuntimeTests: "+checks+" scheduling/settings/read-only/DLL wiring assertions; provider/game/UI boundaries are fixtures.");
+ }
+ static void StablePublication(){
+  InformationRuntime.Clear();InformationRuntime.Install(new HarmonyLib.Harmony());
+  MapGuideSource.Visible=false;MapGuideSource.NoSelectionSession=false;ChoiceStorySource.Visible=false;ShopEffectSource.Visible=true;
+  ShopEffectSource.Fail=false;float now=200;
+  InformationRuntime.Tick(null,true,now);var first=LogBridge.Model.Tab("상점 효과").Snapshot;int reads=ShopEffectSource.Reads;
+  InformationRuntime.Tick(null,true,now+=.5f);
+  Check(ShopEffectSource.Reads==reads+1&&ReferenceEquals(first,LogBridge.Model.Tab("상점 효과").Snapshot),"equal immutable display values skip log projection but still read current state");
+  InformationRuntime.Tick(null,true,now+=.5f,true);
+  Check(!ReferenceEquals(first,LogBridge.Model.Tab("상점 효과").Snapshot),"manual refresh always republishes even equal display values");
+  var anchor=new object();
+  InformationRow Base()=>new("id","title","kind","status","detail","auto",anchor);
+  var variants=new[]{new InformationRow("other","title","kind","status","detail","auto",anchor),
+   new InformationRow("id","other","kind","status","detail","auto",anchor),new InformationRow("id","title","other","status","detail","auto",anchor),
+   new InformationRow("id","title","kind","other","detail","auto",anchor),new InformationRow("id","title","kind","status","other","auto",anchor),
+   new InformationRow("id","title","kind","status","detail","other",anchor),new InformationRow("id","title","kind","status","detail","auto",new object()),
+   new InformationRow("id","title","kind","status","detail","auto",anchor,true),new InformationRow("id","title","kind","status","detail","auto",anchor,false,true),
+   new InformationRow("id","title","kind","status","detail","auto",anchor,false,false,true)};
+  foreach(var row in variants){
+   ShopEffectSource.TestRow=Base();InformationRuntime.Tick(null,true,now+=.5f);first=LogBridge.Model.Tab("상점 효과").Snapshot;
+   ShopEffectSource.TestRow=row;InformationRuntime.Tick(null,true,now+=.5f);
+   Check(!ReferenceEquals(first,LogBridge.Model.Tab("상점 효과").Snapshot),"every display field, anchor and badge state invalidates publication equality");
+  }
+  first=LogBridge.Model.Tab("상점 효과").Snapshot;ShopEffectSource.Fail=true;InformationRuntime.Tick(null,true,now+=.5f);
+  Check(!ReferenceEquals(first,LogBridge.Model.Tab("상점 효과").Snapshot)&&LogBridge.Model.Tab("상점 효과").Snapshot.Rows[0].RefreshState==DiceMaster.LogUI.LogRefreshState.RetainedFailure,"failure status publishes even with unchanged retained content");
+  first=LogBridge.Model.Tab("상점 효과").Snapshot;reads=ShopEffectSource.Reads;ShopEffectSource.Fail=false;
+  InformationRuntime.Tick(null,true,now+=.5f);Check(ShopEffectSource.Reads==reads,"coalescing cannot bypass five-second failed-query backoff");
+  InformationRuntime.Tick(null,true,now+=5);
+  Check(!ReferenceEquals(first,LogBridge.Model.Tab("상점 효과").Snapshot)&&LogBridge.Model.Tab("상점 효과").Snapshot.Rows[0].RefreshState==DiceMaster.LogUI.LogRefreshState.Healthy,"recovery republishes identical content as healthy");
+  LogBridge.Model.Publish(new DiceMaster.LogUI.LogSnapshot(LogBridge.Model.ContextId,"상점 효과",new List<DiceMaster.LogUI.LogItem>()));
+  InformationRuntime.Tick(null,true,now+=.5f);Check(LogBridge.Model.Tab("상점 효과").Snapshot.Rows[0].Id=="id","a displaced publication is restored instead of suppressed by value equality");
+  LogBridge.Model.MarkPublicationFailure("상점 효과");InformationRuntime.Tick(null,true,now+=.5f);
+  Check(!LogBridge.Model.Tab("상점 효과").PublicationFailed,"a failed model publication is repaired even when source values are equal");
+  LogBridge.Model.ResetContext(LogBridge.Model.ContextId+1);InformationRuntime.Tick(null,true,now+=.5f);
+  Check(LogBridge.Model.Tab("상점 효과").HasPublished&&LogBridge.Model.Tab("상점 효과").Snapshot.ContextId==LogBridge.Model.ContextId,"same shop values republish into a new Lua/model context");
+  reads=ShopEffectSource.Reads;InformationRuntime.Tick(null,false,now+=.5f);Check(ShopEffectSource.Reads==reads,"hidden coalesced pages perform no state reads");
+  ShopEffectSource.TestRow=null;InformationRuntime.Clear();
  }
  static void MapDiagnosticPublication(){
   InformationRuntime.Clear();InformationRuntime.Install(new HarmonyLib.Harmony());ChoiceStorySource.Visible=false;

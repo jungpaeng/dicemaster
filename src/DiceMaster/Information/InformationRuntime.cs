@@ -20,6 +20,7 @@ namespace DiceMaster.Information
             internal readonly RefreshEngine Engine = new RefreshEngine();
             internal string Context;
             internal List<DisplayRow> Rows = new List<DisplayRow>();
+            internal LogSnapshot Publication;
             internal bool Visible, Detailed;
         }
         private static readonly Page map = new Page(), shop = new Page(), branch = new Page(), hints = new Page(), choices = new Page(), markers = new Page();
@@ -106,7 +107,7 @@ namespace DiceMaster.Information
             if (!enabled[0] && !enabled[1]) { MapGuideSource.ClearSnapshots(); PreviewConditions.ClearTalkContext(); MapDefinitionAssets.Clear(); }
         }
         private static void Reset(Page page)
-        { page.Engine.ResetContext(); page.Rows.Clear(); page.Context = null; page.Visible = false; }
+        { page.Engine.ResetContext(); page.Rows.Clear(); page.Publication = null; page.Context = null; page.Visible = false; }
         public static void Clear()
         {
             map.Detailed = false;
@@ -207,7 +208,15 @@ namespace DiceMaster.Information
                 string current = currentKey != null ? currentKey() :
                     title == "상점 효과" ? ShopEffectSource.ContextKey : title == "분기 기록" ? BranchHistory.ContextKey : key;
                 if (current != key) { Reset(page); page.Context = current; Publish(page, title); return; }
-                page.Rows = rows; Publish(page, title);
+                if (title == "지도 표식" || title == "1회성") { page.Rows = rows; return; }
+                // Providers still sample current state at the normal cadence.
+                // Only log projection/publication is coalesced. Always retain
+                // the newest provider result for native anchors and rendering.
+                bool same = SameRows(page.Rows, rows);
+                page.Rows = rows;
+                var tab = LogBridge.Model.Tab(ModelTitle(title));
+                bool ownsLog = tab.HasPublished && !tab.PublicationFailed && ReferenceEquals(page.Publication, tab.Snapshot);
+                if (!same || !ownsLog || page.Detailed || manual || rows.Count == 0) Publish(page, title);
             }, message => DicePlugin.LogInfo("Information " + message));
             // The shared log model can receive a new Lua context between healthy ticks.
             if (title != "지도 표식" && !LogBridge.Model.Tab(ModelTitle(title)).HasPublished) Publish(page, title);
@@ -256,7 +265,47 @@ namespace DiceMaster.Information
                 InformationRow diagnostic = MapGuideSource.DiagnosticRow();
                 AddPublishedRow(rows, new DisplayRow(diagnostic.Id, diagnostic, ""), diagnostic);
             }
-            LogBridge.Model.Publish(new LogSnapshot(LogBridge.Model.ContextId, ModelTitle(title), rows));
+            var publication = new LogSnapshot(LogBridge.Model.ContextId, ModelTitle(title), rows);
+            page.Publication = null; // a failed publication must remain retryable
+            LogBridge.Model.Publish(publication);
+            page.Publication = publication;
+        }
+        private static bool SameRows(List<DisplayRow> previous, List<DisplayRow> current)
+        {
+            if (previous.Count != current.Count) return false;
+            for (int at = 0; at < current.Count; at++)
+            {
+                DisplayRow a = previous[at], b = current[at];
+                if (a.Id != b.Id || a.Status != b.Status) return false;
+                if (a.Value is InformationRow row && b.Value is InformationRow next)
+                { if (!SameRow(row, next)) return false; }
+                else if (a.Value is MapGuideSnapshot map && b.Value is MapGuideSnapshot nextMap)
+                {
+                    if (map.ContextKey != nextMap.ContextKey || map.HasSelection != nextMap.HasSelection ||
+                        !SameRow(map.Summary, nextMap.Summary) || !SameEntries(map.Entries, nextMap.Entries)) return false;
+                }
+                else if (a.Value is ChoiceStorySnapshot choices && b.Value is ChoiceStorySnapshot nextChoices)
+                {
+                    if (choices.ContextKey != nextChoices.ContextKey || !SameEntries(choices.Entries, nextChoices.Entries)) return false;
+                }
+                // Unknown/mutable provider types opt out. In particular, do not
+                // infer semantic equality from an arbitrary object's reference.
+                else return false;
+            }
+            return true;
+        }
+        private static bool SameEntries(List<InformationRow> a, List<InformationRow> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int at = 0; at < a.Count; at++) if (!SameRow(a[at], b[at])) return false;
+            return true;
+        }
+        private static bool SameRow(InformationRow a, InformationRow b)
+        {
+            if (a == null || b == null) return a == null && b == null;
+            return a.Id == b.Id && a.Title == b.Title && a.Kind == b.Kind && a.Status == b.Status &&
+                a.Detail == b.Detail && a.AutoText == b.AutoText && ReferenceEquals(a.Anchor, b.Anchor) &&
+                a.Available == b.Available && a.Opportunity == b.Opportunity && a.Guidance == b.Guidance;
         }
         private static void AddPublishedRow(List<LogItem> rows, DisplayRow source, InformationRow value)
         {
