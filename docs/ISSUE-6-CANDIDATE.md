@@ -3,7 +3,7 @@
 ## alpha.34 — 고정 날짜 조회·설정 범위
 
 <!-- alpha34-publication -->
-main에서 alpha.34 후보를 준비했다. 고정 날짜와 가변 시각의 조회를 분리해 연단방 첫 대화의 지도 누락을 보완했다. 전체·고정 커밋 검사와 게시 결과를 아래 기록에 추가하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-22 21:58:37 KST에 소스 [`cf10c0a`](https://github.com/jungpaeng/dicemaster/commit/cf10c0ab37d30ec125ef16baee2edfd0765e1c7e)의 [alpha.34](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.34)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **고정 날짜 조건 누락에 따른 연단방 첫 대화의 지도 안내를 보완했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha34-publication -->
 
 EnableMapGuide와 상위 EnableOptionInfo를 따른다. EnableOneShotHints·EnableBranchNotices·EnableShopEffectInfo를 포함해 키/기본값/패키지 cfg 바이트 변화는 없다. 정상0.25초/실패5초·숨김/OFF/로드 정리·입력 보호를 유지한다. 고정 날짜 파일 보충은 일반 아이보리 경로 안내 전용이며 금색 기회/엄격1회성 증명으로 사용하지 않는다. [자료 경계](ISSUE-6-FIXED-CALENDAR.md) · [후보·Windows 대기](ISSUE-6-ALPHA34-RELEASE.md).
