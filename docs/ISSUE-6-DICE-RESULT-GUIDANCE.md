@@ -1,11 +1,5 @@
 # 주사위 결과별 이야기 연결 안내 — alpha.39
 
-## alpha.40 후속 수정 — 최초 활성화
-
-alpha.39의 최초 주사위 화면 누락을 보완했다. `ExecuteRoll` 호출 인자를 대기 보관하고 실제 `UpdateOptions` 완료 후 현재 활성 소유자·문맥·원본 결과 행 전체를 대조해 결합한다. 초기 `MenuDialog.Awake → Clear`는 해당 초기화 범위에서만 대기를 보존한다. 실제 Clear/OnDisable/문맥 변경/초기화 실패는 취소하며 오래된 완료 통지로 복구하지 않는다. 기존 위쪽 주사위 패널을 다시 추가하지 않는다.
-
-준비 대기/원문 미확인도 기존 상세 도구의 ‘주사위 연결 자료’로 보인다. 초기화 후킹에서 Lua를 파싱하거나 주사위/판정/RNG를 실행하지 않으며 갱신·숨김·설정·예산은 그대로다. 양양 수련의 실제 Lua와 네이티브 IL 순서를 회귀 검사에 포함했다. [alpha.40 후보·검증·게시 기록](ISSUE-6-ALPHA40-RELEASE.md). 아래 alpha.39 기록은 당시의 검증 이력이며 alpha.40 새 DLL의 Windows 확인은 대기다.
-
 <!-- alpha39-publication -->
 2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha39-publication -->

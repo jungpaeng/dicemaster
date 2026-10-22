@@ -33,15 +33,6 @@ namespace DiceMaster.Information
         private static DiceRouteIndex index;
         private static DiceRouteIndex.Site site;
         private static DiceMenuDialog owner;
-        private sealed class PendingRoll
-        {
-            internal DiceMenuDialog Owner;
-            internal string[] Raw;
-            internal string Key;
-            internal long Context;
-            internal int InitializationDepth;
-        }
-        private static PendingRoll pending;
         private static string[] raw;
         private static int generation, cursor;
         private static long context;
@@ -53,9 +44,7 @@ namespace DiceMaster.Information
         private static readonly Dictionary<object, string> eventNames = new Dictionary<object, string>();
         private static string TextOf(object text)
         { return text == null ? "" : text.GetType().GetProperty("text", Fields)?.GetValue(text, null) as string ?? ""; }
-        private static bool Live(DiceMenuDialog dice) => dice != null && dice.isActiveAndEnabled && dice.gameObject.activeInHierarchy && ReferenceEquals(MenuDialog.ActiveMenuDialog, dice);
-        public static bool Active => (guide || once) &&
-            (context == LogBridge.Model.ContextId && Live(owner) || pending != null && pending.Context == LogBridge.Model.ContextId && Live(pending.Owner));
+        public static bool Active => (guide || once) && owner != null && owner.isActiveAndEnabled && owner.gameObject.activeInHierarchy && ReferenceEquals(MenuDialog.ActiveMenuDialog, owner);
         public static string ContextKey => generation + "/" + LogBridge.Model.ContextId + "/" + guide + "/" + once;
         public static void Configure(bool showGuide, bool showOnce)
         {
@@ -73,70 +62,33 @@ namespace DiceMaster.Information
             Clear(); script = name; source = text ?? "";
         }
         public static void Clear()
-        { ResetView(); pending = null; script = source = null; index = null; proofRetries.Clear(); eventNames.Clear(); }
-        private static void ResetView()
-        { Restore(); owner = null; key = null; raw = null; site = null; located = false; arms.Clear(); labels.Clear(); generation++; cursor = 0; }
-        // ExecuteRoll returns an iterator before its body activates the view.
-        // Capture this invocation, but bind only after native UpdateOptions.
-        private static void Capture(DiceMenuDialog dice, string[] options, string checkName)
+        { Restore(); owner = null; key = null; raw = null; script = source = null; index = null; site = null; located = false; arms.Clear(); labels.Clear(); proofRetries.Clear(); eventNames.Clear(); generation++; cursor = 0; }
+        private static void Begin(DiceMenuDialog dice, string[] options, string checkName)
         {
-            ResetView(); pending = null;
-            if (!guide && !once || dice == null || options == null || options.Length == 0 || options.Length > 16) return;
-            var copy = (string[])options.Clone();
-            foreach (string value in copy) if (value == null || value.Length > 2048) return;
-            pending = new PendingRoll { Owner = dice, Raw = copy, Key = checkName, Context = LogBridge.Model.ContextId };
+            if (!guide && !once || options == null || options.Length == 0 || options.Length > 16 || source == null) return;
+            Restore(); labels.Clear(); owner = dice; key = checkName; raw = (string[])options.Clone();
+            for (int n = 0; n < raw.Length; n++) if (raw[n] == null || raw[n].Length > 2048) { owner = null; return; }
+            context = LogBridge.Model.ContextId; site = null; located = false; arms.Clear(); cursor = 0; generation++;
+            if (index == null) index = new DiceRouteIndex(script, source);
         }
-        private static void PreparedView(DiceMenuDialog dice)
-        {
-            var next = pending;
-            if (next == null || !ReferenceEquals(next.Owner, dice) || next.InitializationDepth != 0 ||
-                next.Context != LogBridge.Model.ContextId || !Live(dice)) return;
-            // A stale/partial native refresh cannot activate captured evidence.
-            for (int at = 0; at < next.Raw.Length; at++) if (Option(dice, next.Raw, at) == null) return;
-            owner = dice; key = next.Key; raw = next.Raw; context = next.Context; pending = null; generation++;
-        }
-        private static void Closed(MenuDialog menu)
-        {
-            bool captured = pending != null && ReferenceEquals(pending.Owner, menu);
-            // Native MenuDialog.Awake calls Clear on the first activation.
-            // Preserve only the exact pending invocation inside that scope.
-            if (captured && pending.InitializationDepth > 0) return;
-            if (captured) pending = null;
-            if (captured || ReferenceEquals(owner, menu)) ResetView();
-        }
-        private static void Hidden(DiceMenuDialog dice)
-        {
-            bool captured = pending != null && ReferenceEquals(pending.Owner, dice);
-            if (captured) pending = null;
-            if (captured || ReferenceEquals(owner, dice)) ResetView();
-        }
-        private static bool Valid => (guide || once) && Live(owner) && context == LogBridge.Model.ContextId && raw != null;
+        private static bool Valid => Active && context == LogBridge.Model.ContextId && (guide || once) && raw != null;
         public static List<DisplayQuery> Discover()
         {
-            var result = new List<DisplayQuery>(); if (!Active) return result;
+            var result = new List<DisplayQuery>(); if (!Valid) return result;
             result.Add(new DisplayQuery("dice/" + ContextKey, ReadSnapshot)); return result;
         }
-        private static DiceOption Option(int at) => Option(owner, raw, at);
-        private static DiceOption Option(DiceMenuDialog dice, string[] options, int at)
+        private static DiceOption Option(int at)
         {
-            var buttons = nativeButtons == null || dice == null ? null : nativeButtons.GetValue(dice) as Button[];
-            if (options == null || buttons == null || at >= buttons.Length || buttons[at] == null || !buttons[at].gameObject.activeInHierarchy) return null;
+            var buttons = nativeButtons == null || owner == null ? null : nativeButtons.GetValue(owner) as Button[];
+            if (buttons == null || at >= buttons.Length || buttons[at] == null || !buttons[at].gameObject.activeInHierarchy) return null;
             var option = buttons[at].GetComponent<DiceOption>();
-            return option != null && rawText != null && TextOf(rawText.GetValue(option)) == options[at] ? option : null;
+            return option != null && rawText != null && TextOf(rawText.GetValue(option)) == raw[at] ? option : null;
         }
         private static ScriptReadResult Script(string name) => string.Equals(name, script, StringComparison.OrdinalIgnoreCase) ? ScriptReadResult.Success(source) : DataHelper.ReadPreviewScript(name);
         private static object ReadSnapshot()
         {
-            if (!Active) throw new DataNotReadyException();
+            if (!Valid) throw new DataNotReadyException();
             var snapshot = new DiceGuideSnapshot { ContextKey = ContextKey };
-            if (!Valid || source == null)
-            {
-                snapshot.Entries.Add(new InformationRow("dice/status", "주사위 연결 자료", "자료 상태",
-                    !Valid ? "주사위 결과 화면 준비 대기" : "주사위 원문 미확인",
-                    "스크립트: " + (script ?? "미확인") + "\n판정 키: " + (pending == null ? key : pending.Key) +
-                    "\n현재 주사위 화면을 관찰했습니다. 원본 결과 행의 준비와 원문 연결을 확인한 뒤 안내합니다. 이전 지도 결과로 대신하지 않습니다.", ""));
-                return snapshot;
-            }
             var slice = new MapRouteDefinitions.PreparationSlice();
             if (index == null) index = new DiceRouteIndex(script, source);
             index.Advance(262144, slice.ShouldYield);
@@ -242,54 +194,20 @@ namespace DiceMaster.Information
         private static void Observe(Action action)
         { try { action(); } catch (Exception error) { InformationRuntime.Failure("주사위 경로", error); } }
         public static void Install(Harmony harmony)
-        { harmony.PatchAll(typeof(Roll)); harmony.PatchAll(typeof(Initialize)); harmony.PatchAll(typeof(Prepared)); harmony.PatchAll(typeof(Close)); harmony.PatchAll(typeof(Hide)); harmony.PatchAll(typeof(Content)); }
+        { harmony.PatchAll(typeof(Roll)); harmony.PatchAll(typeof(Close)); harmony.PatchAll(typeof(Content)); }
         [HarmonyPatch(typeof(DiceMenuDialog), "ExecuteRoll")]
         private static class Roll
         {
             [HarmonyPostfix, HarmonyPriority(Priority.Last)]
             private static void Postfix(DiceMenuDialog __instance, string[] options, string checkName)
-            { if (OptionInfoPatch.DisplayRefreshDepth == 0) Observe(() => Capture(__instance, options, checkName)); }
-        }
-        [HarmonyPatch(typeof(MenuDialog), "Awake")]
-        private static class Initialize
-        {
-            [HarmonyPrefix, HarmonyPriority(Priority.First)]
-            private static void Prefix(MenuDialog __instance, out PendingRoll __state)
-            {
-                __state = pending != null && ReferenceEquals(pending.Owner, __instance) ? pending : null;
-                if (__state != null) __state.InitializationDepth++;
-            }
-            [HarmonyFinalizer, HarmonyPriority(Priority.Last)]
-            private static Exception Finalizer(Exception __exception, PendingRoll __state)
-            {
-                if (__state != null)
-                {
-                    __state.InitializationDepth--;
-                    if (__exception != null && ReferenceEquals(pending, __state)) Observe(() => { pending = null; ResetView(); });
-                }
-                return __exception;
-            }
-        }
-        [HarmonyPatch(typeof(CustomMenuDialog), "UpdateOptions")]
-        private static class Prepared
-        {
-            [HarmonyPostfix, HarmonyPriority(Priority.Last)]
-            private static void Postfix(CustomMenuDialog __instance)
-            { if (__instance is DiceMenuDialog dice && OptionInfoPatch.DisplayRefreshDepth == 0) Observe(() => PreparedView(dice)); }
+            { if (OptionInfoPatch.DisplayRefreshDepth == 0) Observe(() => Begin(__instance, options, checkName)); }
         }
         [HarmonyPatch(typeof(MenuDialog), nameof(MenuDialog.Clear))]
         private static class Close
         {
             [HarmonyPrefix]
             private static void Prefix(MenuDialog __instance)
-            { Observe(() => Closed(__instance)); }
-        }
-        [HarmonyPatch(typeof(DiceMenuDialog), "OnDisable")]
-        private static class Hide
-        {
-            [HarmonyPrefix]
-            private static void Prefix(DiceMenuDialog __instance)
-            { Observe(() => Hidden(__instance)); }
+            { if (ReferenceEquals(owner, __instance)) Observe(() => { Restore(); labels.Clear(); owner = null; raw = null; arms.Clear(); site = null; generation++; }); }
         }
         [HarmonyPatch(typeof(DiceOption), nameof(DiceOption.UpdateContent))]
         private static class Content

@@ -1,11 +1,5 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
-## alpha.40 — 최초 주사위 화면과 설정
-
-최초 활성화의 초기화 때문에 사라지던 결과별 안내를 보완했다. [alpha.40 후보·검증·게시 기록](ISSUE-6-ALPHA40-RELEASE.md). `EnableMapGuide`/`EnableOneShotHints`와 상위 설정·기본값·cfg는 동일하다. 둘 다 OFF면 호출 안내/조회가 없고 준비 중 OFF에서도 분석하지 않는다. 이미 준비된 활성 화면에서 다시 ON이면 현재 인자로 복원한다. 실제 종료/OnDisable/불러오기/원문 전환/초기화 예외는 대기와 화면 소유자를 취소한다.
-
-준비 대기 또는 원문 미확인은 기존 지도 안내 상세에 현재 주사위의 ‘주사위 연결 자료’로 제공한다. 이전 장소의 결과로 대신하지 않는다. 자동 요약/마커는 활성 원본 결과 행 전체가 일치한 뒤만 표시한다. 새 입력·설정·우측 상단 주사위 패널은 없다. 새 DLL의 Windows 확인과 #6 완료는 대기다.
-
 <!-- alpha39-publication -->
 2026-10-23 03:13:15 KST에 소스 [`534a1f2`](https://github.com/jungpaeng/dicemaster/commit/534a1f249cfce32ce3dd3139b7139308b7499aed)의 [alpha.39](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.39)를 게시했다. 전체·고정 커밋 검사22개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **alpha.38의 주사위 진행 패널/결과 기록을 되돌리고 결과 행별 이야기 마커·짧은 요약을 제공하며, 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha39-publication -->

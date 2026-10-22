@@ -187,22 +187,12 @@ static class Program {
    using(var story=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed","Mortal.Story.dll"))) {
     var dice=story.MainModule.GetType("Mortal.Story.DiceMenuDialog");
     Check(dice.Methods.Any(x=>x.Name=="ExecuteRoll"&&x.ReturnType.FullName=="System.Collections.IEnumerator"&&x.Parameters.Count==3&&x.Parameters[0].ParameterType.FullName=="System.String[]"&&x.Parameters[2].Name=="checkName"),"supplied native dice hook captures exact options/key without replacing its IEnumerator");
-    Check(!dice.Methods.Any(x=>x.Name=="UpdateOptions"),"dice inherits the actual CustomMenuDialog readiness method");
-    var iterator=dice.NestedTypes.Single(x=>x.Name.Contains("<ExecuteRoll>"));
-    var body=iterator.Methods.Single(x=>x.Name=="MoveNext").Body.Instructions;
-    int activation=body.ToList().FindIndex(x=>x.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.GameObject"&&c.Name=="SetActive"&&x.Previous?.OpCode.Code==Mono.Cecil.Cil.Code.Ldc_I4_1);
-    int prepared=body.ToList().FindIndex(x=>x.Operand is MethodReference c&&c.DeclaringType.FullName=="Mortal.Core.CustomMenuDialog"&&c.Name=="UpdateOptions");
-    Check(activation>=0&&prepared>activation,"supplied real iterator activates the native view before the result-row readiness hook");
     var option=story.MainModule.GetType("Mortal.Story.DiceOption");
     foreach(string name in new[]{"_sourceText","_normalText","_highText","_conditionText"})Check(option.Fields.Any(f=>f.Name==name),"native dice display field exists: "+name);
     var lua=story.MainModule.GetType("Mortal.Story.LuaManager");
     Check(lua.Fields.Single(x=>x.Name=="<Instance>k__BackingField").IsStatic,"canonical Lua singleton is an existing backing field, not a lazy getter");
     Check(lua.Fields.Single(x=>x.Name=="_luaEnvironment").FieldType.FullName=="Fungus.LuaEnvironment","canonical current Lua environment is the supplied serialized field");
     Check(story.MainModule.GetType("Mortal.Story.StatModifyManager").Fields.Single(x=>x.Name=="_talkOptionFlag").FieldType.FullName=="Mortal.Core.FlagCollectionData","canonical reset collection metadata matches the game's actual reset implementation");
-   }
-   using(var fungus=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed","Fungus.dll"))) {
-    var awake=fungus.MainModule.GetType("Fungus.MenuDialog").Methods.Single(x=>x.Name=="Awake");
-    Check(awake.Body.Instructions.Any(x=>x.OpCode.Code==Mono.Cecil.Cil.Code.Callvirt&&x.Operand is MethodReference c&&c.Name=="Clear"),"supplied real MenuDialog.Awake clears the menu on its first activation");
    }
    foreach(var spec in new[]{("Mortal.Free.dll","Mortal.Free.FreeManager",new[]{"_menuOpen","_statOpen","_saveOpen"}), ("Mortal.Story.dll","Mortal.Story.StoryManager",new[]{"_panelOpen","_menuOpen","_statusOpen","_logOpen"})}) {
     using var owners=AssemblyDefinition.ReadAssembly(System.IO.Path.Combine(references,"Mortal_Data","Managed",spec.Item1));
