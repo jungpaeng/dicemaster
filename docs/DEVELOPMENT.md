@@ -1,5 +1,12 @@
 # 개발 안내
 
+## alpha.32 — 설치 파일 정의와 현재 값의 분리
+
+MapDefinitionFileReader는 SHA-256·크기·인덱스·스키마를 검증한 설치 파일의 조건/분기/초기화 정의만 읽는다. 내장 MapDefinitions.index에는 파일 지문·타입·오프셋만 있고 게임 payload는 없다. State/시간/능력치/실행 count를 디스크에서 복구하지 않는다. MapFileDefinitions는 기존 등록 장소의 현재 missions/player 카탈로그로 정확한 타입/이름의 입력 객체를 연결한다. 불명·중복 객체는 미확정이며 현재 Story owner가 우선한다. 파일 정의는 경로 reader 전용으로 기회·1회성 권한에 쓰지 않는다.
+
+해시·해석은 취소 가능한 worker, Unity 이름/기존 참조 수집은 main이다. worker에는 Unity/game API가 없고 설치 파일은 Open/Read/ShareRead다. 문맥별 캐시·5초 IO 재시도·지원 불일치 보류·가림/숨김 취소를 분리한다. 독립 경로의 해금/완료/활동 판정을 유지하면서 무관한 풀 실패의 전역 차단만 제거한다. 인덱스 재생성·검사·지원 지문은 [상세 문서](ISSUE-6-FILE-DEFINITIONS.md), [배포 기록](ISSUE-6-ALPHA32-RELEASE.md)을 따른다. 실제 Windows 확인은 대기다.
+
+
 ## alpha.31 — 지도 상세 대상과 독립 진단
 
 <!-- alpha31-publication -->

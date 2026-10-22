@@ -11,6 +11,7 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources/MapDefinitions.index" LogicalName="DiceMaster.MapDefinitions.index" Access="Private" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
     <!-- Gamepad and LiveLog are canonical sources within this single assembly. -->
     <EmbeddedResource Include="Resources/DiceMaster.Assets.mortaldice" LogicalName="DiceMaster.Assets.mortaldice" Access="Public" />

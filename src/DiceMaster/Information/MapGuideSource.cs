@@ -523,6 +523,7 @@ namespace DiceMaster.Information
         private static void ObserveSessionData(PositionController controller)
         {
             object manager = Read(controller, "_missionsManager"), player = Read(controller, "_gameStatManager");
+            MapDefinitionAssets.Observe(manager, player);
             if (ReferenceEquals(manager, observedManager) && ReferenceEquals(player, observedPlayer)) return;
             globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear();
             foreach (Place value in places) { value.Reads.Clear(); value.Definition = null; }

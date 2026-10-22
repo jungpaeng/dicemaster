@@ -10,7 +10,10 @@ namespace DiceMaster.Information
         // The background caller supplies a shared, bounded screen-wide budget.
         private static void CollectSelectedRoute(Place place, PositionController controller, Source source, List<Candidate> candidates)
         {
-            if (!source.Routes.RootMenuComplete || source.Routes.HasReadFailure || source.Routes.StoryEntries.Count == 0) return;
+            // Each witness still proves its own closed choices, completion,
+            // entry guards and activity independence. A failed unrelated pool
+            // is not evidence against this already observed dialogue path.
+            if (!source.Routes.RootMenuComplete || source.Routes.StoryEntries.Count == 0) return;
             var dispatchProbe = new Candidate { Rank = 0, Status = "", Detail = "" };
             ApplyPlace(controller, dispatchProbe);
             if (dispatchProbe.Rank != 0) return;

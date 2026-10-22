@@ -1,5 +1,18 @@
 # 변경 이력
 
+## [v1.0.7-alpha.32](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.32) — 2026-10-22 (prerelease)
+
+<!-- alpha32-publication -->
+게시 준비. 구현·자동 검증 후보이며 실제 Windows 확인은 대기다.
+<!-- /alpha32-publication -->
+
+- 저장 지도로 바로 시작해 Story 관리자가 없어도, 지원하는 설치 파일의 정의와 현재 게임 값을 연결해 흰색 대화 안내를 준비한다. 파일 지문이 다르면 보류한다.
+- 다른 분기의 이벤트 풀 실패가 독립적으로 확인한 대화 안내까지 막던 경계를 수정한다. 잠김·완료·반복 활동·기회/1회성의 엄격한 판정은 유지한다.
+- 파일 해시 검증·해석은 별도 스레드에서 하고 문맥 변경·숨김/OFF에서 늦은 결과를 폐기한다. 정상0.25초/실패5초·warm Lua 캐시·기존 입력과 설정을 유지한다.
+
+[지원 범위·원인·검사](docs/ISSUE-6-FILE-DEFINITIONS.md) · [파일·게시 기록](docs/ISSUE-6-ALPHA32-RELEASE.md). 새 DLL의 실제 Windows·세이브·지연/FPS·물리 입력과 #6 전체 완료는 대기다.
+
+
 ## [v1.0.7-alpha.31](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.31) — 2026-10-22 (prerelease)
 
 <!-- alpha31-publication -->

@@ -1,5 +1,14 @@
 # 소스 기반 Release와 게시 이력
 
+## alpha.32 — 저장 지도 직행의 이야기 안내
+
+<!-- alpha32-publication -->
+게시 준비. 설치 파일 정의의 지문 검증·읽기 전용 현재 값 연결과 독립 경로의 실패 분리를 포함한다. 실제 Windows 확인은 대기다.
+<!-- /alpha32-publication -->
+
+고정 커밋 재빌드·기존 후보 DLL/cfg/ZIP 바이트 대조 뒤 annotated tag와 main을 게시한다. 이전 Release/태그/자산·Latest v1.0.6·#6 open을 보존한다. [지원 범위](ISSUE-6-FILE-DEFINITIONS.md) · [소스·파일·검증·게시 기록](ISSUE-6-ALPHA32-RELEASE.md).
+
+
 ## alpha.31 — 지도 로그의 장소 상세·자료 상태
 
 <!-- alpha31-publication -->

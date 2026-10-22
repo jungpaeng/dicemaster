@@ -136,6 +136,8 @@ namespace DiceMaster.Information
             bool menuVisible = ChoiceStorySource.MenuVisible;
             bool mapVisible = !nativeWindow && focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
             bool mapDetails = detailPage == "지도 안내";
+            MapDefinitionAssets.SetVisible(enabled[0] && focused && !nativeWindow && !menuVisible &&
+                (automaticVisible && MapGuideSource.MarkerSessionVisible || mapDetails));
             map.Detailed = mapDetails;
             MapGuideSource.BeginScheduledReads();
             try

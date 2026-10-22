@@ -90,6 +90,7 @@ namespace DiceMaster.LiveLog
             var values = LoadedDefinitions(PreviewDefinitionKind.TalkFlags);
             if (values == null || values.Length == 0) return null;
             object result = values[0]; Snapshot.Exact(result, "Mortal.Core.FlagCollectionData");
+            if (result is DisplayDefinition) source = "설치 파일 정의와 현재 게임 플래그 연결";
             foreach (object value in values) if (!ReferenceEquals(value, result)) return null;
             return result;
         }
@@ -710,6 +711,7 @@ namespace DiceMaster.LiveLog
 
             internal static object Field(object target, string name)
             {
+                if (target is DisplayDefinition definition) return definition.Read(name);
                 if (target == null) throw new InvalidOperationException("Missing preview condition data.");
                 Type type = target as Type ?? target.GetType();
                 for (Type at = type; at != null; at = at.BaseType)
@@ -721,7 +723,7 @@ namespace DiceMaster.LiveLog
                 throw new MissingFieldException(type.FullName, name);
             }
             internal static void Exact(object value, string type)
-            { if (value == null || value.GetType().FullName != type) throw new InvalidOperationException("Unsupported preview condition type."); }
+            { if (value == null || (value is DisplayDefinition definition ? definition.TypeName : value.GetType().FullName) != type) throw new InvalidOperationException("Unsupported preview condition type."); }
             private IList List(object value, string name, int limit = 8192)
             {
                 object result = Field(value, name);
@@ -752,6 +754,7 @@ namespace DiceMaster.LiveLog
             }
             private static string Name(object value)
             {
+                if (value is DisplayDefinition definition) return definition.Name;
                 // Read the audited nonvirtual Unity Object.name getter only;
                 // no arbitrary configuration property or custom getter runs.
                 for (Type at = value.GetType(); at != null; at = at.BaseType)

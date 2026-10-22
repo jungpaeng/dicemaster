@@ -1,5 +1,10 @@
 # DiceMaster 패드 조정
 
+## alpha.32 — 저장 지도 직행과 준비 취소
+
+지원하는 설치 자료를 이용한 흰색 안내 준비는 원래 패드 포커스·해제/중립·Xbox/XInput 소유권을 바꾸지 않는다. 게임 창 가림·포커스 상실·지도 숨김에서는 진행 중 파일 준비를 취소하고, 다시 보일 때 현재 문맥으로 준비한다. 준비 중에도 A/Enter/클릭은 원래 게임 동작이다. 새 설정이나 단축키는 없다. [Windows cold-load·입력 확인표](ISSUE-6-WINDOWS-VALIDATION.md#alpha32--저장-지도-직행의-파일-정의-확인-대기), [지원·성능 경계](ISSUE-6-FILE-DEFINITIONS.md).
+
+
 ## alpha.31 — 포커스 해제 뒤 지도 로그
 
 <!-- alpha31-publication -->

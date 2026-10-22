@@ -22,7 +22,7 @@ namespace DiceMaster.LiveLog
         private sealed class Evaluation
         {
             private readonly HashSet<object> active = new HashSet<object>(new Identity());
-            private static object Read(object value, string name) { return LogBridge.ReadFieldStrict(value, name); }
+            private static object Read(object value, string name) { return value is DisplayDefinition definition ? definition.Read(name) : LogBridge.ReadFieldStrict(value, name); }
             private static int Number(object value, string name) { return Convert.ToInt32(Read(value, name)); }
             private static IList List(object value, string name)
             {

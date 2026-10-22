@@ -47,7 +47,7 @@ def main():
         if (root / 'src/DiceMaster/Information/MapDefinitionAssets.cs').is_file():
             symbols.append('GUIDANCE_NATIVE_DEFINITIONS')
         ET.SubElement(properties, 'DefineConstants').text = '$(DefineConstants);' + ';'.join(symbols)
-        for item in xml.findall('.//Compile'):
+        for item in xml.findall('.//Compile') + xml.findall('.//EmbeddedResource'):
             item.set('Include', str((project.parent / item.get('Include')).resolve()))
         ET.SubElement(xml.find('ItemGroup'), 'Compile', {
             'Include': str(repository / 'tools/Benchmarks/GuidanceMarkers.cs')})

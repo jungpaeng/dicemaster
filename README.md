@@ -19,13 +19,13 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-<!-- alpha31-publication -->
-2026-10-22 17:17:04 KST에 소스 [`cc656fc`](https://github.com/jungpaeng/dicemaster/commit/cc656fc901466aba0c105e2b17c4c508ab672094)의 [alpha.31](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.31)을 게시했다. 전체·고정 커밋 자동 검사21개·실제 후보 DLL 연결·설치 ZIP과 익명 공개 다운로드 검증을 통과했다. **로그·진단 보완이며 최초 불러오기 흰색 마커 누락 버그는 미해결이다. 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
-<!-- /alpha31-publication -->
+<!-- alpha32-publication -->
+alpha.32 게시 준비: 저장된 지도로 바로 시작할 때 Story 장면의 과거 로딩에 의존하던 흰색 안내 마커를 보완했습니다. 실제 Windows 확인은 대기이며 PRD #6 전체 완료를 뜻하지 않습니다.
+<!-- /alpha32-publication -->
 
-alpha.31은 지도 포커스가 풀려도 로그에서 마지막 장소의 상세를 읽고, 장소 미선택·조회 실패에도 자료 상태를 확인하도록 보완합니다. **게임 재실행 후 저장 지도에서 흰색 마커가 누락되는 버그는 아직 해결되지 않았습니다.** [변경·지원 범위](docs/ISSUE-6-MAP-LOG-DIAGNOSTICS.md) · [후보·검증 기록](docs/ISSUE-6-ALPHA31-RELEASE.md).
+alpha.32는 설치된 게임의 검증된 정의 자료와 현재 게임 값을 연결해 지도 대화를 안내합니다. 다른 분기의 이벤트 풀을 읽지 못해도 독립적으로 확인한 대화 경로는 표시합니다. **제공받은 게임 복제본과 같은 자산·관리 DLL 지문에서 디스크 대체 조회를 지원**하며, 파일 구성이 다르면 기존 로드 자료 조회를 유지하고 상세에 지원 자료 불일치를 표시합니다. [지원 범위·검사](docs/ISSUE-6-FILE-DEFINITIONS.md) · [후보·게시 기록](docs/ISSUE-6-ALPHA32-RELEASE.md).
 
-**[v1.0.7-alpha.31 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.31/DiceMaster-v1.0.7-alpha.31.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 이전 [alpha.30 게시 기록](docs/ISSUE-6-ALPHA30-RELEASE.md)은 별도로 보존합니다.
+**[v1.0.7-alpha.32 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.32/DiceMaster-v1.0.7-alpha.32.zip)**. 게임 종료 후 DLL만 교체해 기존 cfg를 보존하세요. 이전 [alpha.31 게시 기록](docs/ISSUE-6-ALPHA31-RELEASE.md)은 별도로 보존합니다.
 
 현재 main은 확인된 기회를 **어두운 바탕의 금색 두루마리**, 그 외 현재 안내 가능한 대화·경로를 **아이보리 바탕의 두루마리**로 구분합니다. 같은 항목에 둘 다 있으면 금색 하나를 표시합니다. 당문 지도는 장소 상단 중앙의 핀과 짧은 연결선, 유학 등 실제 선택 메뉴는 버튼 모서리 배지입니다. 원래 패드·키보드 포커스 또는 마우스 호버 옆에 설명 하나를 띄우며 A/Enter/클릭/터치는 게임의 원래 동작입니다. [새 배지의 의미·검증](docs/ISSUE-6-GUIDANCE-BADGES.md).
 
@@ -168,6 +168,8 @@ alpha.31은 지도 포커스가 풀려도 로그에서 마지막 장소의 상�
 | `LogWindowX` / `LogWindowY` | `20` / `20` | 창 위치 |
 | `LogWindowWidth` / `LogWindowHeight` | `872` / `960` | 기준 해상도의 기본 창 크기 |
 | `LogFontSize` | `20` | 기준 해상도의 기본 글자 크기 |
+
+설치 파일 정의 조회도 `EnableMapGuide`와 상위 옵션을 따릅니다. 지도 안내 OFF·창 가림·숨김에는 진행 중 준비를 취소하고, 두 지도 정보 기능 OFF·로드/장면 전환·종료에는 파일 자료와 현재 게임 연결을 정리합니다. 설정 키·기본값·cfg 바이트 변화는 없습니다. 파일 지원 불일치·해금 미확정은 표시 근거로 사용하지 않습니다.
 
 후보의 네 개별 설정은 `[DiceMaster]`에 기본 ON으로 추가되며 로그 도구에서 각각 즉시 변경·저장합니다. 다른 개별 값·기존 cfg·단축키·배치는 유지합니다. OFF는 해당 표시·수집·스냅샷을 정리하고 분기는 기록까지 지웁니다. ON은 현재 유효 문맥부터 읽으며 지난 알림을 재생하지 않습니다. `EnableOptionInfo=false`로 시작하면 네 저장값을 바꾸지 않고 모두 비활성화합니다. 상위 옵션을 바꾼 뒤에는 기존 규칙대로 재시작하세요. 개별 설정 읽기 실패는 해당 기능만 비활성화하며 최초 키 누락의 기본 ON과 구분합니다.
 

@@ -36,10 +36,10 @@ namespace Mortal.Core
     { public int _logicOp; public List<StatCompareItem> _items = new List<StatCompareItem>(); public bool Check() { Counters.GameCalls++; throw new Exception(); } }
     public class ConditionResultData : UnityEngine.Object
     { public List<ConditionResultItem> _items = new List<ConditionResultItem>(); }
-    public class GameStat { public StatKind _type = StatKind.行動次數; public object _statAdditionData; public int _value = 3; public int FinalValue => _value; }
+    public class GameStat : UnityEngine.Object { public StatKind _type = StatKind.行動次數; public object _statAdditionData; public int _value = 3; public int FinalValue => _value; }
     public class PlayerStatData { public List<GameStat> _list = new List<GameStat> { new GameStat() }; }
     public class GameTime { public int Year = 1, Month = 5, Stage = 1, _roundsPerMonth = 3; }
-    public class GameTimeData { public GameTime GameTime = new GameTime(); }
+    public class GameTimeData : UnityEngine.Object { public GameTime GameTime = new GameTime(); }
     public class PlayerStatManagerData { public PlayerStatData _stats = new PlayerStatData(); public GameTimeData _gameTimeData = new GameTimeData(); }
     public class MissionCheckData : UnityEngine.Object
     { public string _key = "start", _startScript = "mission"; public PositionType _position = PositionType.Hall; public bool _active = true, _dayCheck, _beforeMainMission; public int _timeCheckType = 1; public GameTime _specificTime = new GameTime(), _minTime = new GameTime(), _maxTime = new GameTime(); public ConditionResultItem[] _conditions = Array.Empty<ConditionResultItem>(); }
@@ -63,7 +63,7 @@ namespace Mortal.Core
         { Enumerations++; return ((IDictionary)new Dictionary<string, MissionCheckData>(this)).GetEnumerator(); }
     }
     public class MissionManagerData
-    { public MissionData _main = new MissionData(); public SubMissions _subMissions = new SubMissions(); public MissionCheckData MainCheckData; public Dictionary<string,MissionCheckData> ActiveSubMissions = new Dictionary<string,MissionCheckData>(); public bool MainMissionStart; public PositionType MainMissionPosition; }
+    { public object[] _flagsCollection = Array.Empty<object>(); public MissionData _main = new MissionData(); public SubMissions _subMissions = new SubMissions(); public MissionCheckData MainCheckData; public Dictionary<string,MissionCheckData> ActiveSubMissions = new Dictionary<string,MissionCheckData>(); public bool MainMissionStart; public PositionType MainMissionPosition; }
     public static class Counters { public static int GameCalls; }
 }
 namespace Mortal.Free
@@ -346,5 +346,5 @@ namespace DiceMaster.Information
 }
 
 #if !MAP_ROUTE_INTEGRATION
-namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static string Describe() => "definition fixture"; } }
+namespace DiceMaster.Information { internal static class MapDefinitionAssets { internal static string Describe() => "definition fixture"; internal static void Observe(object missions, object player) {} } }
 #endif
