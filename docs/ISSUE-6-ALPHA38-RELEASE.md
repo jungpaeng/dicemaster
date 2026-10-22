@@ -1,7 +1,7 @@
 # alpha.38 — 주사위 판정 안내·확정 결과 기록
 
 <!-- alpha38-publication -->
-main에서 alpha.38의 주사위 판정 안내와 확정 결과 기록을 구현·자동 검사했다. 마커 유무와 독립적으로 실제 열린 주사위를 관찰한다. 고정 커밋 검사·게시 결과는 별도로 기록하며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha38-publication -->
 
 기준 main은 `b8b698596513cf2516c6c47321bc8c00a8a97577`다. 원래 main에서 구현·검증했으며 별도 브랜치/worktree는 만들지 않았다. [설계·수명·실패·한계](ISSUE-6-DICE-INFORMATION.md) · [Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md).
@@ -23,7 +23,7 @@ SDK8.0.426·전체21개 프로그램·318개 빌드 입력·129개 생산 소스
 - PASS: 4265 managed behavior assertions and 1288 metadata contract assertions; Unity/random/data boundaries are managed fixtures, native game runtime NOT executed.
 - PASS: 262831 assertions.
 
-원래 게임 코루틴·Harmony·물리 입력·FPS를 실제 Windows에서 실행한 결과는 아니다. 실제 생산 코드의 관리 경계로 초기/재굴림 제외·정상 확정·취소/정리·예외 보존·부정확한 이름 재사용 방지·5초/20건·설정/가림·웜 표시 재사용을 확인했다. 고정 커밋 재빌드·게시 결과는 후속 기록으로 남긴다.
+원래 게임 코루틴·Harmony·물리 입력·FPS를 실제 Windows에서 실행한 결과는 아니다. 실제 생산 코드의 관리 경계로 초기/재굴림 제외·정상 확정·취소/정리·예외 보존·부정확한 이름 재사용 방지·5초/20건·설정/가림·웜 표시 재사용을 확인했다. 소스·annotated tag는 `aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c` / `v1.0.7-alpha.38`다. 고정 커밋 재빌드의 318개 입력·129개 소스/리소스·21개 검사 통과와 DLL/cfg/ZIP이 검토 후보와 모두 일치한다. 이번 검토 후보와 고정 재빌드는21개 성공 기록까지 모두 일치한다.
 
 ## 설치 후보 파일
 
@@ -38,3 +38,9 @@ SDK8.0.426·전체21개 프로그램·318개 빌드 입력·129개 생산 소스
 활협전용 BepInEx 모드 베이스가 필요하다. 게임 종료 후 기존 DLL/cfg를 백업하고 DLL만 교체해 cfg를 보존한다. 최초 설치는 ZIP의 config·plugins를 BepInEx 아래에 넣는다. 자동 Source code 압축은 설치용이 아니다. 문제 시 게임 종료 후 백업 DLL/cfg를 복구한다. alpha.37과 Latest 정식 v1.0.6을 보존한다.
 
 마커 없는/자동/일반 선택 경로의 주사위, ExecuteRoll/legacy timer·수동/자동·재굴림·계속 확정, 진입 선택 연결/미확인·다음 메뉴/스크립트, 실제 5초/20건·기록 초기화·가림/작은 화면/입력/FPS를 새 DLL에서 확인해야 한다. 전체 완료나 #6 이슈 종료로 처리하지 않는다.
+
+## 게시 결과
+
+2026-10-23 01:27:04 KST에 Release `420949846`·asset `666413805`를 draft=false·prerelease=true·make_latest=false로 게시했다. [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.38/DiceMaster-v1.0.7-alpha.38.zip)의 SHA-256·크기·두 경로·CRC·내부 DLL/cfg 바이트를 인증 없이 확인했다.
+
+이전 79개 Release·80개 태그·자산·Latest 정식v1.0.6과 #5/#6 상태를 보존했다. main과 새 annotated tag만 atomic push했으며 게시 보충은 별도 main 문서 커밋이다. 소스 태그·배포 파일은 바꾸지 않는다. GitHub의 기본 페이지 목록이 빈 응답을 반환해 page=1을 명시하고 기존79개 Release·자산의 이전 기록과 전부 대조했다. 목록 API의 빈 응답은 이벤트/배포 부재로 취급하지 않았다. 실제 Windows/사용자 세이브·입력·FPS/GC 확인과 #6 완료는 대기다. 영수증은 artifacts/releases/v1.0.7-alpha.38/에 보관한다.

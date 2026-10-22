@@ -3,7 +3,7 @@
 ## alpha.38 — 주사위 판정 안내·확정 결과 확인 대기
 
 <!-- alpha38-publication -->
-main에서 alpha.38의 주사위 판정 안내와 확정 결과 기록을 구현·자동 검사했다. 마커 유무와 독립적으로 실제 열린 주사위를 관찰한다. 고정 커밋 검사·게시 결과는 별도로 기록하며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha38-publication -->
 
 [후보·파일·자동 검사](ISSUE-6-ALPHA38-RELEASE.md) · [설계·범위](ISSUE-6-DICE-INFORMATION.md). 아래는 실제 Windows/Unity/Harmony·사용자 세이브·물리 입력에서 확인해야 한다.

@@ -3,7 +3,7 @@
 ## [v1.0.7-alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38) — 2026-10-23 (prerelease)
 
 <!-- alpha38-publication -->
-main에서 alpha.38의 주사위 판정 안내와 확정 결과 기록을 구현·자동 검사했다. 마커 유무와 독립적으로 실제 열린 주사위를 관찰한다. 고정 커밋 검사·게시 결과는 별도로 기록하며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha38-publication -->
 
 주사위가 실제 열리면 우측 상단에 게임이 표시한 판정 이름과 확인된 진입 선택을 안내한다. 마커 없는 경로·자동 진행도 대상이며 출처를 확인하지 못하면 주사위 정보만 표시한다. 진행 확정·정상 메뉴 정리가 확인된 결과만 기존 분기 알림/최근20건 메모리에 함께 보관한다. 재굴림 중간 결과는 기록하지 않는다.

@@ -3,7 +3,7 @@
 ## alpha.38 — 주사위 안내의 설정·초기화
 
 <!-- alpha38-publication -->
-main에서 alpha.38의 주사위 판정 안내와 확정 결과 기록을 구현·자동 검사했다. 마커 유무와 독립적으로 실제 열린 주사위를 관찰한다. 고정 커밋 검사·게시 결과는 별도로 기록하며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha38-publication -->
 
 EnableBranchNotices와 상위 EnableOptionInfo를 사용한다. 지도/1회성 설정이 모두 OFF여도 분기 설정이 ON이면 실제 열린 주사위 안내/기록이 동작한다. 분기 OFF는 진행 중 맥락·기록을 함께 정리하며 OFF 전에 시작한 주사위를 ON 후 재생하지 않는다. 기존 저장/불러오기/새 게임/장면/명시적 기록 초기화도 같은 수명을 따른다. 네 키/기본 ON·cfg 바이트는 alpha.37과 같다. [설정·실패·범위](ISSUE-6-DICE-INFORMATION.md) · [후보·Windows 대기](ISSUE-6-ALPHA38-RELEASE.md).

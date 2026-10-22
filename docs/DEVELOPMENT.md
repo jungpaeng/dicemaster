@@ -3,7 +3,7 @@
 ## alpha.38 — 주사위의 실제 진행 맥락·결과 관찰
 
 <!-- alpha38-publication -->
-main에서 alpha.38의 주사위 판정 안내와 확정 결과 기록을 구현·자동 검사했다. 마커 유무와 독립적으로 실제 열린 주사위를 관찰한다. 고정 커밋 검사·게시 결과는 별도로 기록하며 실제 Windows 확인과 PRD #6 전체 완료는 대기다.
+2026-10-23 01:27:04 KST에 소스 [`aa7cc1a`](https://github.com/jungpaeng/dicemaster/commit/aa7cc1a620fa55a2daa3e1f4b3aaacd42ab8575c)의 [alpha.38](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.38)를 게시했다. 전체·고정 커밋 검사21개·복제본 DLL 연결·설치 ZIP·익명 공개 다운로드 대조를 통과했다. **마커와 독립적인 주사위 판정 안내·확정 결과 기록을 구현했으며, 새 DLL의 실제 Windows 확인과 PRD #6 전체 완료는 대기다.**
 <!-- /alpha38-publication -->
 
 DiceObservationPatches는 ExecuteRoll과 legacy ShowTimer의 원래 IEnumerator를 위임하는 관찰 래퍼를 사용한다. Current/MoveNext/Reset/yield 객체·원래 예외를 보존하고 Dispose를 전달한다. 원래 주사위 코루틴을 진행하는 동안 _triggerNextInput이 참인 MenuDialog.Clear의 정상 종료만 최종 결과로 삼는다. 외부 clear·취소·초기 계산·재굴림은 제외한다. Button.Press에서 확인한 실제 표준 선택지 이름만 한 번 연결하며 새 메뉴/실제 Lua/문맥/OFF에서 유효성을 정리한다. 자세한 원본 근거·오류/수명·관리 검사는 [설계](ISSUE-6-DICE-INFORMATION.md)와 [후보](ISSUE-6-ALPHA38-RELEASE.md)를 따른다.
