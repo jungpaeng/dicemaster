@@ -2,6 +2,10 @@
 
 ## [v1.0.7-alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41) — 2026-10-23 (prerelease)
 
+<!-- alpha41-publication -->
+2026-10-23 04:53:47 KST에 소스 [`cf3397e`](https://github.com/jungpaeng/dicemaster/commit/cf3397ea884b7177f2fb385abb5ceb641a10f198)의 [alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41)을 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·실제 게임 DLL 연결 API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha41-publication -->
+
 - 동일한 정보의 로그 재발행을 줄이고 설치 정의와 현재 세이브의 연결을 분리해 필요한 부분만 연결한다.
 - 진전이 있는 짧은 이야기 경로를 최대 네 조회까지 이어 준비해 첫 지도 마커의 대기를 줄인다. 기존 공유 예산·원문 읽기 상한·0.25초/5초를 유지한다.
 - alpha.39·40의 주사위 자동 이야기 마커·요약을 제거한다. 기존 주사위 조작·실제 분기 기록·지도/선택지 안내는 보존한다.

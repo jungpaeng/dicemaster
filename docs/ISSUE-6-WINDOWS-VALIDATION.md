@@ -1,6 +1,10 @@
 # PRD #6 — 새 후보 실제 Windows 확인표
 
-## 단계별 성능 개선 후보 — Windows 미실행
+## alpha.41 — Windows 확인 대기
+
+<!-- alpha41-publication -->
+2026-10-23 04:53:47 KST에 소스 [`cf3397e`](https://github.com/jungpaeng/dicemaster/commit/cf3397ea884b7177f2fb385abb5ceb641a10f198)의 [alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41)을 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·실제 게임 DLL 연결 API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha41-publication -->
 
 정상 0.25초·실패 5초와 숨김/OFF 중단을 유지하면서 동일 정보의 로그 발행, 설치 정의와 현재 참조의 수명, 배경 준비 순서를 단계적으로 보완했다. 반복 필드 검색 캐시는 전체 provider에서 효과가 명확하지 않아 최종에서 제외했다. 자동 측정과 실제 Windows 확인은 구분하며 새 후보의 Windows 성능·물리 입력 확인은 대기다. [구현·재현 명령·측정과 한계](ISSUE-6-PERFORMANCE-STAGES.md). [alpha.41의 고정 소스·파일·게시 상태](ISSUE-6-ALPHA41-RELEASE.md)를 따르며 #6 전체 완료를 뜻하지 않는다.
 

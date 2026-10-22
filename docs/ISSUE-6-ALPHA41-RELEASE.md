@@ -29,7 +29,7 @@ macOS .NET8 관리 경계/실제 설치 파일의 참고 측정이다. Unity/게
 
 검토 후보의 21개 검사 프로그램과 실제 설치 파일/원문 경계 회귀가 통과했다. 고정 참조 16개와 사용자 게임 복제본을 연결한 API 검사, ZIP의 두 경로/CRC/내부 바이트를 대조했다. 새 DLL의 실제 Windows/Unity/Harmony·사용자 세이브·물리 입력 실행은 미실행이다.
 
-빌드 입력은 314개, 생산 소스/리소스는 126개다. 소스 태그는 `v1.0.7-alpha.41`이며 커밋 후 그 커밋만 추출해 관리 모드 DLL 0개에서 재빌드한다. 검토 후보의 전체 입력 SHA·SDK·DLL/cfg/ZIP·21개 검사 통과를 대조하고 결과는 게시 후 아래에 확정한다. 동적 반복 검사 단언 수는 실행마다 달라질 수 있어 전체 성공 기록을 원문으로 보존한다.
+빌드 입력은 314개, 생산 소스/리소스는 126개다. 소스 태그 `v1.0.7-alpha.41`은 `cf3397ea884b7177f2fb385abb5ceb641a10f198`를 가리킨다. 해당 커밋만 추출해 관리 모드 DLL 0개에서 재빌드했고 검토 후보의 전체 입력 SHA·SDK·고정 참조·DLL/cfg/ZIP이 모두 일치했다. 21개 검사 프로그램이 통과했다. 동적 반복 검사 단언 수는 실행마다 달라질 수 있어 전체 성공 기록을 원문으로 보존한다.
 
 | 파일 | bytes | SHA-256 |
 | --- | ---: | --- |
@@ -49,6 +49,16 @@ macOS .NET8 관리 경계/실제 설치 파일의 참고 측정이다. Unity/게
 
 새 파일의 사용자 Windows 확인 전 #6 전체 완료나 이슈 종료로 처리하지 않는다. v1.0.6의 사용자 확인은 착수 근거이며 이 새 DLL의 확인으로 승계하지 않는다.
 
-## 게시 준비 상태
+## 게시 완료와 공개 파일 확인
 
-검토 후보는 검증을 마쳤고 고정 커밋 재빌드·annotated tag/main push·새 prerelease 게시·익명 공개 ZIP 대조는 커밋 후 순서대로 진행한다. 기존 82개 Release·기존 태그/자산·Latest 정식 v1.0.6과 #5/#6 open을 보존한다. 게시 후 결과 문서는 별도 main 커밋으로 남기고 소스 태그·패키지는 바꾸지 않는다.
+<!-- alpha41-publication -->
+2026-10-23 04:53:47 KST에 소스 [`cf3397e`](https://github.com/jungpaeng/dicemaster/commit/cf3397ea884b7177f2fb385abb5ceb641a10f198)의 [alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41)을 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·실제 게임 DLL 연결 API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha41-publication -->
+
+- 소스 커밋: [`cf3397ea884b7177f2fb385abb5ceb641a10f198`](https://github.com/jungpaeng/dicemaster/commit/cf3397ea884b7177f2fb385abb5ceb641a10f198). annotated tag와 main을 함께 push했다. 이 게시 결과 문서는 이후 별도 main 커밋이며 소스 태그·패키지를 바꾸지 않는다.
+- Release `421138262`, asset `666916742`. `draft=false`, `prerelease=true`, `make_latest=false`로 게시했다. 공개 시각은 `2026-10-22T19:53:47Z`다.
+- 검토 후보와 고정 커밋 재빌드의 입력 314개·생산 소스/리소스 126개·SDK·고정 참조 16개와 DLL/cfg/ZIP이 일치했다. 재빌드의 21개 검사 프로그램이 통과했고 이번 실행의 단언 기록도 검토 후보와 같았다.
+- 사용자 게임 복제본의 실제 DLL을 연결한 API 검사는 4,265개 관리 동작·1,288개 메타데이터 단언을 통과했다. 현재 후보 DLL을 새로 빌드했고 검사기/fixture는 입력이 같은 이전 실행 파일을 재사용했다. 소스 입력과 게임 참조의 전후 SHA 일치를 대조했다. Unity/Harmony/native 게임은 실행하지 않았다.
+- 인증 없는 공개 Release 페이지·ZIP 다운로드가 HTTP 200이다. ZIP 436,612 bytes와 SHA-256, 정확히 두 내부 경로·CRC·DLL/cfg 크기/바이트/해시가 위 표 및 고정 커밋 산출물과 일치했다. Release 본문의 두 고정 소스 문서 링크도 HTTP 200을 확인했다.
+- 기존 82개 Release의 본문·태그·게시 상태·자산 ID/이름/크기/해시와 156개 태그 참조는 보존됐다. Latest 정식은 `v1.0.6`, #5/#6는 open이다. 과거 Windows 확인을 새 후보에 승계하거나 이슈를 닫지 않았다.
+- 로컬 영수증은 `artifacts/releases/v1.0.7-alpha.41/release-verification.json`, `artifacts/issue-6/performance-release/reviewed-commit-comparison.json`, `public-verification.json`에 보존했다. 이 폴더는 Git/설치 ZIP에 포함하지 않는다.

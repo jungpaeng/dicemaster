@@ -1,6 +1,6 @@
 # PRD #6 — 단계별 성능 개선과 검증
 
-2026-10-23 작업. 기준은 `main`의 `b0e591a37ad8e99f6d84f5dc4765ca6bb1bda77b`이다. 주사위 자동 이야기 마커·요약을 되살리지 않는다. 별도 브랜치·worktree 없이 원래 작업 폴더에서 진행했다. 이 변경의 실제 Windows·Unity 프레임·물리 패드 확인과 PRD #6 전체 완료는 대기다. 후속 커밋·prerelease 상태는 [alpha.41 기록](ISSUE-6-ALPHA41-RELEASE.md)을 따른다.
+2026-10-23 작업. 기준은 `main`의 `b0e591a37ad8e99f6d84f5dc4765ca6bb1bda77b`이다. 주사위 자동 이야기 마커·요약을 되살리지 않는다. 별도 브랜치·worktree 없이 원래 작업 폴더에서 진행했다. 이 변경의 실제 Windows·Unity 프레임·물리 패드 확인과 PRD #6 전체 완료는 대기다. 소스 `cf3397e`의 고정 커밋 재빌드·prerelease 게시·익명 ZIP 대조를 완료했다. 게시 상태와 Windows 대기는 [alpha.41 기록](ISSUE-6-ALPHA41-RELEASE.md)을 따른다.
 
 ## 구현과 수명
 
