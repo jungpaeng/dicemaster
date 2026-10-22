@@ -118,8 +118,9 @@ static class LogRefreshTests
             "DiceMaster.Assets.mortaldice", "DiceMaster.Translations.ModTranslation.txt", "DiceMaster.Translations.Pairs",
             "DiceMaster.Translations.TriggerTranslation1.0.5v.txt", "DiceMaster.Translations._Substitutions.txt",
             "DiceMaster.Gamepad.Native.MinHook.x64.dll", "DiceMaster.Gamepad.Native.MinHook.x86.dll",
-            "DiceMaster.Gamepad.Native.LICENSE.txt", "DiceMaster.StoryBadge.rgba", "DiceMaster.StoryBadge.svg"
-        }.OrderBy(name => name)), "Exact legacy resources plus the reviewed badge image and licensed source are embedded");
+            "DiceMaster.Gamepad.Native.LICENSE.txt", "DiceMaster.StoryBadge.rgba", "DiceMaster.StoryBadge.svg",
+            "DiceMaster.StoryGuideBadge.rgba", "DiceMaster.StoryGuideBadge.svg"
+        }.OrderBy(name => name)), "Exact legacy resources plus both reviewed badge images and licensed sources are embedded");
 
         string output = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1]))!, "LogRefreshFixtures.patched.dll");
         using (var fixtures = AssemblyDefinition.ReadAssembly(args[1]))

@@ -182,8 +182,11 @@ static class Program {
   var visibility=m.GetType("DiceMaster.Information.InformationVisibility");
   Check(visibility!=null&&visibility.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="get_Instance"&&x.Name!="SetValue"&&!x.Name.StartsWith("set_")),"delivered native-window reader has no scene scan, singleton initialization or reflected/property writes");
   foreach(string name in new[]{"TickCore","DrawCore"})Check(m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name==name).Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==visibility.FullName&&c.Name=="get_Blocked"),"delivered query and paint boundaries both check native windows: "+name);
-  var badgeResource=m.Resources.OfType<EmbeddedResource>().SingleOrDefault(x=>x.Name=="DiceMaster.StoryBadge.rgba");
-  Check(badgeResource!=null&&badgeResource.GetResourceData().Length==64*64*4,"delivered DLL embeds the complete mod-owned image with no extra installation files");
+  foreach(string name in new[]{"DiceMaster.StoryBadge.rgba","DiceMaster.StoryGuideBadge.rgba"})
+  {
+   var badgeResource=m.Resources.OfType<EmbeddedResource>().SingleOrDefault(x=>x.Name==name);
+   Check(badgeResource!=null&&badgeResource.GetResourceData().Length==64*64*4,"delivered DLL embeds the complete mod-owned image with no extra installation files: "+name);
+  }
   var badgeType=m.GetType("DiceMaster.Information.InformationBadge");
   Check(badgeType!=null&&badgeType.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="UnityEngine.Texture2D"&&c.Name=="LoadRawTextureData")),"delivered badge uploads prepared pixels rather than relying on font or PNG decoder");
   Check(m.GetType("DiceMaster.Information.InformationRuntime").Methods.Single(x=>x.Name=="DrawBadge").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName==badgeType.FullName&&c.Name=="Draw"),"delivered native-place and menu marker path calls the actual image renderer");
@@ -207,7 +210,9 @@ static class Program {
   Check(PriorityOf(capture)==800&&PriorityOf(instrument)==0&&PriorityOf(complete)==0,"delivered actual Harmony observer captures original Lua before #5 instrumentation and publishes in the late finalizer");
   Check(capture.Parameters.Any(x=>x.Name=="__state"&&x.IsOut)&&complete.Parameters.Any(x=>x.Name=="__state")&&!complete.Parameters.Any(x=>x.Name=="luaString"),"delivered load observation uses per-invocation source state instead of the transformed compiler argument");
   Check(capture.Body.Instructions.Any(x=>x.Operand is FieldReference f&&f.Name=="Text"&&f.DeclaringType.FullName.EndsWith("/OriginalSource",StringComparison.Ordinal)),"delivered early prefix retains the original source reference without rewriting execution input");
-  Check(runtime.Methods.Single(x=>x.Name=="DrawCore").Body.Instructions.Any(i=>i.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.InformationRow"&&f.Name=="Opportunity"),"delivered red dots read the independent opportunity property instead of general dialogue availability");
+  Check(runtime.Methods.Single(x=>x.Name=="DrawCore").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.InformationRow"&&c.Name=="get_HasBadge"),"delivered renderer admits explicit opportunity or guidance badges independently of general availability");
+  Check(runtime.Methods.Single(x=>x.Name=="DrawBadge").Body.Instructions.Any(i=>i.Operand is FieldReference f&&f.DeclaringType.FullName=="DiceMaster.Information.InformationRow"&&f.Name=="Opportunity"),"delivered badge style preserves opportunity precedence over light guidance");
+  Check(runtime.Methods.Single(x=>x.Name=="TickCore").Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.Name=="BeginScheduledReads")&&runtime.Methods.Single(x=>x.Name=="TickCore").Body.ExceptionHandlers.Any(x=>x.HandlerType==Mono.Cecil.Cil.ExceptionHandlerType.Finally),"selected and background map reads share a scheduling budget released in finally");
   var opportunity=choice.Methods.Single(x=>x.Name=="AppendOpportunities");
   Check(opportunity.Body.Instructions.Select(i=>i.Operand).OfType<MethodReference>().Any(c=>c.DeclaringType.FullName=="DiceMaster.Information.OneShotProof"&&c.Name=="TryGetEvent")&&opportunity.Body.Instructions.Select(i=>i.Operand).OfType<MethodReference>().Any(c=>c.DeclaringType.FullName=="DiceMaster.EventSelection.EventEligibility"&&c.Name=="EvaluateCurrent"),"delivered current menu uses the actual strict proof and fresh event eligibility reader");
   Check(choice.Methods.Any(x=>x.HasBody&&x.Body.Instructions.Any(i=>i.Operand is MethodReference c&&c.DeclaringType.FullName=="DiceMaster.Information.MapRouteDefinitions"&&c.Name=="AdvanceBudgeted")),"delivered current-menu source uses the bounded route analyzer");
@@ -234,7 +239,8 @@ static class Program {
   Check(m.GetType("DiceMaster.Information.MapRouteRead").Methods.Single(x=>x.Name=="ForSelectedPlace").Body.Instructions.Any(x=>x.Operand is MethodReference call&&call.Name=="ProjectPositionEntry"),"delivered selected-place guidance calls the read-only entry projector");
   Check(anchors.Methods.Where(x=>x.HasBody).SelectMany(x=>x.Body.Instructions).Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="FindObjectsOfTypeAll"&&x.Name!="FindObjectsOfType"&&x.Name!="Raycast"&&x.Name!="SetValue"),"delivered geometry has no scene-wide scans, raycasts, or reflected field writes");
   var markerRead=m.GetType("DiceMaster.Information.MapGuideSource").Methods.Single(x=>x.Name=="ReadMarkers");
-  Check(markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="GetSource"&&x.Name!="AdvanceBudgeted"&&x.Name!="GetTextFromResources"),"delivered global marker pass cannot start source loading or route preparation");
+  Check(markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().All(x=>x.Name!="GetSource"&&x.Name!="AdvanceBudgeted"&&x.Name!="GetTextFromResources")&&
+   markerRead.Body.Instructions.Select(x=>x.Operand).OfType<MethodReference>().Any(x=>x.Name=="CollectGuidanceMarkers"),"delivered marker pass delegates cold dialogue work to the shared bounded guidance scheduler");
  }
  static System.Collections.Generic.IEnumerable<TypeDefinition> DeepTypes(TypeDefinition type) {
   yield return type;

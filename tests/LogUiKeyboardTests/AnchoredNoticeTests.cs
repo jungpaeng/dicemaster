@@ -50,6 +50,12 @@ internal static partial class Program
             Draw();
             Check(GUI.BadgeStems.Count == 2 && GUI.BadgeLabels[0].Text == "image", "map opportunities use the shared image and one short connector per place");
             Check(GUI.BadgeLabels.Count == 2 && GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("첫 장소") && GUI.PassiveLabels[0].Text.Contains("첫 이야기"), "all ready places show passive dots while only native focus reveals its multiple opportunities");
+            var opportunity = markers.Entries[1];
+            markers.Entries[1] = new InformationRow("guide/b", "둘째 장소", "연결 안내", "진행 가능성 있음", "상세", "경로 후보: 인물 → 주제", second, false, false, true);
+            Draw();
+            Check(GUI.BadgeLabels.Count == 2 && !markers.Entries[1].Opportunity && markers.Entries[1].HasBadge,
+                "an unfocused place with a verified guidance route receives its own marker without becoming an opportunity");
+            markers.Entries[1] = opportunity;
             var freeWindow = new Mortal.Free.FreeManager(); Mortal.Free.FreeManager.Instance = freeWindow;
             freeWindow._statOpen = true; Draw();
             Check(GUI.BadgeLabels.Count == 0 && GUI.PassiveLabels.Count == 0 && first.gameObject.activeInHierarchy, "status panel hides cached map pins and description although underlying place objects remain active");
@@ -83,6 +89,15 @@ internal static partial class Program
             Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels.Count == 1 && GUI.PassiveLabels[0].Text.StartsWith("현재 선택의 안내"), "choice screen suppresses underlying map and only confirmed choices get dots");
             ChoiceStorySource.Selected = choices.Entries[1]; Draw();
             Check(GUI.BadgeLabels.Count == 1 && GUI.PassiveLabels[0].Text.Contains("일반 대화") && GUI.PassiveLabels[0].Text.Contains("<color=#BFFFCC>진행 가능</color>"), "ordinary confirmed dialogue remains readable in green without granting another red dot");
+            var ordinary = ChoiceStorySource.Current.Entries[1];
+            disabled.Interactable = true;
+            ChoiceStorySource.Current.Entries[1] = new InformationRow(ordinary.Id, ordinary.Title, ordinary.Kind, ordinary.Status, ordinary.Detail, ordinary.AutoText, ordinary.Anchor, false, false, true);
+            ChoiceStorySource.Selected = choices.Entries[0];
+            Draw();
+            Check(GUI.BadgeLabels.Count == 2 && GUI.PassiveLabels.Count == 1 && !ChoiceStorySource.Current.Entries[1].Opportunity,
+                "an unselected active-menu route receives a second guide badge while the focused tooltip remains single");
+            ChoiceStorySource.Current.Entries[1] = ordinary;
+            disabled.Interactable = false;
             var blocked = new InformationRow("blocked/detail", "진행 불가 대화", "인물 대화", "지금 진행 불가", "상세", "", second);
             choices.Entries[1] = blocked; ChoiceStorySource.Selected = blocked;
             Event.current = new Event { mousePosition = new Vector2(710, 410), type = EventType.MouseMove }; Draw();

@@ -38,6 +38,7 @@ namespace DiceMaster.Information {
  public static class ShopInformationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class BranchObservationPatches {public static void Install(HarmonyLib.Harmony h) {}}
  public static class MapGuideSource {
+  public static void BeginScheduledReads() {} public static void EndScheduledReads() {}
   public static IList<MapRouteEvent> ReadChoicePool(string key)=>new List<MapRouteEvent>();
   public static bool SmallEventGraph(object o)=>true;public static Func<object,bool> MarkerVisible;public static bool MarkerSessionVisible=>SessionVisible;public static string MarkerContextKey=>ContextKey;public static int MarkerReads;public static bool MarkerFail;
   public static List<DisplayQuery> DiscoverMarkers(bool g,bool o)=>new(){new DisplayQuery("markers",()=>{MarkerReads++;if(MarkerFail)throw new InvalidOperationException();return new MapMarkerSnapshot();})};

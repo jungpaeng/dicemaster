@@ -6,8 +6,8 @@ namespace DiceMaster.Information
 {
     public static partial class MapGuideSource
     {
-        // Only the selected place prepares/samples these paths. Global markers
-        // never call this method or start downstream discovery.
+        // Selected-place and visible-place guidance use identical predicates.
+        // The background caller supplies a shared, bounded screen-wide budget.
         private static void CollectSelectedRoute(Place place, PositionController controller, Source source, List<Candidate> candidates)
         {
             if (!source.Routes.RootMenuComplete || source.Routes.HasReadFailure || source.Routes.StoryEntries.Count == 0) return;
@@ -15,37 +15,43 @@ namespace DiceMaster.Information
             ApplyPlace(controller, dispatchProbe);
             if (dispatchProbe.Rank != 0) return;
             var scan = source.SelectedStories;
+            if (guidancePreferredOnly && scan.Preferred == null) return;
+            var budget = guidanceBudget ?? new GuidanceBudget();
+            if (budget.Paths <= 0 || budget.Gates <= 0 || budget.Kinds <= 0) return;
             // Index only new immutable witnesses, including later paths added
             // to an earlier story. Non-dialogue definitions use no read slots.
             var definitions = source.Routes.StoryPaths;
-            int indexBudget = 64;
-            while (scan.Indexed < definitions.Count && indexBudget-- > 0)
+            int indexBudget = Math.Min(64, budget.Index);
+            while (!guidancePreferredOnly && scan.Indexed < definitions.Count && indexBudget-- > 0 && budget.Index-- > 0)
             {
                 var item = definitions[scan.Indexed++];
                 if (item.Path.Steps.Count != 0 && !string.IsNullOrEmpty(item.Path.DialogueCharacter))
                     scan.Candidates.Add(new StoryLink { Story = item.Story, Path = item.Path });
             }
             if (scan.Candidates.Count == 0) return;
-            var read = MapRouteRead.ForSelectedPlace(Read(controller, "_positionData"));
+            var read = MapRouteRead.ForSelectedPlace(Read(controller, "_positionData"), guidanceDefinitions);
             if (read == null) return;
-            int paths = 32, gates = 32, kinds = 32;
+            int paths = Math.Min(32, budget.Paths);
             StoryLink previous = scan.Preferred;
             if (previous != null)
             {
-                paths--;
-                if (previous.Path.ReadGuidance(read, -1, true, true, ref gates, ref kinds, out _) == MapGuidanceRejection.None)
+                paths--; budget.Paths--;
+                if (previous.Path.ReadGuidance(read, -1, true, true, ref budget.Gates, ref budget.Kinds, out _) == MapGuidanceRejection.None)
                 { AddSelectedRoute(previous, candidates); return; }
+                if (budget.Gates < 0 || budget.Kinds < 0) return;
                 scan.Preferred = null;
             }
+            if (guidancePreferredOnly) return;
             int remaining = Math.Min(paths, scan.Candidates.Count);
-            while (remaining-- > 0 && gates > 0 && kinds > 0)
+            while (remaining-- > 0 && budget.Paths > 0 && budget.Gates > 0 && budget.Kinds > 0)
             {
                 int at = scan.Cursor % scan.Candidates.Count;
                 StoryLink link = scan.Candidates[at];
                 scan.Cursor = (at + 1) % scan.Candidates.Count;
                 if (ReferenceEquals(link, previous)) continue;
-                int priorGates = gates, priorKinds = kinds;
-                if (link.Path.ReadGuidance(read, -1, true, true, ref gates, ref kinds, out _) == MapGuidanceRejection.None)
+                budget.Paths--;
+                int priorGates = budget.Gates, priorKinds = budget.Kinds;
+                if (link.Path.ReadGuidance(read, -1, true, true, ref budget.Gates, ref budget.Kinds, out _) == MapGuidanceRejection.None)
                 {
                     scan.Preferred = link;
                     AddSelectedRoute(link, candidates);
@@ -54,7 +60,7 @@ namespace DiceMaster.Information
                 // Do not strand a valid tail at the end of each gate budget.
                 // Retry with a fresh budget; a path exceeding a whole budget
                 // is skipped for this sweep so it cannot starve later paths.
-                if (gates < 0 || kinds < 0)
+                if (budget.Gates < 0 || budget.Kinds < 0)
                 {
                     if (priorGates < 32 || priorKinds < 32) scan.Cursor = at;
                     break;

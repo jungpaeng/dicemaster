@@ -1,5 +1,15 @@
 # 변경 이력
 
+## [v1.0.7-alpha.29](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.29) — 2026-10-22 (prerelease 후보)
+
+<!-- alpha29-publication -->
+alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha29-publication -->
+
+- 기존 어두운 금색 기회 배지와 구분되는 아이보리 두루마리를 추가한다. 현재 안내 가능한 일반 대화·후속 경로가 있음을 뜻하며 이벤트 발생·1회성·현재 실행을 보장하지 않는다. 같은 항목에 둘 다 있으면 기존 기회 배지를 우선한다.
+- 지도는 보이는 미선택 장소도 순환 준비하고, 선택 메뉴는 실제 활성 선택지의 기존 안내 결과를 사용한다. 포커스/호버 시 설명 하나를 표시하고 원래 선택·패드 입력은 유지한다.
+- 선택 장소와 나머지 장소가 하나의 준비/시간 예산을 공유한다. 현재 값은 새로 읽고 조건 정의 이름 색인만 같은 갱신에서 공유하며 빈 버퍼를 재사용한다. 정상 0.25초/실패5초를 유지한다. [설계·측정·검증 상태](docs/ISSUE-6-GUIDANCE-BADGES.md). 아래 alpha.28은 이미 게시된 이전 파일이다.
+
 ## [v1.0.7-alpha.28](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.28) — 2026-10-22 (prerelease)
 
 <!-- alpha28-publication -->

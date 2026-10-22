@@ -212,6 +212,7 @@ namespace DiceMaster.LiveLog
     public class PreviewCondition { }
     public static class PreviewConditions
     {
+        internal sealed class DefinitionScope { public void Reset() { } }
         public static readonly PreviewCondition Unknown = new PreviewCondition();
         public static string DescribeCurrent(PreviewCondition condition) => "fixture current diagnostic";
         public static string DescribePositionEntry(PreviewCondition condition, object data) => "fixture private entry diagnostic";
@@ -279,6 +280,9 @@ namespace DiceMaster.Information
         public readonly List<MapRouteEntry> Entries = new List<MapRouteEntry>();
         public readonly List<MapStoryEntry> StoryEntries = new List<MapStoryEntry>();
         public int WorkCount => Advances;
+        public int ScriptReadCount => Advances;
+        public int PoolReadCount => 0;
+        public bool HasPendingWork => IsPreparing;
         private string root; private Func<string,ScriptReadResult> reader; private Func<string,IList<MapRouteEvent>> pools;
         private bool done;
         public bool IsPreparing { get; private set; } = true;

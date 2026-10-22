@@ -44,8 +44,10 @@ namespace DiceMaster.Information
             string key = MarkerContextKey;
             queries.Add(new DisplayQuery("map/markers/" + key, () => {
                 if (!MarkerSessionVisible || key != MarkerContextKey) throw new DataNotReadyException();
+                bool ownBudget = !scheduledReads;
+                if (ownBudget) BeginScheduledReads();
                 try { return ReadMarkers(controller, guide, oneShot); }
-                finally { currentRoutes = null; preparationSlice = null; currentConditions.Clear(); dispatch = null; entryBarrier = null; }
+                finally { currentRoutes = null; preparationSlice = null; currentConditions.Clear(); dispatch = null; entryBarrier = null; if (ownBudget) EndScheduledReads(); }
             }));
             return queries;
         }
@@ -103,10 +105,10 @@ namespace DiceMaster.Information
             detailed = false; automaticEvents = AutomaticEventLimit; automaticProofs = coldEffects = 0;
             markerCandidates = 64;
             currentRoutes = new MapRouteRead(); currentConditions.Clear();
-            var slice = new MapRouteDefinitions.PreparationSlice();
+            var slice = preparationSlice = PreparationBudget();
             var visible = new List<Place>(64);
             var preparedNotices = new Dictionary<Place, List<string>>();
-            if (selectedPlace != null) visible.Add(selectedPlace);
+            if (selectedPlace != null && Live(selectedPlace) != null && (MarkerVisible == null || MarkerVisible(Live(selectedPlace)))) visible.Add(selectedPlace);
             foreach (Place place in places)
             {
                 if (ReferenceEquals(place, selectedPlace)) continue;
@@ -117,13 +119,16 @@ namespace DiceMaster.Information
             // All shallow waiting notices precede optional cached one-shot reads.
             if (guide) foreach (Place place in visible)
             { if (slice.ShouldYield()) break; AddMarker(place, batch, snapshot, preparedNotices, true, false, null); }
-            if (!oneShot) return snapshot;
-            object config;
-            try { object checkpoints = ExistingCheckpoints(); config = checkpoints == null ? null : Read(checkpoints, "_position"); }
-            catch (Exception) { return snapshot; } // Missing research data never erases waiting membership.
-            // Selected place first. No source preparation or result parsing is admitted here.
-            foreach (Place place in visible)
-            { if (slice.ShouldYield() || markerCandidates <= 0) break; AddMarker(place, batch, snapshot, preparedNotices, false, true, config); }
+            if (oneShot)
+            {
+                object config;
+                try { object checkpoints = ExistingCheckpoints(); config = checkpoints == null ? null : Read(checkpoints, "_position"); }
+                catch (Exception) { config = null; } // Broken one-shot metadata does not stop independent dialogue guidance.
+                // Selected place first. No source preparation or result parsing is admitted here.
+                foreach (Place place in visible)
+                { if (config == null || slice.ShouldYield() || markerCandidates <= 0) break; AddMarker(place, batch, snapshot, preparedNotices, false, true, config); }
+            }
+            if (guide) CollectGuidanceMarkers(visible, batch, snapshot, slice);
             return snapshot;
         }
         private static void AddMarker(Place place, MarkerBatch batch, MapMarkerSnapshot snapshot, Dictionary<Place, List<string>> preparedNotices, bool guide, bool oneShot, object config)

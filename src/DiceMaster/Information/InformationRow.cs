@@ -7,12 +7,14 @@ namespace DiceMaster.Information
         public readonly object Anchor;
         public readonly bool Available;
         public readonly bool Opportunity;
+        public readonly bool Guidance;
+        public bool HasBadge { get { return Opportunity || Guidance; } }
         public InformationRow(string id, string title, string kind, string status, string detail,
-            string autoText = null, object anchor = null, bool available = false, bool opportunity = false)
+            string autoText = null, object anchor = null, bool available = false, bool opportunity = false, bool guidance = false)
         {
             Id = id ?? ""; Title = title ?? Id; Kind = kind ?? ""; Status = status ?? "";
             Detail = detail ?? ""; AutoText = autoText ?? (Title + " · " + Kind + " · " + Status);
-            Anchor = anchor; Available = available; Opportunity = opportunity;
+            Anchor = anchor; Available = available; Opportunity = opportunity; Guidance = guidance;
         }
     }
 }

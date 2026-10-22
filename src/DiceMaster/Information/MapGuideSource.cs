@@ -146,6 +146,19 @@ namespace DiceMaster.Information
         private static string entryBarrier;
         private static MapRouteRead currentRoutes;
         private static MapRouteDefinitions.PreparationSlice preparationSlice;
+        private static bool scheduledReads, routeAdvanced, guidancePreferredOnly;
+        private static MapRouteDefinitions.PreparationSlice scheduledSlice;
+        private sealed class GuidanceBudget
+        { internal int Paths = 32, Gates = 32, Kinds = 32, Index = 64; }
+        private static GuidanceBudget guidanceBudget;
+        private static PreviewConditions.DefinitionScope guidanceDefinitions;
+        private static readonly PreviewConditions.DefinitionScope definitionBuffers = new PreviewConditions.DefinitionScope();
+        public static void BeginScheduledReads()
+        { scheduledReads = true; routeAdvanced = false; scheduledSlice = null; definitionBuffers.Reset(); guidanceDefinitions = definitionBuffers; }
+        public static void EndScheduledReads()
+        { scheduledReads = false; scheduledSlice = null; guidanceBudget = null; guidancePreferredOnly = false; guidanceDefinitions = null; definitionBuffers.Reset(); }
+        private static MapRouteDefinitions.PreparationSlice PreparationBudget()
+        { return scheduledReads ? scheduledSlice ?? (scheduledSlice = new MapRouteDefinitions.PreparationSlice()) : new MapRouteDefinitions.PreparationSlice(); }
         private static int routeReads, effectStarts;
         private sealed class Timing
         {
@@ -236,7 +249,7 @@ namespace DiceMaster.Information
             selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
         }
         public static void Clear()
-        { places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
+        { backgroundPrepareCursor = backgroundReadCursor = 0; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
         public static void ClearSnapshots() { ClearSnapshotsCore(true); }
         public static void ClearSnapshotsPreservingSyntax() { ClearSnapshotsCore(false); }
         private static void ClearSnapshotsCore(bool clearSyntax)
@@ -277,6 +290,11 @@ namespace DiceMaster.Information
             automaticProofs = 4;
             currentConditions.Clear();
             ObserveSessionData(controller);
+            UpdatePlaceMetadata(place, controller, true);
+            return ReadPlace(place, controller, guide, oneShot);
+        }
+        private static void UpdatePlaceMetadata(Place place, PositionController controller, bool announce)
+        {
             try
             {
                 object data = Read(controller, "_positionData");
@@ -288,7 +306,7 @@ namespace DiceMaster.Information
                 if (!ReferenceEquals(data, place.Data) || !ReferenceEquals(config, place.PositionConfig) || script != place.Script || key != place.Key)
                 {
                     place.Data = data; place.PositionConfig = config; place.Script = script; place.Key = key;
-                    place.Definition = null; place.Reads.Clear(); generation++;
+                    place.Definition = null; place.Reads.Clear(); if (announce) generation++;
                 }
             }
             catch (Exception)
@@ -299,11 +317,10 @@ namespace DiceMaster.Information
                 if (place.Data != null || place.Definition != null)
                 {
                     place.Data = place.PositionConfig = null; place.Definition = null;
-                    place.Reads.Clear(); generation++;
+                    place.Reads.Clear(); if (announce) generation++;
                 }
                 throw;
             }
-            return ReadPlace(place, controller, guide, oneShot);
         }
         private static object ExistingCheckpoints()
         {
@@ -396,7 +413,12 @@ namespace DiceMaster.Information
                     source.Routes = new MapRouteDefinitions(source.Script, DataHelper.ReadPreviewScript, key => ReadPool(place, key)) { UseSharedSyntax = true };
                 if (source.Routes != null)
                 {
-                    source.Routes.AdvanceBudgeted(Now, 8192, preparationSlice.ShouldYield);
+                    if (!scheduledReads || !routeAdvanced)
+                    {
+                        int work = source.Routes.WorkCount, resources = source.Routes.ScriptReadCount + source.Routes.PoolReadCount;
+                        source.Routes.AdvanceBudgeted(Now, 8192, preparationSlice.ShouldYield);
+                        if (scheduledReads && (source.Routes.WorkCount != work || source.Routes.ScriptReadCount + source.Routes.PoolReadCount != resources)) routeAdvanced = true;
+                    }
                     if (source.EventWork != source.Routes.WorkCount)
                     {
                       source.EventWork = source.Routes.WorkCount;
@@ -514,7 +536,7 @@ namespace DiceMaster.Information
                 long end = Stopwatch.GetTimestamp(); timings[0].Add(Milliseconds(start, end), Milliseconds(start, missionsEnd), 0, 0, Milliseconds(missionsEnd, end), Math.Max(0, Allocated() - allocated));
                 return waiting;
             }
-            preparationSlice = new MapRouteDefinitions.PreparationSlice();
+            preparationSlice = PreparationBudget();
             currentRoutes = new MapRouteRead();
             Source source = GetSource(place);
             long prepared = Stopwatch.GetTimestamp();
@@ -735,9 +757,10 @@ namespace DiceMaster.Information
                 }
             }
             // A selected-place route is guidance only. It never changes the
-            // opportunity count, Available bit or marker eligibility.
+            // opportunity count or Available bit. Its light badge is separate.
+            bool hasGuidance = false;
             if (guide) foreach (Candidate value in ordered)
-                if (!string.IsNullOrEmpty(value.RoutePreview)) { automatic.Add(value.RoutePreview); break; }
+                if (!string.IsNullOrEmpty(value.RoutePreview)) { automatic.Add(value.RoutePreview); hasGuidance = true; break; }
             if (snapshot.Entries.Count == 0)
                 snapshot.Entries.Add(new InformationRow("map/empty/" + ContextKey, place == null ? "장소 무관 임무 없음" : detailed ? "현재 연결 항목 없음" : "현재 자동 표시 대상 없음", "지도", "현재 확인된 항목 없음",
                     "현재 관찰한 자료 범위의 결과입니다. 전체 게임의 기회 없음이나 반복 가능을 뜻하지 않습니다."));
@@ -748,7 +771,7 @@ namespace DiceMaster.Information
                 if (diagnostics.Count != 0) status += " · " + string.Join(" · ", diagnostics);
                 string text = MapGuidePresentation.Summary(automatic, guide, preparing);
                 snapshot.Summary = new InformationRow(SelectionKey(place), Plain(title), "지도", status,
-                    "대기 상태·현재 조건·선택 우선순위는 서로 다른 정보입니다. 경로·조건·효과와 장소 무관 항목은 지도 로그에서 읽습니다.", text, controller, available, available);
+                    "대기 상태·현재 조건·선택 우선순위는 서로 다른 정보입니다. 경로·조건·효과와 장소 무관 항목은 지도 로그에서 읽습니다.", text, controller, available, available, hasGuidance);
             }
             return snapshot;
         }

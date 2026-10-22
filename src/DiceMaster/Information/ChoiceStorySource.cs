@@ -312,7 +312,8 @@ namespace DiceMaster.Information
                 var row = new InformationRow("choice/" + key + "/" + (anchor == null ? "" : anchor.GetInstanceID().ToString(CultureInfo.InvariantCulture)),
                     option.Title, "인물 대화", status, detail,
                     state == MapRouteState.NotMet || selection.Path == null ? "" : preview + (!ambiguous && !incomplete && binding.Paths.Count <= 32 && selection.Count > 1 ? " · 외 " + (selection.Count - 1) + "개" : "") + " · " + status,
-                    anchor, !ambiguous && !incomplete && state == MapRouteState.Met);
+                    anchor, !ambiguous && !incomplete && state == MapRouteState.Met, false,
+                    selection.Path != null && state != MapRouteState.NotMet);
                 snapshot.Entries.Add(row);
                 if (row.AutoText.Length != 0 && snapshot.Hints.Count < 3) snapshot.Hints.Add(row);
             }

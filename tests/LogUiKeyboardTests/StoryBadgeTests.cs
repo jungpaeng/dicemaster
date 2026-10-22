@@ -41,11 +41,19 @@ internal static partial class Program
             for (int at = 0; at < 1000; at++) InformationBadge.Draw(pin, InformationLayout.Stem(pin, anchor));
             Check(Texture2D.Created == creates + 1 && Texture2D.Uploads == uploads + 1 && Texture2D.Bytes.Length == 16384, "one thousand badge repaints share exactly one embedded image upload");
             Check(GUI.color.r == savedColor.r && GUI.color.g == savedColor.g && GUI.color.b == savedColor.b, "icon and connector always restore caller GUI color");
+            for (int at = 0; at < 1000; at++) InformationBadge.Draw(pin, InformationLayout.Stem(pin, anchor), true);
+            Check(Texture2D.Created == creates + 2 && Texture2D.Uploads == uploads + 2,
+                "both dark opportunity and light guidance variants upload once each, never on warm repaint");
+            int pixel = ((63 - 10) * 64 + 32) * 4;
+            Check(Texture2D.Bytes[pixel] > 230 && Texture2D.Bytes[pixel + 1] > 220 && Texture2D.Bytes[pixel + 2] > 180,
+                "guidance icon uses the actual embedded bright ivory background rather than tinting the whole opportunity image");
             int destroyed = UnityEngine.Object.Destroyed;
-            InformationBadge.Release(); Check(UnityEngine.Object.Destroyed == destroyed + 1, "plugin shutdown releases its own badge texture");
+            InformationBadge.Release(); Check(UnityEngine.Object.Destroyed == destroyed + 2, "plugin shutdown releases both of its own badge textures");
             Texture2D.FailUpload = true; creates = Texture2D.Created; int failures = 0;
             for (int at = 0; at < 100; at++) try { InformationBadge.Draw(pin, default); } catch { failures++; }
             Check(failures == 1 && Texture2D.Created == creates + 1, "texture upload failure is reported once instead of retried every repaint");
+            Texture2D.FailUpload = false; InformationBadge.Draw(pin, default, true);
+            Check(Texture2D.Created == creates + 2, "one failed opportunity upload cannot suppress the independent guidance resource");
         }
         finally { Event.current = previous; Texture2D.FailUpload = false; InformationBadge.Release(); GUI.color = Color.white; GUI.BadgeLabels.Clear(); GUI.BadgeStems.Clear(); }
     }

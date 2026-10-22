@@ -1,5 +1,15 @@
 # 지도·1회성·분기·상점 정보 — 후보·검증 이력
 
+## alpha.29 — 밝은 안내 배지·설정 범위
+
+<!-- alpha29-publication -->
+alpha.29 게시를 준비 중이다. 검토 후보의 전체21개 자동 검사·실제 DLL 연결·설치 ZIP 검증은 통과했으며, 고정 커밋 재빌드·공개 다운로드 검증은 게시 절차에서 확인한다. 실제 Windows·물리 입력·FPS 확인과 PRD #6 전체 완료는 대기다.
+<!-- /alpha29-publication -->
+
+alpha.29 후보에 포함된다. 새 키/기본값/저장 값은 없고 EnableMapGuide가 지도·실제 선택지의 밝은 대화/경로 배지와 설명을 함께 제어한다. EnableMapGuide OFF면 배경 이야기 준비와 밝은 배지를 중단하며 EnableOneShotHints의 기존 기회/1회성 표시는 독립적으로 유지한다. 상위 EnableOptionInfo의 시작 시 적용·분기/상점 OFF 및 기록 초기화 규칙은 유지한다. 패키지 cfg의 설명 주석은 갱신했으므로 이전 cfg와 바이트는 다르지만 키·값은 같다. 업데이트 시 기존 cfg를 보존한다. [후보·측정·검증 상태](ISSUE-6-GUIDANCE-BADGES.md).
+
+아래 alpha.28은 이미 게시된 이전 파일이며 밝은 안내 배지는 포함하지 않는다.
+
 ## alpha.28 — 후속 경로·설정 범위
 
 <!-- alpha28-publication -->

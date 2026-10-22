@@ -735,7 +735,7 @@ static class Program
         Check(!resolver.Methods.SelectMany(Calls).Any(c => c.Name.StartsWith("set_") || c.Name == "OnControlsChanged"), "mode resolver never forces game control scheme");
         Check(module.AssemblyReferences.All(r => r.Name != "Unity.InputSystem"), "read-only mode reflection adds no unpinned assembly reference");
         var resources = module.Resources.OfType<EmbeddedResource>().ToArray();
-        Check(resources.Length == 10 && resources.All(r => r.Name.StartsWith("DiceMaster.")), "eight existing mod resources plus the badge image and licensed source embedded");
+        Check(resources.Length == 12 && resources.All(r => r.Name.StartsWith("DiceMaster.")), "eight existing mod resources plus both badge images and licensed sources embedded");
         Check(!resources.Any(r => r.Name.Contains("Mortal.Core") || r.Name.Contains("Mortal.Story")), "game DLLs are not embedded");
         var preservedResources = new Dictionary<string, string> {
             ["DiceMaster.Assets.mortaldice"] = "5cb5c10adea77234bbef4f8f348514526c9765e9c45fe2b4e8d3c334ecfc0ff6",
@@ -747,7 +747,9 @@ static class Program
             ["DiceMaster.Translations.TriggerTranslation1.0.5v.txt"] = "a528b4740da8fe1fd5218e50d8113720306ea1db21b959b0ab1545c13587dbd4",
             ["DiceMaster.Translations._Substitutions.txt"] = "640d5fc2a5fae476b766c5b59481a10e7e7d68a605557485f5bf2277e6569909",
             ["DiceMaster.StoryBadge.rgba"] = "fae992a1a5b618d5a1ce864a605bd921f672e5519c7c6225c2118f51bd689840",
-            ["DiceMaster.StoryBadge.svg"] = "0fee4213285d6b25a88cd56924354b677b05e8493c3db08d935ef95ec0a89515"
+            ["DiceMaster.StoryBadge.svg"] = "0fee4213285d6b25a88cd56924354b677b05e8493c3db08d935ef95ec0a89515",
+            ["DiceMaster.StoryGuideBadge.rgba"] = "516eec9dca07da1d6f69eb0c6a62be962703bee3c99c895eb63e452eccd4bb01",
+            ["DiceMaster.StoryGuideBadge.svg"] = "3345623e4952b071ad250399bdb8d021375817b11b1e4babb233e75e525b4577"
         };
         foreach (var resource in resources)
             Check(Convert.ToHexString(SHA256.HashData(resource.GetResourceData())).Equals(preservedResources[resource.Name], StringComparison.OrdinalIgnoreCase),

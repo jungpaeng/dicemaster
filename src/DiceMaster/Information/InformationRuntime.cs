@@ -133,16 +133,21 @@ namespace DiceMaster.Information
             bool menuVisible = ChoiceStorySource.MenuVisible;
             bool mapVisible = !nativeWindow && focused && automaticVisible && !menuVisible && MapGuideSource.Visible;
             bool mapDetails = detailPage == "지도 안내";
-            Run(map, "지도 안내", MapKey(mapDetails),
-                !nativeWindow && !menuVisible && (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
-                () => MapGuideSource.Discover(enabled[0], enabled[1], mapDetails), manual, () => MapKey(mapDetails));
-            Run(choices, "선택 경로", ChoiceKey(mapDetails),
-                choiceVisible && focused && (automaticVisible || mapDetails), now,
-                () => ChoiceStorySource.Discover(mapDetails), manual,
-                () => ChoiceKey(mapDetails));
-            Run(markers, "지도 표식", MarkerKey(),
-                !nativeWindow && (enabled[0] || enabled[1]) && focused && automaticVisible && !popupVisible && !menuVisible && MapGuideSource.MarkerSessionVisible, now,
-                () => MapGuideSource.DiscoverMarkers(enabled[0], enabled[1]), manual, MarkerKey);
+            MapGuideSource.BeginScheduledReads();
+            try
+            {
+                Run(map, "지도 안내", MapKey(mapDetails),
+                    !nativeWindow && !menuVisible && (enabled[0] || enabled[1]) && focused && (mapVisible || detailPage == "지도 안내"), now,
+                    () => MapGuideSource.Discover(enabled[0], enabled[1], mapDetails), manual, () => MapKey(mapDetails));
+                Run(choices, "선택 경로", ChoiceKey(mapDetails),
+                    choiceVisible && focused && (automaticVisible || mapDetails), now,
+                    () => ChoiceStorySource.Discover(mapDetails), manual,
+                    () => ChoiceKey(mapDetails));
+                Run(markers, "지도 표식", MarkerKey(),
+                    !nativeWindow && (enabled[0] || enabled[1]) && focused && automaticVisible && !popupVisible && !menuVisible && MapGuideSource.MarkerSessionVisible, now,
+                    () => MapGuideSource.DiscoverMarkers(enabled[0], enabled[1]), manual, MarkerKey);
+            }
+            finally { MapGuideSource.EndScheduledReads(); }
             Run(shop, "상점 효과", ShopEffectSource.ContextKey,
                 enabled[3] && focused && (automaticVisible && ShopEffectSource.Visible || detailPage == "상점 효과"), now,
                 ShopEffectSource.Discover, manual);

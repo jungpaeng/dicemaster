@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Frame/background: original DiceMaster artwork. Inner icon: Lucide scroll-text (ISC). -->
+  <metadata>
+Inner icon: Lucide scroll-text, supplied by the user.
+Source: https://lucide.dev/icons/scroll-text
+
+ISC License
+Copyright (c) 2026 Lucide Icons and Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  </metadata>
+  <circle cx="32" cy="32" r="29" fill="#fff4d8" fill-opacity=".98" stroke="#624f2c" stroke-width="2"/>
+  <circle cx="32" cy="32" r="25.5" fill="none" stroke="#a98445" stroke-opacity=".6" stroke-width="1"/>
+  <g transform="translate(12.8 12.8) scale(1.6)" fill="none" stroke="#5b4629" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 12h-5"/>
+    <path d="M15 8h-5"/>
+    <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
+    <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
+  </g>
+</svg>

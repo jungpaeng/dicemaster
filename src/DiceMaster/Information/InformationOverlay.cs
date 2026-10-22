@@ -119,7 +119,7 @@ namespace DiceMaster.Information
             if (mapNative == null) mapNative = selected;
             InformationRow mapCurrent = Focused(mapFocusRows, mapNative, mapFocus, true);
             foreach (InformationRow row in mapFocusRows)
-                if (row.Opportunity && (!ReferenceEquals(row, selected) || status.Length == 0)) DrawBadge(row, true);
+                if (row.HasBadge && (!ReferenceEquals(row, selected) || status.Length == 0)) DrawBadge(row, true);
             if (mapCurrent != null && !string.IsNullOrEmpty(mapCurrent.AutoText))
             {
                 string currentStatus = ReferenceEquals(mapCurrent, selected) ? status : "";
@@ -134,12 +134,12 @@ namespace DiceMaster.Information
                 // Only the exact positive entry status is green. Mixed rows,
                 // headings and stale publications keep their neutral color.
                 Rect anchor;
-                if (InformationAnchors.TryRect(mapCurrent.Anchor, out anchor)) DrawPassive(mapLabel, mapText, false, default(Rect), false, true, NoticeAnchor(anchor, mapCurrent.Opportunity && currentStatus.Length == 0, true));
+                if (InformationAnchors.TryRect(mapCurrent.Anchor, out anchor)) DrawPassive(mapLabel, mapText, false, default(Rect), false, true, NoticeAnchor(anchor, mapCurrent.HasBadge && currentStatus.Length == 0, true));
             }
             if (choice != null)
             {
                 InformationRow current = Focused(choice.Entries, ChoiceStorySource.CurrentRow(choice), choiceFocus, false);
-                if (choiceStatus.Length == 0) foreach (InformationRow row in choice.Entries) if (row.Opportunity) DrawBadge(row, false);
+                if (choiceStatus.Length == 0) foreach (InformationRow row in choice.Entries) if (row.HasBadge) DrawBadge(row, false);
                 if (!ReferenceEquals(lastChoice, choice) || !ReferenceEquals(lastChoiceRow, current) || lastChoiceStatus != choiceStatus)
                 {
                     lastChoice = choice; lastChoiceRow = current; lastChoiceStatus = choiceStatus;
@@ -150,7 +150,7 @@ namespace DiceMaster.Information
                     choiceText = EntryConditionColors(string.Join("\n", lines), choiceStatus.Length == 0);
                 }
                 Rect anchor;
-                if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, NoticeAnchor(anchor, current.Opportunity && choiceStatus.Length == 0, false));
+                if (current != null && InformationAnchors.TryRect(current.Anchor, out anchor)) DrawPassive(choiceLabel, choiceText, false, default(Rect), false, true, NoticeAnchor(anchor, current.HasBadge && choiceStatus.Length == 0, false));
             }
             if (latest != null) DrawPassive(branchLabel, latest.AutoText, true, logOpen ? logRect : default(Rect), latest.Available);
         }
@@ -166,7 +166,7 @@ namespace DiceMaster.Information
                 if (string.IsNullOrEmpty(row.AutoText)) continue;
                 Rect anchor;
                 if (row.Anchor == null || !InformationAnchors.IsInteractive(row.Anchor) || !InformationAnchors.TryRect(row.Anchor, out anchor)) continue;
-                if (anchor.Contains(pointer) || row.Opportunity && InformationLayout.Badge(anchor, viewport, map ? mapBadgeSize : choiceBadgeSize, map).Contains(pointer)) return row;
+                if (anchor.Contains(pointer) || row.HasBadge && InformationLayout.Badge(anchor, viewport, map ? mapBadgeSize : choiceBadgeSize, map).Contains(pointer)) return row;
             }
             return null;
         }
@@ -177,7 +177,7 @@ namespace DiceMaster.Information
             Rect anchor;
             if (row.Anchor == null || !InformationAnchors.IsInteractive(row.Anchor) || !InformationAnchors.TryRect(row.Anchor, out anchor)) return;
             Rect badge = InformationLayout.Badge(anchor, new Rect(0, 0, Screen.width, Screen.height), map ? mapBadgeSize : choiceBadgeSize, map);
-            try { InformationBadge.Draw(badge, map ? InformationLayout.Stem(badge, anchor) : default(Rect)); }
+            try { InformationBadge.Draw(badge, map ? InformationLayout.Stem(badge, anchor) : default(Rect), row.Guidance && !row.Opportunity); }
             catch (Exception error) { Failure("안내 아이콘", error); }
         }
         private static string EntryConditionColors(string text, bool current)

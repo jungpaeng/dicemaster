@@ -23,15 +23,18 @@ namespace DiceMaster.Information
     {
         private PreviewConditions.Reader reader;
         private readonly bool projectTalkResets;
+        private readonly PreviewConditions.DefinitionScope definitions;
         public MapRouteRead() : this(false) { }
         public MapRouteRead(bool projectTalkResets) { this.projectTalkResets = projectTalkResets; }
-        internal static MapRouteRead ForSelectedPlace(object data)
+        private MapRouteRead(bool projectTalkResets, PreviewConditions.DefinitionScope definitions)
+        { this.projectTalkResets = projectTalkResets; this.definitions = definitions; }
+        internal static MapRouteRead ForSelectedPlace(object data, PreviewConditions.DefinitionScope definitions = null)
         {
-            var read = new MapRouteRead(true);
+            var read = new MapRouteRead(true, definitions);
             return read.EnsureReader().ProjectPositionEntry(data) ? read : null;
         }
         private PreviewConditions.Reader EnsureReader()
-        { return reader ?? (reader = projectTalkResets ? PreviewConditions.CreateRouteReader() : PreviewConditions.CreateReader()); }
+        { return reader ?? (reader = new PreviewConditions.Reader(projectTalkResets, definitions)); }
         private readonly Dictionary<PreviewCondition, PreviewConditionState> values = new Dictionary<PreviewCondition, PreviewConditionState>();
         private readonly Dictionary<Func<bool>, bool> completeness = new Dictionary<Func<bool>, bool>();
         private readonly Dictionary<PreviewCondition, bool> entrySwitches = new Dictionary<PreviewCondition, bool>();

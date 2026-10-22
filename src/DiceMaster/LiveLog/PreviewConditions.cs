@@ -290,7 +290,7 @@ namespace DiceMaster.LiveLog
         public sealed class Reader
         {
             private readonly Snapshot snapshot;
-            internal Reader(bool projectTalkResets = false) { snapshot = new Snapshot(false, projectTalkResets); }
+            internal Reader(bool projectTalkResets = false, DefinitionScope definitions = null) { snapshot = new Snapshot(false, projectTalkResets, definitions); }
             // Selected-place guidance only. Interpret serialized entry checks
             // into this read's private values; never execute a game evaluator.
             internal bool ProjectPositionEntry(object data) { snapshot.ProjectPositionEntry(data); return snapshot.EntryBoundaryKnown; }
@@ -384,19 +384,52 @@ namespace DiceMaster.LiveLog
             { Values = new HashSet<int>(values); Minimum = values[0]; Maximum = values[values.Count - 1]; }
         }
 
+        // Owned by one scheduled map publication only. This shares names and
+        // configuration object references, NEVER flags, truth or virtual entry
+        // values between places. The next scheduled read starts a new scope.
+        internal sealed class DefinitionScope
+        {
+            internal readonly Dictionary<object, DefinitionIndex> Indices = new Dictionary<object, DefinitionIndex>(new Identity());
+            private readonly Stack<DefinitionIndex> empty = new Stack<DefinitionIndex>(4);
+            private void Recycle(DefinitionIndex index)
+            {
+                index.List = null; index.Count = index.Cursor = 0; index.Values.Clear();
+                if (empty.Count < 4) empty.Push(index);
+            }
+            internal void Reset()
+            { foreach (var index in Indices.Values) Recycle(index); Indices.Clear(); }
+            internal DefinitionIndex Index(object config, IList list)
+            {
+                DefinitionIndex index;
+                if (Indices.TryGetValue(config, out index))
+                {
+                    if (ReferenceEquals(index.List, list) && index.Count == list.Count) return index;
+                    Recycle(index);
+                }
+                index = empty.Count == 0 ? new DefinitionIndex() : empty.Pop();
+                index.List = list; index.Count = list.Count; Indices[config] = index;
+                return index;
+            }
+        }
+        internal sealed class DefinitionIndex
+        {
+            internal object List;
+            internal int Count, Cursor;
+            internal readonly Dictionary<string, object> Values = new Dictionary<string, object>(StringComparer.Ordinal);
+        }
         private sealed class Snapshot
         {
             private readonly List<string> diagnostics;
             private bool diagnosticsLimited;
             private readonly bool projectTalkResets;
-            internal Snapshot(bool explain = false, bool projectTalkResets = false)
+            internal Snapshot(bool explain = false, bool projectTalkResets = false, DefinitionScope scope = null)
             {
                 this.projectTalkResets = projectTalkResets; if (explain) diagnostics = new List<string>();
                 if (projectTalkResets)
                 {
                     routeValues = new Dictionary<PreviewCondition, object>();
                     resetDefaults = new Dictionary<object, int>(new Identity());
-                    definitions = new Dictionary<object, DefinitionIndex>(new Identity());
+                    definitions = scope ?? new DefinitionScope();
                 }
             }
             internal void Trace(string text)
@@ -428,12 +461,7 @@ namespace DiceMaster.LiveLog
             private int entryReadLimit;
             internal bool EntryBoundaryKnown { get { return !entryUnknown; } }
             private readonly Dictionary<object, int> resetDefaults;
-            private sealed class DefinitionIndex
-            {
-                internal int Cursor;
-                internal readonly Dictionary<string, object> Values = new Dictionary<string, object>(StringComparer.Ordinal);
-            }
-            private readonly Dictionary<object, DefinitionIndex> definitions;
+            private readonly DefinitionScope definitions;
             internal void ProjectPositionEntry(object data)
             {
                 entryUnknown = true; enteringPlace = false; entryValues = null; entryReadFailed = false;
@@ -729,7 +757,7 @@ namespace DiceMaster.LiveLog
                 DefinitionIndex index = null; object found;
                 if (projectTalkResets)
                 {
-                    if (!definitions.TryGetValue(config, out index)) definitions.Add(config, index = new DefinitionIndex());
+                    index = definitions.Index(config, list);
                     if (index.Values.TryGetValue(key, out found)) return found;
                 }
                 for (int at = index == null ? 0 : index.Cursor; at < list.Count; at++)

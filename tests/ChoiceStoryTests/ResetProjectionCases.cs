@@ -48,6 +48,8 @@ internal static partial class Program
         var button = Normal("O_entry", "사사형");
         for (int at = 0; at < 60; at++) Read();
         var value = Read(true); var row = Linked(value, "사사형");
+        Check(row.Guidance && row.HasBadge && !row.Opportunity,
+            "an eligible route-only tooltip explicitly grants a light guidance badge without opportunity evidence");
         Check(row.AutoText.Contains("어린 시절 이야기", StringComparison.Ordinal) && !row.Opportunity,
             "a parent native choice previews the unlocked followup after a virtual reset without creating an opportunity marker");
         persistent.State = 1;

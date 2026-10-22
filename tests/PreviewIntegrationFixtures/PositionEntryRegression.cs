@@ -28,7 +28,7 @@ namespace DiceMaster
             object predicate = Invoke(Type("LiveLog.PreviewConditions"), null, "Parse", "checkpointmanager.Condition('delivered_entry_gate')", null);
             string Forecast()
             {
-                object reader = Invoke(Type("Information.MapRouteRead"), null, "ForSelectedPlace", data);
+                object reader = Invoke(Type("Information.MapRouteRead"), null, "ForSelectedPlace", data, null);
                 return reader == null ? "NoEntry" : Invoke(reader.GetType(), reader, "Current", predicate).ToString();
             }
             int writes = target.StateWrites, checks = PositionConditionFlagItem.Executions + PositionFlagItem.Executions;
