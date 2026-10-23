@@ -1,5 +1,12 @@
 # 변경 이력
 
+## v1.0.7-alpha.42 — 흰 마커 준비 대기 개선 (게시 준비)
+
+- 장면 교체 뒤 파괴된 지도 장소 등록 누적을 제거한다.
+- 실패 재시도 대기 장소가 정상 경로의 준비 순서를 낭비하지 않게 한다.
+- 첫 안내가 확인된 선택 장소의 후속 준비와 다른 장소의 첫 안내를 공정하게 처리한다.
+- 현재 판정·공유 예산·정상 0.25초/실패 5초와 입력을 유지한다. [비교·검사·Windows 대기](docs/ISSUE-6-WHITE-MARKER-PREPARATION.md).
+
 ## [v1.0.7-alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41) — 2026-10-23 (prerelease)
 
 <!-- alpha41-publication -->

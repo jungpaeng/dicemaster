@@ -7,6 +7,33 @@ namespace DiceMaster.Information
     public static partial class MapGuideSource
     {
         private static int backgroundPrepareCursor, backgroundPrepareStreak, backgroundReadCursor;
+        private static Place deferredSelected;
+        private static Source deferredSelectedSource;
+        private static int selectedYieldStreak;
+        private static bool DeferSelectedPreparation(Place place, Source source)
+        {
+            // Keep focus priority until its first valid witness. Thereafter,
+            // offer this SAME slot to peers before exploring unrelated tails.
+            // At most four yielded turns may precede selected work.
+            if (!scheduledReads || selectedYieldStreak >= 4 || !ReferenceEquals(place, selectedPlace) ||
+                !source.Routes.HasPendingWork || source.SelectedStories.Stamp == null ||
+                !source.SelectedStories.Stamp.IsCurrent()) return false;
+            deferredSelected = place; deferredSelectedSource = source;
+            return true;
+        }
+        private static void FinishSelectedPreparation()
+        {
+            Place place = deferredSelected;
+            if (place == null || !IsEnabled || !ReferenceEquals(place, selectedPlace) ||
+                !ReferenceEquals(place.Definition, deferredSelectedSource) || !OnMap(Live(place))) return;
+            if (routeAdvanced) { selectedYieldStreak++; return; }
+            // Independent RefreshEngines need not be due in the same frame.
+            // If markers did not consume the slot, give it back immediately;
+            // use the original shared deadline, never a second work budget.
+            preparationSlice = PreparationBudget();
+            if (preparationSlice.ShouldYield()) { selectedYieldStreak++; return; }
+            GetSource(place);
+        }
         // One screen-wide preparation slot (shared with the selected place),
         // never one full preparation budget per visible place. Positive
         // witnesses validate their observed inputs before optional preparation.
@@ -29,6 +56,7 @@ namespace DiceMaster.Information
                     int at = (backgroundPrepareCursor++ & int.MaxValue) % visible.Count;
                     Place place = visible[at];
                     if (HasMarker(snapshot, place) || !CanReadGuidance(place, batch, out _)) continue;
+                    if (string.IsNullOrEmpty(place.Script)) continue;
                     Source source = place.Definition;
                     if (source != null && source.Routes != null && !source.Routes.HasPendingWork && source.Failure == null) continue;
                     int work = source?.Routes?.WorkCount ?? 0;
@@ -44,7 +72,10 @@ namespace DiceMaster.Information
                     if (progressed && source.Routes.HasPendingWork && ++backgroundPrepareStreak < 4)
                         backgroundPrepareCursor--;
                     else backgroundPrepareStreak = 0;
-                    break;
+                    // A failed plan waiting for its five-second retry used
+                    // neither resource nor work. Do not spend the whole screen
+                    // turn on it; scan the bounded remainder for runnable work.
+                    if (progressed || routeAdvanced || slice.ShouldYield()) break;
                 }
             guidancePreferredOnly = false;
             for (int offset = 0; offset < visible.Count && !slice.ShouldYield() && guidanceBudget.Paths > 0; offset++)

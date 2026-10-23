@@ -122,6 +122,7 @@ internal static partial class Program
         CurrentTalkContextCases();
         PositionEntryProjectionCases();
         GuidanceMarkerCases();
+        MapPreparationSchedulingCases();
         StableGuidanceMarkerCases();
         LoadingMarkerCases();
         ColdMapDefinitionCases();

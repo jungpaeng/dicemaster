@@ -159,9 +159,13 @@ namespace DiceMaster.Information
         private static PreviewConditions.DefinitionScope guidanceDefinitions;
         private static readonly PreviewConditions.DefinitionScope definitionBuffers = new PreviewConditions.DefinitionScope();
         public static void BeginScheduledReads()
-        { scheduledReads = true; routeAdvanced = false; scheduledSlice = null; definitionBuffers.Reset(); guidanceDefinitions = definitionBuffers; }
+        { scheduledReads = true; routeAdvanced = false; deferredSelected = null; deferredSelectedSource = null; scheduledSlice = null; definitionBuffers.Reset(); guidanceDefinitions = definitionBuffers; }
         public static void EndScheduledReads()
-        { scheduledReads = false; scheduledSlice = null; guidanceBudget = null; guidancePreferredOnly = false; guidanceDefinitions = null; definitionBuffers.Reset(); }
+        {
+            try { FinishSelectedPreparation(); }
+            finally
+            { scheduledReads = false; deferredSelected = null; deferredSelectedSource = null; scheduledSlice = null; guidanceBudget = null; guidancePreferredOnly = false; guidanceDefinitions = null; definitionBuffers.Reset(); }
+        }
         private static MapRouteDefinitions.PreparationSlice PreparationBudget()
         { return scheduledReads ? scheduledSlice ?? (scheduledSlice = new MapRouteDefinitions.PreparationSlice()) : new MapRouteDefinitions.PreparationSlice(); }
         private static int routeReads, effectStarts;
@@ -237,9 +241,29 @@ namespace DiceMaster.Information
         public static void Register(PositionController controller)
         {
             if (controller == null) return;
+            PruneDestroyedPlaces();
             if (Session == null) { session = new WeakReference(controller); generation++; }
             foreach (Place place in places) if (ReferenceEquals(place.Controller.Target, controller)) return;
             places.Add(new Place { Controller = new WeakReference(controller), Id = checked(++sequence) }); markerGeneration++;
+        }
+        private static void PruneDestroyedPlaces()
+        {
+            bool changed = false;
+            for (int at = places.Count - 1; at >= 0; at--)
+            {
+                Place place = places[at];
+                // Unity's destroyed-object null is distinct from a merely
+                // hidden/disabled live control. Retain the latter for reopening.
+                if (place.Controller.Target is PositionController controller && controller != null) continue;
+                places.RemoveAt(at); changed = true;
+                if (ReferenceEquals(selectedPlace, place))
+                { selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; }
+                if (ReferenceEquals(detailPlace, place)) { detailPlace = null; detailFailure = null; }
+            }
+            if (!changed) return;
+            if (!(session?.Target is PositionController owner) || owner == null) session = null;
+            backgroundPrepareCursor = backgroundPrepareStreak = backgroundReadCursor = 0;
+            generation++; markerGeneration++;
         }
         public static void Select(PositionController controller)
         {
@@ -247,6 +271,7 @@ namespace DiceMaster.Information
             Register(controller);
             if (selection != null && ReferenceEquals(selection.Target, controller)) { detailPlace = selectedPlace; return; }
             selection = new WeakReference(controller); session = new WeakReference(controller);
+            selectedYieldStreak = 0; deferredSelected = null; deferredSelectedSource = null;
             foreach (Place place in places) if (ReferenceEquals(place.Controller.Target, controller)) { selectedPlace = place; break; }
             detailPlace = selectedPlace; detailFailure = null;
             selectionVersion++; selectionId = "map/" + selectedPlace.Id + "/" + selectionVersion; generation++;
@@ -257,12 +282,13 @@ namespace DiceMaster.Information
             selection = null; selectedPlace = null; selectionId = ""; selectionVersion++; generation++;
         }
         public static void Clear()
-        { backgroundPrepareCursor = backgroundPrepareStreak = backgroundReadCursor = 0; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = detailPlace = null; detailFailure = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
+        { backgroundPrepareCursor = backgroundPrepareStreak = backgroundReadCursor = selectedYieldStreak = 0; deferredSelected = null; deferredSelectedSource = null; places.Clear(); globalPlace.Reads.Clear(); scripts.Clear(); missionIndices.Clear(); MapRouteDefinitions.ClearSharedSyntaxCache(); ClearTimings(); selection = session = null; observedManager = observedPlayer = null; selectedPlace = detailPlace = null; detailFailure = null; selectionId = ""; selectionVersion++; hasClock = false; elapsed = 0; generation++; markerGeneration++; }
         public static void ClearSnapshots() { ClearSnapshotsCore(true); }
         public static void ClearSnapshotsPreservingSyntax() { ClearSnapshotsCore(false); }
         private static void ClearSnapshotsCore(bool clearSyntax)
         {
-            backgroundPrepareStreak = 0;
+            PruneDestroyedPlaces();
+            backgroundPrepareStreak = selectedYieldStreak = 0; deferredSelected = null; deferredSelectedSource = null;
             // Used for OFF: retain weak lifecycle handles, never parsed data.
             bool changed = scripts.Count != 0 || missionIndices.Count != 0 || detailPlace != null || detailFailure != null;
             detailPlace = null; detailFailure = null;
@@ -427,7 +453,7 @@ namespace DiceMaster.Information
             }
             throw new DataNotReadyException();
         }
-        private static Source GetSource(Place place)
+        private static Source GetSource(Place place, bool allowDefer = false)
         {
             Source source = place.Definition;
             if (source == null) place.Definition = source = new Source { Script = place.Script };
@@ -438,11 +464,12 @@ namespace DiceMaster.Information
                     source.Routes = new MapRouteDefinitions(source.Script, DataHelper.ReadPreviewScript, key => ReadPool(place, key)) { UseSharedSyntax = true, PrioritizeRootPreparation = true };
                 if (source.Routes != null)
                 {
-                    if (!scheduledReads || !routeAdvanced)
+                    if ((!scheduledReads || !routeAdvanced) && !(allowDefer && DeferSelectedPreparation(place, source)))
                     {
                         int work = source.Routes.WorkCount, resources = source.Routes.ScriptReadCount + source.Routes.PoolReadCount;
                         source.Routes.AdvanceBudgeted(Now, 8192, preparationSlice.ShouldYield);
                         if (scheduledReads && (source.Routes.WorkCount != work || source.Routes.ScriptReadCount + source.Routes.PoolReadCount != resources)) routeAdvanced = true;
+                        if (ReferenceEquals(place, selectedPlace)) selectedYieldStreak = 0;
                     }
                     if (source.EventWork != source.Routes.WorkCount)
                     {
@@ -566,7 +593,7 @@ namespace DiceMaster.Information
             }
             preparationSlice = PreparationBudget();
             currentRoutes = new MapRouteRead();
-            Source source = GetSource(place);
+            Source source = GetSource(place, guide && !detailed);
             long prepared = Stopwatch.GetTimestamp();
             foreach (EventDefinition entry in source.Events)
             {

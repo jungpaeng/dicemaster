@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -19,6 +21,7 @@ static class GuideProbe
         _value2 = new StatGroupVariable { _value = new List<StatValueReference> { new StatValueReference { _constant = 0 } } } } } };
     static void Main(string[] args)
     {
+        if (args.Contains("scheduling")) { Scheduling(); return; }
         if (args.Contains("definitions")) { Definitions(); return; }
         if (args.Contains("metadata")) { Metadata(); return; }
         bool selected = args.Contains("selected");
@@ -152,6 +155,152 @@ static class GuideProbe
             rows.Add(new { round, count, ms, bytes, sum, fresh });
         }
         Console.WriteLine(JsonSerializer.Serialize(rows));
+    }
+    // Same provider calls for the Git baseline and the working tree. Virtual
+    // .25-second ticks measure scheduling opportunities, not Windows latency.
+    static void Scheduling()
+    {
+        Run(1, false); // JIT warm-up outside reported cases
+        var rows = new List<object>();
+        foreach (int count in new[] { 1, 8, 16 }) foreach (bool selected in new[] { false, true })
+            rows.Add(Run(count, selected));
+        foreach (int count in new[] { 1, 4, 8 }) rows.Add(RunBlocked(count));
+        rows.Add(Lifecycle());
+        Console.WriteLine(JsonSerializer.Serialize(rows));
+    }
+    static object Lifecycle()
+    {
+        MapGuideSource.Clear(); MapGuideSource.Enabled = () => true; MapGuideSource.MarkerVisible = _ => true;
+        var keep = new List<PositionController>();
+        for (int visit = 0; visit < 100; visit++)
+        {
+            foreach (var controller in keep) controller.Destroyed = true;
+            keep.Clear(); MapGuideSource.ClearSnapshots();
+            var owner = new PositionController();
+            for (int at = 0; at < 11; at++)
+            {
+                var controller = new PositionController { _positionData = new FreePositionData { name = "Place" + at, _defaultScript = "" },
+                    _missionsManager = owner._missionsManager, _gameStatManager = owner._gameStatManager, _freeManager = owner._freeManager };
+                keep.Add(controller); MapGuideSource.Register(controller);
+            }
+        }
+        var all = (IList)typeof(MapGuideSource).GetField("places", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+        int registered = all.Count;
+        for (int at = 0; at < 20; at++) MapGuideSource.DiscoverMarkers(true, false)[0].Read();
+        var times = new double[1000]; long allocated = GC.GetAllocatedBytesForCurrentThread();
+        for (int at = 0; at < times.Length; at++)
+        {
+            long begin = Stopwatch.GetTimestamp(); MapGuideSource.DiscoverMarkers(true, false)[0].Read();
+            times[at] = (Stopwatch.GetTimestamp() - begin) * 1000.0 / Stopwatch.Frequency;
+        }
+        allocated = GC.GetAllocatedBytesForCurrentThread() - allocated; Array.Sort(times);
+        GC.KeepAlive(keep);
+        return new { test = "lifecycle-100-visits", registered, live = keep.Count, p50Ms = times[499], p95Ms = times[949], bytesPerQuery = allocated / times.Length };
+    }
+
+    static object Field(object value, string key) => value.GetType()
+        .GetField(key, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).GetValue(value);
+    static MapRouteDefinitions Routes(PositionController controller)
+    {
+        var places = (IEnumerable)typeof(MapGuideSource).GetField("places", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+        foreach (var place in places)
+            if (ReferenceEquals(((WeakReference)Field(place, "Controller")).Target, controller))
+            { var source = Field(place, "Definition"); return source == null ? null : (MapRouteDefinitions)Field(source, "Routes"); }
+        return null;
+    }
+    static void ResetScheduling()
+    {
+        MapGuideSource.Clear(); MapDefinitionAssets.Clear(); DiceMaster.LiveLog.PreviewConditions.ClearTalkContext();
+        MapGuideSource.Enabled = () => true; MapGuideSource.MarkerVisible = _ => true;
+        DataHelper.Scripts.Clear(); DataHelper.ExternalReader = null; UnityEngine.Time.unscaledTime = 0;
+        CheckPointManager.Instance = new CheckPointManager();
+    }
+    static void SchedulingGate(string key) => CheckPointManager.Instance._condition._list.Add(
+        new ConditionResultData { name = key, _items = new List<ConditionResultItem> { IsZero(new FlagData { name = key }) } });
+    static PositionController SchedulingPlace(PositionController owner, string script)
+    {
+        var controller = new PositionController { _positionData = new FreePositionData { name = script, _defaultScript = script },
+            _missionsManager = owner._missionsManager, _gameStatManager = owner._gameStatManager, _freeManager = owner._freeManager };
+        MapGuideSource.Register(controller); return controller;
+    }
+    static MapMarkerSnapshot SchedulingRead(bool selected)
+    {
+        UnityEngine.Time.unscaledTime += .25f; MapGuideSource.BeginScheduledReads();
+        try
+        {
+            if (selected) MapGuideSource.Discover(true, true)[0].Read();
+            return (MapMarkerSnapshot)MapGuideSource.DiscoverMarkers(true, true)[0].Read();
+        }
+        finally { MapGuideSource.EndScheduledReads(); }
+    }
+    static string SchedulingHash(MapMarkerSnapshot value)
+    {
+        string canonical = string.Join("\n", value.Entries.Select(row => row.Title + "|" + row.Kind + "|" + row.Status + "|" +
+            row.AutoText + "|" + row.Available + "|" + row.Opportunity + "|" + row.Guidance).OrderBy(row => row, StringComparer.Ordinal));
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+    }
+    const string SchedulingTalk = "setcharacter(characters.Get('person'));say(luamanager.GetStoryText('D_probe'))";
+    static string SchedulingChoice(string key, string body) => "local a={};a[1]=checkpointmanager.Condition('" + key +
+        "') and 'O_" + key + "' or '~x';local r=choose(a);if r==1 then " + body + " end";
+    static object Run(int branches, bool selected)
+    {
+        ResetScheduling(); var owner = new PositionController();
+        var root = new StringBuilder("local a={};");
+        for (int at = 1; at <= branches; at++)
+        {
+            string key = "focus_gate_" + at; SchedulingGate(key);
+            root.Append("a[" + at + "]=checkpointmanager.Condition('" + key + "') and 'O_" + key + "' or '~x';");
+        }
+        root.Append("local r=choose(a);");
+        for (int at = 1; at <= branches; at++)
+        {
+            root.Append((at == 1 ? "if " : "elseif ") + "r==" + at + " then ");
+            root.Append(at == 1 ? SchedulingTalk : "luamanager.SetNextScript('tail_" + at + "');luamanager.Init()");
+            root.Append(' '); DataHelper.Scripts["tail_" + at] = SchedulingTalk;
+        }
+        DataHelper.Scripts["focus"] = root.Append("end").ToString();
+        SchedulingGate("other_gate"); DataHelper.Scripts["other"] = SchedulingChoice("other_gate", SchedulingTalk);
+        var focus = SchedulingPlace(owner, "focus"); var other = SchedulingPlace(owner, "other");
+        if (selected) MapGuideSource.Select(focus);
+        int focusAt = 0, otherAt = 0, completeAt = 0, maxReads = 0;
+        var trace = new List<object>(); var cost = new double[70]; MapMarkerSnapshot value = null;
+        for (int tick = 1; tick <= cost.Length; tick++)
+        {
+            int reads = DataHelper.Reads; long begin = Stopwatch.GetTimestamp(); value = SchedulingRead(selected);
+            cost[tick - 1] = (Stopwatch.GetTimestamp() - begin) * 1000.0 / Stopwatch.Frequency;
+            maxReads = Math.Max(maxReads, DataHelper.Reads - reads);
+            if (focusAt == 0 && value.Entries.Any(row => ReferenceEquals(row.Anchor, focus) && row.Guidance)) focusAt = tick;
+            if (otherAt == 0 && value.Entries.Any(row => ReferenceEquals(row.Anchor, other) && row.Guidance)) otherAt = tick;
+            var a = Routes(focus); var b = Routes(other);
+            if (completeAt == 0 && a?.HasPendingWork == false) completeAt = tick;
+            if (tick <= 25) trace.Add(new { tick, reads = DataHelper.Reads - reads, focusMarker = focusAt != 0, otherMarker = otherAt != 0,
+                focusPending = a?.HasPendingWork, focusReads = a?.ScriptReadCount, focusRoot = a?.RootMenuComplete, otherReads = b?.ScriptReadCount });
+        }
+        Array.Sort(cost); string displayHash = SchedulingHash(value);
+        GC.KeepAlive(focus); GC.KeepAlive(other);
+        return new { branches, selected, focusAt, otherAt, completeAt, maxReads, p95Ms = cost[66], maximumMs = cost[69], displayHash, trace };
+    }
+    static object RunBlocked(int count)
+    {
+        ResetScheduling(); var owner = new PositionController(); var keep = new List<PositionController>();
+        for (int at = 0; at < count; at++) keep.Add(SchedulingPlace(owner, "missing_" + at));
+        for (int depth = 0; depth < 3; depth++)
+        {
+            string key = "good_" + depth; SchedulingGate(key);
+            DataHelper.Scripts[key] = SchedulingChoice(key, depth < 2 ? "luamanager.SetNextScript('good_" + (depth + 1) + "');luamanager.Init()" : SchedulingTalk);
+        }
+        var good = SchedulingPlace(owner, "good_0"); keep.Add(good);
+        int first = 0, maxReads = 0, idle = 0; var trace = new List<object>(); MapMarkerSnapshot value = null;
+        for (int tick = 1; tick <= 30; tick++)
+        {
+            int reads = DataHelper.Reads; value = SchedulingRead(false); reads = DataHelper.Reads - reads;
+            maxReads = Math.Max(maxReads, reads);
+            if (first == 0 && reads == 0) idle++;
+            if (first == 0 && value.Entries.Any(row => ReferenceEquals(row.Anchor, good) && row.Guidance)) first = tick;
+            if (tick <= 25) trace.Add(new { tick, reads, goodReads = Routes(good)?.ScriptReadCount, found = first > 0 });
+        }
+        string displayHash = SchedulingHash(value); GC.KeepAlive(keep);
+        return new { test = "failed-prerequisite-queued", count, first, idleBeforeFirst = idle, maxReads, displayHash, trace };
     }
 }
 

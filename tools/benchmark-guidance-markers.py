@@ -3,8 +3,11 @@
 Run with the .NET 8 SDK on PATH:
     python3 tools/benchmark-guidance-markers.py
     python3 tools/benchmark-guidance-markers.py --baseline c850006
+    python3 tools/benchmark-guidance-markers.py --baseline 48ac7f1 --modes scheduling
 
 This does not execute Unity, Lua, Windows input or a game frame.
+The scheduling mode covers selected-place tails, failed-root retry waits and
+100 scene recreations using identical provider calls for both source versions.
 """
 import argparse
 import json

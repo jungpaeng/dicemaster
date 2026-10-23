@@ -230,6 +230,9 @@ namespace DiceMaster.LiveLog
         internal sealed class DefinitionScope { public void Reset() { } }
         internal sealed class ReadStamp
         {
+            // This shallow fixture never captures a successful read set.
+            // Route integration links the real stamps and their invalidation.
+            internal bool IsCurrent() => false;
             internal static bool IsRecording => false;
             internal static void Observe(object owner, string key, Func<object> read, object value) { }
         }

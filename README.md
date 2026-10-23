@@ -19,6 +19,8 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
+`main`의 alpha.41 이후 흰 마커 준비 대기 개선은 **v1.0.7-alpha.42 게시 준비 중**입니다. 선택 장소의 첫 안내 이후 다른 장소도 먼저 준비하고, 실패 재시도 대기와 파괴된 장소 누적을 정리합니다. 공개 시험판과 구분하며 [자동 비교·남은 Windows 확인](docs/ISSUE-6-WHITE-MARKER-PREPARATION.md)을 참고하세요.
+
 <!-- alpha41-publication -->
 2026-10-23 04:53:47 KST에 소스 [`cf3397e`](https://github.com/jungpaeng/dicemaster/commit/cf3397ea884b7177f2fb385abb5ceb641a10f198)의 [alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41)을 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·실제 게임 DLL 연결 API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
 <!-- /alpha41-publication -->
