@@ -1,6 +1,6 @@
 # PRD #6 — 흰 마커 준비 대기 개선
 
-2026-10-23. 기준은 `main`의 `48ac7f11bb73e75f609cb24ffb12c51db93c62d3`(게시된 alpha.41의 소스 동작)이다. 원래 작업 폴더의 main에서 진행하며 별도 브랜치·worktree를 만들지 않는다. 이 문서는 **alpha.41 이후 alpha.42 후보 변경**이다. [소스 고정 재빌드·게시 기록](ISSUE-6-ALPHA42-RELEASE.md)에서 릴리스 상태를 별도로 확인한다. 실제 Windows 확인과 #6 전체 완료는 대기다.
+2026-10-23. 기준은 `main`의 `48ac7f11bb73e75f609cb24ffb12c51db93c62d3`(게시된 alpha.41의 소스 동작)이다. 원래 작업 폴더의 main에서 진행하며 별도 브랜치·worktree를 만들지 않는다. 이 문서는 **alpha.41 이후 alpha.42 변경**이다. [소스 고정 재빌드·게시 기록](ISSUE-6-ALPHA42-RELEASE.md)에서 릴리스 상태를 별도로 확인한다. 실제 Windows 확인과 #6 전체 완료는 대기다.
 
 ## 적용한 세 단계
 
@@ -77,3 +77,11 @@ python3 tools/benchmark-guidance-markers.py --modes scheduling unselected select
 - 전체 검사·패키지 영수증: `verification/summary.json`, 복제본 DLL/API 영수증: `verification/clone-api/summary.json` (위 artifacts 디렉터리 기준).
 
 위 영수증은 커밋 전 검토 후보의 검사다. 소스 고정 재빌드·커밋/태그/prerelease 게시 결과는 [alpha.42 기록](ISSUE-6-ALPHA42-RELEASE.md)에 별도로 남긴다. 설치된 게임 파일은 교체하지 않았다. 새 Windows 확인은 대기이며 #6을 전체 완료/종료로 처리하지 않는다. 기존 cfg를 보존해 설치하고 위 Windows 확인 항목을 비교한다.
+
+## 게시 결과
+
+<!-- alpha42-publication -->
+2026-10-23 22:13:01 KST에 소스 [`b70073c`](https://github.com/jungpaeng/dicemaster/commit/b70073c309021a7d8aa215758c201d3b2244e94d)의 [alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42)를 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·복제본 게임 DLL/API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha42-publication -->
+
+소스 태그와 게시 ZIP은 위 로컬 후보의 DLL/cfg/ZIP 바이트와 같다. 고정 커밋 재빌드와 공개 파일/보존 검증은 [alpha.42 게시 기록](ISSUE-6-ALPHA42-RELEASE.md)을 따른다. Windows 확인은 대기다.

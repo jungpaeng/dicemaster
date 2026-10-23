@@ -1,6 +1,10 @@
 # 변경 이력
 
-## v1.0.7-alpha.42 — 흰 마커 준비 대기 개선 (게시 준비)
+## [v1.0.7-alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42) — 2026-10-23 (prerelease)
+
+<!-- alpha42-publication -->
+2026-10-23 22:13:01 KST에 소스 [`b70073c`](https://github.com/jungpaeng/dicemaster/commit/b70073c309021a7d8aa215758c201d3b2244e94d)의 [alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42)를 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·복제본 게임 DLL/API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha42-publication -->
 
 - 장면 교체 뒤 파괴된 지도 장소 등록 누적을 제거한다.
 - 실패 재시도 대기 장소가 정상 경로의 준비 순서를 낭비하지 않게 한다.

@@ -1,8 +1,12 @@
 # PRD #6 — 지도·1회성·실제 분기·상점 정보 구현 기록
 
-## alpha.42 후보 — 흰 마커 준비 대기 개선
+## alpha.42 — 흰 마커 준비 대기 개선
 
-파괴된 장소 등록을 정리하고, 실패 재시도 대기 순서를 건너뛰며, 선택 장소의 첫 유효 안내 이후 동료 장소의 준비에 제한적으로 순서를 양보한다. 기존 현재 판정·공유 예산·0.25초/5초·입력 계약을 유지한다. 게시된 alpha.41 이후 alpha.42 후보 변경이며 실제 Windows 확인은 대기다. [후보 게시 준비 기록](ISSUE-6-ALPHA42-RELEASE.md). [단계별 비교·재현·검사·한계](ISSUE-6-WHITE-MARKER-PREPARATION.md).
+<!-- alpha42-publication -->
+2026-10-23 22:13:01 KST에 소스 [`b70073c`](https://github.com/jungpaeng/dicemaster/commit/b70073c309021a7d8aa215758c201d3b2244e94d)의 [alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42)를 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·복제본 게임 DLL/API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha42-publication -->
+
+파괴된 장소 등록을 정리하고, 실패 재시도 대기 순서를 건너뛰며, 선택 장소의 첫 유효 안내 이후 동료 장소의 준비에 제한적으로 순서를 양보한다. 기존 현재 판정·공유 예산·0.25초/5초·입력 계약을 유지한다. alpha.42로 게시했으며 실제 Windows 확인은 대기다. [게시 기록](ISSUE-6-ALPHA42-RELEASE.md). [단계별 비교·재현·검사·한계](ISSUE-6-WHITE-MARKER-PREPARATION.md).
 
 ## alpha.41 — 단계별 성능 개선
 

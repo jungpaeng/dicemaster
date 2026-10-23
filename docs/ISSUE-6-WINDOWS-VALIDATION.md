@@ -1,8 +1,12 @@
 # PRD #6 — 새 후보 실제 Windows 확인표
 
-## alpha.42 후보 — 흰 마커 준비 대기 개선 확인 대기
+## alpha.42 — 흰 마커 준비 대기 개선 확인 대기
 
-[구현·자동 측정·후보 영수증](ISSUE-6-WHITE-MARKER-PREPARATION.md) · [게시 준비 기록](ISSUE-6-ALPHA42-RELEASE.md). 공개 alpha.41이나 기존 사용자 확인을 새 DLL 확인으로 승계하지 않는다.
+<!-- alpha42-publication -->
+2026-10-23 22:13:01 KST에 소스 [`b70073c`](https://github.com/jungpaeng/dicemaster/commit/b70073c309021a7d8aa215758c201d3b2244e94d)의 [alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42)를 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·복제본 게임 DLL/API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha42-publication -->
+
+[구현·자동 측정·후보 영수증](ISSUE-6-WHITE-MARKER-PREPARATION.md) · [후보·게시 기록](ISSUE-6-ALPHA42-RELEASE.md). 공개 alpha.41이나 기존 사용자 확인을 새 DLL 확인으로 승계하지 않는다.
 
 - [ ] 새 게임/완전 재시작 후 저장 직행에서 무포커스·남제자방 계속 포커스·연단방 계속 포커스를 각각 비교한다. 선택 장소의 첫 안내와 다른 장소의 첫 마커/전체 준비 시간을 나눠 기록한다.
 - [ ] 장면을 여러 번 오간 뒤 살아 있는 장소만 남고, 숨긴 장소를 다시 열면 정상 표시되는지 확인한다.

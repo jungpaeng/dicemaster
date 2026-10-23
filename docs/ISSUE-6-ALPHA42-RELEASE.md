@@ -20,7 +20,7 @@ macOS .NET8에서 운영 provider와 관리 경계로 측정했다. 실제 게�
 
 기존 54개와 추가 27개 비교에서 최종 표시 SHA-256이 같다. 정상 추가 원문 읽기는 0회, 한 조회의 준비 원문 읽기는 최대 1회다. 선택 장소의 모든 후속 준비를 한 조회 늦추는 절충이 있으며 일부 cold/갱신 위상에서는 첫 표시가 한 갱신 늦어지는 변동도 남는다. 모든 첫 표시나 Windows FPS가 개선됐다고 주장하지 않는다.
 
-## 검토 후보와 게시 준비
+## 검토 후보·고정 커밋 재빌드
 
 원래 main에서 검토 후보의 전체 21개 검사 프로그램·실제 설치 파일/원문 경계·복제본 DLL 연결을 통과했다. 입력 315개, 생산 소스/리소스 126개, 고정 참조 16개다. 복제본 API 검사는 모드/검사기/fixture를 새로 빌드해 4,265개 managed behavior / 1,288개 metadata contract를 통과했다. 설치 ZIP의 두 경로·CRC·cfg/DLL 바이트가 새 후보와 같다.
 
@@ -30,7 +30,7 @@ macOS .NET8에서 운영 provider와 관리 경계로 측정했다. 실제 게�
 | 설치 ZIP | 436859 | `71cf293d885c506f9bbc401ebd91a898ac41f55a940963ab5f0d5079327d77e9` |
 | DiceMaster.cfg | 13083 | `deda801f4c061f3436732c1da6d4a3a2195dce79822dccb74846468faf9f99fd` |
 
-이 문서의 최초 커밋 시점에는 고정 커밋 재빌드·태그 push·prerelease 게시를 준비 중이다. 실제 완료 결과는 후속 main 문서 커밋에서 기록한다. 이전 태그/Release/자산을 수정하거나 삭제하지 않으며 최신 정식은 v1.0.6으로 유지한다.
+소스 태그 `v1.0.7-alpha.42`는 `b70073c309021a7d8aa215758c201d3b2244e94d`를 가리킨다. 해당 커밋만 추출해 관리 모드 DLL 0개에서 재빌드했으며 검토 후보의 전체 입력 SHA·SDK·고정 참조·DLL/cfg/ZIP이 일치했다. 21개 검사 프로그램이 다시 통과했다. 게시 결과 문서는 이후 별도 main 커밋이며 소스 태그·패키지를 바꾸지 않는다.
 
 ## 설치와 Windows 확인 대기
 
@@ -42,3 +42,18 @@ macOS .NET8에서 운영 provider와 관리 경계로 측정했다. 실제 게�
 - [ ] 기존 이벤트 선택·예약·로그 네 탭·주사위·상점·실제 분기 기록을 확인한다. 첫 안내·전체 준비·실제 프레임 p95/GC를 별도로 측정한다.
 
 [실제 Windows 확인표](ISSUE-6-WINDOWS-VALIDATION.md). 새 DLL의 사용자 확인 전 #6 전체 완료나 이슈 종료로 처리하지 않는다. v1.0.6 확인은 이 후보로 승계하지 않는다.
+
+## 게시 완료와 공개 파일 확인
+
+<!-- alpha42-publication -->
+2026-10-23 22:13:01 KST에 소스 [`b70073c`](https://github.com/jungpaeng/dicemaster/commit/b70073c309021a7d8aa215758c201d3b2244e94d)의 [alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42)를 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·복제본 게임 DLL/API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha42-publication -->
+
+- [설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.42/DiceMaster-v1.0.7-alpha.42.zip) · 소스 `b70073c309021a7d8aa215758c201d3b2244e94d`. annotated tag와 main을 함께 atomic push했다.
+- Release `421860631`, asset `669174531`. `draft=false`, `prerelease=true`, `make_latest=false`. 공개 시각 `2026-10-23T13:13:01Z`.
+- 인증 없는 공개 Release API/페이지/ZIP 다운로드가 성공했다. ZIP 436,859 B와 SHA-256, 두 내부 경로·CRC·DLL/cfg 바이트가 고정 커밋 산출물 및 검토 후보와 같다.
+- 기존 83개 Release의 본문·태그·게시 상태·자산 ID/이름/크기/해시와 84개 원격 tag 참조가 보존됐다. 현재는 84개 Release·85개 tag 참조다. latest 정식은 v1.0.6이며 #5/#6는 open이다.
+- 복제본 게임 DLL/API 경계는 이번 후보·검사기·fixture를 새로 빌드한 결과다. 현재 DLL 바이트가 고정 참조 빌드와 같다. 실제 Unity/Harmony·Windows 게임은 실행하지 않았다.
+- 고정 커밋 영수증: `artifacts/releases/v1.0.7-alpha.42/release-verification.json`. 공개 파일/보존 검증: 같은 폴더의 `anonymous-verification.json`. 검토 후보 대조: `artifacts/issue-6/white-marker-release/reviewed-commit-comparison.json`. 이 폴더는 Git/설치 ZIP에 포함하지 않는다.
+
+Windows 확인 전 새 후보나 #6을 전체 완료/종료로 처리하지 않는다.

@@ -19,13 +19,21 @@ Windows용 활협전과 **BepInEx가 포함된 활협전용 모드 베이스**�
 
 ## 정보 기능 시험판
 
-`main`의 alpha.41 이후 흰 마커 준비 대기 개선은 **v1.0.7-alpha.42 게시 준비 중**입니다. 선택 장소의 첫 안내 이후 다른 장소도 먼저 준비하고, 실패 재시도 대기와 파괴된 장소 누적을 정리합니다. 공개 시험판과 구분하며 [자동 비교·남은 Windows 확인](docs/ISSUE-6-WHITE-MARKER-PREPARATION.md)을 참고하세요.
+<!-- alpha42-publication -->
+2026-10-23 22:13:01 KST에 소스 [`b70073c`](https://github.com/jungpaeng/dicemaster/commit/b70073c309021a7d8aa215758c201d3b2244e94d)의 [alpha.42](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.42)를 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·복제본 게임 DLL/API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
+<!-- /alpha42-publication -->
+
+**[v1.0.7-alpha.42 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.42/DiceMaster-v1.0.7-alpha.42.zip)** · [변경·검사·Windows 확인](docs/ISSUE-6-ALPHA42-RELEASE.md)
+
+alpha.42는 선택 장소의 첫 안내 이후 다른 장소도 먼저 준비하고, 실패 재시도 대기와 파괴된 장소 누적을 정리합니다. 기존 현재 조건 재검증·0.25초/5초·표시/입력 규칙을 유지합니다. [자동 비교·남은 Windows 확인](docs/ISSUE-6-WHITE-MARKER-PREPARATION.md).
+
+이전 alpha.41 게시 기록:
 
 <!-- alpha41-publication -->
 2026-10-23 04:53:47 KST에 소스 [`cf3397e`](https://github.com/jungpaeng/dicemaster/commit/cf3397ea884b7177f2fb385abb5ceb641a10f198)의 [alpha.41](https://github.com/jungpaeng/dicemaster/releases/tag/v1.0.7-alpha.41)을 게시했다. 고정 커밋의 21개 검사·검토 입력/파일 일치·실제 게임 DLL 연결 API 경계·익명 공개 ZIP 대조를 통과했다. 실제 Windows 성능·물리 입력 확인과 #6 전체 완료는 대기다.
 <!-- /alpha41-publication -->
 
-**[v1.0.7-alpha.41 설치 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.41/DiceMaster-v1.0.7-alpha.41.zip)** · [변경·검사·Windows 확인](docs/ISSUE-6-ALPHA41-RELEASE.md)
+[이전 v1.0.7-alpha.41 ZIP](https://github.com/jungpaeng/dicemaster/releases/download/v1.0.7-alpha.41/DiceMaster-v1.0.7-alpha.41.zip) · [변경·검사·Windows 확인](docs/ISSUE-6-ALPHA41-RELEASE.md)
 
 alpha.41은 같은 내용의 로그 발행을 줄이고, 검증한 설치 정의를 재사용하며, 짧은 이야기 경로의 첫 마커가 먼저 준비되도록 순서를 개선합니다. 정상 0.25초·실패 5초와 기존 표시·입력 기준을 유지합니다. 자동 측정에서 재준비·할당량과 첫 안내 대기가 줄었으며 실제 Windows FPS 개선 여부는 확인 대기입니다. 최초에 모든 정의를 일괄 조회하는 검사에서는 비용이 증가한 한계도 있습니다. [측정 범위·수치·한계](docs/ISSUE-6-PERFORMANCE-STAGES.md).
 
